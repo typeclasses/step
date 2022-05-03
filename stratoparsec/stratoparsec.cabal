@@ -1,0 +1,63 @@
+cabal-version: 3.0
+
+name: stratoparsec
+version: 0
+
+common base
+    default-language: Haskell2010
+    ghc-options: -Wall -fdefer-typed-holes
+    default-extensions:
+        AllowAmbiguousTypes
+        BlockArguments
+        DeriveFunctor
+        DerivingStrategies
+        DerivingVia
+        LambdaCase
+        GeneralizedNewtypeDeriving
+        ScopedTypeVariables
+        StandaloneDeriving
+        StandaloneKindSignatures
+        TypeApplications
+        TypeFamilies
+
+library
+    import: base
+    hs-source-dirs: library/stratoparsec
+    exposed-modules:
+        Stratoparsec.BufferedStream
+      , Stratoparsec.BufferedStream.Type
+      , Stratoparsec.BufferedStream.Util
+      , Stratoparsec.ByteString
+      , Stratoparsec.ByteString.Buffer
+      , Stratoparsec.ByteString.ParserType
+      , Stratoparsec.ByteString.Parsers
+      , Stratoparsec.Context
+      , Stratoparsec.Context.Type
+      , Stratoparsec.Context.Util
+      , Stratoparsec.Name
+      , Stratoparsec.Parser
+      , Stratoparsec.Parser.Type
+      , Stratoparsec.Parser.Util
+      , Stratoparsec.Text
+      , Stratoparsec.Text.Buffer
+      , Stratoparsec.Text.ParserType
+      , Stratoparsec.Text.Parsers
+      , Stratoparsec.TextLike
+      , Stratoparsec.TextLike.Class
+      , Stratoparsec.TextLike.Parsers
+      , Stratoparsec.TextLike.ParserType
+    build-depends:
+        list-transformer
+      , relude
+    mixins:
+        list-transformer (List.Transformer as ListT)
+      , relude (Relude as Prelude)
+
+library list-stop
+    import: base
+    hs-source-dirs: library/list-stop
+    exposed-modules: ListStop
+    build-depends:
+        relude
+    mixins:
+        relude (Relude as Prelude)
