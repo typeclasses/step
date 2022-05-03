@@ -13,12 +13,23 @@ common base
         DerivingStrategies
         DerivingVia
         LambdaCase
+        GADTs
         GeneralizedNewtypeDeriving
         ScopedTypeVariables
         StandaloneDeriving
         StandaloneKindSignatures
         TypeApplications
         TypeFamilies
+    build-depends:
+        base
+      , containers
+      , list-transformer
+      , relude
+    mixins:
+        base (Text.Show as Show)
+      , containers (Data.Set as Set)
+      , list-transformer (List.Transformer as ListT)
+      , relude (Relude as Prelude)
 
 library
     import: base
@@ -46,18 +57,8 @@ library
       , Stratoparsec.TextLike.Class
       , Stratoparsec.TextLike.Parsers
       , Stratoparsec.TextLike.ParserType
-    build-depends:
-        list-transformer
-      , relude
-    mixins:
-        list-transformer (List.Transformer as ListT)
-      , relude (Relude as Prelude)
 
 library commit-list
     import: base
     hs-source-dirs: library/commit-list
     exposed-modules: CommitList
-    build-depends:
-        relude
-    mixins:
-        relude (Relude as Prelude)
