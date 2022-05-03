@@ -53,10 +53,10 @@ library
         list-transformer (List.Transformer as ListT)
       , relude (Relude as Prelude)
 
-library list-stop
+library commit-list
     import: base
-    hs-source-dirs: library/list-stop
-    exposed-modules: ListStop
+    hs-source-dirs: library/commit-list
+    exposed-modules: CommitList
     build-depends:
         relude
     mixins:
