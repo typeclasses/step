@@ -13,9 +13,6 @@ data Tree k a
 
 type Key k = (Ord k)
 
-empty :: Tree k a
-empty = _
-
 singleton :: k -> a -> Tree k a
 singleton = _
 
@@ -27,12 +24,18 @@ insert ::
     -> Tree k a
 insert = _
 
+delete :: k -> Tree k a -> Tree k a
+delete = _
+
+substitute :: k -> a -> Tree k a -> Tree k a
+substitute = _
+
 -- @prune a b@ removes all descendants of @a@ other than those that lead to @b@.
 prune :: k -> k -> Tree k a -> Tree k a
 prune = _
 
-depthFirstView :: Tree k a -> Maybe (k, a, Tree k a)
-depthFirstView = _
+leftmost :: Tree k a -> Maybe (k, a)
+leftmost = _
 
 simplify :: Tree k a -> Tree k a
 simplify = _

@@ -63,4 +63,4 @@ library commit-list
     import: base
     hs-source-dirs: library/commit-list
     exposed-modules: CommitList
-    other-modules: Tree
+    other-modules: Tree, Life, Infinity

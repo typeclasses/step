@@ -7,64 +7,59 @@ import qualified Monad
 import qualified Set
 import qualified Show
 import qualified Seq
-import qualified Tree
-import Tree (Tree)
+import qualified Life
+import Life (Life)
+import qualified Infinity
 
-data CommitListT (m :: Type -> Type) (a :: Type) where
-    Commit :: CommitKey -> CommitListT m a
-    Action :: m (Step m a) -> CommitListT m a
-    ForEach :: CommitListT m a -> (a -> CommitListT m b) -> CommitListT m b
-    Tentatively :: CommitListT m CommitKey
+data PossibiliT (m :: Type -> Type) (a :: Type)
+  where
+    Simple0 :: PossibiliT m a
+    Simple1 :: a -> PossibiliT m a
+    Action0 :: m x -> PossibiliT m a
+    Action1 :: m a -> PossibiliT m a
+    Commit0 :: CommitKey -> PossibiliT m a
+    Commit1 :: CommitKey -> a -> PossibiliT m a
+    ForEach :: PossibiliT m a -> (a -> PossibiliT m b) -> PossibiliT m b
+    Alternatively :: PossibiliT m a -> PossibiliT m a -> PossibiliT m a
+    Tentatively :: PossibiliT m x -> (CommitKey -> x -> a) -> PossibiliT m a
 
-instance Applicative m => Functor (CommitListT m) where
-    fmap f = \case
-        Commit k -> Commit k
-        Action a -> Action (fmap (fmap f) a)
-        ForEach x g -> ForEach x (fmap f . g)
-        Tentatively -> ForEach Tentatively (singleton . f)
+findHead :: PossibiliT m a -> PossibiliT m a
+findHead = \case
+    Tentatively p f -> _
+    p -> p
 
-instance Monad m => Monad (CommitListT m) where
-    return = singleton
+deriving stock instance Functor m => Functor (PossibiliT m)
+
+instance Monad m => Monad (PossibiliT m) where
+    return = Simple1
     (>>=) = ForEach
 
-instance Monad m => Applicative (CommitListT m) where
+instance Monad m => Applicative (PossibiliT m) where
     pure = Monad.return
     (<*>) = Monad.ap
-
-data Step (m :: Type -> Type) (a :: Type) =
-    Nil | Cons a (CommitListT m a)
-    deriving stock Functor
 
 newtype CommitKey = CommitKey Natural
     deriving stock (Eq, Ord, Show)
 
-data CommitState m =
-  CommitState
-    { tree :: Tree CommitKey (CommitListT m ())
-    , nextCommitKey :: CommitKey
-    }
+tentatively :: PossibiliT m a -> PossibiliT m (CommitKey, a)
+tentatively x = Tentatively x (\k a -> (k, a))
 
-nil :: Applicative m => CommitListT m a
-nil = Action (pure Nil)
+runPossibiliT :: Monad m => PossibiliT m a -> m ()
+runPossibiliT x = live $ Life.singleton (fmap CommitKey Infinity.natural) (void x)
 
-singleton :: Applicative m => a -> CommitListT m a
-singleton x = Action (pure (Cons x nil))
-
-runCommitList :: Monad m => CommitListT m a -> m ()
-runCommitList x = runCommitListFromState initialState (CommitKey 0) (void x)
-
-initialState :: CommitState m
-initialState = CommitState{ tree = Tree.empty, nextCommitKey = CommitKey 0 }
-
-runCommitState :: Monad m => CommitState m -> m ()
-runCommitState st = case Tree.depthFirstView (tree st) of
+live :: Monad m => Life CommitKey (PossibiliT m ()) -> m ()
+live l = case Life.leftmost l of
     Nothing -> return ()
-    Just (k, x, tree') -> runCommitListFromState st{ tree = tree' } k x
+    Just (k, p) -> case p of
+        Commit0 commitK   -> l & Life.prune commitK k & live
+        Commit1 commitK _ -> l & Life.prune commitK k & live
+        ForEach x f -> _
 
-runCommitListFromState :: Monad m => CommitState m -> CommitKey -> CommitListT m () -> m ()
-runCommitListFromState st hereK = \case
-    Commit commitK -> runCommitState st{ tree = Tree.prune commitK hereK (tree st) }
-    Action a -> a >>= \case{ Nil -> runCommitState st; Cons _ x -> runCommitListFromState st x }
+        -- Just (k, OneAction a) -> a >>= \case
+        --     Nil -> st & overTree (Tree.delete k) & run'
+        --     Cons _ x -> st & overTree (Tree.substitute k x) & run'
+        -- Just (k, Tentatively x) -> _
+
 
     -- ForEach Tentatively f -> runCommitState
     --     st { pending = Map.insert k (f k) (pending st)
@@ -112,9 +107,6 @@ incrementCommitKey (CommitKey n) = CommitKey (succ n)
 
 -- initialState :: CommitState
 -- initialState = CommitState{ tentativeKeySet = Set.empty, nextCommitKey = CommitKey 0 }
-
--- tentatively :: MonadIO m => CommitListT m a -> CommitListT m (CommitKey, a)
--- tentatively x = do{ k <- newCommitKey; i <- whileTentative k x; return (k, i) }
 
 -- newCommitKey :: forall m. MonadIO m => CommitListT m CommitKey
 -- newCommitKey = CommitListT @m $ lift do
