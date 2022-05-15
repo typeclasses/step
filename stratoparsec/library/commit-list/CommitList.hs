@@ -13,12 +13,10 @@ import qualified Infinity
 
 data PossibiliT (m :: Type -> Type) (a :: Type)
   where
-    Simple0 :: PossibiliT m a
-    Simple1 :: a -> PossibiliT m a
-    Action0 :: m x -> PossibiliT m a
-    Action1 :: m a -> PossibiliT m a
-    Commit0 :: CommitKey -> PossibiliT m a
-    Commit1 :: CommitKey -> a -> PossibiliT m a
+    Nil :: PossibiliT m a
+    Yield :: a -> PossibiliT m a -> PossibiliT m a
+    Commit :: CommitKey -> PossibiliT m a -> PossibiliT m a
+    Action :: m (PossibiliT m a) -> PossibiliT m a
     ForEach :: PossibiliT m a -> (a -> PossibiliT m b) -> PossibiliT m b
     Alternatively :: PossibiliT m a -> PossibiliT m a -> PossibiliT m a
     Tentatively :: PossibiliT m x -> (CommitKey -> x -> a) -> PossibiliT m a
@@ -31,7 +29,7 @@ findHead = \case
 deriving stock instance Functor m => Functor (PossibiliT m)
 
 instance Monad m => Monad (PossibiliT m) where
-    return = Simple1
+    return x = Yield x Nil
     (>>=) = ForEach
 
 instance Monad m => Applicative (PossibiliT m) where
@@ -50,10 +48,14 @@ runPossibiliT x = live $ Life.singleton (fmap CommitKey Infinity.natural) (void 
 live :: Monad m => Life CommitKey (PossibiliT m ()) -> m ()
 live l = case Life.leftmost l of
     Nothing -> return ()
-    Just (k, p) -> case p of
-        Commit0 commitK   -> l & Life.prune commitK k & live
-        Commit1 commitK _ -> l & Life.prune commitK k & live
-        ForEach x f -> _
+    Just (k, p, l') -> let liveWith f = live (f l') in case p of
+        Nil                     -> liveWith id
+        Commit commitK next     -> liveWith (Life.prune commitK k . Life.insert k next)
+        Yield _ next            -> liveWith (Life.insert k next)
+        Action m                -> m >>= \next -> liveWith (Life.insert k next)
+        Alternatively x y       -> liveWith (Life.insert k x . Life.insert k y)
+        ForEach x f             -> _
+        Tentatively x f         -> _
 
         -- Just (k, OneAction a) -> a >>= \case
         --     Nil -> st & overTree (Tree.delete k) & run'
