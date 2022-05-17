@@ -1,6 +1,9 @@
 module Tree where
 
-data Tree k a = Tree k (Maybe (Tree k a)) [a]
+data Tree k a =
+  Tree k
+    (Maybe (Tree k a)) -- ^ Actively being explored
+    [a] -- ^ Alternative possibilities
 
 type Key k = (Ord k)
 
@@ -18,8 +21,8 @@ insert = _
 delete :: Key k => k -> Tree k a -> Tree k a
 delete = _
 
--- @prune a b@ removes all descendants of @a@ other than those that lead to @b@.
-prune :: Key k => k -> k -> Tree k a -> Tree k a
+-- Removes alternative possibilities at a key
+prune :: Key k => k -> Tree k a -> Tree k a
 prune = _
 
 leftmost :: Key k => Tree k a -> Maybe (k, a, Tree k a)

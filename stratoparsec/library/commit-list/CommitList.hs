@@ -21,11 +21,6 @@ data PossibiliT (m :: Type -> Type) (a :: Type)
     Alternatively :: PossibiliT m a -> PossibiliT m a -> PossibiliT m a
     Tentatively :: PossibiliT m x -> (CommitKey -> x -> a) -> PossibiliT m a
 
-findHead :: PossibiliT m a -> PossibiliT m a
-findHead = \case
-    Tentatively p f -> _
-    p -> p
-
 deriving stock instance Functor m => Functor (PossibiliT m)
 
 instance Monad m => Monad (PossibiliT m) where
@@ -50,11 +45,11 @@ live l = case Life.leftmost l of
     Nothing -> return ()
     Just (k, p, l') -> let liveWith f = live (f l') in case p of
         Nil                     -> liveWith id
-        Commit commitK next     -> liveWith (Life.prune commitK k . Life.insert k next)
+        Commit commitK next     -> liveWith (Life.prune commitK . Life.insert k next)
         Yield _ next            -> liveWith (Life.insert k next)
         Action m                -> m >>= \next -> liveWith (Life.insert k next)
         Alternatively x y       -> liveWith (Life.insert k x . Life.insert k y)
-        ForEach x f             -> _
+        ForEach (ForEach x f) g -> liveWith (Life.insert k (ForEach f g))
         Tentatively x f         -> _
 
         -- Just (k, OneAction a) -> a >>= \case
