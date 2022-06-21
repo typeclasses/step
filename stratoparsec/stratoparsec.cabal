@@ -27,11 +27,13 @@ common base
       , containers
       , list-transformer
       , relude
+      , text
     mixins:
-        base (Text.Show as Show, Control.Monad as Monad)
+        base (Data.Char as Char, Text.Show as Show, Control.Monad as Monad)
       , containers (Data.Set as Set, Data.Map.Strict as Map, Data.Sequence as Seq)
       , list-transformer (List.Transformer as ListT)
       , relude (Relude as Prelude)
+      , text (Data.Text as Text, Data.Text.Lazy as LText)
 
 library
     import: base
