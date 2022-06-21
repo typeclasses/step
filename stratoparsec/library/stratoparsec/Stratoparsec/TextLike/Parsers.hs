@@ -8,12 +8,13 @@ import qualified ListT
 import Stratoparsec.TextLike.ParserType (Parser)
 import Stratoparsec.TextLike.Class (TextLike)
 
+import qualified Stratoparsec.Parser.Type as ParseState (ParseState (..))
 import qualified Stratoparsec.Parser.Type as T
 import qualified Stratoparsec.TextLike.Class as TL
 import qualified Stratoparsec.BufferedStream.Type as BufferedStream
 
 amountBuffered :: forall m text. (Monad m, TextLike text) => Parser m text Natural
-amountBuffered = T.Parser \_ -> get <&> TL.bufferSize @text . BufferedStream.buffer
+amountBuffered = T.Parser \_ -> get <&> TL.bufferSize @text . BufferedStream.buffer . ParseState.remainingInput
 
 -- | Force the input until at least @n@ characters of input are available or the end of input is reached.
 -- bufferAtLeast :: forall m text. (Monad m, TextLike text) => Natural -> Parser m text ()
