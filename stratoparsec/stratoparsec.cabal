@@ -24,12 +24,14 @@ common base
         ViewPatterns
     build-depends:
         base
+      , bytestring
       , containers
       , list-transformer
       , relude
       , text
     mixins:
-        base (Data.Char as Char, Text.Show as Show, Control.Monad as Monad)
+        base (Data.Char as Char, Data.Word as Word, Text.Show as Show, Control.Monad as Monad)
+      , bytestring (Data.ByteString as ByteString, Data.ByteString.Lazy as LByteString)
       , containers (Data.Set as Set, Data.Map.Strict as Map, Data.Sequence as Seq)
       , list-transformer (List.Transformer as ListT)
       , relude (Relude as Prelude)
@@ -43,7 +45,8 @@ library
       , Stratoparsec.BufferedStream.Type
       , Stratoparsec.BufferedStream.Util
       , Stratoparsec.ByteString
-      , Stratoparsec.ByteString.Buffer
+      , Stratoparsec.ByteString.BufferType
+      , Stratoparsec.ByteString.BufferUtil
       , Stratoparsec.ByteString.ParserType
       , Stratoparsec.ByteString.Parsers
       , Stratoparsec.Context
@@ -54,7 +57,8 @@ library
       , Stratoparsec.Parser.Type
       , Stratoparsec.Parser.Util
       , Stratoparsec.Text
-      , Stratoparsec.Text.Buffer
+      , Stratoparsec.Text.BufferType
+      , Stratoparsec.Text.BufferUtil
       , Stratoparsec.Text.ParserType
       , Stratoparsec.Text.Parsers
       , Stratoparsec.TextLike

@@ -1,4 +1,4 @@
-module Stratoparsec.Text.Buffer where
+module Stratoparsec.Text.BufferType where
 
 data TextBuffer =
   TextBuffer

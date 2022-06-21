@@ -1,10 +1,16 @@
 module Stratoparsec.TextLike.Class where
 
+import qualified ByteString as BS
+import qualified LByteString as LBS
 import qualified Char as C
 import qualified Text as T
 import qualified LText as LT
+import qualified Word as W
 
-import Stratoparsec.Text.Buffer
+import Stratoparsec.Text.BufferType
+import Stratoparsec.ByteString.BufferType
+import qualified Stratoparsec.Text.BufferUtil as TextBuffer
+import qualified Stratoparsec.ByteString.BufferUtil as ByteStringBuffer
 
 class TextLike text where
 
@@ -27,3 +33,17 @@ instance TextLike T.Text
     type Char T.Text = C.Char
     type Lazy T.Text = LT.Text
     type Buffer T.Text = TextBuffer
+    textToBuffer = TextBuffer.fromText
+    bufferConcat = TextBuffer.concat
+    bufferToLazy = TextBuffer.toLazyText
+    bufferSize = TextBuffer.length
+
+instance TextLike BS.ByteString
+  where
+    type Char BS.ByteString = W.Word8
+    type Lazy BS.ByteString = LBS.ByteString
+    type Buffer BS.ByteString = ByteStringBuffer
+    textToBuffer = ByteStringBuffer.fromByteString
+    bufferConcat = ByteStringBuffer.concat
+    bufferToLazy = ByteStringBuffer.toLazyByteString
+    bufferSize = ByteStringBuffer.length

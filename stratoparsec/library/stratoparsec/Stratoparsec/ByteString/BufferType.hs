@@ -1,4 +1,4 @@
-module Stratoparsec.ByteString.Buffer where
+module Stratoparsec.ByteString.BufferType where
 
 data ByteStringBuffer =
   ByteStringBuffer
