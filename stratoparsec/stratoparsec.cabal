@@ -40,28 +40,4 @@ common base
 library
     import: base
     hs-source-dirs: library/stratoparsec
-    exposed-modules:
-        Stratoparsec.BufferedStream
-      , Stratoparsec.BufferedStream.Type
-      , Stratoparsec.BufferedStream.Util
-      , Stratoparsec.ByteString
-      , Stratoparsec.ByteString.BufferType
-      , Stratoparsec.ByteString.BufferUtil
-      , Stratoparsec.ByteString.ParserType
-      , Stratoparsec.ByteString.Parsers
-      , Stratoparsec.Context
-      , Stratoparsec.Context.Type
-      , Stratoparsec.Context.Util
-      , Stratoparsec.Name
-      , Stratoparsec.Parser
-      , Stratoparsec.Parser.Type
-      , Stratoparsec.Parser.Util
-      , Stratoparsec.Text
-      , Stratoparsec.Text.BufferType
-      , Stratoparsec.Text.BufferUtil
-      , Stratoparsec.Text.ParserType
-      , Stratoparsec.Text.Parsers
-      , Stratoparsec.TextLike
-      , Stratoparsec.TextLike.Class
-      , Stratoparsec.TextLike.Parsers
-      , Stratoparsec.TextLike.ParserType
+    exposed-modules: Stratoparsec
