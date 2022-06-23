@@ -29,6 +29,7 @@ common base
       , containers
       , list-transformer
       , mono-traversable ^>= 1.0
+      , optics ^>= 0.4
       , relude
       , text
     mixins:
@@ -48,6 +49,7 @@ library
         Stratoparsec.Buffer
         Stratoparsec.Stream
         Stratoparsec.Stream.State
+        Stratoparsec.Document
     other-modules:
         Stratoparsec.Util.Modify
         Stratoparsec.Util.While

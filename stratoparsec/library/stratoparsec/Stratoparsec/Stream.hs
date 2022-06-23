@@ -17,6 +17,12 @@ data Stream m chunk =
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
+toListT :: Monad m => Stream m chunk -> ListT m chunk
+toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
+
+fromListT :: ListT m chunk -> Stream m chunk
+fromListT x = Stream{ buffer = Buffer.empty, pending = Just x }
+
 bufferSize :: Stream m chunk -> Natural
 bufferSize = Buffer.size . buffer
 
