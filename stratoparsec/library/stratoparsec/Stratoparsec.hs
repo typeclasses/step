@@ -12,31 +12,13 @@ import qualified Text as T
 import qualified LText as LT
 import qualified Seq
 import qualified Mono
+import qualified ListT
 
-type BufferedStream :: (Type -> Type) -> Type -> Type -> Type
-data BufferedStream m chunk buffer =
-  ParseState
-    { bufferedStreamBuffer :: buffer
-    , bufferedStreamPending :: ListT m chunk
-    }
+import Stratoparsec.Buffer (Buffer)
+import qualified Stratoparsec.Buffer as Buffer
 
-textLikeSingletonBuffer :: MonoFoldable text => text -> Buffer text
-textLikeSingletonBuffer x =
-    Buffer{ bufferChunks = Seq.singleton x, bufferSize = fromIntegral $ Mono.olength x }
-
-data Buffer a = Buffer{ bufferChunks :: Seq a, bufferSize :: Natural }
-
--- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
-bufferCharacters :: Natural
-    -> BufferedStream m text (Mono.Element text)
-    -> m (BufferedStream m text (Mono.Element text))
-bufferCharacters n s = _
-
--- bufferAtLeast :: forall m text. (Monad m, TextLike text) => Natural -> Parser m text ()
--- bufferAtLeast n = bufferSize >>= \si -> when (si < n) $ T.Parser \_ -> do
---     s <- get
---     lift $ ListT.next (BufferedStream.pending s) >>= _
-
+import Stratoparsec.Stream (Stream)
+import qualified Stratoparsec.Stream as Stream
 
 -- ensure n = T.Parser $ \t pos more lose succ ->
 --     case lengthAtLeast pos n t of

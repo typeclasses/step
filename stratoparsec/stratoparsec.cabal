@@ -13,6 +13,7 @@ common base
         DeriveFunctor
         DerivingStrategies
         DerivingVia
+        FlexibleContexts
         LambdaCase
         GADTs
         GeneralizedNewtypeDeriving
@@ -42,4 +43,11 @@ common base
 library
     import: base
     hs-source-dirs: library/stratoparsec
-    exposed-modules: Stratoparsec
+    exposed-modules:
+        Stratoparsec
+        Stratoparsec.Buffer
+        Stratoparsec.Stream
+        Stratoparsec.Stream.State
+    other-modules:
+        Stratoparsec.Util.Modify
+        Stratoparsec.Util.While
