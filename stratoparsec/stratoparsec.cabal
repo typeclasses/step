@@ -27,6 +27,7 @@ common base
       , bytestring
       , containers
       , list-transformer
+      , mono-traversable ^>= 1.0
       , relude
       , text
     mixins:
@@ -34,6 +35,7 @@ common base
       , bytestring (Data.ByteString as ByteString, Data.ByteString.Lazy as LByteString)
       , containers (Data.Set as Set, Data.Map.Strict as Map, Data.Sequence as Seq)
       , list-transformer (List.Transformer as ListT)
+      , mono-traversable (Data.MonoTraversable as Mono)
       , relude (Relude as Prelude)
       , text (Data.Text as Text, Data.Text.Lazy as LText)
 
