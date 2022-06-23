@@ -75,10 +75,12 @@ data TextBuffer =
     , textBufferLength :: Natural
     }
 
--- amountBuffered :: forall m text. (Monad m, TextLike text) => m Natural
--- amountBuffered = T.Parser \_ -> get <&> TL.bufferSize @text . BufferedStream.buffer . ParseState.remainingInput
+-- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
+bufferCharacters :: Natural
+    -> BufferedStream m text (TextLikeBuffer text)
+    -> m (BufferedStream m text (TextLikeBuffer text))
+bufferCharacters n s = _
 
--- | Force the input until at least @n@ characters of input are available or the end of input is reached.
 -- bufferAtLeast :: forall m text. (Monad m, TextLike text) => Natural -> Parser m text ()
 -- bufferAtLeast n = bufferSize >>= \si -> when (si < n) $ T.Parser \_ -> do
 --     s <- get
