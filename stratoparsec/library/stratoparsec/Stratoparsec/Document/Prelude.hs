@@ -6,7 +6,7 @@ import Stratoparsec.Document
 
 import qualified Stratoparsec.Stream.State as Stream.State
 
-char :: Monad m => Parser m Char
+char :: Parser Char
 char = Parser \eo -> do
     cm <- zoom futureLens do
         Stream.State.fillBuffer 1
@@ -15,18 +15,26 @@ char = Parser \eo -> do
         Nothing -> let Parser f = failure in f eo
         Just x -> return (Right x)
 
-satisfy :: Monad m => (Char -> Bool) -> Parser m Char
+satisfy :: (Char -> Bool) -> Parser Char
 satisfy ok = do
     x <- char
     if ok x then return x else failure
 
-atEnd :: Monad m => Parser m Bool
+atEnd :: Parser Bool
 atEnd = Parser \_eo -> fmap Right $ zoom futureLens Stream.State.isEmpty
 
-end :: Monad m => Parser m ()
+end :: Parser ()
 end = atEnd >>= \case True -> return (); False -> failure
 
-failure :: Monad m => Parser m a
-failure = Parser \_eo -> do
-    c <- use contextStackLens
-    return (Left (Error c))
+failure :: Parser a
+failure = Parser \_eo ->
+    return (Left (Error{ errorContext = [] }))
+
+contextualize :: Context -> Parser a -> Parser a
+contextualize c (Parser f) = Parser \eo ->
+    f eo <&> \case
+        Left (Error cs) -> Left (Error (c : cs))
+        Right x -> Right x
+
+(<?>) :: Parser a -> Context -> Parser a
+p <?> c = contextualize c p

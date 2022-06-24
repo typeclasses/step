@@ -14,7 +14,7 @@ data Error = Error{ errorContext :: [Context] }
     deriving stock (Eq, Show)
 
 newtype Context = Context Text
-    deriving newtype (Eq, Show)
+    deriving newtype (Eq, Show, IsString)
 
 data Position = Position{ line :: Natural, column :: Natural }
 
@@ -25,18 +25,16 @@ data ParseState m =
   ParseState
     { past :: Buffer Text
     , future :: Stream m Text
-    , contextStack :: [Context]
     , position :: Position
     }
 
-makeLensesFor [("future", "futureLens"), ("contextStack", "contextStackLens")] ''ParseState
+makeLensesFor [("future", "futureLens")] ''ParseState
 
 initialParseState :: ListT m Text -> ParseState m
 initialParseState xs =
     ParseState{
         past = Buffer.empty,
         future = Stream.fromListT xs,
-        contextStack = [],
         position = beginning
     }
 
@@ -45,15 +43,17 @@ defaultErrorOptions = ErrorOptions{ errorLinesBefore = 4, errorLinesAfter = 2 }
 
 data ErrorOptions = ErrorOptions{ errorLinesBefore :: Natural, errorLinesAfter :: Natural }
 
-newtype Parser m a = Parser (ErrorOptions -> StateT (ParseState m) m (Either Error a))
+newtype ParserT m a = Parser (ErrorOptions -> StateT (ParseState m) m (Either Error a))
     deriving stock Functor
     deriving (Applicative, Monad)
         via (ReaderT ErrorOptions (ExceptT Error (StateT (ParseState m) m)))
 
-parse :: Monad m => ErrorOptions -> Parser m a -> StateT (ListT m Text) m (Either Error a)
+type Parser a = forall m. Monad m => ParserT m a
+
+parse :: Monad m => ErrorOptions -> ParserT m a -> StateT (ListT m Text) m (Either Error a)
 parse eo (Parser p) = StateT \xs -> do
     (result, s) <- runStateT (p eo) (initialParseState xs)
     return (result, Stream.toListT (future s))
 
-parseOnly :: Monad m => ErrorOptions -> Parser m a -> ListT m Text -> m (Either Error a)
+parseOnly :: Monad m => ErrorOptions -> ParserT m a -> ListT m Text -> m (Either Error a)
 parseOnly eo p xs = evalStateT (parse eo p) xs
