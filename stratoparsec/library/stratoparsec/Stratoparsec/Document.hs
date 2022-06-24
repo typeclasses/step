@@ -1,5 +1,7 @@
 module Stratoparsec.Document where
 
+import Optics
+
 import ListT (ListT)
 
 import Stratoparsec.Buffer (Buffer)
@@ -7,10 +9,13 @@ import Stratoparsec.Stream (Stream)
 
 import qualified Stratoparsec.Buffer as Buffer
 import qualified Stratoparsec.Stream as Stream
+import qualified Stratoparsec.Stream.State as Stream.State
 
 data Error = Error{ errorContext :: [Context] }
+    deriving stock (Eq, Show)
 
 newtype Context = Context Text
+    deriving newtype (Eq, Show)
 
 data Position = Position{ line :: Natural, column :: Natural }
 
@@ -25,8 +30,19 @@ data ParseState m =
     , position :: Position
     }
 
+makeLensesFor [("future", "futureLens"), ("contextStack", "contextStackLens")] ''ParseState
+
 initialParseState :: ListT m Text -> ParseState m
-initialParseState xs = ParseState{ past = Buffer.empty, future = Stream.fromListT xs, contextStack = [], position = beginning }
+initialParseState xs =
+    ParseState{
+        past = Buffer.empty,
+        future = Stream.fromListT xs,
+        contextStack = [],
+        position = beginning
+    }
+
+defaultErrorOptions :: ErrorOptions
+defaultErrorOptions = ErrorOptions{ errorLinesBefore = 4, errorLinesAfter = 2 }
 
 data ErrorOptions = ErrorOptions{ errorLinesBefore :: Natural, errorLinesAfter :: Natural }
 
@@ -42,3 +58,8 @@ parse eo (Parser p) = StateT \xs -> do
 
 parseOnly :: Monad m => ErrorOptions -> Parser m a -> ListT m Text -> m (Either Error a)
 parseOnly eo p xs = evalStateT (parse eo p) xs
+
+failure :: Monad m => Parser m a
+failure = Parser \_eo -> do
+    c <- use contextStackLens
+    return (Left (Error c))

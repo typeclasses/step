@@ -1,9 +1,12 @@
 module Stratoparsec.Stream where
 
+import Optics
+
 import ListT (ListT)
-import Mono (MonoFoldable)
+import ListLike (ListLike)
 
 import qualified ListT
+import qualified ListLike
 
 import Stratoparsec.Buffer (Buffer)
 import qualified Stratoparsec.Buffer as Buffer
@@ -16,6 +19,8 @@ data Stream m chunk =
     , pending :: Maybe (ListT m chunk)
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
+
+makeLensesFor [("buffer", "bufferLens"), ("pending", "pendingLens")] ''Stream
 
 toListT :: Monad m => Stream m chunk -> ListT m chunk
 toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
@@ -30,7 +35,7 @@ bufferIsEmpty :: Stream m chunk -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
-fillBuffer :: (Monad m, MonoFoldable chunk) =>
+fillBuffer :: (Monad m, ListLike chunk char) =>
     Natural -> Stream m chunk -> m (Stream m chunk)
 fillBuffer n = while continue readChunk
   where
@@ -39,7 +44,7 @@ fillBuffer n = while continue readChunk
         && Buffer.size (buffer s) < n
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-readChunk :: (Monad m, MonoFoldable chunk) =>
+readChunk :: (Monad m, ListLike chunk char) =>
     Stream m chunk -> m (Stream m chunk)
 readChunk s = case pending s of
     Nothing -> return s -- If the end of the stream has been reached, do nothing
@@ -48,7 +53,8 @@ readChunk s = case pending s of
         >>= \case
             ListT.Nil -> -- If the stream is now empty, change its value to 'Nothing' to remember that we have reached the end
                 return s{ pending = Nothing }
-            ListT.Cons x xs -> -- We got a new chunk of input. Remove it from the pending input stream and add it to the buffer.
+            ListT.Cons x xs -> -- We got a new chunk of input.
                 return Stream{
-                    buffer = buffer s <> Buffer.singleton x,
-                    pending = Just xs }
+                    buffer = (if ListLike.null x then id else (<> Buffer.singleton x)) (buffer s), -- Add the chunk to the buffer if it is non-empty.
+                    pending = Just xs -- Remove the chunk from the pending input stream.
+                }
