@@ -43,8 +43,22 @@ docParseExamples =
         x <- Doc.parseOnly Doc.defaultErrorOptions (char3 <* Doc.end) (ListT.select input)
         x === Left (Doc.Error [])
     )
+  , ("Digit", property do
+        x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.contextualize "Digit" digit) (ListT.select ["2"])
+        x === Right '2'
+    )
   , ("Expected digit", property do
         x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.contextualize "Digit" digit) (ListT.select ["a"])
         x === Left (Doc.Error ["Digit"])
+    )
+  , ("Text", property do
+        input <- forAll (Gen.choice [abc, abcd])
+        x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.text "abc") (ListT.select input)
+        x === Right ()
+    )
+  , ("Expected text", property do
+        input <- forAll (Gen.element [[], [""], ["ab"], ["a", "b"], ["bc"]])
+        x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.text "abc") (ListT.select input)
+        x === Left (Doc.Error [])
     )
   ]

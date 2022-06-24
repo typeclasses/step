@@ -15,6 +15,12 @@ char = Parser \eo -> do
         Nothing -> let Parser f = failure in f eo
         Just x -> return (Right x)
 
+text :: Text -> Parser ()
+text expected = Parser \eo ->
+    zoom futureLens (Stream.State.takeString expected) >>= \case
+        True -> return (Right ())
+        False -> let Parser p = failure in p eo
+
 satisfy :: (Char -> Bool) -> Parser Char
 satisfy ok = do
     x <- char

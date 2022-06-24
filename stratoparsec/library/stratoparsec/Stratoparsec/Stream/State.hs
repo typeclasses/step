@@ -3,7 +3,7 @@ module Stratoparsec.Stream.State where
 import Optics
 
 import ListLike (ListLike)
-
+import qualified ListLike
 
 import Stratoparsec.Stream (Stream)
 
@@ -30,3 +30,12 @@ takeChar :: (Monad m, ListLike chunk char) => StateT (Stream m chunk) m (Maybe c
 takeChar = do
     modifyM (Stream.fillBuffer 1)
     zoom Stream.bufferLens Buffer.State.takeChar
+
+takeString :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => chunk -> StateT (Stream m chunk) m Bool
+takeString c = if ListLike.null c then return True else
+    isEmpty >>= \case
+        True -> return False
+        False -> zoom Stream.bufferLens (Buffer.State.takeString c) >>= \case
+            Buffer.State.TakeStringFail -> return False
+            Buffer.State.TakeStringSuccess -> return True
+            Buffer.State.TakeStringPartial c' -> takeString c'
