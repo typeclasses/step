@@ -22,11 +22,11 @@ takeString :: (Monad m, ListLike chunk char, Eq chunk, Eq char) =>
     chunk -> StateT (Buffer chunk) m (TakeStringResult chunk)
 takeString c = do
     b <- get
-    case Buffer.unprefix c b of
-        Buffer.UnprefixFail -> return TakeStringFail
-        Buffer.UnprefixPartial c' -> do
+    case Buffer.stripPrefix c b of
+        Buffer.StripPrefixFail -> return TakeStringFail
+        Buffer.StripPrefixPartial c' -> do
             put Buffer.empty
             return (TakeStringPartial c')
-        Buffer.UnprefixSuccess b' -> do
+        Buffer.StripPrefixSuccess b' -> do
             put b'
             return TakeStringSuccess
