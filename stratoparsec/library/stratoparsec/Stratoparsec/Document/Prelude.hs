@@ -25,3 +25,8 @@ atEnd = Parser \_eo -> fmap Right $ zoom futureLens Stream.State.isEmpty
 
 end :: Monad m => Parser m ()
 end = atEnd >>= \case True -> return (); False -> failure
+
+failure :: Monad m => Parser m a
+failure = Parser \_eo -> do
+    c <- use contextStackLens
+    return (Left (Error c))
