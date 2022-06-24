@@ -5,9 +5,9 @@ import Optics
 import ListLike (ListLike)
 import qualified ListLike
 
-import Stratoparsec.Stream (Stream)
+import Stratoparsec.Stream.Base (Stream)
 
-import qualified Stratoparsec.Stream as Stream
+import qualified Stratoparsec.Stream.Base as Stream
 import qualified Stratoparsec.Buffer.State as Buffer.State
 
 import Stratoparsec.Util.Modify

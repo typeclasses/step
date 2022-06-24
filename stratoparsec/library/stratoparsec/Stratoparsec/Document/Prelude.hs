@@ -2,7 +2,7 @@ module Stratoparsec.Document.Prelude where
 
 import Optics
 
-import Stratoparsec.Document
+import Stratoparsec.Document.Base
 
 import qualified Stratoparsec.Stream.State as Stream.State
 

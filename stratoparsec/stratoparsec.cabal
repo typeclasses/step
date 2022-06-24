@@ -48,11 +48,11 @@ library
     import: base
     hs-source-dirs: library/stratoparsec
     exposed-modules:
-        Stratoparsec.Buffer
+        Stratoparsec.Buffer.Base
         Stratoparsec.Buffer.State
-        Stratoparsec.Stream
+        Stratoparsec.Stream.Base
         Stratoparsec.Stream.State
-        Stratoparsec.Document
+        Stratoparsec.Document.Base
         Stratoparsec.Document.Prelude
     other-modules:
         Stratoparsec.Util.Modify

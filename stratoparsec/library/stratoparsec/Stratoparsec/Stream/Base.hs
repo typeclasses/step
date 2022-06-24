@@ -1,4 +1,4 @@
-module Stratoparsec.Stream where
+module Stratoparsec.Stream.Base where
 
 import Optics
 
@@ -8,8 +8,8 @@ import ListLike (ListLike)
 import qualified ListT
 import qualified ListLike
 
-import Stratoparsec.Buffer (Buffer)
-import qualified Stratoparsec.Buffer as Buffer
+import Stratoparsec.Buffer.Base (Buffer)
+import qualified Stratoparsec.Buffer.Base as Buffer
 
 import Stratoparsec.Util.While
 

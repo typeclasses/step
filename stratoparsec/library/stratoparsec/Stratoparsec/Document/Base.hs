@@ -1,14 +1,14 @@
-module Stratoparsec.Document where
+module Stratoparsec.Document.Base where
 
 import Optics
 
 import ListT (ListT)
 
-import Stratoparsec.Buffer (Buffer)
-import Stratoparsec.Stream (Stream)
+import Stratoparsec.Buffer.Base (Buffer)
+import Stratoparsec.Stream.Base (Stream)
 
-import qualified Stratoparsec.Buffer as Buffer
-import qualified Stratoparsec.Stream as Stream
+import qualified Stratoparsec.Buffer.Base as Buffer
+import qualified Stratoparsec.Stream.Base as Stream
 
 data Error = Error{ errorContext :: [Context] }
     deriving stock (Eq, Show)
