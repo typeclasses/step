@@ -30,6 +30,7 @@ common base
         base
       , bytestring
       , containers
+      , hedgehog
       , list-transformer
       , ListLike ^>= 4.7
       , optics ^>= 0.4
@@ -54,6 +55,7 @@ library
         Stratoparsec.Stream.State
         Stratoparsec.Document.Base
         Stratoparsec.Document.Prelude
+        Stratoparsec.Test.InputChunking
     other-modules:
         Stratoparsec.Util.Modify
         Stratoparsec.Util.While
@@ -63,4 +65,4 @@ test-suite test-stratoparsec
     type: exitcode-stdio-1.0
     hs-source-dirs: test/test-stratoparsec
     main-is: Main.hs
-    build-depends: stratoparsec, hedgehog
+    build-depends: stratoparsec

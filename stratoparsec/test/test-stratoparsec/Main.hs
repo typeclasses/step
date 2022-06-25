@@ -11,14 +11,10 @@ import qualified Char
 import qualified Stratoparsec.Document.Base as Doc
 import qualified Stratoparsec.Document.Prelude as Doc
 
+import Stratoparsec.Test.InputChunking (genChunks)
+
 main :: IO ()
 main = defaultMain [checkParallel (Group "Document parsing examples" docParseExamples)]
-
-abc :: Gen [Text]
-abc = Gen.element [["abc"], ["ab", "c"], ["a", "bc"], ["abc", ""], ["", "abc"], ["ab", "", "c"], ["a", "b", "c"]]
-
-abcd :: Gen [Text]
-abcd = Gen.element [["abcd"], ["ab", "cd"], ["a", "bcd"], ["abcd", ""], ["abcd", ""], ["ab", "", "cd"], ["a", "b", "c", "d"]]
 
 char3 :: Doc.Parser (Char, Char, Char)
 char3 = (,,) <$> Doc.char <*> Doc.char <*> Doc.char
@@ -29,17 +25,17 @@ digit = Doc.satisfy Char.isDigit
 docParseExamples :: [(PropertyName, Property)]
 docParseExamples =
   [ ("Char, char, char", property do
-        input <- forAll abc
+        input <- forAll (genChunks "abc")
         x <- Doc.parseOnly Doc.defaultErrorOptions (char3 <* Doc.end) (ListT.select input)
         x === Right ('a', 'b', 'c')
     )
   , ("Char, char, char, and more", property do
-        input <- forAll abcd
+        input <- forAll (genChunks "abcd")
         x <- Doc.parseOnly Doc.defaultErrorOptions char3 (ListT.select input)
         x === Right ('a', 'b', 'c')
     )
   , ("Char, char, char, but not more", property do
-        input <- forAll abcd
+        input <- forAll (genChunks "abcd")
         x <- Doc.parseOnly Doc.defaultErrorOptions (char3 <* Doc.end) (ListT.select input)
         x === Left (Doc.Error [])
     )
@@ -52,12 +48,12 @@ docParseExamples =
         x === Left (Doc.Error ["Digit"])
     )
   , ("Text", property do
-        input <- forAll (Gen.choice [abc, abcd])
+        input <- forAll (Gen.element ["abc", "abcd"] >>= genChunks)
         x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.text "abc") (ListT.select input)
         x === Right ()
     )
   , ("Expected text", property do
-        input <- forAll (Gen.element [[], [""], ["ab"], ["a", "b"], ["bc"]])
+        input <- forAll (Gen.element ["", "ab", "bc"] >>= genChunks)
         x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.text "abc") (ListT.select input)
         x === Left (Doc.Error [])
     )
