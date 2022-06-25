@@ -8,7 +8,7 @@ import qualified Hedgehog.Gen as Gen
 import qualified ListT
 import qualified Char
 
-import qualified Stratoparsec.Document as Doc
+import qualified Stratoparsec.Document.Base as Doc
 import qualified Stratoparsec.Document.Prelude as Doc
 
 main :: IO ()
