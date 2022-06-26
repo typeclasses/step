@@ -1,7 +1,6 @@
 module Main (main) where
 
 import Hedgehog
-import Hedgehog.Main
 
 import qualified Hedgehog.Gen as Gen
 
@@ -13,48 +12,45 @@ import qualified Stratoparsec.Document.Prelude as Doc
 
 import Stratoparsec.Test.InputChunking (genChunks)
 
+import Test.Hspec
+import Test.Hspec.Hedgehog
+
 main :: IO ()
-main = defaultMain [checkParallel (Group "Document parsing examples" docParseExamples)]
+main = hspec do
 
-char3 :: Doc.Parser (Char, Char, Char)
-char3 = (,,) <$> Doc.char <*> Doc.char <*> Doc.char
+    describe "Document parsing" do
 
-digit :: Doc.Parser Char
-digit = Doc.satisfy Char.isDigit
+        describe "p = char, char, char" do
+            let p = (,,) <$> Doc.char <*> Doc.char <*> Doc.char
+            specify "(p <* end) parses \"abc\"" $ hedgehog do
+                input <- forAll (genChunks "abc")
+                x <- Doc.parseOnly Doc.defaultErrorOptions (p <* Doc.end) (ListT.select input)
+                x === Right ('a', 'b', 'c')
+            specify "p parses \"abcd\"" $ hedgehog do
+                input <- forAll (genChunks "abcd")
+                x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
+                x === Right ('a', 'b', 'c')
+            specify "(p <* end) fails on \"abcd\"" $ hedgehog do
+                input <- forAll (genChunks "abcd")
+                x <- Doc.parseOnly Doc.defaultErrorOptions (p <* Doc.end) (ListT.select input)
+                x === Left (Doc.Error [])
 
-docParseExamples :: [(PropertyName, Property)]
-docParseExamples =
-  [ ("Char, char, char", property do
-        input <- forAll (genChunks "abc")
-        x <- Doc.parseOnly Doc.defaultErrorOptions (char3 <* Doc.end) (ListT.select input)
-        x === Right ('a', 'b', 'c')
-    )
-  , ("Char, char, char, and more", property do
-        input <- forAll (genChunks "abcd")
-        x <- Doc.parseOnly Doc.defaultErrorOptions char3 (ListT.select input)
-        x === Right ('a', 'b', 'c')
-    )
-  , ("Char, char, char, but not more", property do
-        input <- forAll (genChunks "abcd")
-        x <- Doc.parseOnly Doc.defaultErrorOptions (char3 <* Doc.end) (ListT.select input)
-        x === Left (Doc.Error [])
-    )
-  , ("Digit", property do
-        x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.contextualize "Digit" digit) (ListT.select ["2"])
-        x === Right '2'
-    )
-  , ("Expected digit", property do
-        x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.contextualize "Digit" digit) (ListT.select ["a"])
-        x === Left (Doc.Error ["Digit"])
-    )
-  , ("Text", property do
-        input <- forAll (Gen.element ["abc", "abcd"] >>= genChunks)
-        x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.text "abc") (ListT.select input)
-        x === Right ()
-    )
-  , ("Expected text", property do
-        input <- forAll (Gen.element ["", "ab", "bc"] >>= genChunks)
-        x <- Doc.parseOnly Doc.defaultErrorOptions (Doc.text "abc") (ListT.select input)
-        x === Left (Doc.Error [])
-    )
-  ]
+        describe "p = contextualize \"Digit\" (satisfy isDigit)" do
+            let p = Doc.contextualize "Digit" (Doc.satisfy Char.isDigit)
+            specify "p parses \"2\"" $ hedgehog do
+                x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select ["2"])
+                x === Right '2'
+            specify "p fails on \"a\"" $ hedgehog do
+                x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select ["a"])
+                x === Left (Doc.Error ["Digit"])
+
+        describe "p = text \"abc\"" do
+            let p = Doc.text "abc"
+            specify "p parses \"abc\" and \"abcd\"" $ hedgehog do
+                input <- forAll (Gen.element ["abc", "abcd"] >>= genChunks)
+                x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
+                x === Right ()
+            specify "p fails on any input that does not start with abc" $ hedgehog do
+                input <- forAll (Gen.element ["", "ab", "bc"] >>= genChunks)
+                x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
+                x === Left (Doc.Error [])
