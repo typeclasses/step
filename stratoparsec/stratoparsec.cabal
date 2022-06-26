@@ -54,6 +54,7 @@ library
         Stratoparsec.Stream.Base
         Stratoparsec.Stream.State
         Stratoparsec.Document.Parser
+        Stratoparsec.Document.ParseState
         Stratoparsec.Document.Past
         Stratoparsec.Document.Position
         Stratoparsec.Document.Prelude

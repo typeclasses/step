@@ -4,30 +4,40 @@ import Optics
 
 import Stratoparsec.Document.Parser
 
+import qualified Stratoparsec.Document.ParseState as ParseState
+
 import qualified Stratoparsec.Stream.State as Stream.State
+
+import qualified Text
 
 char :: Parser Char
 char = Parser \eo -> do
-    cm <- zoom futureLens do
+    cm <- zoom ParseState.futureLens do
         Stream.State.fillBuffer 1
         Stream.State.takeChar
     case cm of
         Nothing -> let Parser f = failure in f eo
-        Just x -> return (Right x)
+        Just x -> do
+            ParseState.record (Text.singleton x)
+            return (Right x)
 
 text :: Text -> Parser ()
 text expected = Parser \eo ->
-    zoom futureLens (Stream.State.takeString expected) >>= \case
-        True -> return (Right ())
+    zoom ParseState.futureLens (Stream.State.takeString expected) >>= \case
+        True -> do
+            ParseState.record expected
+            return (Right ())
         False -> let Parser p = failure in p eo
 
 satisfy :: (Char -> Bool) -> Parser Char
 satisfy ok = do
     x <- char
-    if ok x then return x else failure
+    case ok x of
+        True -> return x
+        False -> failure
 
 atEnd :: Parser Bool
-atEnd = Parser \_eo -> fmap Right $ zoom futureLens Stream.State.isEmpty
+atEnd = Parser \_eo -> fmap Right $ zoom ParseState.futureLens Stream.State.isEmpty
 
 end :: Parser ()
 end = atEnd >>= \case True -> return (); False -> failure
