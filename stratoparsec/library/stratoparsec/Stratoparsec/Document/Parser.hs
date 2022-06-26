@@ -1,14 +1,16 @@
-module Stratoparsec.Document.Base where
+module Stratoparsec.Document.Parser where
 
 import Optics
 
 import ListT (ListT)
 
-import Stratoparsec.Buffer.Base (Buffer)
 import Stratoparsec.Stream.Base (Stream)
+import Stratoparsec.Document.Past (Past)
+import Stratoparsec.Document.Position (Position)
 
-import qualified Stratoparsec.Buffer.Base as Buffer
 import qualified Stratoparsec.Stream.Base as Stream
+import qualified Stratoparsec.Document.Position as Position
+import qualified Stratoparsec.Document.Past as Past
 
 data Error = Error{ errorContext :: [Context] }
     deriving stock (Eq, Show)
@@ -16,14 +18,9 @@ data Error = Error{ errorContext :: [Context] }
 newtype Context = Context Text
     deriving newtype (Eq, Show, IsString)
 
-data Position = Position{ line :: Natural, column :: Natural }
-
-beginning :: Position
-beginning = Position 0 0
-
 data ParseState m =
   ParseState
-    { past :: Buffer Text
+    { past :: Past
     , future :: Stream m Text
     , position :: Position
     }
@@ -33,9 +30,9 @@ makeLensesFor [("future", "futureLens")] ''ParseState
 initialParseState :: ListT m Text -> ParseState m
 initialParseState xs =
     ParseState{
-        past = Buffer.empty,
+        past = Past.empty,
         future = Stream.fromListT xs,
-        position = beginning
+        position = Position.start
     }
 
 defaultErrorOptions :: ErrorOptions
