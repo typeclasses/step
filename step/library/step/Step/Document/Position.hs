@@ -1,7 +1,5 @@
 module Step.Document.Position where
 
-import Optics
-
 newtype LineNumber = LineNumber Natural
     deriving newtype (Eq, Ord, Num, Show)
 

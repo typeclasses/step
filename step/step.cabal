@@ -33,7 +33,6 @@ common base
       , hedgehog
       , list-transformer
       , ListLike ^>= 4.7
-      , optics ^>= 0.4
       , transformers
     mixins:
         base
@@ -90,6 +89,8 @@ library step-internal
     import: base
     hs-source-dirs: library/step-internal
     default-extensions: NoImplicitPrelude
+    build-depends:
+        optics ^>= 0.4
     exposed-modules:
         Step.Util.Modify
         Step.Util.While

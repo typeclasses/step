@@ -1,7 +1,5 @@
 module Step.Document.Past (Past (..), empty, record, positionLens) where
 
-import Optics
-
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 

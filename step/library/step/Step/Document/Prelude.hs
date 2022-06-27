@@ -1,7 +1,5 @@
 module Step.Document.Prelude where
 
-import Optics
-
 import Step.Document.Parser
 
 import Step.Document.Position (Position)

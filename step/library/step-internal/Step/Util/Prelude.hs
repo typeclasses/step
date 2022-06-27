@@ -6,7 +6,6 @@ import Foldable as X (asum)
 import Function as X (fix)
 import ListLike as X (ListLike)
 import MonadTrans as X (lift)
-import Functor as X ((<&>))
 import Identity as X (Identity (Identity), runIdentity)
 import Map as X (Map)
 import Maybe as X (fromMaybe, isJust)
@@ -20,6 +19,8 @@ import Except as X (ExceptT (ExceptT))
 import String as X (IsString)
 import Monoid as X (Endo (Endo), appEndo)
 import ListT as X (ListT)
+
+import Optics as X
 
 import qualified Semigroup
 

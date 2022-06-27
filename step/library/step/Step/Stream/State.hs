@@ -1,7 +1,5 @@
 module Step.Stream.State where
 
-import Optics
-
 import qualified ListLike
 
 import Step.Stream.Base (Stream)
