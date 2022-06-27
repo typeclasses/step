@@ -21,7 +21,8 @@ import Test.Hspec.Hedgehog
 
 import Text (Text)
 
-import qualified Loc
+import Loc (loc)
+import qualified SpanOrLoc
 
 main :: IO ()
 main = hspec do
@@ -94,3 +95,23 @@ documentParsing = describe "Document parsing" do
             input :: [Text] <- forAll (genChunks (ListLike.replicate 50 '\n'))
             let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
             x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
+
+    describe "withLocation" do
+
+        specify "one-line example" $ hedgehog do
+            let p = Doc.text "abc" *> Doc.withLocation (Doc.text "def") <* Doc.text "ghi"
+            input :: [Text] <- forAll (genChunks "abcdefghi")
+            let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
+            x === Right (SpanOrLoc.fromTo (loc 1 4) (loc 1 7), ())
+
+        specify "second-line example" $ hedgehog do
+            let p = Doc.text "xyz\nabc" *> Doc.withLocation (Doc.text "def") <* Doc.text "ghi"
+            input :: [Text] <- forAll (genChunks "xyz\nabcdefghi")
+            let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
+            x === Right (SpanOrLoc.fromTo (loc 2 4) (loc 2 7), ())
+
+        specify "empty example" $ hedgehog do
+            let p = Doc.text "abc" *> Doc.withLocation (Doc.text "") <* Doc.text "def"
+            input :: [Text] <- forAll (genChunks "abcdef")
+            let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
+            x === Right (SpanOrLoc.loc (loc 1 4), ())

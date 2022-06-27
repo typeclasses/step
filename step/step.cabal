@@ -34,7 +34,7 @@ common base
       , hedgehog
       , list-transformer
       , ListLike ^>= 4.7
-      , loc
+      , loc ^>= 0.1.4
       , transformers
     mixins:
         base
@@ -64,7 +64,7 @@ common base
           , Control.Monad.Trans.Reader as Reader
           , Control.Monad.Trans.Except as Except
           )
-      , loc (Data.Loc as Loc)
+      , loc (Data.Loc as Loc, Data.Loc.SpanOrLoc as SpanOrLoc)
 
 library
     import: base

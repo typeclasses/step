@@ -4,7 +4,8 @@ import Step.Internal.Prelude
 
 import Step.Document.Parser
 
-import Loc (Loc)
+import qualified Loc
+import Loc (Loc, SpanOrLoc)
 
 import qualified Step.Document.ParseState as ParseState
 
@@ -59,3 +60,10 @@ contextualize c (Parser f) = Parser \eo ->
 
 (<?>) :: Parser text a -> Context text -> Parser text a
 p <?> c = contextualize c p
+
+withLocation :: Parser text a -> Parser text (SpanOrLoc, a)
+withLocation p = do
+    a <- position
+    x <- p
+    b <- position
+    return (Loc.spanOrLocFromTo a b, x)
