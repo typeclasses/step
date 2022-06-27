@@ -35,7 +35,6 @@ common base
       , ListLike ^>= 4.7
       , optics ^>= 0.4
       , relude
-      , text
     mixins:
         base (Data.Char as Char, Data.Word as Word, Text.Show as Show, Control.Monad as Monad)
       , bytestring (Data.ByteString as ByteString, Data.ByteString.Lazy as LByteString)
@@ -43,7 +42,6 @@ common base
       , list-transformer (List.Transformer as ListT)
       , ListLike (Data.ListLike as ListLike)
       , relude (Relude as Prelude)
-      , text (Data.Text as Text, Data.Text.Lazy as LText)
 
 library
     import: base

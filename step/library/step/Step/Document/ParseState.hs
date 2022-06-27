@@ -12,20 +12,22 @@ import qualified Step.Stream.Base as Stream
 import Step.Document.Past (Past)
 import qualified Step.Document.Past as Past
 
-data ParseState m =
+import ListLike (ListLike)
+
+data ParseState text m =
   ParseState
-    { past :: Past
-    , future :: Stream m Text
+    { past :: Past text
+    , future :: Stream m text
     }
 
 makeLensesFor [("future", "futureLens"), ("past", "pastLens")] ''ParseState
 
-positionLens :: Lens' (ParseState m) Position
+positionLens :: Lens' (ParseState text m) Position
 positionLens = pastLens % Past.positionLens
 
-start :: ListT m Text -> ParseState m
+start :: ListT m text -> ParseState text m
 start xs =
     ParseState{ past = Past.empty, future = Stream.fromListT xs }
 
-record :: Monad m => Text -> StateT (ParseState m) m ()
+record :: Monad m => ListLike text Char => text -> StateT (ParseState text m) m ()
 record x = modifying pastLens (Past.record x)
