@@ -1,6 +1,7 @@
-module Step.Util.While where
+module Step.Internal.While where
 
-import Step.Util.Prelude
+import BasePrelude
+import Function
 
 while :: Monad m =>
     (a -> Bool)    -- ^ While this predicate holds, keep going.

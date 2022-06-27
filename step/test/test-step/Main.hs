@@ -80,14 +80,14 @@ documentParsing = describe "Document parsing" do
 
         specify "column is incremented by char when input contains no line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = appEndo (mtimes n (Endo (Doc.char *>))) Doc.position
+            let p = appEndo (times n (Endo (Doc.char *>))) Doc.position
             input :: [Text] <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
             let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
             x === Right (Doc.Position 1 (Doc.ColumnNumber (n + 1)))
 
         specify "line is incremented by char when input is line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = appEndo (mtimes n (Endo (Doc.char *>))) Doc.position
+            let p = appEndo (times n (Endo (Doc.char *>))) Doc.position
             input :: [Text] <- forAll (genChunks (ListLike.replicate 50 '\n'))
             let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
             x === Right (Doc.Position (Doc.LineNumber (1 + n)) 1)

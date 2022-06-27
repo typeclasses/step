@@ -1,4 +1,4 @@
-module Step.Util.Prelude (module X, mtimes) where
+module Step.Internal.Prelude (module X) where
 
 import BasePrelude as X (Bool (..), Semigroup ((<>)), Monoid (mempty), Ordering (..), Maybe (..), Either (..), Eq, (==), (/=), Ord (compare), Show, Num, (+), (-), Integer, Int, fromIntegral, ($), (.), (<$>), error, id, Monad, (>>=), (=<<), return, Char, elem, (&&), (||), (<), (>), (<=), (>=), Functor, Applicative, fmap, IO, (<*), (*>), (<*>), Integral)
 import Applicative as X ((<|>))
@@ -22,7 +22,6 @@ import ListT as X (ListT)
 
 import Optics as X
 
-import qualified Semigroup
-
-mtimes :: Integral n => Monoid a => n -> a -> a
-mtimes = Semigroup.mtimesDefault
+import Step.Internal.Modify as X
+import Step.Internal.Times as X
+import Step.Internal.While as X

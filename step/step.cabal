@@ -67,12 +67,7 @@ library
     import: base
     hs-source-dirs: library/step
     build-depends: step-internal
-    mixins:
-        step-internal
-          ( Step.Util.Modify
-          , Step.Util.While
-          , Step.Util.Prelude as Prelude
-          )
+    mixins: step-internal (Step.Internal.Prelude as Prelude)
     exposed-modules:
         Step.Buffer.Base
         Step.Buffer.State
@@ -92,9 +87,11 @@ library step-internal
     build-depends:
         optics ^>= 0.4
     exposed-modules:
-        Step.Util.Modify
-        Step.Util.While
-        Step.Util.Prelude
+        Step.Internal.Prelude
+    other-modules:
+        Step.Internal.Modify
+        Step.Internal.Times
+        Step.Internal.While
 
 test-suite test-step
     import: base
@@ -103,5 +100,5 @@ test-suite test-step
     main-is: Main.hs
     build-depends: step, step-internal, hspec, hspec-hedgehog, text
     mixins:
-        step-internal (Step.Util.Modify, Step.Util.While, Step.Util.Prelude as Prelude)
+        step-internal (Step.Internal.Prelude as Prelude)
       , text (Data.Text as Text)

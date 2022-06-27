@@ -7,8 +7,6 @@ import Step.Stream.Base (Stream)
 import qualified Step.Stream.Base as Stream
 import qualified Step.Buffer.State as Buffer.State
 
-import Step.Util.Modify
-
 -- | Determines whether there are any more
 isEmpty :: (Monad m, ListLike chunk char) => StateT (Stream m chunk) m Bool
 isEmpty = do

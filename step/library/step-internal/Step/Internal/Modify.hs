@@ -1,6 +1,8 @@
-module Step.Util.Modify where
+module Step.Internal.Modify where
 
-import Step.Util.Prelude
+import BasePrelude
+import State
+import MonadTrans
 
 modifyM :: Monad m => (s -> m s) -> StateT s m ()
 modifyM f = do

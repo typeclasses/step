@@ -6,8 +6,6 @@ import qualified ListLike
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-import Step.Util.While (while)
-
 data Stream m chunk =
   Stream
     { buffer :: Buffer chunk

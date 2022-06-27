@@ -7,8 +7,6 @@ import qualified Hedgehog.Range as Range
 
 import qualified ListLike
 
-import Step.Util.Modify (modifyM)
-
 -- | Generates various ways of chunking a given input text. Shrinks toward the smallest number of chunks.
 genChunks :: ListLike chunk char => chunk -> Gen [chunk]
 genChunks x =
