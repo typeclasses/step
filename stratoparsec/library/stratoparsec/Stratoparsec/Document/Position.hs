@@ -14,4 +14,4 @@ data Position = Position{ line :: LineNumber, column :: ColumnNumber }
 makeLensesFor [("line", "lineLens"), ("column", "columnLens")] ''Position
 
 start :: Position
-start = Position 1 0
+start = Position 1 1

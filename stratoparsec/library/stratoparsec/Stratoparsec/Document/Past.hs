@@ -51,7 +51,7 @@ recordLF p =
   Past
     { lineMap = Map.alter (Just . (<> Buffer.singleton "\n") . fromMaybe Buffer.empty) (Position.line (position p)) (lineMap p)
     , lastCharacterWasCR = False
-    , position = Position{ Position.line = Position.line (position p) + 1, Position.column = 0 }
+    , position = Position{ Position.line = Position.line (position p) + 1, Position.column = 1 }
     }
 
 recordOther :: Text -> Past -> Past
@@ -60,7 +60,7 @@ recordOther x p =
     newPosition =
         case lastCharacterWasCR p of
             True ->
-                Position{ Position.line = Position.line (position p) + 1, Position.column = Position.ColumnNumber (fromIntegral (Text.length x)) }
+                Position{ Position.line = Position.line (position p) + 1, Position.column = Position.ColumnNumber (fromIntegral (Text.length x) + 1) }
             False ->
                 over Position.columnLens (+ Position.ColumnNumber (fromIntegral (Text.length x))) (position p)
   in

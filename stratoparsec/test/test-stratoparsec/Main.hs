@@ -61,19 +61,19 @@ documentParsing = describe "Document parsing" do
             x === Left (Doc.Error [])
 
     describe "position" do
-        specify "starts at 1:0" $ hedgehog do
+        specify "starts at 1:1" $ hedgehog do
             input <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
             x <- Doc.parseOnly Doc.defaultErrorOptions Doc.position (ListT.select input)
-            x === Right (Doc.Position 1 0)
+            x === Right (Doc.Position 1 1)
         specify "column is incremented by char when input contains no line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
             let p = appEndo (stimes n (Endo (Doc.char *>))) Doc.position
             input <- forAll (genChunks (Text.pack ['a' .. 'z']))
             x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
-            x === Right (Doc.Position 1 (Doc.ColumnNumber n))
+            x === Right (Doc.Position 1 (Doc.ColumnNumber (n + 1)))
         specify "line is incremented by char when input is line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
             let p = appEndo (stimes n (Endo (Doc.char *>))) Doc.position
             input <- forAll (genChunks (Text.replicate 50 "\n"))
             x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
-            x === Right (Doc.Position (Doc.LineNumber (1 + n)) 0)
+            x === Right (Doc.Position (Doc.LineNumber (1 + n)) 1)
