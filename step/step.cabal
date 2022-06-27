@@ -34,18 +34,46 @@ common base
       , list-transformer
       , ListLike ^>= 4.7
       , optics ^>= 0.4
-      , relude
+      , transformers
     mixins:
-        base (Data.Char as Char, Data.Word as Word, Text.Show as Show, Control.Monad as Monad)
+        base
+          ( Data.Char as Char
+          , Data.Word as Word
+          , Text.Show as Show
+          , Control.Monad as Monad
+          , Prelude as BasePrelude
+          , Data.Function as Function
+          , Numeric.Natural as Natural
+          , Control.Applicative as Applicative
+          , Data.Maybe as Maybe
+          , Data.Foldable as Foldable
+          , Data.String as String
+          , Data.Functor as Functor
+          , Data.Functor.Identity as Identity
+          , Data.Semigroup as Semigroup
+          , Data.Monoid as Monoid
+          )
       , bytestring (Data.ByteString as ByteString, Data.ByteString.Lazy as LByteString)
       , containers (Data.Set as Set, Data.Map.Strict as Map, Data.Sequence as Seq)
       , list-transformer (List.Transformer as ListT)
       , ListLike (Data.ListLike as ListLike)
-      , relude (Relude as Prelude)
+      , transformers
+          ( Control.Monad.Trans.State.Strict as State
+          , Control.Monad.Trans.Class as MonadTrans
+          , Control.Monad.Trans.Reader as Reader
+          , Control.Monad.Trans.Except as Except
+          )
 
 library
     import: base
     hs-source-dirs: library/step
+    build-depends: step-internal
+    mixins:
+        step-internal
+          ( Step.Util.Modify
+          , Step.Util.While
+          , Step.Util.Prelude as Prelude
+          )
     exposed-modules:
         Step.Buffer.Base
         Step.Buffer.State
@@ -57,13 +85,22 @@ library
         Step.Document.Position
         Step.Document.Prelude
         Step.Test.InputChunking
-    other-modules:
+
+library step-internal
+    import: base
+    hs-source-dirs: library/step-internal
+    default-extensions: NoImplicitPrelude
+    exposed-modules:
         Step.Util.Modify
         Step.Util.While
+        Step.Util.Prelude
 
 test-suite test-step
     import: base
     type: exitcode-stdio-1.0
     hs-source-dirs: test/test-step
     main-is: Main.hs
-    build-depends: step, hspec, hspec-hedgehog
+    build-depends: step, step-internal, hspec, hspec-hedgehog, text
+    mixins:
+        step-internal (Step.Util.Modify, Step.Util.While, Step.Util.Prelude as Prelude)
+      , text (Data.Text as Text)

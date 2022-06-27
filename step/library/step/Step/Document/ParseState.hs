@@ -12,8 +12,6 @@ import qualified Step.Stream.Base as Stream
 import Step.Document.Past (Past)
 import qualified Step.Document.Past as Past
 
-import ListLike (ListLike)
-
 data ParseState text m =
   ParseState
     { past :: Past text

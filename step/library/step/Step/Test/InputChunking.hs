@@ -6,7 +6,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import qualified ListLike
-import ListLike (ListLike)
 
 import Step.Util.Modify (modifyM)
 
@@ -14,17 +13,17 @@ import Step.Util.Modify (modifyM)
 genChunks :: ListLike chunk char => chunk -> Gen [chunk]
 genChunks x =
     if ListLike.null x
-    then Gen.integral (Range.linear 0 4) <&> \n -> replicate n ListLike.empty
+    then Gen.integral (Range.linear 0 4) <&> \n -> ListLike.replicate n ListLike.empty
     else do
         numberOfChunks <- Gen.integral (Range.linear 1 (4 + ListLike.length x))
-        toList <$> execStateT (replicateM (numberOfChunks - 1) (modifyM fragment)) (ListLike.singleton x)
+        ListLike.toList <$> execStateT (replicateM (numberOfChunks - 1) (modifyM fragment)) (ListLike.singleton x)
 
 -- | From a list of chunks, pick one and divide it in some way
 fragment :: MonadGen m => ListLike chunk char => Seq chunk -> m (Seq chunk)
 fragment xs = do
     (before, target, after) <- genSplitAround xs
     (a, b) <- genSplit target
-    return (fold [before, ListLike.fromList [a, b], after])
+    return (ListLike.fold [before, ListLike.fromList [a, b], after])
 
 -- | Split a chunk into two. The input chunk may be empty. May produce an empty chunk.
 genSplit :: ListLike chunk char => MonadGen m => chunk -> m (chunk, chunk)

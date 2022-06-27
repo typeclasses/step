@@ -11,7 +11,6 @@ import qualified Step.Document.ParseState as ParseState
 import qualified Step.Stream.State as Stream.State
 
 import qualified ListLike
-import ListLike (ListLike)
 
 char :: ListLike text Char => Parser text Char
 char = Parser \eo -> do

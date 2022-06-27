@@ -3,7 +3,6 @@ module Step.Stream.Base where
 import Optics
 
 import ListT (ListT)
-import ListLike (ListLike)
 
 import qualified ListT
 import qualified ListLike

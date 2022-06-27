@@ -11,9 +11,6 @@ import qualified Step.Document.Position as Position
 import qualified Map
 
 import qualified ListLike
-import ListLike (ListLike)
-
-import Prelude hiding (empty)
 
 data Past text =
   Past
