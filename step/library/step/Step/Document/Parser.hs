@@ -1,5 +1,7 @@
 module Step.Document.Parser where
 
+import Step.Internal.Prelude
+
 import qualified Step.Stream.Base as Stream
 
 import Step.Document.ParseState (ParseState)

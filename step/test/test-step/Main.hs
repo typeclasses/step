@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Step.Internal.Prelude
+
 import Hedgehog
 
 import qualified Hedgehog.Gen as Gen

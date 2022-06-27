@@ -1,5 +1,7 @@
 module Step.Buffer.State where
 
+import Step.Internal.Prelude
+
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 

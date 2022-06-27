@@ -1,5 +1,7 @@
 module Step.Stream.Base where
 
+import Step.Internal.Prelude
+
 import qualified ListT
 import qualified ListLike
 

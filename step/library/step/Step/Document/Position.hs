@@ -1,5 +1,7 @@
 module Step.Document.Position where
 
+import Step.Internal.Prelude
+
 newtype LineNumber = LineNumber Natural
     deriving newtype (Eq, Ord, Num, Show)
 

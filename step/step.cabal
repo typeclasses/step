@@ -17,6 +17,7 @@ common base
         LambdaCase
         GADTs
         GeneralizedNewtypeDeriving
+        NoImplicitPrelude
         OverloadedStrings
         RankNTypes
         ScopedTypeVariables
@@ -67,7 +68,7 @@ library
     import: base
     hs-source-dirs: library/step
     build-depends: step-internal
-    mixins: step-internal (Step.Internal.Prelude as Prelude)
+    mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Buffer.Base
         Step.Buffer.State
@@ -83,7 +84,6 @@ library
 library step-internal
     import: base
     hs-source-dirs: library/step-internal
-    default-extensions: NoImplicitPrelude
     build-depends:
         optics ^>= 0.4
     exposed-modules:
@@ -100,5 +100,5 @@ test-suite test-step
     main-is: Main.hs
     build-depends: step, step-internal, hspec, hspec-hedgehog, text
     mixins:
-        step-internal (Step.Internal.Prelude as Prelude)
+        step-internal (Step.Internal.Prelude)
       , text (Data.Text as Text)

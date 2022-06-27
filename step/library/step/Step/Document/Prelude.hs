@@ -1,5 +1,7 @@
 module Step.Document.Prelude where
 
+import Step.Internal.Prelude
+
 import Step.Document.Parser
 
 import Step.Document.Position (Position)

@@ -1,5 +1,7 @@
 module Step.Stream.State where
 
+import Step.Internal.Prelude
+
 import qualified ListLike
 
 import Step.Stream.Base (Stream)

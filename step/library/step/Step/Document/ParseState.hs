@@ -1,5 +1,7 @@
 module Step.Document.ParseState where
 
+import Step.Internal.Prelude
+
 import Step.Document.Position (Position)
 
 import Step.Stream.Base (Stream)
