@@ -2,8 +2,6 @@ module Step.Document.ParseState where
 
 import Optics
 
-import ListT (ListT)
-
 import Step.Document.Position (Position)
 
 import Step.Stream.Base (Stream)

@@ -1,7 +1,5 @@
 module Step.Buffer.Base where
 
-import ListT (ListT)
-
 import qualified Seq
 import qualified ListLike
 import qualified ListT

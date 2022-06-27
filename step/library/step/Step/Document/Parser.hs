@@ -1,7 +1,5 @@
 module Step.Document.Parser where
 
-import ListT (ListT)
-
 import qualified Step.Stream.Base as Stream
 
 import Step.Document.ParseState (ParseState)

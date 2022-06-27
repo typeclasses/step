@@ -2,15 +2,13 @@ module Step.Stream.Base where
 
 import Optics
 
-import ListT (ListT)
-
 import qualified ListT
 import qualified ListLike
 
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-import Step.Util.While
+import Step.Util.While (while)
 
 data Stream m chunk =
   Stream
