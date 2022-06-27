@@ -9,4 +9,4 @@ newtype ColumnNumber = ColumnNumber Natural
 data Position = Position{ line :: LineNumber, column :: ColumnNumber }
 
 start :: Position
-start = Position 0 0
+start = Position 1 0

@@ -6,6 +6,7 @@ import Stratoparsec.Document.Position (LineNumber, ColumnNumber, Position)
 import qualified Stratoparsec.Document.Position as Position
 
 import qualified Map
+import qualified Text
 
 data Past =
   Past
@@ -23,4 +24,6 @@ empty =
     }
 
 record :: Text -> Past -> Past
-record = _
+record x p = if Text.null x then p else
+    let (a, b) = Text.break (`elem` ['\r', '\n']) x in
+    if Text.null a then _ else _
