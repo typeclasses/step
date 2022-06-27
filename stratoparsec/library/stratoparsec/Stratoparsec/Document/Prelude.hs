@@ -4,6 +4,8 @@ import Optics
 
 import Stratoparsec.Document.Parser
 
+import Stratoparsec.Document.Position (Position)
+
 import qualified Stratoparsec.Document.ParseState as ParseState
 
 import qualified Stratoparsec.Stream.State as Stream.State
@@ -35,6 +37,9 @@ satisfy ok = do
     case ok x of
         True -> return x
         False -> failure
+
+position :: Parser Position
+position = Parser \_eo -> use ParseState.positionLens <&> Right
 
 atEnd :: Parser Bool
 atEnd = Parser \_eo -> fmap Right $ zoom ParseState.futureLens Stream.State.isEmpty

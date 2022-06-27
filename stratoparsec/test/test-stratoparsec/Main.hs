@@ -3,12 +3,15 @@ module Main (main) where
 import Hedgehog
 
 import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 
 import qualified ListT
 import qualified Char
+import qualified Text
 
 import qualified Stratoparsec.Document.Parser as Doc
 import qualified Stratoparsec.Document.Prelude as Doc
+import qualified Stratoparsec.Document.Position as Doc
 
 import Stratoparsec.Test.InputChunking (genChunks)
 
@@ -56,3 +59,15 @@ documentParsing = describe "Document parsing" do
             input <- forAll (Gen.element ["", "ab", "bc"] >>= genChunks)
             x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
             x === Left (Doc.Error [])
+
+    describe "position" do
+        specify "starts at 1:0" $ hedgehog do
+            input <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
+            x <- Doc.parseOnly Doc.defaultErrorOptions Doc.position (ListT.select input)
+            x === Right (Doc.Position 1 0)
+        specify "is incremented by char" $ hedgehog do
+            n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
+            let p = appEndo (stimes n (Endo (Doc.char *>))) Doc.position
+            input <- forAll (genChunks (Text.pack ['a' .. 'z']))
+            x <- Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
+            x === Right (Doc.Position 1 (Doc.ColumnNumber n))

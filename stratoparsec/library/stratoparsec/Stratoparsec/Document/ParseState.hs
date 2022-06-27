@@ -4,6 +4,8 @@ import Optics
 
 import ListT (ListT)
 
+import Stratoparsec.Document.Position (Position)
+
 import Stratoparsec.Stream.Base (Stream)
 import qualified Stratoparsec.Stream.Base as Stream
 
@@ -17,6 +19,9 @@ data ParseState m =
     }
 
 makeLensesFor [("future", "futureLens"), ("past", "pastLens")] ''ParseState
+
+positionLens :: Lens' (ParseState m) Position
+positionLens = pastLens % Past.positionLens
 
 start :: ListT m Text -> ParseState m
 start xs =
