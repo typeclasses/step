@@ -34,6 +34,7 @@ common base
       , hedgehog
       , list-transformer
       , ListLike ^>= 4.7
+      , loc
       , transformers
     mixins:
         base
@@ -63,6 +64,7 @@ common base
           , Control.Monad.Trans.Reader as Reader
           , Control.Monad.Trans.Except as Except
           )
+      , loc (Data.Loc as Loc)
 
 library
     import: base
@@ -77,7 +79,7 @@ library
         Step.Document.Parser
         Step.Document.ParseState
         Step.Document.Past
-        Step.Document.Position
+        Step.Document.Loc
         Step.Document.Prelude
         Step.Test.InputChunking
 

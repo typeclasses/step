@@ -4,7 +4,7 @@ import Step.Internal.Prelude
 
 import Step.Document.Parser
 
-import Step.Document.Position (Position)
+import Loc (Loc)
 
 import qualified Step.Document.ParseState as ParseState
 
@@ -38,7 +38,7 @@ satisfy ok = do
         True -> return x
         False -> failure
 
-position :: Parser text Position
+position :: Parser text Loc
 position = Parser \_eo -> use ParseState.positionLens <&> Right
 
 atEnd :: ListLike text Char => Parser text Bool

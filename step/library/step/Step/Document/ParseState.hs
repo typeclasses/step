@@ -2,7 +2,7 @@ module Step.Document.ParseState where
 
 import Step.Internal.Prelude
 
-import Step.Document.Position (Position)
+import Loc (Loc)
 
 import Step.Stream.Base (Stream)
 import qualified Step.Stream.Base as Stream
@@ -18,7 +18,7 @@ data ParseState text m =
 
 makeLensesFor [("future", "futureLens"), ("past", "pastLens")] ''ParseState
 
-positionLens :: Lens' (ParseState text m) Position
+positionLens :: Lens' (ParseState text m) Loc
 positionLens = pastLens % Past.positionLens
 
 start :: ListT m text -> ParseState text m

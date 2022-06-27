@@ -5,8 +5,9 @@ import Step.Internal.Prelude
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-import Step.Document.Position (LineNumber, Position (Position))
-import qualified Step.Document.Position as Position
+import Loc (Line, Loc)
+import qualified Loc
+import qualified Step.Document.Loc as Loc
 
 import qualified Map
 
@@ -14,9 +15,9 @@ import qualified ListLike
 
 data Past text =
   Past
-    { lineMap :: Map LineNumber (Buffer text)
+    { lineMap :: Map Line (Buffer text)
     , lastCharacterWasCR :: Bool
-    , position :: Position
+    , position :: Loc
     }
 
 makeLensesFor [("position", "positionLens")] ''Past
@@ -26,7 +27,7 @@ empty =
   Past
     { lineMap = Map.empty
     , lastCharacterWasCR = False
-    , position = Position.start
+    , position = Loc.origin
     }
 
 record :: ListLike text Char => text -> Past text -> Past text
@@ -40,17 +41,17 @@ record x p =
 recordCR :: ListLike text Char => Past text -> Past text
 recordCR p =
   Past
-    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\r')) . fromMaybe Buffer.empty) (Position.line (position p)) (lineMap p)
+    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\r')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
     , lastCharacterWasCR = True
-    , position = over Position.columnLens (+ 1) (position p)
+    , position = over Loc.columnLens (+ 1) (position p)
     }
 
 recordLF :: ListLike text Char => Past text -> Past text
 recordLF p =
   Past
-    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\n')) . fromMaybe Buffer.empty) (Position.line (position p)) (lineMap p)
+    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\n')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
     , lastCharacterWasCR = False
-    , position = Position{ Position.line = Position.line (position p) + 1, Position.column = 1 }
+    , position = Loc.loc (Loc.locLine (position p) + 1) 1
     }
 
 recordOther :: ListLike text Char => text -> Past text -> Past text
@@ -59,12 +60,12 @@ recordOther x p =
     newPosition =
         case lastCharacterWasCR p of
             True ->
-                Position{ Position.line = Position.line (position p) + 1, Position.column = Position.ColumnNumber (fromIntegral (ListLike.length x) + 1) }
+                Loc.loc (Loc.locLine (position p) + 1) (fromIntegral (ListLike.length x) + 1)
             False ->
-                over Position.columnLens (+ Position.ColumnNumber (fromIntegral (ListLike.length x))) (position p)
+                over Loc.columnLens (+ fromIntegral (ListLike.length x)) (position p)
   in
     Past
-      { lineMap = Map.alter (Just . (<> Buffer.singleton x) . fromMaybe Buffer.empty) (Position.line newPosition) (lineMap p)
+      { lineMap = Map.alter (Just . (<> Buffer.singleton x) . fromMaybe Buffer.empty) (Loc.locLine newPosition) (lineMap p)
       , lastCharacterWasCR = False
       , position = newPosition
       }

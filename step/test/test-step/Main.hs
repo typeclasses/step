@@ -13,7 +13,6 @@ import qualified Char
 
 import qualified Step.Document.Parser as Doc
 import qualified Step.Document.Prelude as Doc
-import qualified Step.Document.Position as Doc
 
 import Step.Test.InputChunking (genChunks)
 
@@ -21,6 +20,8 @@ import Test.Hspec
 import Test.Hspec.Hedgehog
 
 import Text (Text)
+
+import qualified Loc
 
 main :: IO ()
 main = hspec do
@@ -78,18 +79,18 @@ documentParsing = describe "Document parsing" do
         specify "starts at 1:1" $ hedgehog do
             input :: [Text] <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
             let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions Doc.position (ListT.select input)
-            x === Right (Doc.Position 1 1)
+            x === Right (Loc.loc 1 1)
 
         specify "column is incremented by char when input contains no line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
             let p = appEndo (times n (Endo (Doc.char *>))) Doc.position
             input :: [Text] <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
             let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
-            x === Right (Doc.Position 1 (Doc.ColumnNumber (n + 1)))
+            x === Right (Loc.loc 1 (fromIntegral $ n + 1))
 
         specify "line is incremented by char when input is line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
             let p = appEndo (times n (Endo (Doc.char *>))) Doc.position
             input :: [Text] <- forAll (genChunks (ListLike.replicate 50 '\n'))
             let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
-            x === Right (Doc.Position (Doc.LineNumber (1 + n)) 1)
+            x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
