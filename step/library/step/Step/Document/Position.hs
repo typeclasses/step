@@ -1,4 +1,4 @@
-module Stratoparsec.Document.Position where
+module Step.Document.Position where
 
 import Optics
 

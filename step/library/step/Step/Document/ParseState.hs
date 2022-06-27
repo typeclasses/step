@@ -1,16 +1,16 @@
-module Stratoparsec.Document.ParseState where
+module Step.Document.ParseState where
 
 import Optics
 
 import ListT (ListT)
 
-import Stratoparsec.Document.Position (Position)
+import Step.Document.Position (Position)
 
-import Stratoparsec.Stream.Base (Stream)
-import qualified Stratoparsec.Stream.Base as Stream
+import Step.Stream.Base (Stream)
+import qualified Step.Stream.Base as Stream
 
-import Stratoparsec.Document.Past (Past)
-import qualified Stratoparsec.Document.Past as Past
+import Step.Document.Past (Past)
+import qualified Step.Document.Past as Past
 
 data ParseState m =
   ParseState

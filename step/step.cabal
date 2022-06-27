@@ -1,6 +1,6 @@
 cabal-version: 3.0
 
-name: stratoparsec
+name: step
 version: 0
 
 common base
@@ -47,25 +47,25 @@ common base
 
 library
     import: base
-    hs-source-dirs: library/stratoparsec
+    hs-source-dirs: library/step
     exposed-modules:
-        Stratoparsec.Buffer.Base
-        Stratoparsec.Buffer.State
-        Stratoparsec.Stream.Base
-        Stratoparsec.Stream.State
-        Stratoparsec.Document.Parser
-        Stratoparsec.Document.ParseState
-        Stratoparsec.Document.Past
-        Stratoparsec.Document.Position
-        Stratoparsec.Document.Prelude
-        Stratoparsec.Test.InputChunking
+        Step.Buffer.Base
+        Step.Buffer.State
+        Step.Stream.Base
+        Step.Stream.State
+        Step.Document.Parser
+        Step.Document.ParseState
+        Step.Document.Past
+        Step.Document.Position
+        Step.Document.Prelude
+        Step.Test.InputChunking
     other-modules:
-        Stratoparsec.Util.Modify
-        Stratoparsec.Util.While
+        Step.Util.Modify
+        Step.Util.While
 
-test-suite test-stratoparsec
+test-suite test-step
     import: base
     type: exitcode-stdio-1.0
-    hs-source-dirs: test/test-stratoparsec
+    hs-source-dirs: test/test-step
     main-is: Main.hs
-    build-depends: stratoparsec, hspec, hspec-hedgehog
+    build-depends: step, hspec, hspec-hedgehog

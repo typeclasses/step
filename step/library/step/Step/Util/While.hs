@@ -1,4 +1,4 @@
-module Stratoparsec.Util.While where
+module Step.Util.While where
 
 while :: Monad m =>
     (a -> Bool)    -- ^ While this predicate holds, keep going.

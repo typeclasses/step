@@ -1,12 +1,12 @@
-module Stratoparsec.Document.Past (Past (..), empty, record, positionLens) where
+module Step.Document.Past (Past (..), empty, record, positionLens) where
 
 import Optics
 
-import Stratoparsec.Buffer.Base (Buffer)
-import qualified Stratoparsec.Buffer.Base as Buffer
+import Step.Buffer.Base (Buffer)
+import qualified Step.Buffer.Base as Buffer
 
-import Stratoparsec.Document.Position (LineNumber, Position (Position))
-import qualified Stratoparsec.Document.Position as Position
+import Step.Document.Position (LineNumber, Position (Position))
+import qualified Step.Document.Position as Position
 
 import qualified Map
 import qualified Text

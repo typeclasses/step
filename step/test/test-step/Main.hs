@@ -9,11 +9,11 @@ import qualified ListT
 import qualified Char
 import qualified Text
 
-import qualified Stratoparsec.Document.Parser as Doc
-import qualified Stratoparsec.Document.Prelude as Doc
-import qualified Stratoparsec.Document.Position as Doc
+import qualified Step.Document.Parser as Doc
+import qualified Step.Document.Prelude as Doc
+import qualified Step.Document.Position as Doc
 
-import Stratoparsec.Test.InputChunking (genChunks)
+import Step.Test.InputChunking (genChunks)
 
 import Test.Hspec
 import Test.Hspec.Hedgehog

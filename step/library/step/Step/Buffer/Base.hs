@@ -1,4 +1,4 @@
-module Stratoparsec.Buffer.Base where
+module Step.Buffer.Base where
 
 import ListLike (ListLike)
 import ListT (ListT)

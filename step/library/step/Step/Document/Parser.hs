@@ -1,11 +1,11 @@
-module Stratoparsec.Document.Parser where
+module Step.Document.Parser where
 
 import ListT (ListT)
 
-import qualified Stratoparsec.Stream.Base as Stream
+import qualified Step.Stream.Base as Stream
 
-import Stratoparsec.Document.ParseState (ParseState)
-import qualified Stratoparsec.Document.ParseState as ParseState
+import Step.Document.ParseState (ParseState)
+import qualified Step.Document.ParseState as ParseState
 
 data Error = Error{ errorContext :: [Context] }
     deriving stock (Eq, Show)

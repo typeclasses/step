@@ -1,16 +1,16 @@
-module Stratoparsec.Stream.State where
+module Step.Stream.State where
 
 import Optics
 
 import ListLike (ListLike)
 import qualified ListLike
 
-import Stratoparsec.Stream.Base (Stream)
+import Step.Stream.Base (Stream)
 
-import qualified Stratoparsec.Stream.Base as Stream
-import qualified Stratoparsec.Buffer.State as Buffer.State
+import qualified Step.Stream.Base as Stream
+import qualified Step.Buffer.State as Buffer.State
 
-import Stratoparsec.Util.Modify
+import Step.Util.Modify
 
 -- | Determines whether there are any more
 isEmpty :: (Monad m, ListLike chunk char) => StateT (Stream m chunk) m Bool

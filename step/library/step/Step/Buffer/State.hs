@@ -1,8 +1,8 @@
-module Stratoparsec.Buffer.State where
+module Step.Buffer.State where
 
 import ListLike (ListLike)
-import Stratoparsec.Buffer.Base (Buffer)
-import qualified Stratoparsec.Buffer.Base as Buffer
+import Step.Buffer.Base (Buffer)
+import qualified Step.Buffer.Base as Buffer
 
 takeChar :: (Monad m, ListLike chunk char) => StateT (Buffer chunk) m (Maybe char)
 takeChar = do

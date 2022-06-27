@@ -1,4 +1,4 @@
-module Stratoparsec.Stream.Base where
+module Step.Stream.Base where
 
 import Optics
 
@@ -8,10 +8,10 @@ import ListLike (ListLike)
 import qualified ListT
 import qualified ListLike
 
-import Stratoparsec.Buffer.Base (Buffer)
-import qualified Stratoparsec.Buffer.Base as Buffer
+import Step.Buffer.Base (Buffer)
+import qualified Step.Buffer.Base as Buffer
 
-import Stratoparsec.Util.While
+import Step.Util.While
 
 data Stream m chunk =
   Stream

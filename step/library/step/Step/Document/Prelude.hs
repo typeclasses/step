@@ -1,14 +1,14 @@
-module Stratoparsec.Document.Prelude where
+module Step.Document.Prelude where
 
 import Optics
 
-import Stratoparsec.Document.Parser
+import Step.Document.Parser
 
-import Stratoparsec.Document.Position (Position)
+import Step.Document.Position (Position)
 
-import qualified Stratoparsec.Document.ParseState as ParseState
+import qualified Step.Document.ParseState as ParseState
 
-import qualified Stratoparsec.Stream.State as Stream.State
+import qualified Step.Stream.State as Stream.State
 
 import qualified Text
 

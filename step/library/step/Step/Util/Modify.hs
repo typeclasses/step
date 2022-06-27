@@ -1,4 +1,4 @@
-module Stratoparsec.Util.Modify where
+module Step.Util.Modify where
 
 modifyM :: Monad m => (s -> m s) -> StateT s m ()
 modifyM f = do

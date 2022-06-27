@@ -1,4 +1,4 @@
-module Stratoparsec.Test.InputChunking (genChunks) where
+module Step.Test.InputChunking (genChunks) where
 
 import Hedgehog
 
@@ -8,7 +8,7 @@ import qualified Hedgehog.Range as Range
 import qualified ListLike
 import ListLike (ListLike)
 
-import Stratoparsec.Util.Modify (modifyM)
+import Step.Util.Modify (modifyM)
 
 -- | Generates various ways of chunking a given input text. Shrinks toward the smallest number of chunks.
 genChunks :: ListLike chunk char => chunk -> Gen [chunk]
