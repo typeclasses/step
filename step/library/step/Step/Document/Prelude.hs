@@ -13,7 +13,7 @@ import qualified Step.Stream.State as Stream.State
 
 import qualified ListLike
 
-char :: ListLike text Char => Parser text Char
+char :: Monad m => ListLike text Char => Parser text m Char
 char = Parser \eo -> do
     cm <- zoom ParseState.futureLens do
         Stream.State.fillBuffer 1
@@ -24,7 +24,7 @@ char = Parser \eo -> do
             ParseState.record (ListLike.singleton x)
             return (Right x)
 
-text :: ListLike text Char => Eq text => text -> Parser text ()
+text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
 text expected = Parser \eo ->
     zoom ParseState.futureLens (Stream.State.takeString expected) >>= \case
         True -> do
@@ -32,38 +32,53 @@ text expected = Parser \eo ->
             return (Right ())
         False -> let Parser p = failure in p eo
 
-satisfy :: ListLike text Char => (Char -> Bool) -> Parser text Char
+satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text m Char
 satisfy ok = do
     x <- char
     case ok x of
         True -> return x
         False -> failure
 
-position :: Parser text Loc
+position :: Monad m => Parser text m Loc
 position = Parser \_eo -> use ParseState.positionLens <&> Right
 
-atEnd :: ListLike text Char => Parser text Bool
+atEnd :: Monad m => ListLike text Char => Parser text m Bool
 atEnd = Parser \_eo -> fmap Right $ zoom ParseState.futureLens Stream.State.isEmpty
 
-end :: ListLike text Char => Parser text ()
+end :: Monad m => ListLike text Char => Parser text m ()
 end = atEnd >>= \case True -> return (); False -> failure
 
-failure :: Parser text a
+failure :: Monad m => Parser text m a
 failure = Parser \_eo ->
     return (Left (Error{ errorContext = [] }))
 
-contextualize :: Context text -> Parser text a -> Parser text a
+contextualize :: Monad m => Context text -> Parser text m a -> Parser text m a
 contextualize c (Parser f) = Parser \eo ->
     f eo <&> \case
         Left (Error cs) -> Left (Error (c : cs))
         Right x -> Right x
 
-(<?>) :: Parser text a -> Context text -> Parser text a
+(<?>) :: Monad m => Parser text m a -> Context text -> Parser text m a
 p <?> c = contextualize c p
 
-withLocation :: Parser text a -> Parser text (SpanOrLoc, a)
+withLocation :: Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
 withLocation p = do
     a <- position
     x <- p
     b <- position
     return (Loc.spanOrLocFromTo a b, x)
+
+many :: Monad m => ListLike list a => Possibility text m a -> Parser text m list
+many (Possibility p) = Parser \_eo ->
+  let
+    r s = do
+      result <- p s
+      case result of
+          Nothing -> return (s, ListLike.empty)
+          Just (s', x) -> (over _2 (ListLike.singleton x <>)) <$> r s'
+  in
+    do
+      s <- get
+      (s', xs) <- lift $ r s
+      put s'
+      return (Right xs)
