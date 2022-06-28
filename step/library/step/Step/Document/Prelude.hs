@@ -7,22 +7,34 @@ import Step.Document.Parser
 import qualified Loc
 import Loc (Loc, SpanOrLoc)
 
+import Step.Document.ParseState (ParseState (ParseState))
 import qualified Step.Document.ParseState as ParseState
 
 import qualified Step.Stream.State as Stream.State
 
+import qualified Step.Document.Past as Past
+
 import qualified ListLike
 
-char :: Monad m => ListLike text Char => Parser text m Char
-char = Parser \eo -> do
-    cm <- zoom ParseState.futureLens do
-        Stream.State.fillBuffer 1
-        Stream.State.takeChar
+char :: Monad m => ListLike text Char => Possibility text m Char
+char = satisfy (\_ -> True)
+
+satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Possibility text m Char
+satisfy ok =  Possibility \_eo s -> do
+    (cm, fu) <- runStateT
+        do
+            Stream.State.fillBuffer 1
+            Stream.State.takeChar
+        (ParseState.future s)
     case cm of
-        Nothing -> let Parser f = failure in f eo
-        Just x -> do
-            ParseState.record (ListLike.singleton x)
-            return (Right x)
+        Just x | ok x ->
+            return $ Right
+              ( ParseState{ ParseState.past = Past.record (ListLike.singleton x) (ParseState.past s)
+                          , ParseState.future = fu
+                          }
+              , x
+              )
+        _ -> return (Left fu)
 
 text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
 text expected = Parser \eo ->
@@ -31,13 +43,6 @@ text expected = Parser \eo ->
             ParseState.record expected
             return (Right ())
         False -> let Parser p = failure in p eo
-
-satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text m Char
-satisfy ok = do
-    x <- char
-    case ok x of
-        True -> return x
-        False -> failure
 
 position :: Monad m => Parser text m Loc
 position = Parser \_eo -> use ParseState.positionLens <&> Right

@@ -19,6 +19,11 @@ defaultErrorOptions = ErrorOptions{ errorLinesBefore = 4, errorLinesAfter = 2 }
 
 data ErrorOptions = ErrorOptions{ errorLinesBefore :: Natural, errorLinesAfter :: Natural }
 
+-- | A `Parser` can:
+--
+-- * Modify the 'ParseState', restricted to valid modifications -- it can buffer new input, and it can move input from the future to the past
+-- * Either fail by returning an 'Error', or succeed by returning an `a`
+--
 newtype Parser text m a = Parser (ErrorOptions -> StateT (ParseState text m) m (Either (Error text) a))
     deriving stock Functor
     deriving (Applicative, Monad)
@@ -32,6 +37,11 @@ parse eo (Parser p) = StateT \xs -> do
 parseOnly :: Monad m => ErrorOptions -> Parser text m a -> ListT m text -> m (Either (Error text) a)
 parseOnly eo p xs = evalStateT (parse eo p) xs
 
+-- | A `Possibility` can:
+--
+-- * Modify the future, restricted to the buffering of new input
+-- * Either fail, or succeed (move input from the future to the past, return an `a`)
+--
 newtype Possibility text m a =
   Possibility
     (
@@ -43,3 +53,4 @@ newtype Possibility text m a =
           (ParseState text m, a) -- Accepted -- returns a new state and parsed value
         )
     )
+    deriving stock Functor
