@@ -69,10 +69,10 @@ withLocation p = do
     return (Loc.spanOrLocFromTo a b, x)
 
 many :: Monad m => ListLike list a => Possibility text m a -> Parser text m list
-many (Possibility p) = Parser \_eo ->
+many (Possibility p) = Parser \eo ->
   let
     r s = do
-      result <- p s
+      result <- p eo s
       case result of
           Left fu -> return (s{ ParseState.future = fu }, ListLike.empty)
           Right (s', x) -> (over _2 (ListLike.singleton x <>)) <$> r s'
@@ -86,7 +86,7 @@ many (Possibility p) = Parser \_eo ->
 require :: Monad m => Possibility text m a -> Parser text m a
 require (Possibility p) = Parser \eo -> do
     s <- get
-    result <- lift (p s)
+    result <- lift (p eo s)
     case result of
         Left _ -> let Parser f = failure in f eo
         Right (s', x) -> do

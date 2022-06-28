@@ -35,7 +35,8 @@ parseOnly eo p xs = evalStateT (parse eo p) xs
 newtype Possibility text m a =
   Possibility
     (
-      ParseState text m
+      ErrorOptions
+      -> ParseState text m
       -> m
         (Either
           (Stream m text) -- Rejected -- returns a new 'future' stream that is equivalent to the current future (but may be buffered more)
