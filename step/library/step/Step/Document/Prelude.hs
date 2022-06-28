@@ -74,11 +74,21 @@ many (Possibility p) = Parser \_eo ->
     r s = do
       result <- p s
       case result of
-          Nothing -> return (s, ListLike.empty)
-          Just (s', x) -> (over _2 (ListLike.singleton x <>)) <$> r s'
+          Left fu -> return (s{ ParseState.future = fu }, ListLike.empty)
+          Right (s', x) -> (over _2 (ListLike.singleton x <>)) <$> r s'
   in
     do
       s <- get
       (s', xs) <- lift $ r s
       put s'
       return (Right xs)
+
+require :: Monad m => Possibility text m a -> Parser text m a
+require (Possibility p) = Parser \eo -> do
+    s <- get
+    result <- lift (p s)
+    case result of
+        Left _ -> let Parser f = failure in f eo
+        Right (s', x) -> do
+            put s'
+            return (Right x)

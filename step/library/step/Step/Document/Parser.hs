@@ -2,6 +2,7 @@ module Step.Document.Parser where
 
 import Step.Internal.Prelude
 
+import Step.Stream.Base (Stream)
 import qualified Step.Stream.Base as Stream
 
 import Step.Document.ParseState (ParseState)
@@ -31,4 +32,13 @@ parse eo (Parser p) = StateT \xs -> do
 parseOnly :: Monad m => ErrorOptions -> Parser text m a -> ListT m text -> m (Either (Error text) a)
 parseOnly eo p xs = evalStateT (parse eo p) xs
 
-newtype Possibility text m a = Possibility (ParseState text m -> m (Maybe (ParseState text m, a)))
+newtype Possibility text m a =
+  Possibility
+    (
+      ParseState text m
+      -> m
+        (Either
+          (Stream m text) -- Rejected -- returns a new 'future' stream that is equivalent to the current future (but may be buffered more)
+          (ParseState text m, a) -- Accepted -- returns a new state and parsed value
+        )
+    )
