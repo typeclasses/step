@@ -18,18 +18,16 @@ import Step.Document.Parser
 import qualified Loc
 import Loc (Loc, SpanOrLoc)
 
-import Step.Document.ParseState (ParseState (ParseState))
-import qualified Step.Document.ParseState as ParseState
+import Step.CountingBufferedStream.Base (CountingBufferedStream (CountingBufferedStream))
+import qualified Step.CountingBufferedStream.Base as CountingBufferedStream
 
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-import Step.Stream.Base (Stream)
-import qualified Step.Stream.Base as Stream
+import Step.BufferedStream.Base (BufferedStream)
+import qualified Step.BufferedStream.Base as BufferedStream
 
-import qualified Step.Stream.State as Stream.State
-
-import qualified Step.Document.Past as Past
+import qualified Step.CountingBufferedStream.State as CountingBufferedStream.State
 
 import qualified ListLike
 
@@ -40,21 +38,12 @@ char :: Monad m => ListLike text Char => Possibility text m Char
 char = satisfy (\_ -> True)
 
 satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Possibility text m Char
-satisfy ok =  Possibility \_eo s -> do
-    (cm, fu) <- runStateT
-        do
-            Stream.State.fillBuffer 1
-            Stream.State.takeChar
-        (ParseState.future s)
+satisfy ok = Possibility \_config -> do
+    cbs <- get
+    (cbs', cm) <- CountingBufferedStream.peekChar cbs
     case cm of
-        Just x | ok x ->
-            return $ Right
-              ( ParseState{ ParseState.past = Past.record (ListLike.singleton x) (ParseState.past s)
-                          , ParseState.future = fu
-                          }
-              , x
-              )
-        _ -> return (Left fu)
+        Just (cbs'', x) | ok x -> put cbs'' $> Just x
+        _                      -> put cbs'  $> Nothing
 
 text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
 text expected = Parser \eo ->

@@ -1,4 +1,10 @@
-module Step.Document.Past (Past (..), empty, record, positionLens) where
+module Step.LineHistory.Base
+  (
+    LineHistory (..),
+    empty,
+    record,
+  )
+  where
 
 import Step.Internal.Prelude
 
@@ -13,24 +19,22 @@ import qualified Map
 
 import qualified ListLike
 
-data Past text =
-  Past
+data LineHistory text =
+  LineHistory
     { lineMap :: Map Line (Buffer text)
     , lastCharacterWasCR :: Bool
     , position :: Loc
     }
 
-makeLensesFor [("position", "positionLens")] ''Past
-
-empty :: Past text
+empty :: LineHistory text
 empty =
-  Past
+  LineHistory
     { lineMap = Map.empty
     , lastCharacterWasCR = False
     , position = Loc.origin
     }
 
-record :: ListLike text Char => text -> Past text -> Past text
+record :: ListLike text Char => text -> LineHistory text -> LineHistory text
 record x p =
   case ListLike.uncons x of
     Nothing -> p
@@ -38,23 +42,23 @@ record x p =
     Just ('\n', x') -> record x' (recordLF p)
     Just _ -> let (a, b) = ListLike.break (`elem` ['\r', '\n']) x in record b (recordOther a p)
 
-recordCR :: ListLike text Char => Past text -> Past text
+recordCR :: ListLike text Char => LineHistory text -> LineHistory text
 recordCR p =
-  Past
+  LineHistory
     { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\r')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
     , lastCharacterWasCR = True
     , position = over Loc.columnLens (+ 1) (position p)
     }
 
-recordLF :: ListLike text Char => Past text -> Past text
+recordLF :: ListLike text Char => LineHistory text -> LineHistory text
 recordLF p =
-  Past
+  LineHistory
     { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\n')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
     , lastCharacterWasCR = False
     , position = Loc.loc (Loc.locLine (position p) + 1) 1
     }
 
-recordOther :: ListLike text Char => text -> Past text -> Past text
+recordOther :: ListLike text Char => text -> LineHistory text -> LineHistory text
 recordOther x p =
   let
     newPosition =
@@ -64,7 +68,7 @@ recordOther x p =
             False ->
                 over Loc.columnLens (+ fromIntegral (ListLike.length x)) (position p)
   in
-    Past
+    LineHistory
       { lineMap = Map.alter (Just . (<> Buffer.singleton x) . fromMaybe Buffer.empty) (Loc.locLine newPosition) (lineMap p)
       , lastCharacterWasCR = False
       , position = newPosition

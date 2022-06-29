@@ -74,13 +74,20 @@ library
     exposed-modules:
         Step.Buffer.Base
         Step.Buffer.State
-        Step.Stream.Base
-        Step.Stream.State
+
+        Step.BufferedStream.Base
+        Step.BufferedStream.State
+
+        Step.CountingBufferedStream.Base
+        Step.CountingBufferedStream.State
+
         Step.Document.Parser
-        Step.Document.ParseState
-        Step.Document.Past
         Step.Document.Loc
         Step.Document.Prelude
+
+        Step.LineHistory.Base
+        Step.LineHistory.State
+
         Step.Test.InputChunking
 
 library step-internal
