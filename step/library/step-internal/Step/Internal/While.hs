@@ -11,3 +11,6 @@ while :: Monad m =>
 while continue step =
     fix \r x ->
         if continue x then step x >>= r else return x
+
+until :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m a
+until continue step = while (not . continue) step

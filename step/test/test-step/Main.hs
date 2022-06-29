@@ -129,3 +129,8 @@ documentParsing = describe "Document parsing" do
             input :: [Text] <- forAll (genChunks "abcdef")
             let x = runIdentity $ Doc.parseOnly Doc.defaultErrorOptions p (ListT.select input)
             x === Right (SpanOrLoc.loc (loc 1 4), ())
+
+    -- describe "while" do
+
+    --     specify "..." $ hedgehog do
+    --         let p = Doc.match

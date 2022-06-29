@@ -29,8 +29,8 @@ empty = Buffer{ chunks = Seq.empty, size = 0 }
 toListT :: Monad m => Buffer a -> ListT m a
 toListT = ListT.select . chunks
 
-uncons :: ListLike chunk char => Buffer chunk -> Maybe (char, Buffer chunk)
-uncons b = if isEmpty b then Nothing else Just $
+unconsChar :: ListLike chunk char => Buffer chunk -> Maybe (char, Buffer chunk)
+unconsChar b = if isEmpty b then Nothing else Just $
     case chunks b of
         Seq.Empty -> error "Buffer size is 0 but it has no chunks"
         (Seq.:<|) x xs ->
@@ -40,6 +40,11 @@ uncons b = if isEmpty b then Nothing else Just $
                       chunks = (if ListLike.null x' then id else (x' Seq.<|)) xs,
                       size = size b - 1
                   })
+
+unconsChunk :: ListLike chunk char => Buffer chunk -> Maybe (chunk, Buffer chunk)
+unconsChunk b = case ListLike.uncons (chunks b) of
+    Nothing -> Nothing
+    Just (c, cs) -> Just (c, Buffer{ chunks = cs, size = size b - fromIntegral (ListLike.length c) } )
 
 data StripPrefixResult chunk =
     StripPrefixFail

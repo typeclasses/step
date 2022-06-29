@@ -23,6 +23,14 @@ fillBuffer n = modifyM (Stream.fillBuffer n)
 readChunk :: (Monad m, ListLike chunk char) => StateT (Stream m chunk) m ()
 readChunk = modifyM Stream.readChunk
 
+bufferAll :: (Monad m, ListLike chunk char) => StateT (Stream m chunk) m ()
+bufferAll = isEmpty >>= \case True -> return (); False -> readChunk *> bufferAll
+
+takeChunk :: (Monad m, ListLike chunk char) => StateT (Stream m chunk) m (Maybe chunk)
+takeChunk = do
+    modifyM (Stream.fillBuffer 1)
+    zoom Stream.bufferLens Buffer.State.takeChunk
+
 takeChar :: (Monad m, ListLike chunk char) => StateT (Stream m chunk) m (Maybe char)
 takeChar = do
     modifyM (Stream.fillBuffer 1)
@@ -36,3 +44,6 @@ takeString c = if ListLike.null c then return True else
             Buffer.State.TakeStringFail -> return False
             Buffer.State.TakeStringSuccess -> return True
             Buffer.State.TakeStringPartial c' -> takeString c'
+
+putChunk :: (Monad m, ListLike chunk char) => chunk -> StateT (Stream m chunk) m ()
+putChunk x = unless (ListLike.null x) $ modify' (Stream.putChunk x)

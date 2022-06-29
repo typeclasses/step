@@ -1,6 +1,17 @@
-module Step.Document.Prelude where
+module Step.Document.Prelude
+  (
+    {- * Single character result -} char, satisfy,
+    {- * Text result -} text, all,
+    {- * Inspecting the position -} position, withLocation,
+    {- * Possibility to Parser -} many, require,
+    {- * The end -} atEnd, end,
+    {- * Contextualizing errors -} contextualize, (<?>),
+    {- * Failure -} failure,
+    {- * Transformation -} under, while,
+  )
+  where
 
-import Step.Internal.Prelude
+import Step.Internal.Prelude hiding (while, under)
 
 import Step.Document.Parser
 
@@ -10,11 +21,20 @@ import Loc (Loc, SpanOrLoc)
 import Step.Document.ParseState (ParseState (ParseState))
 import qualified Step.Document.ParseState as ParseState
 
+import Step.Buffer.Base (Buffer)
+import qualified Step.Buffer.Base as Buffer
+
+import Step.Stream.Base (Stream)
+import qualified Step.Stream.Base as Stream
+
 import qualified Step.Stream.State as Stream.State
 
 import qualified Step.Document.Past as Past
 
 import qualified ListLike
+
+import qualified ListT
+import ListT (ListT (ListT))
 
 char :: Monad m => ListLike text Char => Possibility text m Char
 char = satisfy (\_ -> True)
@@ -97,3 +117,50 @@ require (Possibility p) = Parser \eo -> do
         Right (s', x) -> do
             put s'
             return (Right x)
+
+-- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
+all :: Monad m => ListLike text Char => Parser text m text
+all = Parser \_eo -> do
+    zoom ParseState.futureLens Stream.State.bufferAll
+    xs <- Buffer.chunks <$> use (ParseState.futureLens % Stream.bufferLens)
+    assign ParseState.futureLens Stream.empty
+    zoom ParseState.pastLens $ traverse_ (modify' . Past.record) xs
+    return (Right (ListLike.fold xs))
+
+under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
+under (Transform t) (Parser p) = Parser \eo -> do
+    s <- get
+    (s', x) <- zoom ParseState.futureLens $ lift $ runStateT (p eo) _
+    _
+
+-- match :: ListLike text Char => Monad m => Extent text m -> Parser text m text
+-- match (Extent e) = Parser \_eo -> do
+--     s <- get
+--     (s', t) <- lift $ execStateT (match' e) (s, ListLike.empty)
+--     put s'
+--     return (Right (ListLike.fold t))
+
+-- match' :: Monad m => ListLike text Char =>
+--     ListT (StateT (Stream m text) m) text
+--     -> StateT (ParseState text m, Seq text) m ()
+-- match' e = do
+--     step <- zoom (_1 % ParseState.futureLens) (ListT.next e)
+--     case step of
+--         ListT.Nil -> return ()
+--         ListT.Cons x e' -> do
+--             zoom _1 (ParseState.record x)
+--             modifying _2 (`ListLike.snoc` x)
+--             match' e'
+
+while :: ListLike text Char => Monad m => (Char -> Bool) -> Transform text m text
+while f = Transform while'
+  where
+    while' = ListT do
+        cm <- Stream.State.takeChunk
+        case cm of
+            Nothing -> return ListT.Nil
+            Just c | ListLike.null c -> return (ListT.Cons c while')
+            Just c -> do
+                let (a, b) = ListLike.span f c
+                Stream.State.putChunk b
+                return if ListLike.null a then ListT.Nil else ListT.Cons a while'

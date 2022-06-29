@@ -17,6 +17,9 @@ data Stream m chunk =
 
 makeLensesFor [("buffer", "bufferLens"), ("pending", "pendingLens")] ''Stream
 
+empty :: Stream m chunk
+empty = Stream Buffer.empty Nothing
+
 toListT :: Monad m => Stream m chunk -> ListT m chunk
 toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
 
@@ -28,6 +31,14 @@ bufferSize = Buffer.size . buffer
 
 bufferIsEmpty :: Stream m chunk -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer
+
+bufferUnconsChunk :: ListLike chunk char => Stream m chunk -> Maybe (chunk, Stream m chunk)
+bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
+    Nothing -> Nothing
+    Just (c, b') -> Just (c, s{ buffer = b' })
+
+putChunk :: ListLike chunk char => chunk -> Stream m chunk -> Stream m chunk
+putChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
 fillBuffer :: (Monad m, ListLike chunk char) =>

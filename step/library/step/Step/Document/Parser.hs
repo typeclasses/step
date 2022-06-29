@@ -54,3 +54,10 @@ newtype Possibility text m a =
         )
     )
     deriving stock Functor
+
+newtype Transform text m text' =
+  Transform
+    (
+      ListT (StateT (Stream m text) m) text'
+    )
+  deriving stock Functor

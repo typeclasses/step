@@ -8,7 +8,16 @@ import qualified Step.Buffer.Base as Buffer
 takeChar :: (Monad m, ListLike chunk char) => StateT (Buffer chunk) m (Maybe char)
 takeChar = do
     b <- get
-    case Buffer.uncons b of
+    case Buffer.unconsChar b of
+        Nothing -> return Nothing
+        Just (c, b') -> do
+            put b'
+            return (Just c)
+
+takeChunk :: (Monad m, ListLike chunk char) => StateT (Buffer chunk) m (Maybe chunk)
+takeChunk = do
+    b <- get
+    case Buffer.unconsChunk b of
         Nothing -> return Nothing
         Just (c, b') -> do
             put b'
