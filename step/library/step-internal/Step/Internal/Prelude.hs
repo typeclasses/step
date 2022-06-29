@@ -19,6 +19,7 @@ import Except as X (ExceptT (ExceptT))
 import String as X (IsString)
 import Monoid as X (Endo (Endo), appEndo)
 import ListT as X (ListT)
+import Functor as X (($>), (<$), void)
 
 import Optics as X
 

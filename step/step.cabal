@@ -80,6 +80,7 @@ library
 
         Step.CountingBufferedStream.Base
         Step.CountingBufferedStream.State
+        Step.CountingBufferedStream.Tentative
 
         Step.Document.Parser
         Step.Document.Loc
@@ -87,6 +88,9 @@ library
 
         Step.LineHistory.Base
         Step.LineHistory.State
+
+        Step.Tentative.Base
+        Step.Tentative.State
 
         Step.Test.InputChunking
 

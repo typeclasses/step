@@ -4,7 +4,7 @@ module Step.CountingBufferedStream.Base
     {- * Optics -} positionLens, bufferLens, pendingLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
     {- * Buffering -} fillBuffer, readChunk,
-    {- * Taking from the stream -} unconsChar, bufferUnconsChar, peekChar,
+    {- * Taking from the stream -} unconsChar, bufferUnconsChar, unconsCharTentative,
   )
   where
 
@@ -15,6 +15,8 @@ import qualified Step.Buffer.Base as Buffer
 
 import Step.BufferedStream.Base (BufferedStream (BufferedStream))
 import qualified Step.BufferedStream.Base as BufferedStream
+
+import qualified Step.Tentative.Base as Tentative
 
 data CountingBufferedStream m chunk =
   CountingBufferedStream
@@ -48,20 +50,14 @@ unconsChar cbs = do
         Nothing -> (cbs', Nothing)
         Just (x, cbs'') -> (cbs'', Just x)
 
-peekChar :: Monad m => ListLike chunk char => CountingBufferedStream m chunk ->
-    m ( CountingBufferedStream m chunk           -- The stream if the peeked value is not taken
-      , Maybe ( CountingBufferedStream m chunk   -- The stream if the peeked value is taken
-              , char                             -- The peeked value
-              )
-      )
-peekChar cbs = do
+unconsCharTentative :: Monad m => ListLike chunk char => CountingBufferedStream m chunk -> m (Tentative.Step (CountingBufferedStream m chunk) (Maybe char))
+unconsCharTentative cbs = do
     cbs' <- fillBuffer 1 cbs
-    return
-      ( cbs'
-      , case bufferUnconsChar cbs' of
-          Nothing -> Nothing
-          Just (x, cbs'') -> Just (cbs'', x)
-      )
+    return  case bufferUnconsChar cbs' of
+        Nothing -> Tentative.noChoiceStep cbs' Nothing
+        Just (x, cbs'') -> Tentative.choiceStep
+            Tentative.Choice{ Tentative.ifNotTaken = cbs', Tentative.ifActionTaken = cbs'' }
+            (Just x)
 
 fromListT :: ListT m chunk -> CountingBufferedStream m chunk
 fromListT xs =
