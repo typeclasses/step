@@ -86,6 +86,9 @@ library
         Step.Document.Loc
         Step.Document.Prelude
 
+        Step.DocumentMemory.Base
+        Step.DocumentMemory.State
+
         Step.LineHistory.Base
         Step.LineHistory.State
 

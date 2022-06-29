@@ -37,7 +37,7 @@ import ListT (ListT (ListT))
 import qualified Step.Tentative.State as Tentative.State
 
 char :: Monad m => ListLike text Char => Possibility text m Char
-char = satisfy (\_ -> True)
+char = Possibility \_config -> CountingBufferedStream.State.takeChar
 
 satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Possibility text m Char
 satisfy ok = Possibility \_config -> CountingBufferedStream.State.takeCharIf ok

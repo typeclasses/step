@@ -24,7 +24,11 @@ data LineHistory text =
     { lineMap :: Map Line (Buffer text)
     , lastCharacterWasCR :: Bool
     , position :: Loc
+    , index :: Natural
     }
+
+positionAtIndex :: Natural -> Maybe Loc
+positionAtIndex = _
 
 empty :: LineHistory text
 empty =
@@ -32,6 +36,7 @@ empty =
     { lineMap = Map.empty
     , lastCharacterWasCR = False
     , position = Loc.origin
+    , index = 0
     }
 
 record :: ListLike text Char => text -> LineHistory text -> LineHistory text
@@ -48,6 +53,7 @@ recordCR p =
     { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\r')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
     , lastCharacterWasCR = True
     , position = over Loc.columnLens (+ 1) (position p)
+    , index = index p + 1
     }
 
 recordLF :: ListLike text Char => LineHistory text -> LineHistory text
@@ -56,6 +62,7 @@ recordLF p =
     { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\n')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
     , lastCharacterWasCR = False
     , position = Loc.loc (Loc.locLine (position p) + 1) 1
+    , index = index p + 1
     }
 
 recordOther :: ListLike text Char => text -> LineHistory text -> LineHistory text
@@ -72,4 +79,5 @@ recordOther x p =
       { lineMap = Map.alter (Just . (<> Buffer.singleton x) . fromMaybe Buffer.empty) (Loc.locLine newPosition) (lineMap p)
       , lastCharacterWasCR = False
       , position = newPosition
+      , index = index p + fromIntegral (ListLike.length x)
       }
