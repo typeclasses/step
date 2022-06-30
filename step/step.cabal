@@ -78,9 +78,9 @@ library
         Step.BufferedStream.Base
         Step.BufferedStream.State
 
-        Step.CountingBufferedStream.Base
-        Step.CountingBufferedStream.State
-        Step.CountingBufferedStream.Tentative
+        Step.Cursor.Base
+        Step.Cursor.State
+        Step.Cursor.Tentative
 
         Step.Document.Parser
         Step.Document.Loc
@@ -106,6 +106,7 @@ library step-internal
         Step.Internal.Prelude
     other-modules:
         Step.Internal.Modify
+        Step.Internal.RecordStream
         Step.Internal.Times
         Step.Internal.While
 

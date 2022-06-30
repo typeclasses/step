@@ -5,18 +5,27 @@ import Step.Internal.Prelude
 import Step.LineHistory.Base (LineHistory)
 import qualified Step.LineHistory.Base as LineHistory
 
-import Step.CountingBufferedStream.Base (CountingBufferedStream)
-import qualified Step.CountingBufferedStream.Base as CountingBufferedStream
+import Step.Cursor.Base (Cursor)
+import qualified Step.Cursor.Base as Cursor
+
+import Loc (Loc)
 
 data DocumentMemory text m =
   DocumentMemory
-    { lineHistory :: LineHistory text
-    , pending :: CountingBufferedStream m text
+    { content :: LineHistory text
+    , cursor :: Cursor (StateT (LineHistory text) m) text
     }
 
-fromListT :: ListT m text -> DocumentMemory text m
-fromListT x =
+type DocumentCursor text m = Cursor (StateT (LineHistory text) m) text
+
+fromListT :: ListLike text Char => Monad m => ListT m text -> DocumentMemory text m
+fromListT xs =
   DocumentMemory
-    { lineHistory = LineHistory.empty
-    , pending = CountingBufferedStream.fromListT x
+    { content = LineHistory.empty
+    , cursor = Cursor.fromListT $ recordStream LineHistory.record xs
     }
+
+position :: DocumentMemory text m -> Loc
+position x = case LineHistory.locateCursorInDocument (Cursor.position (cursor x)) (content x) of
+    Just l -> l
+    Nothing -> error "invalid DocumentMemory"

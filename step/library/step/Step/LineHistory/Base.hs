@@ -3,6 +3,7 @@ module Step.LineHistory.Base
     LineHistory (..),
     empty,
     record,
+    locateCursorInDocument,
   )
   where
 
@@ -19,24 +20,26 @@ import qualified Map
 
 import qualified ListLike
 
+import Step.Cursor.Base (CursorPosition)
+
 data LineHistory text =
   LineHistory
     { lineMap :: Map Line (Buffer text)
     , lastCharacterWasCR :: Bool
-    , position :: Loc
-    , index :: Natural
+    , documentPosition :: Loc
+    , cursorPosition :: CursorPosition
     }
 
-positionAtIndex :: Natural -> Maybe Loc
-positionAtIndex = _
+locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe Loc
+locateCursorInDocument = _
 
 empty :: LineHistory text
 empty =
   LineHistory
     { lineMap = Map.empty
     , lastCharacterWasCR = False
-    , position = Loc.origin
-    , index = 0
+    , documentPosition = Loc.origin
+    , cursorPosition = 0
     }
 
 record :: ListLike text Char => text -> LineHistory text -> LineHistory text
@@ -50,19 +53,19 @@ record x p =
 recordCR :: ListLike text Char => LineHistory text -> LineHistory text
 recordCR p =
   LineHistory
-    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\r')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
+    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\r')) . fromMaybe Buffer.empty) (Loc.locLine (documentPosition p)) (lineMap p)
     , lastCharacterWasCR = True
-    , position = over Loc.columnLens (+ 1) (position p)
-    , index = index p + 1
+    , documentPosition = over Loc.columnLens (+ 1) (documentPosition p)
+    , cursorPosition = cursorPosition p + 1
     }
 
 recordLF :: ListLike text Char => LineHistory text -> LineHistory text
 recordLF p =
   LineHistory
-    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\n')) . fromMaybe Buffer.empty) (Loc.locLine (position p)) (lineMap p)
+    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\n')) . fromMaybe Buffer.empty) (Loc.locLine (documentPosition p)) (lineMap p)
     , lastCharacterWasCR = False
-    , position = Loc.loc (Loc.locLine (position p) + 1) 1
-    , index = index p + 1
+    , documentPosition = Loc.loc (Loc.locLine (documentPosition p) + 1) 1
+    , cursorPosition = cursorPosition p + 1
     }
 
 recordOther :: ListLike text Char => text -> LineHistory text -> LineHistory text
@@ -71,13 +74,13 @@ recordOther x p =
     newPosition =
         case lastCharacterWasCR p of
             True ->
-                Loc.loc (Loc.locLine (position p) + 1) (fromIntegral (ListLike.length x) + 1)
+                Loc.loc (Loc.locLine (documentPosition p) + 1) (fromIntegral (ListLike.length x) + 1)
             False ->
-                over Loc.columnLens (+ fromIntegral (ListLike.length x)) (position p)
+                over Loc.columnLens (+ fromIntegral (ListLike.length x)) (documentPosition p)
   in
     LineHistory
       { lineMap = Map.alter (Just . (<> Buffer.singleton x) . fromMaybe Buffer.empty) (Loc.locLine newPosition) (lineMap p)
       , lastCharacterWasCR = False
-      , position = newPosition
-      , index = index p + fromIntegral (ListLike.length x)
+      , documentPosition = newPosition
+      , cursorPosition = cursorPosition p + fromIntegral (ListLike.length x)
       }

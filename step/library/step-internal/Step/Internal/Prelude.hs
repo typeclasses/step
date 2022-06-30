@@ -24,5 +24,6 @@ import Functor as X (($>), (<$), void)
 import Optics as X
 
 import Step.Internal.Modify as X
+import Step.Internal.RecordStream as X
 import Step.Internal.Times as X
 import Step.Internal.While as X

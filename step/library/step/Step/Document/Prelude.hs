@@ -1,7 +1,7 @@
 module Step.Document.Prelude
   (
     {- * Single character result -} char, satisfy,
-    -- {- * Text result -} text, all,
+    {- * Text result -} text, all,
     -- {- * Inspecting the position -} position, withLocation,
     -- {- * Possibility to Parser -} many, require,
     -- {- * The end -} atEnd, end,
@@ -18,8 +18,8 @@ import Step.Document.Parser
 import qualified Loc
 import Loc (Loc, SpanOrLoc)
 
-import Step.CountingBufferedStream.Base (CountingBufferedStream (CountingBufferedStream))
-import qualified Step.CountingBufferedStream.Base as CountingBufferedStream
+import Step.Cursor.Base (Cursor (Cursor))
+import qualified Step.Cursor.Base as Cursor
 
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
@@ -27,7 +27,9 @@ import qualified Step.Buffer.Base as Buffer
 import Step.BufferedStream.Base (BufferedStream)
 import qualified Step.BufferedStream.Base as BufferedStream
 
-import qualified Step.CountingBufferedStream.State as CountingBufferedStream.State
+import qualified Step.Cursor.State as Cursor.State
+
+import qualified Step.DocumentMemory.State as DocumentMemory.State
 
 import qualified ListLike
 
@@ -37,18 +39,17 @@ import ListT (ListT (ListT))
 import qualified Step.Tentative.State as Tentative.State
 
 char :: Monad m => ListLike text Char => Possibility text m Char
-char = Possibility \_config -> CountingBufferedStream.State.takeChar
+char = Possibility DocumentMemory.State.takeChar
 
 satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Possibility text m Char
-satisfy ok = Possibility \_config -> CountingBufferedStream.State.takeCharIf ok
+satisfy ok = Possibility (DocumentMemory.State.takeCharIf ok)
 
--- text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
--- text expected = Parser \eo ->
---     zoom ParseState.futureLens (Stream.State.takeString expected) >>= \case
---         True -> do
---             ParseState.record expected
---             return (Right ())
---         False -> let Parser p = failure in p eo
+text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
+text x = Parser do
+    y <- DocumentMemory.State.takeText x
+    case y of
+        True -> return (Right ())
+        False -> let Parser f = failure in f
 
 -- position :: Monad m => Parser text m Loc
 -- position = Parser \_eo -> use ParseState.positionLens <&> Right
@@ -59,9 +60,8 @@ satisfy ok = Possibility \_config -> CountingBufferedStream.State.takeCharIf ok
 -- end :: Monad m => ListLike text Char => Parser text m ()
 -- end = atEnd >>= \case True -> return (); False -> failure
 
--- failure :: Monad m => Parser text m a
--- failure = Parser \_eo ->
---     return (Left (Error{ errorContext = [] }))
+failure :: Monad m => Parser text m a
+failure = Parser (return (Left (Error{ errorContext = [] })))
 
 -- contextualize :: Monad m => Context text -> Parser text m a -> Parser text m a
 -- contextualize c (Parser f) = Parser \eo ->
@@ -104,14 +104,9 @@ satisfy ok = Possibility \_config -> CountingBufferedStream.State.takeCharIf ok
 --             put s'
 --             return (Right x)
 
--- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
--- all :: Monad m => ListLike text Char => Parser text m text
--- all = Parser \_eo -> do
---     zoom ParseState.futureLens Stream.State.bufferAll
---     xs <- Buffer.chunks <$> use (ParseState.futureLens % Stream.bufferLens)
---     assign ParseState.futureLens Stream.empty
---     zoom ParseState.pastLens $ traverse_ (modify' . Past.record) xs
---     return (Right (ListLike.fold xs))
+-- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
+all :: Monad m => ListLike text Char => Parser text m text
+all = Parser DocumentMemory.State.takeAll
 
 -- under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do

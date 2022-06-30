@@ -1,6 +1,6 @@
-module Step.CountingBufferedStream.Base
+module Step.Cursor.Base
   (
-    {- * The type -} CountingBufferedStream (..),
+    {- * The type -} Cursor (..), CursorPosition (..),
     {- * Optics -} positionLens, bufferLens, pendingLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
     {- * Buffering -} fillBuffer, readChunk,
@@ -18,9 +18,12 @@ import qualified Step.BufferedStream.Base as BufferedStream
 
 import qualified Step.Tentative.Base as Tentative
 
-data CountingBufferedStream m chunk =
-  CountingBufferedStream
-    { position :: Natural
+newtype CursorPosition = CursorPosition Natural
+    deriving newtype (Eq, Ord, Show, Num)
+
+data Cursor m chunk =
+  Cursor
+    { position :: CursorPosition
     , buffer :: Buffer chunk
     , pending :: Maybe (ListT m chunk)
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
@@ -31,26 +34,26 @@ makeLensesFor
     , ("buffer", "bufferLens")
     , ("pending", "pendingLens")
     ]
-    ''CountingBufferedStream
+    ''Cursor
 
-bufferedStreamLens :: Lens' (CountingBufferedStream m chunk) (BufferedStream m chunk)
+bufferedStreamLens :: Lens' (Cursor m chunk) (BufferedStream m chunk)
 bufferedStreamLens = lens
     (\x -> BufferedStream{ BufferedStream.buffer = buffer x, BufferedStream.pending = pending x })
     (\x bs -> x{ buffer = BufferedStream.buffer bs, pending = BufferedStream.pending bs })
 
-bufferUnconsChar :: ListLike chunk char => CountingBufferedStream m chunk -> Maybe (char, CountingBufferedStream m chunk)
+bufferUnconsChar :: ListLike chunk char => Cursor m chunk -> Maybe (char, Cursor m chunk)
 bufferUnconsChar cbs = case Buffer.unconsChar (buffer cbs) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, cbs{ buffer = b', position = position cbs + 1 })
 
-unconsChar :: Monad m => ListLike chunk char => CountingBufferedStream m chunk -> m (CountingBufferedStream m chunk, Maybe char)
+unconsChar :: Monad m => ListLike chunk char => Cursor m chunk -> m (Cursor m chunk, Maybe char)
 unconsChar cbs = do
     cbs' <- fillBuffer 1 cbs
     return case bufferUnconsChar cbs' of
         Nothing -> (cbs', Nothing)
         Just (x, cbs'') -> (cbs'', Just x)
 
-unconsCharTentative :: Monad m => ListLike chunk char => CountingBufferedStream m chunk -> m (Tentative.Step (CountingBufferedStream m chunk) (Maybe char))
+unconsCharTentative :: Monad m => ListLike chunk char => Cursor m chunk -> m (Tentative.Step (Cursor m chunk) (Maybe char))
 unconsCharTentative cbs = do
     cbs' <- fillBuffer 1 cbs
     return  case bufferUnconsChar cbs' of
@@ -59,19 +62,19 @@ unconsCharTentative cbs = do
             Tentative.Choice{ Tentative.ifNotTaken = cbs', Tentative.ifActionTaken = cbs'' }
             (Just x)
 
-fromListT :: ListT m chunk -> CountingBufferedStream m chunk
+fromListT :: ListT m chunk -> Cursor m chunk
 fromListT xs =
-    CountingBufferedStream 0 Buffer.empty (Just xs)
+    Cursor 0 Buffer.empty (Just xs)
 
-toListT :: Monad m => CountingBufferedStream m chunk -> ListT m chunk
+toListT :: Monad m => Cursor m chunk -> ListT m chunk
 toListT = BufferedStream.toListT . view bufferedStreamLens
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
 fillBuffer :: (Monad m, ListLike chunk char) =>
-    Natural -> CountingBufferedStream m chunk -> m (CountingBufferedStream m chunk)
+    Natural -> Cursor m chunk -> m (Cursor m chunk)
 fillBuffer n = traverseOf bufferedStreamLens (BufferedStream.fillBuffer n)
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
 readChunk :: (Monad m, ListLike chunk char) =>
-    CountingBufferedStream m chunk -> m (CountingBufferedStream m chunk)
+    Cursor m chunk -> m (Cursor m chunk)
 readChunk = traverseOf bufferedStreamLens (BufferedStream.readChunk)

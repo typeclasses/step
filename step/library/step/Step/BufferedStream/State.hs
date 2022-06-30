@@ -36,14 +36,14 @@ takeChar = do
     modifyM (BufferedStream.fillBuffer 1)
     zoom BufferedStream.bufferLens Buffer.State.takeChar
 
-takeString :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => chunk -> StateT (BufferedStream m chunk) m Bool
-takeString c = if ListLike.null c then return True else
+takeText :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => chunk -> StateT (BufferedStream m chunk) m Bool
+takeText c = if ListLike.null c then return True else
     isEmpty >>= \case
         True -> return False
         False -> zoom BufferedStream.bufferLens (Buffer.State.takeString c) >>= \case
             Buffer.State.TakeStringFail -> return False
             Buffer.State.TakeStringSuccess -> return True
-            Buffer.State.TakeStringPartial c' -> takeString c'
+            Buffer.State.TakeStringPartial c' -> takeText c'
 
 putChunk :: (Monad m, ListLike chunk char) => chunk -> StateT (BufferedStream m chunk) m ()
 putChunk x = unless (ListLike.null x) $ modify' (BufferedStream.putChunk x)
