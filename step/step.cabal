@@ -118,9 +118,10 @@ test-suite test-step
     type: exitcode-stdio-1.0
     hs-source-dirs: test/test-step
     main-is: Main.hs
-    other-modules:
-        Step.Spec.DocumentParsing
     build-depends: step, step-internal, hspec, hspec-hedgehog, text
     mixins:
         step-internal (Step.Internal.Prelude)
       , text (Data.Text as Text)
+    other-modules:
+        Step.Spec.DocumentParsing
+        Step.Spec.LineHistory
