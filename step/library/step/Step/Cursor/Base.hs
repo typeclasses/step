@@ -3,7 +3,7 @@ module Step.Cursor.Base
     {- * The type -} Cursor (..), CursorPosition (..),
     {- * Optics -} positionLens, bufferLens, pendingLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
-    {- * Buffering -} fillBuffer, readChunk,
+    {- * Buffering -} fillBuffer, readChunk, bufferAll, isAllBuffered, bufferIsEmpty,
     {- * Taking from the stream -} unconsChar, bufferUnconsChar, unconsCharTentative,
   )
   where
@@ -35,6 +35,15 @@ makeLensesFor
     , ("pending", "pendingLens")
     ]
     ''Cursor
+
+bufferIsEmpty :: Cursor m chunk -> Bool
+bufferIsEmpty = Buffer.isEmpty . buffer
+
+isAllBuffered :: Cursor m chunk -> Bool
+isAllBuffered = isNothing . pending
+
+bufferAll :: Monad m => ListLike chunk char => Cursor m chunk -> m (Cursor m chunk)
+bufferAll = while (not . isAllBuffered) readChunk
 
 bufferedStreamLens :: Lens' (Cursor m chunk) (BufferedStream m chunk)
 bufferedStreamLens = lens

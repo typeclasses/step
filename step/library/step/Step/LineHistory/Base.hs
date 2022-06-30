@@ -24,14 +24,14 @@ import Step.Cursor.Base (CursorPosition)
 
 data LineHistory text =
   LineHistory
-    { lineMap :: Map Line (Buffer text)
+    { lineMap :: Map Line (CursorPosition, Buffer text)
     , lastCharacterWasCR :: Bool
     , documentPosition :: Loc
     , cursorPosition :: CursorPosition
     }
 
 locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe Loc
-locateCursorInDocument = _
+locateCursorInDocument cp lh = Map.lookupMax (Map.filter _ (lineMap lh)) <&> (\(_, x) -> x)
 
 empty :: LineHistory text
 empty =
@@ -53,7 +53,12 @@ record x p =
 recordCR :: ListLike text Char => LineHistory text -> LineHistory text
 recordCR p =
   LineHistory
-    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\r')) . fromMaybe Buffer.empty) (Loc.locLine (documentPosition p)) (lineMap p)
+    { lineMap = Map.alter
+          (let y = Buffer.singleton (ListLike.singleton '\r') in Just . \case
+              Nothing -> (cursorPosition p, y)
+              Just (cp, x) -> (cp, x <> y)
+          )
+          (Loc.locLine (documentPosition p)) (lineMap p)
     , lastCharacterWasCR = True
     , documentPosition = over Loc.columnLens (+ 1) (documentPosition p)
     , cursorPosition = cursorPosition p + 1
@@ -62,7 +67,12 @@ recordCR p =
 recordLF :: ListLike text Char => LineHistory text -> LineHistory text
 recordLF p =
   LineHistory
-    { lineMap = Map.alter (Just . (<> Buffer.singleton (ListLike.singleton '\n')) . fromMaybe Buffer.empty) (Loc.locLine (documentPosition p)) (lineMap p)
+    { lineMap = Map.alter
+          (let y = Buffer.singleton (ListLike.singleton '\n') in Just . \case
+              Nothing -> (cursorPosition p, y)
+              Just (cp, x) -> (cp, x <> y)
+          )
+          (Loc.locLine (documentPosition p)) (lineMap p)
     , lastCharacterWasCR = False
     , documentPosition = Loc.loc (Loc.locLine (documentPosition p) + 1) 1
     , cursorPosition = cursorPosition p + 1
@@ -79,7 +89,12 @@ recordOther x p =
                 over Loc.columnLens (+ fromIntegral (ListLike.length x)) (documentPosition p)
   in
     LineHistory
-      { lineMap = Map.alter (Just . (<> Buffer.singleton x) . fromMaybe Buffer.empty) (Loc.locLine newPosition) (lineMap p)
+      { lineMap = Map.alter
+          (let y = Buffer.singleton x in Just . \case
+              Nothing -> (cursorPosition p, y)
+              Just (cp, d) -> (cp, d <> y)
+          )
+            (Loc.locLine newPosition) (lineMap p)
       , lastCharacterWasCR = False
       , documentPosition = newPosition
       , cursorPosition = cursorPosition p + fromIntegral (ListLike.length x)

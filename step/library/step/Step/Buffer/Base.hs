@@ -29,6 +29,9 @@ empty = Buffer{ chunks = Seq.empty, size = 0 }
 toListT :: Monad m => Buffer a -> ListT m a
 toListT = ListT.select . chunks
 
+fold :: Monoid chunk => Buffer chunk -> chunk
+fold = ListLike.fold . chunks
+
 unconsChar :: ListLike chunk char => Buffer chunk -> Maybe (char, Buffer chunk)
 unconsChar b = if isEmpty b then Nothing else Just $
     case chunks b of

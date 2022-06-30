@@ -2,9 +2,9 @@ module Step.Document.Prelude
   (
     {- * Single character result -} char, satisfy,
     {- * Text result -} text, all,
-    -- {- * Inspecting the position -} position, withLocation,
-    -- {- * Possibility to Parser -} many, require,
-    -- {- * The end -} atEnd, end,
+    {- * Inspecting the position -} position, withLocation,
+    {- * Possibility to Parser -} {- many, -} require,
+    {- * The end -} atEnd, end,
     -- {- * Contextualizing errors -} contextualize, (<?>),
     -- {- * Failure -} failure,
     -- {- * Transformation -} under, while,
@@ -51,14 +51,14 @@ text x = Parser do
         True -> return (Right ())
         False -> let Parser f = failure in f
 
--- position :: Monad m => Parser text m Loc
--- position = Parser \_eo -> use ParseState.positionLens <&> Right
+position :: Monad m => Parser text m Loc
+position = Parser (Right <$> DocumentMemory.State.getPosition)
 
--- atEnd :: Monad m => ListLike text Char => Parser text m Bool
--- atEnd = Parser \_eo -> fmap Right $ zoom ParseState.futureLens Stream.State.isEmpty
+atEnd :: Monad m => ListLike text Char => Parser text m Bool
+atEnd = Parser (Right <$> DocumentMemory.State.atEnd)
 
--- end :: Monad m => ListLike text Char => Parser text m ()
--- end = atEnd >>= \case True -> return (); False -> failure
+end :: Monad m => ListLike text Char => Parser text m ()
+end = atEnd >>= \case True -> return (); False -> failure
 
 failure :: Monad m => Parser text m a
 failure = Parser (return (Left (Error{ errorContext = [] })))
@@ -72,12 +72,12 @@ failure = Parser (return (Left (Error{ errorContext = [] })))
 -- (<?>) :: Monad m => Parser text m a -> Context text -> Parser text m a
 -- p <?> c = contextualize c p
 
--- withLocation :: Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
--- withLocation p = do
---     a <- position
---     x <- p
---     b <- position
---     return (Loc.spanOrLocFromTo a b, x)
+withLocation :: Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
+withLocation p = do
+    a <- position
+    x <- p
+    b <- position
+    return (Loc.spanOrLocFromTo a b, x)
 
 -- many :: Monad m => ListLike list a => Possibility text m a -> Parser text m list
 -- many (Possibility p) = Parser \eo ->
@@ -94,19 +94,16 @@ failure = Parser (return (Left (Error{ errorContext = [] })))
 --       put s'
 --       return (Right xs)
 
--- require :: Monad m => Possibility text m a -> Parser text m a
--- require (Possibility p) = Parser \eo -> do
---     s <- get
---     result <- lift (p eo s)
---     case result of
---         Left _ -> let Parser f = failure in f eo
---         Right (s', x) -> do
---             put s'
---             return (Right x)
+require :: Monad m => Possibility text m a -> Parser text m a
+require (Possibility p) = Parser do
+    result <- p
+    case result of
+        Nothing -> let Parser f = failure in f
+        Just x -> return (Right x)
 
 -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 all :: Monad m => ListLike text Char => Parser text m text
-all = Parser DocumentMemory.State.takeAll
+all = Parser (Right <$> DocumentMemory.State.takeAll)
 
 -- under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do

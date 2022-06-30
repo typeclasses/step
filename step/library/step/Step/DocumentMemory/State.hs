@@ -36,3 +36,6 @@ takeText x = runCursorState (Cursor.State.takeText x)
 
 takeAll :: Monad m => ListLike text Char => StateT (DocumentMemory text m) m text
 takeAll = runCursorState Cursor.State.takeAll
+
+atEnd :: Monad m => ListLike text char => StateT (DocumentMemory text m) m Bool
+atEnd = runCursorState Cursor.State.atEnd

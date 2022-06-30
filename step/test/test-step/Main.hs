@@ -50,31 +50,31 @@ documentParsing = describe "Document parsing" do
             let x = runIdentity $ Doc.parseOnly (p <* Doc.end) (ListT.select input)
             x === Left (Doc.Error [])
 
-    describe "p = contextualize \"Digit\" (require (satisfy isDigit))" do
-        let p = Doc.contextualize "Digit" (Doc.require (Doc.satisfy Char.isDigit))
+    -- describe "p = contextualize \"Digit\" (require (satisfy isDigit))" do
+    --     let p = Doc.contextualize "Digit" (Doc.require (Doc.satisfy Char.isDigit))
 
-        specify "p parses \"2\"" $ hedgehog do
-            input :: [Text] <- forAll (genChunks "2")
-            let x = runIdentity $ Doc.parseOnly p (ListT.select input)
-            x === Right '2'
+    --     specify "p parses \"2\"" $ hedgehog do
+    --         input :: [Text] <- forAll (genChunks "2")
+    --         let x = runIdentity $ Doc.parseOnly p (ListT.select input)
+    --         x === Right '2'
 
-        specify "p fails on \"a\"" $ hedgehog do
-            input :: [Text] <- forAll (genChunks "a")
-            let x = runIdentity $ Doc.parseOnly p (ListT.select input)
-            x === Left (Doc.Error ["Digit"])
+    --     specify "p fails on \"a\"" $ hedgehog do
+    --         input :: [Text] <- forAll (genChunks "a")
+    --         let x = runIdentity $ Doc.parseOnly p (ListT.select input)
+    --         x === Left (Doc.Error ["Digit"])
 
-    describe "p = many (satisfy isDigit)" do
-        let p = Doc.many (Doc.satisfy Char.isDigit)
+    -- describe "p = many (satisfy isDigit)" do
+    --     let p = Doc.many (Doc.satisfy Char.isDigit)
 
-        specify "p parses 123 from 123abc" $ hedgehog do
-            input :: [Text] <- forAll (genChunks "123abc")
-            let x = runIdentity $ Doc.parseOnly p (ListT.select input)
-            x === Right ("123" :: [Char])
+    --     specify "p parses 123 from 123abc" $ hedgehog do
+    --         input :: [Text] <- forAll (genChunks "123abc")
+    --         let x = runIdentity $ Doc.parseOnly p (ListT.select input)
+    --         x === Right ("123" :: [Char])
 
-        specify "p parses nothing from abc" $ hedgehog do
-            input :: [Text] <- forAll (genChunks "abc")
-            let x = runIdentity $ Doc.parseOnly p (ListT.select input)
-            x === Right ([] :: [Char])
+    --     specify "p parses nothing from abc" $ hedgehog do
+    --         input :: [Text] <- forAll (genChunks "abc")
+    --         let x = runIdentity $ Doc.parseOnly p (ListT.select input)
+    --         x === Right ([] :: [Char])
 
     describe "p = text \"abc\"" do
         let p = Doc.text "abc"

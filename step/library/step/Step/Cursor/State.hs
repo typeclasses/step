@@ -10,6 +10,8 @@ import qualified Step.Tentative.State as Tentative.State
 
 import qualified Step.BufferedStream.State as BufferedStream.State
 
+import qualified Step.Buffer.Base as Buffer
+
 import qualified ListLike
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
@@ -41,9 +43,25 @@ takeText x = do
     modifying Cursor.positionLens (+ fromIntegral (ListLike.length x))
     return y
 
-takeAll :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => StateT (Cursor m chunk) m text
+bufferAll :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m ()
+bufferAll = modifyM Cursor.bufferAll
+
+takeAll :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m chunk
 takeAll = do
-    _
+    bufferAll
+    takeBuffer
+
+takeBuffer :: Monoid chunk => Monad m => StateT (Cursor m chunk) m chunk
+takeBuffer = do
+    b <- use Cursor.bufferLens
+    assign Cursor.bufferLens Buffer.empty
+    modifying Cursor.positionLens (+ fromIntegral (Buffer.size b))
+    return (Buffer.fold b)
+
+atEnd :: ListLike chunk char => Monad m => StateT (Cursor m chunk) m Bool
+atEnd = do
+    fillBuffer 1
+    get <&> Cursor.bufferIsEmpty
 
 --     zoom ParseState.futureLens Stream.State.bufferAll
 --     xs <- Buffer.chunks <$> use (ParseState.futureLens % Stream.bufferLens)
