@@ -8,6 +8,7 @@ common base
     ghc-options: -Wall -fdefer-typed-holes
     default-extensions:
         AllowAmbiguousTypes
+        BangPatterns
         BlockArguments
         ConstraintKinds
         DeriveFunctor
@@ -81,6 +82,8 @@ library
         Step.Cursor.Base
         Step.Cursor.State
         Step.Cursor.Tentative
+
+        Step.CursorPosition.Base
 
         Step.Document.Parser
         Step.Document.Loc

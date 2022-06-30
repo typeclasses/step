@@ -1,6 +1,6 @@
 module Step.Cursor.Base
   (
-    {- * The type -} Cursor (..), CursorPosition (..),
+    {- * The type -} Cursor (..),
     {- * Optics -} positionLens, bufferLens, pendingLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
     {- * Buffering -} fillBuffer, readChunk, bufferAll, isAllBuffered, bufferIsEmpty,
@@ -18,8 +18,7 @@ import qualified Step.BufferedStream.Base as BufferedStream
 
 import qualified Step.Tentative.Base as Tentative
 
-newtype CursorPosition = CursorPosition Natural
-    deriving newtype (Eq, Ord, Show, Num)
+import Step.CursorPosition.Base (CursorPosition)
 
 data Cursor m chunk =
   Cursor

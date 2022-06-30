@@ -110,6 +110,16 @@ documentParsing = describe "Document parsing" do
             let x = runIdentity $ Doc.parseOnly p (ListT.select input)
             x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
 
+        specify "both line and column increments" $ hedgehog do
+            let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
+            input :: [Text] <- forAll (genChunks =<< times (10 :: Natural) genInputLine)
+            n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
+            let p = appEndo (times n (Endo (Doc.require Doc.char *>))) Doc.position
+            let !x = runIdentity $ Doc.parseOnly p (ListT.select input)
+            let (a, b) = n `quotRem` 20
+            let !l = Loc.loc (fromIntegral $ 1 + a) (1 + fromIntegral b)
+            x === Right l
+
     describe "withLocation" do
 
         specify "one-line example" $ hedgehog do

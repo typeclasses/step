@@ -20,7 +20,8 @@ import qualified Map
 
 import qualified ListLike
 
-import Step.Cursor.Base (CursorPosition)
+import Step.CursorPosition.Base (CursorPosition)
+import qualified Step.CursorPosition.Base as CursorPosition
 
 data LineHistory text =
   LineHistory
@@ -31,7 +32,11 @@ data LineHistory text =
     }
 
 locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe Loc
-locateCursorInDocument cp lh = Map.lookupMax (Map.filter _ (lineMap lh)) <&> (\(_, x) -> x)
+locateCursorInDocument cp lh = if cp == 0 then Just Loc.origin else
+    if cp == cursorPosition lh then Just (documentPosition lh) else
+    Map.lookupMax (Map.filter (\(cp', _) -> cp' <= cp) (lineMap lh))
+    <&> \(l, (cp', _)) ->
+        Loc.loc l (fromIntegral (1 + CursorPosition.absoluteDifference cp cp'))
 
 empty :: LineHistory text
 empty =
@@ -84,9 +89,13 @@ recordOther x p =
     newPosition =
         case lastCharacterWasCR p of
             True ->
-                Loc.loc (Loc.locLine (documentPosition p) + 1) (fromIntegral (ListLike.length x) + 1)
+                Loc.loc (Loc.locLine (documentPosition p) + 1) (fromIntegral (ListLike.length x + 1))
             False ->
-                over Loc.columnLens (+ fromIntegral (ListLike.length x)) (documentPosition p)
+                (
+                  if ListLike.null x then id else
+                  over Loc.columnLens (+ fromIntegral (ListLike.length x))
+                )
+                (documentPosition p)
   in
     LineHistory
       { lineMap = Map.alter
