@@ -14,7 +14,8 @@ import Loc (Line, Loc)
 import qualified Loc
 import qualified Step.Document.Loc as Loc
 
-import qualified Map
+import qualified IntMap
+import IntMap (IntMap)
 
 import qualified ListLike
 
@@ -23,18 +24,27 @@ import qualified Step.CursorPosition.Base as CursorPosition
 
 data LineHistory text =
   LineHistory
-    { lineMap :: Map Line (CursorPosition, Buffer text)
-    , lastCharacterLineEnder :: Maybe LineEndingChar
-    , documentPosition :: Loc
+    { lineStartPositions :: IntMap CursorPosition
+    , lineTracker :: LineTracker
     , cursorPosition :: CursorPosition
     }
 
-data LineEndingChar = CR | LF
+data LineTracker =
+    AfterCR Line -- ^ We're after a carriage return on this line
+  | BeginningOf Line -- ^ We're at the beginning of this line
+  | Within Line -- ^ We're somewhere within this line, neither at the beginning nor the end, and not after a carriage return.
 
 data CursorLocation =
     CursorAt Loc
   | CursorAtLineEnd Loc -- ^ The cursor is at this location, but since this location is the end of a line, it may also be considered to be at the start of the following line.
-  | CursorAmbiguouslyAfterCR Loc -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
+  | CursorLocationNeedsMoreAmbiguouslyAfterCR Loc -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
+
+makeLensesFor
+    [ ("cursorPosition", "cursorPositionLens")
+    , ("lineStartPositions", "lineStartPositionsLens")
+    , ("lineTracker", "lineTrackeLens")
+    ]
+    ''LineHistory
 
 locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe CursorLocation
 locateCursorInDocument cp lh = _
@@ -48,30 +58,43 @@ locateCursorInDocument cp lh = _
 empty :: LineHistory text
 empty =
   LineHistory
-    { lineMap = Map.empty
-    , lastCharacterLineEnder = Nothing
-    , documentPosition = Loc.origin
-    , cursorPosition = 0
+    { lineStartPositions = IntMap.empty
+    , lineTracker = BeginningOf (Line 1)
+    , cursorPosition = CursorPosition 0
     }
 
 record :: ListLike text Char => text -> LineHistory text -> LineHistory text
 record x p =
   case ListLike.uncons x of
     Nothing -> p
-    Just ('\r', x') -> record x' (recordCR p)
-    Just ('\n', x') -> record x' (recordLF p)
-    Just _ -> let (a, b) = ListLike.break (`elem` ['\r', '\n']) x in record b (recordOther a p)
+    Just ('\r', x') -> p & recordCR & record x'
+    Just ('\n', x') -> p & recordLF & record x'
+    Just _ ->
+        let (a, b) = ListLike.break (`elem` ['\r', '\n']) x in
+        p & recordOther a & record b
+
+startNewLine :: LineHistory text -> LineHistory text
+startNewLine lh =
+    lh
+        & over lineStartPositionsLens (IntMap.insert l (cursorPosition lh))
+        & set lineTrackerLens (BeginningOf l)
+  where
+    l =
+        case lineTracker lh of
+            AfterCR x -> x
+            BeginningOf x -> x
+            Within x -> x
 
 recordCR :: ListLike text Char => LineHistory text -> LineHistory text
-recordCR p =
-  LineHistory
-    { lineMap = Map.alter
-          (let y = Buffer.singleton (ListLike.singleton '\r') in Just . \case
-              Nothing -> (cursorPosition p, y)
-              Just (cp, x) -> (cp, x <> y)
-          )
-          (Loc.locLine (documentPosition p)) (lineMap p)
-    , lastCharacterWasCR = True
+recordCR ll =
+    lh
+        &
+        & over cursorPositionLens (CursorPosition.increase 1) $
+  case lineTracker p of
+    AfterCR l -> p{  }
+  p
+    { lineTracker = case lineTracker p of
+        AfterCR l -> AfterCR (l + 1)
     , documentPosition = over Loc.columnLens (+ 1) (documentPosition p)
     , cursorPosition = cursorPosition p + 1
     }

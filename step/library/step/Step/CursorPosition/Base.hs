@@ -7,3 +7,6 @@ newtype CursorPosition = CursorPosition Natural
 
 absoluteDifference :: CursorPosition -> CursorPosition -> Natural
 absoluteDifference (CursorPosition x) (CursorPosition y) = if x > y then x - y else y - x
+
+increase :: Natural -> CursorPosition -> CursorPosition
+increase x (CursorPosition p) = CursorPosition (p + x)

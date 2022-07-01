@@ -3,7 +3,7 @@ module Step.Internal.Prelude (module X) where
 import BasePrelude as X (Bool (..), Semigroup ((<>)), Monoid (mempty), Ordering (..), Maybe (..), Either (..), Eq, (==), (/=), Ord (compare), Show, Num, (+), (-), Integer, Int, fromIntegral, ($), (.), (<$>), error, id, Monad, (>>=), (=<<), return, Char, elem, (&&), (||), (<), (>), (<=), (>=), Functor, Applicative, fmap, IO, (<*), (*>), (<*>), Integral, not, quotRem)
 import Applicative as X ((<|>))
 import Foldable as X (asum, traverse_)
-import Function as X (fix)
+import Function as X (fix, (&))
 import ListLike as X (ListLike)
 import MonadTrans as X (lift)
 import Identity as X (Identity (Identity), runIdentity)
