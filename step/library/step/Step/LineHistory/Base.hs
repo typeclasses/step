@@ -1,9 +1,7 @@
 module Step.LineHistory.Base
   (
-    LineHistory (..),
-    empty,
-    record,
-    locateCursorInDocument,
+    LineHistory (..), empty, record,
+    CursorLocation (..), locateCursorInDocument,
   )
   where
 
@@ -26,23 +24,32 @@ import qualified Step.CursorPosition.Base as CursorPosition
 data LineHistory text =
   LineHistory
     { lineMap :: Map Line (CursorPosition, Buffer text)
-    , lastCharacterWasCR :: Bool
+    , lastCharacterLineEnder :: Maybe LineEndingChar
     , documentPosition :: Loc
     , cursorPosition :: CursorPosition
     }
 
-locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe Loc
-locateCursorInDocument cp lh = if cp == 0 then Just Loc.origin else
-    if cp == cursorPosition lh then Just (documentPosition lh) else
-    Map.lookupMax (Map.filter (\(cp', _) -> cp' <= cp) (lineMap lh))
-    <&> \(l, (cp', _)) ->
-        Loc.loc l (fromIntegral (1 + CursorPosition.absoluteDifference cp cp'))
+data LineEndingChar = CR | LF
+
+data CursorLocation =
+    CursorAt Loc
+  | CursorAtLineEnd Loc -- ^ The cursor is at this location, but since this location is the end of a line, it may also be considered to be at the start of the following line.
+  | CursorAmbiguouslyAfterCR Loc -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
+
+locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe CursorLocation
+locateCursorInDocument cp lh = _
+
+-- if cp == 0 then Just (CursorAt Loc.origin) else
+--     if cp == cursorPosition lh then Just ((if lastCharacterWasCR then CursorAmbiguouslyAfterCR else CursorJust (documentPosition lh)) else
+--     Map.lookupMax (Map.filter (\(cp', _) -> cp' <= cp) (lineMap lh))
+--     <&> \(l, (cp', _)) ->
+--         Loc.loc l (fromIntegral (1 + CursorPosition.absoluteDifference cp cp'))
 
 empty :: LineHistory text
 empty =
   LineHistory
     { lineMap = Map.empty
-    , lastCharacterWasCR = False
+    , lastCharacterLineEnder = Nothing
     , documentPosition = Loc.origin
     , cursorPosition = 0
     }

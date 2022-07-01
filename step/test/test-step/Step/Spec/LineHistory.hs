@@ -27,4 +27,14 @@ import qualified SpanOrLoc
 spec :: SpecWith ()
 spec = describe "Line history" do
 
-    return ()
+    describe "examples" do
+        let
+            lh = LineHistory
+                { lineMap = Map.fromList
+                    [ (Line 1, (CursorPosition 0,  Buffer.singleton "One two three\r\n"))
+                    , (Line 2, (CursorPosition 15, Buffer.singleton "four five six\r"))
+                    , (Line 3, (CursorPosition 29, Buffer.singleton "seven eight"Map Line (CursorPosition, Buffer text)
+                , lastCharacterWasCR :: Bool
+                , documentPosition :: Loc
+                , cursorPosition :: CursorPosition
+                }
