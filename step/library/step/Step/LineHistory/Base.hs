@@ -33,7 +33,7 @@ data LineHistory text =
 
 data CursorLocation =
     CursorAt Loc
-  | CursorLocationNeedsMoreInput -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
+  | CursorLocationNeedsMoreInput{ ifEndOfInput :: Loc } -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
 
 makeLensesFor
     [ ("cursorPosition", "cursorPositionLens")

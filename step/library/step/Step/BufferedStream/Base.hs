@@ -23,6 +23,8 @@ data BufferedStream m chunk =
     { buffer :: Buffer chunk
     , pending :: Maybe (ListT m chunk)
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
+        --
+        -- todo: put a non-empty refinement wrapper around the chunks
     }
 
 makeLensesFor [("buffer", "bufferLens"), ("pending", "pendingLens")] ''BufferedStream

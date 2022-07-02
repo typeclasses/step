@@ -63,6 +63,9 @@ atEnd = do
     fillBuffer 1
     get <&> Cursor.bufferIsEmpty
 
+isAllBuffered :: Monad m => StateT (Cursor m chunk) m Bool
+isAllBuffered = get <&> Cursor.isAllBuffered
+
 --     zoom ParseState.futureLens Stream.State.bufferAll
 --     xs <- Buffer.chunks <$> use (ParseState.futureLens % Stream.bufferLens)
 --     assign ParseState.futureLens Stream.empty

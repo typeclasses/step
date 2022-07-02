@@ -83,6 +83,8 @@ fillBuffer :: (Monad m, ListLike chunk char) =>
 fillBuffer n = traverseOf bufferedStreamLens (BufferedStream.fillBuffer n)
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
+--
+-- todo: rename to "bufferMore"
 readChunk :: (Monad m, ListLike chunk char) =>
     Cursor m chunk -> m (Cursor m chunk)
 readChunk = traverseOf bufferedStreamLens (BufferedStream.readChunk)

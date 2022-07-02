@@ -8,11 +8,26 @@ import Step.DocumentMemory.Base (DocumentMemory (DocumentMemory), DocumentCursor
 import qualified Step.DocumentMemory.Base as DocumentMemory
 
 import Step.LineHistory.Base (LineHistory)
+import qualified Step.LineHistory.Base as LineHistory
 
 import qualified Step.Cursor.State as Cursor.State
 
-getPosition :: Monad m => StateT (DocumentMemory text m) m Loc
-getPosition = get <&> DocumentMemory.position
+getPosition :: ListLike text char => Monad m => StateT (DocumentMemory text m) m Loc
+getPosition =
+    use (to DocumentMemory.position) >>= \case
+        DocumentMemory.CursorAt x -> return x
+        DocumentMemory.CursorLocationNeedsMoreInput -> do
+            bufferMore
+            use (to DocumentMemory.position) >>= \case
+                DocumentMemory.CursorAt x -> return x
+                DocumentMemory.CursorLocationNeedsMoreInput ->
+                    error "DocumentMemory.State.getPosition: after buffering more, should not need more input to determine position"
+
+bufferMore :: ListLike text char => Monad m => StateT (DocumentMemory text m) m ()
+bufferMore = runCursorState Cursor.State.readChunk
+
+isAllBuffered :: Monad m => StateT (DocumentMemory text m) m Bool
+isAllBuffered = get <&> DocumentMemory.isAllBuffered
 
 runCursorState :: Monad m =>
     StateT (DocumentCursor text m) (StateT (LineHistory text) m) a ->
