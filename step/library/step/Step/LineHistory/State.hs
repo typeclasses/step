@@ -1,4 +1,8 @@
-module Step.LineHistory.State (record) where
+module Step.LineHistory.State
+  (
+    record,
+  )
+  where
 
 import Step.Internal.Prelude
 
@@ -9,7 +13,7 @@ import qualified Step.LineHistory.Base as LineHistory
 
 import qualified ListLike
 
-import qualified IntMap
+import qualified Map
 
 import qualified Step.CursorPosition.Base as CursorPosition
 
@@ -35,7 +39,7 @@ startNewLine = do
     l <- use LineHistory.lineTrackerLens
     let l' = l + 1
     cp <- use LineHistory.cursorPositionLens
-    modifying LineHistory.lineStartPositionLens (IntMap.insert (fromIntegral (Loc.toNat l')) cp)
+    modifying LineHistory.lineStartPositionLens (Map.insert cp (fromIntegral (Loc.toNat l')))
     assign LineHistory.lineTrackerLens l'
 
 recordCR :: Monad m => StateT (LineHistory text) m ()

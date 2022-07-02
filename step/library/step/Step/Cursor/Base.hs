@@ -20,11 +20,14 @@ import qualified Step.Tentative.Base as Tentative
 
 import Step.CursorPosition.Base (CursorPosition)
 
+import Step.Nontrivial.Base (Nontrivial)
+import qualified Step.Nontrivial.ListT as Nontrivial.ListT
+
 data Cursor m chunk =
   Cursor
     { position :: CursorPosition
     , buffer :: Buffer chunk
-    , pending :: Maybe (ListT m chunk)
+    , pending :: Maybe (ListT m (Nontrivial chunk))
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
@@ -70,11 +73,11 @@ unconsCharTentative cbs = do
             Tentative.Choice{ Tentative.ifNotTaken = cbs', Tentative.ifActionTaken = cbs'' }
             (Just x)
 
-fromListT :: ListT m chunk -> Cursor m chunk
+fromListT :: Monad m => ListLike chunk char => ListT m chunk -> Cursor m chunk
 fromListT xs =
-    Cursor 0 Buffer.empty (Just xs)
+    Cursor 0 Buffer.empty (Just (Nontrivial.ListT.filter xs))
 
-toListT :: Monad m => Cursor m chunk -> ListT m chunk
+toListT :: Monad m => Cursor m chunk -> ListT m (Nontrivial chunk)
 toListT = BufferedStream.toListT . view bufferedStreamLens
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.

@@ -18,13 +18,15 @@ import qualified ListLike
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
+import Step.Nontrivial.Base (Nontrivial)
+import qualified Step.Nontrivial.Base as Nontrivial
+import qualified Step.Nontrivial.ListT as Nontrivial.ListT
+
 data BufferedStream m chunk =
   BufferedStream
     { buffer :: Buffer chunk
-    , pending :: Maybe (ListT m chunk)
+    , pending :: Maybe (ListT m (Nontrivial chunk))
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
-        --
-        -- todo: put a non-empty refinement wrapper around the chunks
     }
 
 makeLensesFor [("buffer", "bufferLens"), ("pending", "pendingLens")] ''BufferedStream
@@ -32,11 +34,11 @@ makeLensesFor [("buffer", "bufferLens"), ("pending", "pendingLens")] ''BufferedS
 empty :: BufferedStream m chunk
 empty = BufferedStream Buffer.empty Nothing
 
-toListT :: Monad m => BufferedStream m chunk -> ListT m chunk
+toListT :: Monad m => BufferedStream m chunk -> ListT m (Nontrivial chunk)
 toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
 
-fromListT :: ListT m chunk -> BufferedStream m chunk
-fromListT x = BufferedStream{ buffer = Buffer.empty, pending = Just x }
+fromListT :: ListLike chunk char => Monad m => ListT m chunk -> BufferedStream m chunk
+fromListT x = BufferedStream{ buffer = Buffer.empty, pending = Just (Nontrivial.ListT.filter x) }
 
 bufferSize :: BufferedStream m chunk -> Natural
 bufferSize = Buffer.size . buffer
@@ -44,13 +46,16 @@ bufferSize = Buffer.size . buffer
 bufferIsEmpty :: BufferedStream m chunk -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer
 
-bufferUnconsChunk :: ListLike chunk char => BufferedStream m chunk -> Maybe (chunk, BufferedStream m chunk)
+bufferUnconsChunk :: ListLike chunk char => BufferedStream m chunk -> Maybe (Nontrivial chunk, BufferedStream m chunk)
 bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, s{ buffer = b' })
 
 putChunk :: ListLike chunk char => chunk -> BufferedStream m chunk -> BufferedStream m chunk
-putChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
+putChunk x s = case Nontrivial.refine x of Nothing -> s; Just y -> putNontrivialChunk y s
+
+putNontrivialChunk :: ListLike chunk char => Nontrivial chunk -> BufferedStream m chunk -> BufferedStream m chunk
+putNontrivialChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
 fillBuffer :: (Monad m, ListLike chunk char) =>
@@ -73,6 +78,6 @@ bufferMore s = case pending s of
                 return s{ pending = Nothing }
             ListT.Cons x xs -> -- We got a new chunk of input.
                 return BufferedStream{
-                    buffer = (if ListLike.null x then id else (<> Buffer.singleton x)) (buffer s), -- Add the chunk to the buffer if it is non-empty.
+                    buffer = buffer s <> Buffer.singleton x, -- Add the chunk to the buffer if it is non-empty.
                     pending = Just xs -- Remove the chunk from the pending input stream.
                 }

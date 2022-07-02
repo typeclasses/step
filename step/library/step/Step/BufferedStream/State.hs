@@ -9,6 +9,9 @@ import qualified Step.BufferedStream.Base as BufferedStream
 
 import qualified Step.Buffer.State as Buffer.State
 
+import Step.Nontrivial.Base (Nontrivial)
+import qualified Step.Nontrivial.Base as Nontrivial
+
 -- | Determines whether there are any more
 isEmpty :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m Bool
 isEmpty = do
@@ -26,7 +29,7 @@ bufferMore = modifyM BufferedStream.bufferMore
 bufferAll :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m ()
 bufferAll = isEmpty >>= \case True -> return (); False -> bufferMore *> bufferAll
 
-takeChunk :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m (Maybe chunk)
+takeChunk :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m (Maybe (Nontrivial chunk))
 takeChunk = do
     modifyM (BufferedStream.fillBuffer 1)
     zoom BufferedStream.bufferLens Buffer.State.takeChunk
@@ -37,13 +40,16 @@ takeChar = do
     zoom BufferedStream.bufferLens Buffer.State.takeChar
 
 takeText :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => chunk -> StateT (BufferedStream m chunk) m Bool
-takeText c = if ListLike.null c then return True else
+takeText x = case Nontrivial.refine x of Nothing -> return True; Just y -> takeNontrivialText y
+
+takeNontrivialText :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => Nontrivial chunk -> StateT (BufferedStream m chunk) m Bool
+takeNontrivialText c =
     isEmpty >>= \case
         True -> return False
-        False -> zoom BufferedStream.bufferLens (Buffer.State.takeString c) >>= \case
+        False -> zoom BufferedStream.bufferLens (Buffer.State.takeNontrivialString c) >>= \case
             Buffer.State.TakeStringFail -> return False
             Buffer.State.TakeStringSuccess -> return True
-            Buffer.State.TakeStringPartial c' -> takeText c'
+            Buffer.State.TakeStringPartial c' -> takeNontrivialText c'
 
 putChunk :: (Monad m, ListLike chunk char) => chunk -> StateT (BufferedStream m chunk) m ()
 putChunk x = unless (ListLike.null x) $ modify' (BufferedStream.putChunk x)

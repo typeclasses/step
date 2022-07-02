@@ -1,8 +1,9 @@
 module Step.LineHistory.Base
   (
-    LineHistory (..), cursorPositionLens, lineStartPositionLens, lineTrackerLens, afterCRLens,
+    {- * The type -} LineHistory (..),
+    {- * Optics -} cursorPositionLens, lineStartPositionLens, lineTrackerLens, afterCRLens,
     empty,
-    CursorLocation (..), locateCursorInDocument,
+    {- * Finding location at a cursor -} CursorLocation (..), locateCursorInDocument,
   )
   where
 
@@ -11,12 +12,11 @@ import Step.Internal.Prelude
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-import Loc (Line, Loc)
+import Loc (Line, Loc, loc)
 import qualified Loc
 import qualified Step.Document.Loc as Loc
 
-import qualified IntMap
-import IntMap (IntMap)
+import qualified Map
 
 import qualified ListLike
 
@@ -25,7 +25,7 @@ import qualified Step.CursorPosition.Base as CursorPosition
 
 data LineHistory text =
   LineHistory
-    { lineStartPosition :: IntMap CursorPosition
+    { lineStartPosition :: Map CursorPosition Line
     , lineTracker :: Line
     , cursorPosition :: CursorPosition
     , afterCR :: Bool
@@ -34,6 +34,7 @@ data LineHistory text =
 data CursorLocation =
     CursorAt Loc
   | CursorLocationNeedsMoreInput{ ifEndOfInput :: Loc } -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
+  deriving stock (Eq, Show)
 
 makeLensesFor
     [ ("cursorPosition", "cursorPositionLens")
@@ -44,18 +45,25 @@ makeLensesFor
     ''LineHistory
 
 locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe CursorLocation
-locateCursorInDocument cp lh = _
-
--- if cp == 0 then Just (CursorAt Loc.origin) else
---     if cp == cursorPosition lh then Just ((if lastCharacterWasCR then CursorAmbiguouslyAfterCR else CursorJust (documentPosition lh)) else
---     Map.lookupMax (Map.filter (\(cp', _) -> cp' <= cp) (lineMap lh))
---     <&> \(l, (cp', _)) ->
---         Loc.loc l (fromIntegral (1 + CursorPosition.absoluteDifference cp cp'))
+locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh =
+    Just $ CursorLocationNeedsMoreInput{ ifEndOfInput = loc l c }
+  where
+    l = 1 + lineTracker lh
+    c = fromIntegral $ 1 + CursorPosition.absoluteDifference cp (cursorPosition lh)
+locateCursorInDocument cp lh | cp > cursorPosition lh = Nothing
+locateCursorInDocument cp lh =
+    case Map.splitLookup cp (lineStartPosition lh) of
+        (_, Just x, _) -> Just (CursorAt (loc x 1))
+        (m, Nothing, _) -> case Map.lookupMax m of
+            Nothing -> Nothing
+            Just (cp', l) -> Just (CursorAt (loc l c))
+              where
+                c = fromIntegral (1 + CursorPosition.absoluteDifference cp cp')
 
 empty :: LineHistory text
 empty =
   LineHistory
-    { lineStartPosition = IntMap.empty
+    { lineStartPosition = Map.singleton 0 1
     , lineTracker = 1
     , cursorPosition = CursorPosition.origin
     , afterCR = False
