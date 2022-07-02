@@ -5,11 +5,9 @@ import Step.Internal.Prelude
 import Step.DocumentMemory.Base (DocumentMemory)
 import qualified Step.DocumentMemory.Base as DocumentMemory
 
-data Error text = Error{ errorContext :: [Context text] }
-    deriving stock (Eq, Show)
+import Step.Document.Config (Config)
 
-newtype Context text = Context text
-    deriving newtype (Eq, Show, IsString)
+import Step.Document.Error (Error)
 
 -- | A `Parser` can:
 --
@@ -17,16 +15,16 @@ newtype Context text = Context text
 -- * Move the cursor forward
 -- * Either fail by returning an 'Error', or succeed by returning an `a`
 --
-newtype Parser text m a = Parser (StateT (DocumentMemory text m) m (Either (Error text) a))
+newtype Parser text m a = Parser ( Config text -> StateT (DocumentMemory text m) m (Either (Error text) a) )
     deriving stock Functor
     deriving (Applicative, Monad)
-        via (ExceptT (Error text) (StateT (DocumentMemory text m) m))
+        via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
 
-parse :: Monad m => Parser text m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
-parse (Parser p) = p
+parse :: Monad m => Config text -> Parser text m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
+parse config (Parser p) = p config
 
-parseOnly :: Monad m => ListLike text Char => Parser text m a -> ListT m text -> m (Either (Error text) a)
-parseOnly p xs = evalStateT (parse p) (DocumentMemory.fromListT xs)
+parseOnly :: Monad m => ListLike text Char => Config text -> Parser text m a -> ListT m text -> m (Either (Error text) a)
+parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
 
 -- | A `Possibility` can:
 --

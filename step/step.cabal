@@ -36,6 +36,7 @@ common base
         base
       , bytestring
       , containers
+      , data-default-class
       , hedgehog
       , list-transformer
       , ListLike ^>= 4.7
@@ -70,6 +71,7 @@ common base
           , Data.Map.Strict as Map
           , Data.IntMap.Strict as IntMap
           )
+      , data-default-class (Data.Default.Class as Default)
       , list-transformer (List.Transformer as ListT)
       , ListLike (Data.ListLike as ListLike)
       , transformers
@@ -99,8 +101,10 @@ library
 
         Step.CursorPosition.Base
 
-        Step.Document.Parser
+        Step.Document.Config
+        Step.Document.Error
         Step.Document.Loc
+        Step.Document.Parser
         Step.Document.Prelude
 
         Step.DocumentMemory.Base

@@ -20,6 +20,7 @@ import String as X (IsString)
 import Monoid as X (Endo (Endo), appEndo)
 import ListT as X (ListT)
 import Functor as X (($>), (<$), void)
+import Default as X (Default (def))
 
 import Optics as X
 

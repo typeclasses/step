@@ -5,7 +5,7 @@ module Step.Document.Prelude
     {- * Inspecting the position -} position, withLocation,
     {- * Possibility to Parser -} {- many, -} require,
     {- * The end -} atEnd, end,
-    -- {- * Contextualizing errors -} contextualize, (<?>),
+    {- * Contextualizing errors -} contextualize, (<?>),
     -- {- * Failure -} failure,
     -- {- * Transformation -} under, while,
   )
@@ -38,6 +38,12 @@ import ListT (ListT (ListT))
 
 import qualified Step.Tentative.State as Tentative.State
 
+import Step.Document.Error (Error (Error))
+import qualified Step.Document.Error as Error
+
+import Step.Document.Config (Config)
+import qualified Step.Document.Config as Config
+
 char :: Monad m => ListLike text Char => Possibility text m Char
 char = Possibility DocumentMemory.State.takeChar
 
@@ -45,32 +51,30 @@ satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Possibility text m
 satisfy ok = Possibility (DocumentMemory.State.takeCharIf ok)
 
 text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
-text x = Parser do
+text x = Parser \config -> do
     y <- DocumentMemory.State.takeText x
     case y of
         True -> return (Right ())
-        False -> let Parser f = failure in f
+        False -> let Parser f = failure in f config
 
 position :: Monad m => ListLike text Char => Parser text m Loc
-position = Parser (Right <$> DocumentMemory.State.getPosition)
+position = Parser \_config -> Right <$> DocumentMemory.State.getPosition
 
 atEnd :: Monad m => ListLike text Char => Parser text m Bool
-atEnd = Parser (Right <$> DocumentMemory.State.atEnd)
+atEnd = Parser \_config -> Right <$> DocumentMemory.State.atEnd
 
 end :: Monad m => ListLike text Char => Parser text m ()
 end = atEnd >>= \case True -> return (); False -> failure
 
 failure :: Monad m => Parser text m a
-failure = Parser (return (Left (Error{ errorContext = [] })))
+failure = Parser (\config -> return (Left (Error{ Error.context = Config.context config })))
 
--- contextualize :: Monad m => Context text -> Parser text m a -> Parser text m a
--- contextualize c (Parser f) = Parser \eo ->
---     f eo <&> \case
---         Left (Error cs) -> Left (Error (c : cs))
---         Right x -> Right x
+contextualize :: Monad m => text -> Parser text m a -> Parser text m a
+contextualize c (Parser f) = Parser \config ->
+    f (config & over Config.contextLens (c :))
 
--- (<?>) :: Monad m => Parser text m a -> Context text -> Parser text m a
--- p <?> c = contextualize c p
+(<?>) :: Monad m => Parser text m a -> text -> Parser text m a
+p <?> c = contextualize c p
 
 withLocation :: ListLike text Char => Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
 withLocation p = do
@@ -95,15 +99,15 @@ withLocation p = do
 --       return (Right xs)
 
 require :: Monad m => Possibility text m a -> Parser text m a
-require (Possibility p) = Parser do
+require (Possibility p) = Parser \config -> do
     result <- p
     case result of
-        Nothing -> let Parser f = failure in f
+        Nothing -> let Parser f = failure in f config
         Just x -> return (Right x)
 
 -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 all :: Monad m => ListLike text Char => Parser text m text
-all = Parser (Right <$> DocumentMemory.State.takeAll)
+all = Parser \_config -> Right <$> DocumentMemory.State.takeAll
 
 -- under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do
