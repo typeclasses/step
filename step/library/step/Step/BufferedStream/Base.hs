@@ -6,7 +6,7 @@ module Step.BufferedStream.Base
     {- * Conversion with ListT -} toListT, fromListT,
     {- * Buffer querying -} bufferSize, bufferIsEmpty,
     {- * Buffer manipulation -} bufferUnconsChunk, putChunk,
-    {- * Buffering -} fillBuffer, readChunk,
+    {- * Buffering -} fillBuffer, bufferMore,
   )
   where
 
@@ -55,16 +55,16 @@ putChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
 fillBuffer :: (Monad m, ListLike chunk char) =>
     Natural -> BufferedStream m chunk -> m (BufferedStream m chunk)
-fillBuffer n = while continue readChunk
+fillBuffer n = while continue bufferMore
   where
     continue s =
         isJust (pending s)
         && Buffer.size (buffer s) < n
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-readChunk :: (Monad m, ListLike chunk char) =>
+bufferMore :: (Monad m, ListLike chunk char) =>
     BufferedStream m chunk -> m (BufferedStream m chunk)
-readChunk s = case pending s of
+bufferMore s = case pending s of
     Nothing -> return s -- If the end of the stream has been reached, do nothing
     Just p ->
         ListT.next p -- Perform the next step in the pending input stream

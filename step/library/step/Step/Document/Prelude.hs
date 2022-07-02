@@ -51,7 +51,7 @@ text x = Parser do
         True -> return (Right ())
         False -> let Parser f = failure in f
 
-position :: Monad m => Parser text m Loc
+position :: Monad m => ListLike text Char => Parser text m Loc
 position = Parser (Right <$> DocumentMemory.State.getPosition)
 
 atEnd :: Monad m => ListLike text Char => Parser text m Bool
@@ -72,7 +72,7 @@ failure = Parser (return (Left (Error{ errorContext = [] })))
 -- (<?>) :: Monad m => Parser text m a -> Context text -> Parser text m a
 -- p <?> c = contextualize c p
 
-withLocation :: Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
+withLocation :: ListLike text Char => Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
 withLocation p = do
     a <- position
     x <- p

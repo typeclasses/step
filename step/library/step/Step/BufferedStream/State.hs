@@ -20,11 +20,11 @@ fillBuffer :: (Monad m, ListLike chunk char) => Natural -> StateT (BufferedStrea
 fillBuffer n = modifyM (BufferedStream.fillBuffer n)
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-readChunk :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m ()
-readChunk = modifyM BufferedStream.readChunk
+bufferMore :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m ()
+bufferMore = modifyM BufferedStream.bufferMore
 
 bufferAll :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m ()
-bufferAll = isEmpty >>= \case True -> return (); False -> readChunk *> bufferAll
+bufferAll = isEmpty >>= \case True -> return (); False -> bufferMore *> bufferAll
 
 takeChunk :: (Monad m, ListLike chunk char) => StateT (BufferedStream m chunk) m (Maybe chunk)
 takeChunk = do

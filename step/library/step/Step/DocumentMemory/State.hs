@@ -24,7 +24,7 @@ getPosition =
                     error "DocumentMemory.State.getPosition: after buffering more, should not need more input to determine position"
 
 bufferMore :: ListLike text char => Monad m => StateT (DocumentMemory text m) m ()
-bufferMore = runCursorState Cursor.State.readChunk
+bufferMore = runCursorState Cursor.State.bufferMore
 
 isAllBuffered :: Monad m => StateT (DocumentMemory text m) m Bool
 isAllBuffered = get <&> DocumentMemory.isAllBuffered

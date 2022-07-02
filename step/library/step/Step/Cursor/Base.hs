@@ -3,7 +3,7 @@ module Step.Cursor.Base
     {- * The type -} Cursor (..),
     {- * Optics -} positionLens, bufferLens, pendingLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
-    {- * Buffering -} fillBuffer, readChunk, bufferAll, isAllBuffered, bufferIsEmpty,
+    {- * Buffering -} fillBuffer, bufferMore, bufferAll, isAllBuffered, bufferIsEmpty,
     {- * Taking from the stream -} unconsChar, bufferUnconsChar, unconsCharTentative,
   )
   where
@@ -42,7 +42,7 @@ isAllBuffered :: Cursor m chunk -> Bool
 isAllBuffered = isNothing . pending
 
 bufferAll :: Monad m => ListLike chunk char => Cursor m chunk -> m (Cursor m chunk)
-bufferAll = while (not . isAllBuffered) readChunk
+bufferAll = while (not . isAllBuffered) bufferMore
 
 bufferedStreamLens :: Lens' (Cursor m chunk) (BufferedStream m chunk)
 bufferedStreamLens = lens
@@ -83,8 +83,6 @@ fillBuffer :: (Monad m, ListLike chunk char) =>
 fillBuffer n = traverseOf bufferedStreamLens (BufferedStream.fillBuffer n)
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
---
--- todo: rename to "bufferMore"
-readChunk :: (Monad m, ListLike chunk char) =>
+bufferMore :: (Monad m, ListLike chunk char) =>
     Cursor m chunk -> m (Cursor m chunk)
-readChunk = traverseOf bufferedStreamLens (BufferedStream.readChunk)
+bufferMore = traverseOf bufferedStreamLens (BufferedStream.bufferMore)

@@ -19,8 +19,8 @@ fillBuffer :: (Monad m, ListLike chunk char) => Natural -> StateT (Cursor m chun
 fillBuffer n = modifyM (Cursor.fillBuffer n)
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-readChunk :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m ()
-readChunk = modifyM Cursor.readChunk
+bufferMore :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m ()
+bufferMore = modifyM Cursor.bufferMore
 
 takeChar :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m (Maybe char)
 takeChar = fillBuffer 1 *> takeBufferedChar
