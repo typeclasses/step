@@ -3,7 +3,7 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy,
     {- * Text result -} text, all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Possibility to Parser -} {- many, -} require,
+    {- * Possibility to Parser -} many, require,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     -- {- * Failure -} failure,
@@ -83,20 +83,11 @@ withLocation p = do
     b <- position
     return (Loc.spanOrLocFromTo a b, x)
 
--- many :: Monad m => ListLike list a => Possibility text m a -> Parser text m list
--- many (Possibility p) = Parser \eo ->
---   let
---     r s = do
---       result <- p eo s
---       case result of
---           Left fu -> return (s{ ParseState.future = fu }, ListLike.empty)
---           Right (s', x) -> (over _2 (ListLike.singleton x <>)) <$> r s'
---   in
---     do
---       s <- get
---       (s', xs) <- lift $ r s
---       put s'
---       return (Right xs)
+many :: Monad m => ListLike list a => Possibility text m a -> Parser text m list
+many (Possibility p) = Parser \_config -> Right <$> fix \r ->
+    p >>= \case
+        Nothing -> return ListLike.empty
+        Just x -> ListLike.cons x <$> r
 
 require :: Monad m => Possibility text m a -> Parser text m a
 require (Possibility p) = Parser \config -> do

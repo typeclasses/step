@@ -15,7 +15,7 @@ import Step.Document.Error (Error)
 -- * Move the cursor forward
 -- * Either fail by returning an 'Error', or succeed by returning an `a`
 --
-newtype Parser text m a = Parser ( Config text -> StateT (DocumentMemory text m) m (Either (Error text) a) )
+newtype Parser text m a = Parser (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
     deriving stock Functor
     deriving (Applicative, Monad)
         via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))

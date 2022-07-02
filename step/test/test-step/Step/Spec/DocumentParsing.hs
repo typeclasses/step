@@ -61,18 +61,18 @@ spec = describe "Document parsing" do
             let x = runIdentity $ parseOnly def p (ListT.select input)
             x === Left (Error ["Digit"])
 
-    -- describe "p = many (satisfy isDigit)" do
-    --     let p = many (satisfy Char.isDigit)
+    describe "p = many (satisfy isDigit)" do
+        let p = many (satisfy Char.isDigit)
 
-    --     specify "p parses 123 from 123abc" $ hedgehog do
-    --         input :: [Text] <- forAll (genChunks "123abc")
-    --         let x = runIdentity $ parseOnly def p (ListT.select input)
-    --         x === Right ("123" :: [Char])
+        specify "p parses 123 from 123abc" $ hedgehog do
+            input :: [Text] <- forAll (genChunks "123abc")
+            let x = runIdentity $ parseOnly def p (ListT.select input)
+            x === Right ("123" :: [Char])
 
-    --     specify "p parses nothing from abc" $ hedgehog do
-    --         input :: [Text] <- forAll (genChunks "abc")
-    --         let x = runIdentity $ parseOnly def p (ListT.select input)
-    --         x === Right ([] :: [Char])
+        specify "p parses nothing from abc" $ hedgehog do
+            input :: [Text] <- forAll (genChunks "abc")
+            let x = runIdentity $ parseOnly def p (ListT.select input)
+            x === Right ([] :: [Char])
 
     describe "p = text \"abc\"" do
         let p = text "abc"
