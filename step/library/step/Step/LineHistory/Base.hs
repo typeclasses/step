@@ -37,7 +37,7 @@ data LineTracker =
 data CursorLocation =
     CursorAt Loc
   | CursorAtLineEnd Loc -- ^ The cursor is at this location, but since this location is the end of a line, it may also be considered to be at the start of the following line.
-  | CursorLocationNeedsMoreAmbiguouslyAfterCR Loc -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
+  | CursorLocationNeedsMoreInput -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
 
 makeLensesFor
     [ ("cursorPosition", "cursorPositionLens")
