@@ -19,9 +19,11 @@ common base
         DerivingStrategies
         DerivingVia
         FlexibleContexts
+        FlexibleInstances
         LambdaCase
         GADTs
         GeneralizedNewtypeDeriving
+        MultiParamTypeClasses
         NoImplicitPrelude
         OverloadedStrings
         RankNTypes
@@ -46,6 +48,8 @@ common base
     mixins:
         base
           ( Data.Char as Char
+          , Data.Coerce as Coerce
+          , Data.Kind as Kind
           , Data.Word as Word
           , Text.Show as Show
           , Control.Monad as Monad

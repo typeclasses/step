@@ -3,10 +3,10 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy,
     {- * Text result -} text, all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Possibility to Parser -} many, require,
+    {- * Repetition -} repetition,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
-    -- {- * Failure -} failure,
+    {- * Failure -} failure,
     -- {- * Transformation -} under, while,
   )
   where
@@ -14,6 +14,7 @@ module Step.Document.Prelude
 import Step.Internal.Prelude hiding (while, under)
 
 import Step.Document.Parser
+import qualified Step.Document.Parser as Parser
 
 import qualified Loc
 import Loc (Loc, SpanOrLoc)
@@ -44,30 +45,34 @@ import qualified Step.Document.Error as Error
 import Step.Document.Config (Config)
 import qualified Step.Document.Config as Config
 
-char :: Monad m => ListLike text Char => Possibility text m Char
-char = Possibility DocumentMemory.State.takeChar
+import Step.Nontrivial.Base (Nontrivial)
 
-satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Possibility text m Char
-satisfy ok = Possibility (DocumentMemory.State.takeCharIf ok)
+char :: forall m text p. Monad m => ListLike text Char => Lift Possibility1 p => p text m Char
+char = Parser.lift $ Possibility1 \config ->
+    DocumentMemory.State.takeChar <&> maybe (Left (makeError config)) Right
+
+satisfy :: forall m text p. Monad m => ListLike text Char => (Char -> Bool) -> Lift Possibility1 p => p text m Char
+satisfy ok = Parser.lift $ Possibility1 \config ->
+    DocumentMemory.State.takeCharIf ok <&> maybe (Left (makeError config)) Right
 
 text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
-text x = Parser \config -> do
-    y <- DocumentMemory.State.takeText x
-    case y of
-        True -> return (Right ())
-        False -> let Parser f = failure in f config
+text x = Parser \config ->
+    DocumentMemory.State.takeText x <&> \case
+        True -> Right ()
+        False -> Left (makeError config)
 
-position :: Monad m => ListLike text Char => Parser text m Loc
-position = Parser \_config -> Right <$> DocumentMemory.State.getPosition
+position :: forall m text p. Monad m => ListLike text Char => Lift Always p => p text m Loc
+position = Parser.lift $ Always \_config -> DocumentMemory.State.getPosition
 
-atEnd :: Monad m => ListLike text Char => Parser text m Bool
-atEnd = Parser \_config -> Right <$> DocumentMemory.State.atEnd
+atEnd :: forall m text p. Monad m => ListLike text Char => Lift Always p => p text m Bool
+atEnd = Parser.lift $ Always \_config -> DocumentMemory.State.atEnd
 
-end :: Monad m => ListLike text Char => Parser text m ()
-end = atEnd >>= \case True -> return (); False -> failure
+end :: forall m text p. Monad m => ListLike text Char => Lift Possibility p => p text m ()
+end = Parser.lift $ Possibility \config ->
+    DocumentMemory.State.atEnd <&> \case True -> Right (); False -> Left (makeError config)
 
-failure :: Monad m => Parser text m a
-failure = Parser (\config -> return (Left (Error{ Error.context = Config.context config })))
+failure :: Monad m => Lift Failure p => p text m a
+failure = Parser.lift Failure
 
 contextualize :: Monad m => text -> Parser text m a -> Parser text m a
 contextualize c (Parser f) = Parser \config ->
@@ -76,25 +81,18 @@ contextualize c (Parser f) = Parser \config ->
 (<?>) :: Monad m => Parser text m a -> text -> Parser text m a
 p <?> c = contextualize c p
 
-withLocation :: ListLike text Char => Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
+withLocation :: forall m text a. ListLike text Char => Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
 withLocation p = do
     a <- position
     x <- p
     b <- position
     return (Loc.spanOrLocFromTo a b, x)
 
-many :: Monad m => ListLike list a => Possibility text m a -> Parser text m list
-many (Possibility p) = Parser \_config -> Right <$> fix \r ->
-    p >>= \case
-        Nothing -> return ListLike.empty
-        Just x -> ListLike.cons x <$> r
-
-require :: Monad m => Possibility text m a -> Parser text m a
-require (Possibility p) = Parser \config -> do
-    result <- p
-    case result of
-        Nothing -> let Parser f = failure in f config
-        Just x -> return (Right x)
+repetition :: forall m text list a p'. Monad m => ListLike list a => Lift Always p' => Possibility1 text m a -> p' text m list
+repetition (Possibility1 p) = Parser.lift $ Always \config -> fix \r ->
+    p config >>= \case
+        Left _ -> return ListLike.empty
+        Right x -> ListLike.cons x <$> r
 
 -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 all :: Monad m => ListLike text Char => Parser text m text

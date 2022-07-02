@@ -21,6 +21,8 @@ import Monoid as X (Endo (Endo), appEndo)
 import ListT as X (ListT)
 import Functor as X (($>), (<$), void)
 import Default as X (Default (def))
+import Coerce as X (coerce)
+import Kind as X (Type)
 
 import Optics as X
 
