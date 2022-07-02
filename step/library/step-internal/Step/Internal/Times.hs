@@ -2,6 +2,7 @@ module Step.Internal.Times where
 
 import BasePrelude
 import qualified Semigroup
+import Natural (Natural)
 
-times :: Integral n => Monoid a => n -> a -> a
+times :: Monoid a => Natural -> a -> a
 times = Semigroup.mtimesDefault

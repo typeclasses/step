@@ -109,12 +109,12 @@ spec = describe "Document parsing" do
 
         specify "both line and column increments" $ hedgehog do
             let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
-            input :: [Text] <- forAll (genChunks =<< times (10 :: Natural) genInputLine)
+            input :: [Text] <- forAll (genChunks =<< times 10 genInputLine)
             n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
             let p = appEndo (times n (Endo (require char *>))) position
-            let !x = runIdentity $ parseOnly p (ListT.select input)
+            let x = runIdentity $ parseOnly p (ListT.select input)
             let (a, b) = n `quotRem` 20
-            let !l = Loc.loc (fromIntegral $ 1 + a) (1 + fromIntegral b)
+            let l = Loc.loc (fromIntegral $ 1 + a) (fromIntegral $ 1 + b)
             x === Right l
 
     describe "withLocation" do
