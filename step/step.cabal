@@ -41,6 +41,7 @@ common base
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , transformers
+      , optics
     mixins:
         base
           ( Data.Char as Char
@@ -78,6 +79,7 @@ common base
           , Control.Monad.Trans.Except as Except
           )
       , loc (Data.Loc as Loc, Data.Loc.SpanOrLoc as SpanOrLoc)
+      , optics (Optics)
 
 library
     import: base

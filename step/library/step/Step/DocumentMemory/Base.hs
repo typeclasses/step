@@ -4,6 +4,7 @@ import Step.Internal.Prelude
 
 import Step.LineHistory.Base (LineHistory)
 import qualified Step.LineHistory.Base as LineHistory
+import qualified Step.LineHistory.State as LineHistory.State
 
 import Step.Cursor.Base (Cursor)
 import qualified Step.Cursor.Base as Cursor
@@ -22,7 +23,7 @@ fromListT :: ListLike text Char => Monad m => ListT m text -> DocumentMemory tex
 fromListT xs =
   DocumentMemory
     { content = LineHistory.empty
-    , cursor = Cursor.fromListT $ recordStream LineHistory.record xs
+    , cursor = Cursor.fromListT $ recordStream (execState . LineHistory.State.record) xs
     }
 
 position :: DocumentMemory text m -> Loc
