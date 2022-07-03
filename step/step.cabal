@@ -26,6 +26,7 @@ common base
         LambdaCase
         GADTs
         GeneralizedNewtypeDeriving
+        MonadComprehensions
         MultiParamTypeClasses
         NoImplicitPrelude
         OverloadedStrings

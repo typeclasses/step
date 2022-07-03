@@ -107,6 +107,12 @@ instance PolyJoin 'Any 'SureStatic 'Any where
 
 instance PolyJoin 'SureStatic 'Any 'Any where
 
+instance PolyJoin 'MoveUndo 'MoveUndo 'Move
+
+instance PolyJoin 'Move 'Undo 'Move
+
+instance PolyJoin 'Undo 'Move 'Move
+
 class Is pt1 pt2 where
     generalize :: Monad m => Parser text pt1 m a -> Parser text pt2 m a
 
