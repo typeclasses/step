@@ -11,7 +11,7 @@ module Step.Document.Prelude
   )
   where
 
-import Step.Internal.Prelude hiding (while, under)
+import Step.Internal.Prelude hiding (while, under, Is)
 
 import Step.Document.Parser
 import qualified Step.Document.Parser as Parser
@@ -47,56 +47,81 @@ import qualified Step.Document.Config as Config
 
 import Step.Nontrivial.Base (Nontrivial)
 
-char :: forall m text p. Monad m => ListLike text Char => Lift Possibility1 p => p text m Char
-char = Parser.lift $ Possibility1 \config ->
+char :: Monad m => ListLike text Char => Parser text 'Backtracking m Char
+char = AnyParser \config ->
     DocumentMemory.State.takeChar <&> maybe (Left (makeError config)) Right
 
-satisfy :: forall m text p. Monad m => ListLike text Char => (Char -> Bool) -> Lift Possibility1 p => p text m Char
-satisfy ok = Parser.lift $ Possibility1 \config ->
-    DocumentMemory.State.takeCharIf ok <&> maybe (Left (makeError config)) Right
+satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text 'Backtracking m Char
+satisfy ok = AnyParser \config ->
+    DocumentMemory.State.takeCharIf ok <&> \case
+        Nothing -> Left (makeError config)
+        Just x -> Right x
 
-text :: Monad m => ListLike text Char => Eq text => text -> Parser text m ()
-text x = Parser \config ->
+text :: Monad m => ListLike text Char => Eq text => text -> Parser text 'Committing m ()
+text x = AnyParser \config ->
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()
         False -> Left (makeError config)
 
-position :: forall m text p. Monad m => ListLike text Char => Lift Always p => p text m Loc
-position = Parser.lift $ Always \_config -> DocumentMemory.State.getPosition
+atEnd :: Monad m => ListLike text Char => Parser text 'Certainty0 m Bool
+atEnd = CertainParser \_config -> DocumentMemory.State.atEnd
 
-atEnd :: forall m text p. Monad m => ListLike text Char => Lift Always p => p text m Bool
-atEnd = Parser.lift $ Always \_config -> DocumentMemory.State.atEnd
+end :: Monad m => ListLike text Char => Parser text 'Certainty0 m ()
+end = AnyParser \config ->
+    DocumentMemory.State.atEnd <&> \case
+        True -> Right ()
+        False -> Left (makeError config)
 
-end :: forall m text p. Monad m => ListLike text Char => Lift Possibility p => p text m ()
-end = Parser.lift $ Possibility \config ->
-    DocumentMemory.State.atEnd <&> \case True -> Right (); False -> Left (makeError config)
+contextualize :: Monad m => text
+    -> Parser text pt m a
+    -> Parser text pt m a
+contextualize c = \case
+    AnyParser f -> AnyParser \config -> f (g config)
+    CertainParser f -> CertainParser \config -> f (g config)
+  where
+    g config = config & over Config.contextLens (c :)
 
-failure :: Monad m => Lift Failure p => p text m a
-failure = Parser.lift Failure
-
-contextualize :: Monad m => text -> Parser text m a -> Parser text m a
-contextualize c (Parser f) = Parser \config ->
-    f (config & over Config.contextLens (c :))
-
-(<?>) :: Monad m => Parser text m a -> text -> Parser text m a
+(<?>) :: Monad m =>
+       Parser text pt m a
+    -> text
+    -> Parser text pt m a
 p <?> c = contextualize c p
 
-withLocation :: forall m text a. ListLike text Char => Monad m => Parser text m a -> Parser text m (SpanOrLoc, a)
-withLocation p = do
-    a <- position
-    x <- p
-    b <- position
-    return (Loc.spanOrLocFromTo a b, x)
+position :: Monad m => ListLike text char => Parser text 'Certainty0 m Loc
+position = CertainParser \_config -> DocumentMemory.State.getPosition
 
-repetition :: forall m text list a p'. Monad m => ListLike list a => Lift Always p' => Possibility1 text m a -> p' text m list
-repetition (Possibility1 p) = Parser.lift $ Always \config -> fix \r ->
+withLocation :: ListLike text Char => Monad m =>
+       Parser text pt m a
+    -> Parser text pt m (SpanOrLoc, a)
+withLocation = \case
+    AnyParser p -> AnyParser \config -> do
+        a <- DocumentMemory.State.getPosition
+        p config >>= \case
+            Left e -> return (Left e)
+            Right x -> do
+                b <- DocumentMemory.State.getPosition
+                return (Right (Loc.spanOrLocFromTo a b, x))
+    CertainParser p -> CertainParser \config -> do
+        a <- DocumentMemory.State.getPosition
+        x <- p config
+        b <- DocumentMemory.State.getPosition
+        return (Loc.spanOrLocFromTo a b, x)
+
+repetition :: Monad m =>
+    ListLike list a =>
+    Parser text 'Backtracking1 m a
+    -> Parser text 'Certainty m list
+repetition (AnyParser p) = CertainParser \config -> fix \r ->
     p config >>= \case
         Left _ -> return ListLike.empty
         Right x -> ListLike.cons x <$> r
 
 -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
-all :: Monad m => ListLike text Char => Parser text m text
-all = Parser \_config -> Right <$> DocumentMemory.State.takeAll
+all :: Monad m => ListLike text Char => Parser text 'Certainty m text
+all = CertainParser \_config -> DocumentMemory.State.takeAll
+
+failure :: Monad m => Parser text 'Failure m a
+failure = AnyParser \config -> return (Left (makeError config))
 
 -- under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do

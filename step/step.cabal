@@ -12,14 +12,17 @@ common base
 
     default-extensions:
         AllowAmbiguousTypes
+        ApplicativeDo
         BangPatterns
         BlockArguments
         ConstraintKinds
+        DataKinds
         DeriveFunctor
         DerivingStrategies
         DerivingVia
         FlexibleContexts
         FlexibleInstances
+        FunctionalDependencies
         LambdaCase
         GADTs
         GeneralizedNewtypeDeriving
@@ -64,6 +67,7 @@ common base
           , Data.Functor.Identity as Identity
           , Data.Semigroup as Semigroup
           , Data.Monoid as Monoid
+          , Data.Void as Void
           )
       , bytestring
           ( Data.ByteString as ByteString

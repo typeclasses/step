@@ -23,6 +23,7 @@ import Functor as X (($>), (<$), void)
 import Default as X (Default (def))
 import Coerce as X (coerce)
 import Kind as X (Type)
+import Void as X (Void, absurd)
 
 import Optics as X
 

@@ -1,9 +1,10 @@
 module Step.Document.Parser where
 
-import Step.Internal.Prelude
+import Step.Internal.Prelude hiding (Is)
 
 import Step.DocumentMemory.Base (DocumentMemory)
 import qualified Step.DocumentMemory.Base as DocumentMemory
+import qualified Step.DocumentMemory.State as DocumentMemory.State
 
 import Step.Document.Config (Config)
 import qualified Step.Document.Config as Config
@@ -11,101 +12,120 @@ import qualified Step.Document.Config as Config
 import Step.Document.Error (Error (Error))
 import qualified Step.Document.Error as Error
 
--- | A `Parser` can:
---
--- * Buffer new input
--- * Move the cursor forward
--- * Either fail by returning an 'Error', or succeed by returning an `a`
---
-newtype Parser text m a = Parser (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
-    deriving stock Functor
-    deriving (Applicative, Monad)
-        via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
+import Loc (Loc)
 
--- | Like 'Parser', but always consumes at least 1 character if it succeeds
---
-newtype Parser1 text m a = Parser1 (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
-    deriving stock Functor
-    deriving (Applicative, Monad) via (Parser text m)
+data Advancement = Stationary | Advances | MightAdvance
 
--- | Like 'Parser', but cannot fail
---
-newtype Always text m a = Always (Config text -> StateT (DocumentMemory text m) m a)
-    deriving stock Functor
-    deriving (Applicative, Monad)
-        via (ReaderT (Config text) (StateT (DocumentMemory text m) m))
+data Fallibility = MightFail | AlwaysSucceeds
 
--- | Like 'Parser', but does not move the cursor if it fails, thus permitting backtracking
---
-newtype Possibility text m a = Possibility (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
-    deriving stock Functor
+data Commitment = Noncommittal | MightCommitFailure
 
--- | Like 'Possibility', but always consumes at least 1 character if it succeeds
-newtype Possibility1 text m a = Possibility1 (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
-    deriving stock Functor
+data ParserType =
+    Any
+  | Backtracking
+  | Committing
+  | Backtracking1
+  | Committing1
+  | Certainty0
+  | Certainty1
+  | Certainty
+  | Failure
 
--- | Parser that always fails
-data Failure text (m :: Type -> Type) a = Failure
+type family AdvancementOf (p :: ParserType) :: Advancement
 
--- newtype Transform text m text' =
---     Transform (ListT (StateT (BufferedStream m text) m) text')
---     deriving stock Functor
+type instance AdvancementOf 'Any = 'MightAdvance
+type instance AdvancementOf 'Backtracking = 'MightAdvance
+type instance AdvancementOf 'Committing = 'MightAdvance
+type instance AdvancementOf 'Certainty = 'MightAdvance
 
-class Lift p1 p2
+type instance AdvancementOf 'Certainty0 = 'Stationary
+type instance AdvancementOf 'Failure = 'Stationary
+
+type instance AdvancementOf 'Backtracking1 = 'Advances
+type instance AdvancementOf 'Committing1 = 'Advances
+type instance AdvancementOf 'Certainty1 = 'Advances
+
+type family FallibilityOf (p :: ParserType) :: Fallibility
+
+type instance FallibilityOf 'Any = 'MightFail
+type instance FallibilityOf 'Backtracking = 'MightFail
+type instance FallibilityOf 'Committing = 'MightFail
+type instance FallibilityOf 'Backtracking1 = 'MightFail
+type instance FallibilityOf 'Committing1 = 'MightFail
+type instance FallibilityOf 'Failure = 'MightFail
+
+type instance FallibilityOf 'Certainty0 = 'AlwaysSucceeds
+type instance FallibilityOf 'Certainty1 = 'AlwaysSucceeds
+type instance FallibilityOf 'Certainty = 'AlwaysSucceeds
+
+type family CommitmentOf (p :: ParserType) :: Commitment
+
+type instance CommitmentOf 'Any = 'MightCommitFailure
+type instance CommitmentOf 'Committing = 'MightCommitFailure
+type instance CommitmentOf 'Committing1 = 'MightCommitFailure
+type instance CommitmentOf 'Backtracking = 'Noncommittal
+type instance CommitmentOf 'Backtracking1 = 'Noncommittal
+type instance CommitmentOf 'Certainty0 = 'Noncommittal
+type instance CommitmentOf 'Certainty1 = 'Noncommittal
+type instance CommitmentOf 'Certainty = 'Noncommittal
+type instance CommitmentOf 'Failure = 'Noncommittal
+
+
+data Parser (text :: Type) (pt :: ParserType) (m :: Type -> Type) (a :: Type)
   where
-    lift :: Monad m
-         => p1 text (m :: Type -> Type) a
-         -> p2 text (m :: Type -> Type) a
-
-instance Lift Always Parser
-  where
-    lift (Always p) = Parser (\config -> Right <$> p config)
-
-instance Lift Possibility Parser
-  where
-    lift = coerce
-
-instance Lift Possibility1 Parser1
-  where
-    lift = coerce
-
-instance Lift Possibility1 Possibility
-  where
-    lift = coerce
-
-instance Lift Possibility1 Parser
-  where
-    lift = coerce
-
-instance Lift Parser1 Parser
-  where
-    lift = coerce
-
-instance Lift Failure Parser
-  where
-    lift Failure = Parser (\config -> return (Left (makeError config)))
-
-instance Lift Failure Parser1
-  where
-    lift Failure = Parser1 (\config -> return (Left (makeError config)))
-
-instance Lift Failure Possibility
-  where
-    lift Failure = Possibility (\config -> return (Left (makeError config)))
-
-instance Lift Failure Possibility1
-  where
-    lift Failure = Possibility1 (\config -> return (Left (makeError config)))
-
-instance Lift p p
-  where
-    lift = id
+    AnyParser ::
+        (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
+        -> Parser text pt m a
+    CertainParser :: FallibilityOf pt ~ 'AlwaysSucceeds =>
+        (Config text -> StateT (DocumentMemory text m) m a)
+        -> Parser text pt m a
 
 makeError :: Config text -> Error text
 makeError config = Error{ Error.context = Config.context config }
 
-parse :: Monad m => Config text -> Parser text m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
-parse config (Parser p) = p config
+parse :: Monad m => Config text -> Parser text pt m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
+parse config p = let AnyParser p' = generalize p in p' config
 
-parseOnly :: Monad m => ListLike text Char => Config text -> Parser text m a -> ListT m text -> m (Either (Error text) a)
+generalize :: Monad m =>
+       Parser text pt m a
+    -> Parser text 'Any m a
+generalize = \case
+    AnyParser p -> AnyParser p
+    CertainParser p -> AnyParser \config -> Right <$> p config
+
+parseOnly :: Monad m => ListLike text Char => Config text -> Parser text pt m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
+
+
+-- -- Each parser type belongs to one of the following two classes:
+
+-- class CanConsume0 (p :: ParserKind) where trivial :: Monad m => a -> p text m a
+-- instance CanConsume0 Parser where trivial = return
+-- instance CanConsume0 Certainty where trivial = return
+-- deriving via Parser instance CanConsume0 Possibility
+-- deriving via Parser instance CanConsume0 Parser0
+
+-- class ConsumesAtLeast1 (p :: ParserKind) where
+-- instance ConsumesAtLeast1 Parser1
+-- instance ConsumesAtLeast1 Certainty1
+-- instance ConsumesAtLeast1 Possibility1
+
+
+-- -- Parser types that admit failure:
+
+-- class CanFail (p :: ParserKind) where failure :: Monad m => p text m a
+-- instance CanFail Parser where failure = Parser (\config -> return (Left (makeError config)))
+-- deriving via Parser instance CanFail Parser0
+-- deriving via Parser instance CanFail Parser1
+-- deriving via Parser instance CanFail Possibility
+-- deriving via Parser instance CanFail Possibility1
+
+
+-- -- Parser types that can obtain the document position
+
+-- class HasPosition (p :: ParserKind) where position :: Monad m => ListLike text Char => p text m Loc
+-- instance HasPosition Parser where position = Parser \_config -> Right <$> DocumentMemory.State.getPosition
+-- deriving via Parser instance HasPosition Parser1
+-- deriving via Parser instance HasPosition Possibility
+-- deriving via Parser instance HasPosition Possibility1
+-- instance HasPosition Certainty where position = Certainty \_config -> DocumentMemory.State.getPosition
