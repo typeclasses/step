@@ -83,35 +83,24 @@ generalizeTo = generalize @a @b
 class PolyJoin (pt1 :: StepKind) (pt2 :: StepKind) (pt3 :: StepKind) | pt1 pt2 -> pt3 where
     polyJoin :: Parser text pt1 m (Parser text p2 m a) -> Parser text p3 m a
 
+-- todo: ugh there will be 64 of these
 instance PolyJoin 'MoveUndo 'SureStatic 'Move where
-
 instance PolyJoin 'SureStatic 'MoveUndo 'Move where
-
 instance PolyJoin 'MoveUndo 'Move 'Move where
-
 instance PolyJoin 'Move 'MoveUndo 'Move where
-
 instance PolyJoin 'Move 'Move 'Move where
-
 instance PolyJoin 'MoveUndo 'Any 'Move where
-
 instance PolyJoin 'Any 'MoveUndo 'Move where
-
 instance PolyJoin 'Move 'Any 'Move where
-
 instance PolyJoin 'Any 'Move 'Move where
-
 instance PolyJoin 'Any 'Any 'Any where
-
 instance PolyJoin 'Any 'SureStatic 'Any where
-
 instance PolyJoin 'SureStatic 'Any 'Any where
-
 instance PolyJoin 'MoveUndo 'MoveUndo 'Move
-
 instance PolyJoin 'Move 'Undo 'Move
-
 instance PolyJoin 'Undo 'Move 'Move
+instance PolyJoin 'Move 'Static 'Move
+instance PolyJoin 'Static 'Move 'Move
 
 class Is pt1 pt2 where
     generalize :: Monad m => Parser text pt1 m a -> Parser text pt2 m a

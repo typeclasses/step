@@ -70,7 +70,7 @@ text x = AnyParser \config ->
 atEnd :: Monad m => ListLike text Char => Parser text 'SureStatic m Bool
 atEnd = CertainParser \_config -> DocumentMemory.State.atEnd
 
-end :: Monad m => ListLike text Char => Parser text 'Undo m ()
+end :: Monad m => ListLike text Char => Parser text 'Static m ()
 end = AnyParser \config ->
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
