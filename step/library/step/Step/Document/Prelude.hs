@@ -94,7 +94,7 @@ p <?> c = contextualize c p
 position :: Monad m => ListLike text char => Parser text 'SureStatic m Loc
 position = CertainParser \_config -> DocumentMemory.State.getPosition
 
-withLocation :: ListLike text Char => Monad m =>
+withLocation :: ListLike text char => Monad m =>
        Parser text pt m a
     -> Parser text pt m (SpanOrLoc, a)
 withLocation = \case
