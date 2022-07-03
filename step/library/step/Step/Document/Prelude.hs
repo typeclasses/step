@@ -61,7 +61,7 @@ satisfy ok = AnyParser \config ->
         Nothing -> Left (makeError config)
         Just x -> Right x
 
-text :: Monad m => ListLike text Char => Eq text => text -> Parser text 'Committing m ()
+text :: Monad m => ListLike text Char => Eq text => text -> Parser text 'Any m ()
 text x = AnyParser \config ->
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()

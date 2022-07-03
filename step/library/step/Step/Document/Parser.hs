@@ -83,15 +83,11 @@ class Bind pt1 pt2 pt3 | pt1 pt2 -> pt3 where
           -> (a -> Parser text pt2 m b)
           -> Parser text pt3 m b
 
-instance Bind 'Backtracking 'Certainty0 'Committing where
-
 instance Bind 'Backtracking1 'Certainty0 'Committing1 where
 
 instance Bind 'Backtracking1 'Committing1 'Committing1 where
 
 instance Bind 'Committing1 'Committing1 'Committing1 where
-
-instance Bind 'Committing1 'Committing 'Committing1 where
 
 instance Bind 'Backtracking1 'Any 'Committing1 where
 
@@ -111,8 +107,6 @@ instance Is 'Backtracking1 'Any where
 instance Is 'Backtracking1 'Committing1 where
 
 instance Is 'Certainty 'Any where
-
-instance Is 'Committing 'Any where
 
 instance Is 'Certainty0 'Any
 
