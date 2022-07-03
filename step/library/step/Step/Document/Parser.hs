@@ -78,22 +78,20 @@ parse config p = let AnyParser p' = generalizeTo @'Any p in p' config
 generalizeTo :: forall b a text m r. Monad m => Is a b => Parser text a m r -> Parser text b m r
 generalizeTo = generalize @a @b
 
-class Bind pt1 pt2 pt3 | pt1 pt2 -> pt3 where
-    bind :: Parser text pt1 m a
-          -> (a -> Parser text pt2 m b)
-          -> Parser text pt3 m b
+class PolyJoin (pt1 :: StepKind) (pt2 :: StepKind) (pt3 :: StepKind) | pt1 pt2 -> pt3 where
+    polyJoin :: Parser text pt1 m (Parser text p2 m a) -> Parser text p3 m a
 
-instance Bind 'MoveUndo 'SureStatic 'Move where
+instance PolyJoin 'MoveUndo 'SureStatic 'Move where
 
-instance Bind 'MoveUndo 'Move 'Move where
+instance PolyJoin 'MoveUndo 'Move 'Move where
 
-instance Bind 'Move 'Move 'Move where
+instance PolyJoin 'Move 'Move 'Move where
 
-instance Bind 'MoveUndo 'Any 'Move where
+instance PolyJoin 'MoveUndo 'Any 'Move where
 
-instance Bind 'Move 'Any 'Move where
+instance PolyJoin 'Move 'Any 'Move where
 
-instance Bind 'Any 'Any 'Any where
+instance PolyJoin 'Any 'Any 'Any where
 
 class Is pt1 pt2 where
     generalize :: Monad m => Parser text pt1 m a -> Parser text pt2 m a
