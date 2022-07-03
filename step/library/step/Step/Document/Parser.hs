@@ -14,118 +14,110 @@ import qualified Step.Document.Error as Error
 
 import Loc (Loc)
 
-data Advancement = Stationary | Advances | MightAdvance
+import Step.Kind.Base (StepKind (..), FallibilityOf, Fallibility (..))
 
-data Fallibility = MightFail | AlwaysSucceeds
-
-data Commitment = Noncommittal | MightCommitFailure
-
-data ParserType =
-    Any
-  | Backtracking
-  | Committing
-  | Backtracking1
-  | Committing1
-  | Certainty0
-  | Certainty1
-  | Certainty
-  | Failure
-
-type family AdvancementOf (p :: ParserType) :: Advancement
-
-type instance AdvancementOf 'Any = 'MightAdvance
-type instance AdvancementOf 'Backtracking = 'MightAdvance
-type instance AdvancementOf 'Committing = 'MightAdvance
-type instance AdvancementOf 'Certainty = 'MightAdvance
-
-type instance AdvancementOf 'Certainty0 = 'Stationary
-type instance AdvancementOf 'Failure = 'Stationary
-
-type instance AdvancementOf 'Backtracking1 = 'Advances
-type instance AdvancementOf 'Committing1 = 'Advances
-type instance AdvancementOf 'Certainty1 = 'Advances
-
-type family FallibilityOf (p :: ParserType) :: Fallibility
-
-type instance FallibilityOf 'Any = 'MightFail
-type instance FallibilityOf 'Backtracking = 'MightFail
-type instance FallibilityOf 'Committing = 'MightFail
-type instance FallibilityOf 'Backtracking1 = 'MightFail
-type instance FallibilityOf 'Committing1 = 'MightFail
-type instance FallibilityOf 'Failure = 'MightFail
-
-type instance FallibilityOf 'Certainty0 = 'AlwaysSucceeds
-type instance FallibilityOf 'Certainty1 = 'AlwaysSucceeds
-type instance FallibilityOf 'Certainty = 'AlwaysSucceeds
-
-type family CommitmentOf (p :: ParserType) :: Commitment
-
-type instance CommitmentOf 'Any = 'MightCommitFailure
-type instance CommitmentOf 'Committing = 'MightCommitFailure
-type instance CommitmentOf 'Committing1 = 'MightCommitFailure
-type instance CommitmentOf 'Backtracking = 'Noncommittal
-type instance CommitmentOf 'Backtracking1 = 'Noncommittal
-type instance CommitmentOf 'Certainty0 = 'Noncommittal
-type instance CommitmentOf 'Certainty1 = 'Noncommittal
-type instance CommitmentOf 'Certainty = 'Noncommittal
-type instance CommitmentOf 'Failure = 'Noncommittal
-
-
-data Parser (text :: Type) (pt :: ParserType) (m :: Type -> Type) (a :: Type)
+data Parser (text :: Type) (pt :: StepKind) (m :: Type -> Type) (a :: Type)
   where
-    AnyParser ::
+    AnyParser :: FallibilityOf pt ~ 'MightFail =>
         (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
         -> Parser text pt m a
     CertainParser :: FallibilityOf pt ~ 'AlwaysSucceeds =>
         (Config text -> StateT (DocumentMemory text m) m a)
         -> Parser text pt m a
 
+instance Functor m => Functor (Parser text 'Any m)
+  where
+    fmap f (AnyParser p) = AnyParser $ anyParser' $ fmap f $ AnyParser' p
+
+instance Monad m => Applicative (Parser text 'Any m)
+  where
+    pure x = AnyParser $ anyParser' $ pure x
+    (AnyParser f) <*> (AnyParser x) = AnyParser $ anyParser' $ AnyParser' f <*> AnyParser' x
+
+instance Monad m => Monad (Parser text 'Any m)
+  where
+    AnyParser x >>= f = AnyParser $ anyParser' $ AnyParser' x >>= (\(AnyParser y) -> AnyParser' y) . f
+
+instance Functor m => Functor (Parser text 'Committing1 m)
+  where
+    fmap f (AnyParser p) = AnyParser $ anyParser' $ fmap f $ AnyParser' p
+
+instance Monad m => Applicative (Parser text 'Committing1 m)
+  where
+    pure x = AnyParser $ anyParser' $ pure x
+    (AnyParser f) <*> (AnyParser x) = AnyParser $ anyParser' $ AnyParser' f <*> AnyParser' x
+
+instance Monad m => Monad (Parser text 'Committing1 m)
+  where
+    AnyParser x >>= f = AnyParser $ anyParser' $ AnyParser' x >>= (\(AnyParser y) -> AnyParser' y) . f
+
+newtype AnyParser' text m a = AnyParser'{ anyParser' :: (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a)) }
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
+
+instance Functor m => Functor (Parser text 'Certainty0 m)
+  where
+    fmap f (CertainParser p) = CertainParser $ certainParser' $ fmap f $ CertainParser' p
+
+instance Monad m => Applicative (Parser text 'Certainty0 m)
+  where
+    pure x = CertainParser $ certainParser' $ pure x
+    (CertainParser f) <*> (CertainParser x) = CertainParser $ certainParser' $ CertainParser' f <*> CertainParser' x
+
+instance Monad m => Monad (Parser text 'Certainty0 m)
+  where
+    CertainParser x >>= f = CertainParser $ certainParser' $ CertainParser' x >>= (\(CertainParser y) -> CertainParser' y) . f
+
+newtype CertainParser' text m a = CertainParser'{ certainParser' :: (Config text -> StateT (DocumentMemory text m) m a) }
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT (Config text) (StateT (DocumentMemory text m) m))
+
+-- deriving via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
+--     instance Functor (Parser text 'Any m)
+
 makeError :: Config text -> Error text
 makeError config = Error{ Error.context = Config.context config }
 
-parse :: Monad m => Config text -> Parser text pt m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
-parse config p = let AnyParser p' = generalize p in p' config
+parse :: Monad m => Is pt 'Any => Config text -> Parser text pt m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
+parse config p = let AnyParser p' = generalizeTo @'Any p in p' config
 
-generalize :: Monad m =>
-       Parser text pt m a
-    -> Parser text 'Any m a
-generalize = \case
-    AnyParser p -> AnyParser p
-    CertainParser p -> AnyParser \config -> Right <$> p config
+-- generalize :: forall pt2 pt1 m text. (pt1 `Is` pt2) => Monad m =>
+--        Parser text pt1 m a
+--     -> Parser text pt2 m a
+-- generalize = \case
+--     AnyParser p -> AnyParser p
+--     CertainParser p -> AnyParser \config -> Right <$> p config
 
-parseOnly :: Monad m => ListLike text Char => Config text -> Parser text pt m a -> ListT m text -> m (Either (Error text) a)
+generalizeTo :: forall b a text m r. Monad m => Is a b => Parser text a m r -> Parser text b m r
+generalizeTo = generalize @a @b
+
+class Is a b where generalize :: Monad m => Parser text a m r -> Parser text b m r
+
+instance Is 'Any 'Any where generalize (AnyParser p) = AnyParser p
+instance Is 'Committing1 'Committing1 where generalize (AnyParser p) = AnyParser p
+instance Is 'Backtracking1 'Backtracking1 where generalize (AnyParser p) = AnyParser p
+
+instance Is 'Committing 'Any where generalize (AnyParser p) = AnyParser p
+instance Is 'Backtracking 'Any where generalize (AnyParser p) = AnyParser p
+instance Is 'Backtracking1 'Any where generalize (AnyParser p) = AnyParser p
+instance Is 'Committing1 'Any where generalize (AnyParser p) = AnyParser p
+instance Is 'Failure 'Any where generalize (AnyParser p) = AnyParser p
+instance Is 'Certainty0 'Any where generalize (CertainParser p) = AnyParser \config -> Right <$> p config
+instance Is 'Certainty1 'Any where generalize (CertainParser p) = AnyParser \config -> Right <$> p config
+instance Is 'Certainty 'Any where generalize (CertainParser p) = AnyParser \config -> Right <$> p config
+
+instance Is 'Committing 'Committing
+instance Is 'Backtracking 'Committing
+instance Is 'Backtracking1 'Committing
+instance Is 'Committing1 'Committing
+instance Is 'Certainty0 'Committing
+instance Is 'Certainty1 'Committing
+instance Is 'Certainty 'Committing
+instance Is 'Failure 'Committing
+
+instance Is 'Backtracking1 'Committing1
+instance Is 'Certainty1 'Committing1
+instance Is 'Failure 'Committing1
+
+parseOnly :: Monad m => Is pt 'Any => ListLike text Char => Config text -> Parser text pt m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
-
-
--- -- Each parser type belongs to one of the following two classes:
-
--- class CanConsume0 (p :: ParserKind) where trivial :: Monad m => a -> p text m a
--- instance CanConsume0 Parser where trivial = return
--- instance CanConsume0 Certainty where trivial = return
--- deriving via Parser instance CanConsume0 Possibility
--- deriving via Parser instance CanConsume0 Parser0
-
--- class ConsumesAtLeast1 (p :: ParserKind) where
--- instance ConsumesAtLeast1 Parser1
--- instance ConsumesAtLeast1 Certainty1
--- instance ConsumesAtLeast1 Possibility1
-
-
--- -- Parser types that admit failure:
-
--- class CanFail (p :: ParserKind) where failure :: Monad m => p text m a
--- instance CanFail Parser where failure = Parser (\config -> return (Left (makeError config)))
--- deriving via Parser instance CanFail Parser0
--- deriving via Parser instance CanFail Parser1
--- deriving via Parser instance CanFail Possibility
--- deriving via Parser instance CanFail Possibility1
-
-
--- -- Parser types that can obtain the document position
-
--- class HasPosition (p :: ParserKind) where position :: Monad m => ListLike text Char => p text m Loc
--- instance HasPosition Parser where position = Parser \_config -> Right <$> DocumentMemory.State.getPosition
--- deriving via Parser instance HasPosition Parser1
--- deriving via Parser instance HasPosition Possibility
--- deriving via Parser instance HasPosition Possibility1
--- instance HasPosition Certainty where position = Certainty \_config -> DocumentMemory.State.getPosition

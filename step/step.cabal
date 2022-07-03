@@ -29,6 +29,7 @@ common base
         MultiParamTypeClasses
         NoImplicitPrelude
         OverloadedStrings
+        -- QualifiedDo
         RankNTypes
         ScopedTypeVariables
         StandaloneDeriving
@@ -36,6 +37,7 @@ common base
         TemplateHaskell
         TypeApplications
         TypeFamilies
+        TypeOperators
         ViewPatterns
     build-depends:
         base
@@ -50,7 +52,8 @@ common base
       , optics
     mixins:
         base
-          ( Data.Char as Char
+          ( Data.Bool as Bool
+          , Data.Char as Char
           , Data.Coerce as Coerce
           , Data.Kind as Kind
           , Data.Word as Word
@@ -110,6 +113,7 @@ library
         Step.CursorPosition.Base
 
         Step.Document.Config
+        Step.Document.Do
         Step.Document.Error
         Step.Document.Loc
         Step.Document.Parser
@@ -117,6 +121,8 @@ library
 
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
+
+        Step.Kind.Base
 
         Step.Nontrivial.Base
         Step.Nontrivial.List

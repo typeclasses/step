@@ -47,11 +47,15 @@ import qualified Step.Document.Config as Config
 
 import Step.Nontrivial.Base (Nontrivial)
 
-char :: Monad m => ListLike text Char => Parser text 'Backtracking m Char
+import qualified Step.Document.Do as P
+
+import Step.Kind.Base
+
+char :: Monad m => ListLike text Char => Parser text 'Backtracking1 m Char
 char = AnyParser \config ->
     DocumentMemory.State.takeChar <&> maybe (Left (makeError config)) Right
 
-satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text 'Backtracking m Char
+satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text 'Backtracking1 m Char
 satisfy ok = AnyParser \config ->
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (makeError config)
@@ -66,7 +70,7 @@ text x = AnyParser \config ->
 atEnd :: Monad m => ListLike text Char => Parser text 'Certainty0 m Bool
 atEnd = CertainParser \_config -> DocumentMemory.State.atEnd
 
-end :: Monad m => ListLike text Char => Parser text 'Certainty0 m ()
+end :: Monad m => ListLike text Char => Parser text 'Backtracking m ()
 end = AnyParser \config ->
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
@@ -109,7 +113,10 @@ withLocation = \case
 
 repetition :: Monad m =>
     ListLike list a =>
-    Parser text 'Backtracking1 m a
+    FallibilityOf pt ~ 'MightFail =>
+    CommitmentOf pt ~ 'Noncommittal =>
+    CanBeStationary (AdvancementOf pt) ~ 'False =>
+    Parser text pt m a
     -> Parser text 'Certainty m list
 repetition (AnyParser p) = CertainParser \config -> fix \r ->
     p config >>= \case
