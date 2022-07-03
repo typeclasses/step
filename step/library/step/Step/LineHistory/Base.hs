@@ -14,7 +14,7 @@ import qualified Step.Buffer.Base as Buffer
 
 import Loc (Line, Loc, loc)
 import qualified Loc
-import qualified Step.Document.Loc as Loc
+import qualified Step.Loc.Optics as Loc
 
 import qualified Map
 

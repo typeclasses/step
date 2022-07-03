@@ -23,6 +23,7 @@ common base
         FlexibleContexts
         FlexibleInstances
         FunctionalDependencies
+        InstanceSigs
         LambdaCase
         GADTs
         GeneralizedNewtypeDeriving
@@ -114,16 +115,18 @@ library
         Step.CursorPosition.Base
 
         Step.Document.Config
-        Step.Document.Do
         Step.Document.Error
-        Step.Document.Loc
         Step.Document.Parser
         Step.Document.Prelude
 
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
 
-        Step.Kind.Base
+        Step.Action.Family
+        Step.Action.Do
+        Step.Action.Join
+        Step.Action.Kind
+        Step.Action.Lift
 
         Step.Nontrivial.Base
         Step.Nontrivial.List
@@ -132,6 +135,8 @@ library
         Step.LineHistory.Base
         Step.LineHistory.Build
         Step.LineHistory.State
+
+        Step.Loc.Optics
 
         Step.Tentative.Base
         Step.Tentative.State

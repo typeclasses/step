@@ -1,13 +1,13 @@
-module Step.Kind.Base where
+module Step.Action.Kind where
 
 import Bool (Bool (..))
 
-data StepKind =
+data ActionKind =
     Any        -- ^ No known properties
   | Static     -- ^ Does not move the cursor
   | Move       -- ^ Always moves the cursor
-  | Undo       -- ^ Fails noncommitally
-  | MoveUndo   -- ^ Always moves the cursor, fails noncommitally
+  | Undo       -- ^ Fails noncommittally
+  | MoveUndo   -- ^ Always moves the cursor, fails noncommittally
   | Sure       -- ^ Always succeeds
   | SureStatic -- ^ Always succeeds, does not move the cursor
   | SureMove   -- ^ Always succeeds, always moves the cursor
@@ -16,7 +16,7 @@ data Advancement = Stationary | Advances | MightAdvance
 
 data Fallibility = MightFail | AlwaysSucceeds
 
-data Commitment = Noncommittal | MightCommitFailure
+data Commitment = Noncommittal | MightCommitFailure | EitherCannotMoveOrCannotFail
 
 type family CanBeStationary (p :: Advancement) :: Bool
 
@@ -30,7 +30,7 @@ type instance CanAdvance 'Stationary = 'False
 type instance CanAdvance 'MightAdvance = 'True
 type instance CanAdvance 'Advances = 'True
 
-type family AdvancementOf (p :: StepKind) :: Advancement
+type family AdvancementOf (p :: ActionKind) :: Advancement
 
 type instance AdvancementOf 'Any = 'MightAdvance
 type instance AdvancementOf 'Undo = 'MightAdvance
@@ -43,7 +43,7 @@ type instance AdvancementOf 'MoveUndo = 'Advances
 type instance AdvancementOf 'Move = 'Advances
 type instance AdvancementOf 'SureMove = 'Advances
 
-type family FallibilityOf (p :: StepKind) :: Fallibility
+type family FallibilityOf (p :: ActionKind) :: Fallibility
 
 type instance FallibilityOf 'Any = 'MightFail
 type instance FallibilityOf 'Undo = 'MightFail
@@ -55,13 +55,19 @@ type instance FallibilityOf 'SureStatic = 'AlwaysSucceeds
 type instance FallibilityOf 'SureMove = 'AlwaysSucceeds
 type instance FallibilityOf 'Sure = 'AlwaysSucceeds
 
-type family CommitmentOf (p :: StepKind) :: Commitment
+type family CommitmentOf (p :: ActionKind) :: Commitment
 
 type instance CommitmentOf 'Any = 'MightCommitFailure
 type instance CommitmentOf 'Move = 'MightCommitFailure
 type instance CommitmentOf 'Undo = 'Noncommittal
 type instance CommitmentOf 'MoveUndo = 'Noncommittal
-type instance CommitmentOf 'SureStatic = 'Noncommittal
-type instance CommitmentOf 'SureMove = 'Noncommittal
-type instance CommitmentOf 'Sure = 'Noncommittal
-type instance CommitmentOf 'Static = 'Noncommittal
+type instance CommitmentOf 'SureStatic = 'EitherCannotMoveOrCannotFail
+type instance CommitmentOf 'SureMove = 'EitherCannotMoveOrCannotFail
+type instance CommitmentOf 'Sure = 'EitherCannotMoveOrCannotFail
+type instance CommitmentOf 'Static = 'EitherCannotMoveOrCannotFail
+
+type family IsSequenceable (p :: Commitment) :: Bool
+
+type instance IsSequenceable 'MightCommitFailure = 'True
+type instance IsSequenceable 'Noncommittal = 'False
+type instance IsSequenceable 'EitherCannotMoveOrCannotFail = 'True

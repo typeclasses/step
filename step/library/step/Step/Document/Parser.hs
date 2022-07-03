@@ -14,113 +14,26 @@ import qualified Step.Document.Error as Error
 
 import Loc (Loc)
 
-import Step.Kind.Base (StepKind (..), FallibilityOf, Fallibility (..))
+import qualified Step.Action.Kind as ActionKind
+import Step.Action.Kind (ActionKind)
+import Step.Action.Family (Action)
+import qualified Step.Action.Family as Action
+import qualified Step.Action.Lift as Action
 
-data Parser (text :: Type) (pt :: StepKind) (m :: Type -> Type) (a :: Type)
-  where
-    AnyParser :: FallibilityOf pt ~ 'MightFail =>
-        (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a))
-        -> Parser text pt m a
-    CertainParser :: FallibilityOf pt ~ 'AlwaysSucceeds =>
-        (Config text -> StateT (DocumentMemory text m) m a)
-        -> Parser text pt m a
+newtype Parser (text :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Type) =
+    Parser (Action kind (Config text) (DocumentMemory text m) (Error text) m a)
 
-deriving stock instance Functor m => Functor (Parser text pt m)
+deriving newtype instance Functor m => Functor (Parser text kind m)
 
--- instance Functor m => Functor (Parser text 'Any m)
---   where
---     fmap f (AnyParser p) = AnyParser $ anyParser' $ fmap f $ AnyParser' p
+deriving newtype instance Monad m => Applicative (Parser text kind m)
 
--- instance Monad m => Applicative (Parser text 'Any m)
---   where
---     pure x = AnyParser $ anyParser' $ pure x
---     (AnyParser f) <*> (AnyParser x) = AnyParser $ anyParser' $ AnyParser' f <*> AnyParser' x
-
--- instance Monad m => Monad (Parser text 'Any m)
---   where
---     AnyParser x >>= f = AnyParser $ anyParser' $ AnyParser' x >>= (\(AnyParser y) -> AnyParser' y) . f
-
--- newtype AnyParser' text m a = AnyParser'{ anyParser' :: (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a)) }
---     deriving (Functor, Applicative, Monad)
---         via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
-
--- instance Functor m => Functor (Parser text 'SureStatic m)
---   where
---     fmap f (CertainParser p) = CertainParser $ certainParser' $ fmap f $ CertainParser' p
-
--- instance Monad m => Applicative (Parser text 'SureStatic m)
---   where
---     pure x = CertainParser $ certainParser' $ pure x
---     (CertainParser f) <*> (CertainParser x) = CertainParser $ certainParser' $ CertainParser' f <*> CertainParser' x
-
--- instance Monad m => Monad (Parser text 'SureStatic m)
---   where
---     CertainParser x >>= f = CertainParser $ certainParser' $ CertainParser' x >>= (\(CertainParser y) -> CertainParser' y) . f
-
--- newtype CertainParser' text m a = CertainParser'{ certainParser' :: (Config text -> StateT (DocumentMemory text m) m a) }
---     deriving (Functor, Applicative, Monad)
---         via (ReaderT (Config text) (StateT (DocumentMemory text m) m))
-
--- deriving via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
---     instance Functor (Parser text 'Any m)
+deriving newtype instance Monad m => Monad (Parser text kind m)
 
 makeError :: Config text -> Error text
 makeError config = Error{ Error.context = Config.context config }
 
-parse :: Monad m => Is pt 'Any => Config text -> Parser text pt m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
-parse config p = let AnyParser p' = generalizeTo @'Any p in p' config
+parse :: Monad m => Action.Lift k 'ActionKind.Any => Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
+parse config p = let Action.Any p' = Action.liftTo @'ActionKind.Any p in StateT (p' config)
 
--- generalize :: forall pt2 pt1 m text. (pt1 `Is` pt2) => Monad m =>
---        Parser text pt1 m a
---     -> Parser text pt2 m a
--- generalize = \case
---     AnyParser p -> AnyParser p
---     CertainParser p -> AnyParser \config -> Right <$> p config
-
-generalizeTo :: forall b a text m r. Monad m => Is a b => Parser text a m r -> Parser text b m r
-generalizeTo = generalize @a @b
-
-class PolyJoin (pt1 :: StepKind) (pt2 :: StepKind) (pt3 :: StepKind) | pt1 pt2 -> pt3 where
-    polyJoin :: Parser text pt1 m (Parser text p2 m a) -> Parser text p3 m a
-
--- todo: ugh there will be 64 of these
-instance PolyJoin 'MoveUndo 'SureStatic 'Move where
-instance PolyJoin 'SureStatic 'MoveUndo 'Move where
-instance PolyJoin 'MoveUndo 'Move 'Move where
-instance PolyJoin 'Move 'MoveUndo 'Move where
-instance PolyJoin 'Move 'Move 'Move where
-instance PolyJoin 'MoveUndo 'Any 'Move where
-instance PolyJoin 'Any 'MoveUndo 'Move where
-instance PolyJoin 'Move 'Any 'Move where
-instance PolyJoin 'Any 'Move 'Move where
-instance PolyJoin 'Any 'Any 'Any where
-instance PolyJoin 'Any 'SureStatic 'Any where
-instance PolyJoin 'SureStatic 'Any 'Any where
-instance PolyJoin 'MoveUndo 'MoveUndo 'Move
-instance PolyJoin 'Move 'Undo 'Move
-instance PolyJoin 'Undo 'Move 'Move
-instance PolyJoin 'Move 'Static 'Move
-instance PolyJoin 'Static 'Move 'Move
-
-class Is pt1 pt2 where
-    generalize :: Monad m => Parser text pt1 m a -> Parser text pt2 m a
-
-instance Is 'Any 'Any where
-
-instance Is 'Move 'Any where
-
-instance Is 'MoveUndo 'Any where
-
-instance Is 'MoveUndo 'Move where
-
-instance Is 'Sure 'Any where
-
-instance Is 'SureStatic 'Any
-
-instance Is 'SureStatic 'Sure
-
-to :: forall pt2 pt1 text m a. Is pt1 pt2 => Monad m => Parser text pt1 m a -> Parser text pt2 m a
-to = generalize
-
-parseOnly :: Is pt 'Any => Monad m => ListLike text Char => Config text -> Parser text pt m a -> ListT m text -> m (Either (Error text) a)
+parseOnly :: Action.Lift k 'ActionKind.Any => Monad m => ListLike text Char => Config text -> Parser text k m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
