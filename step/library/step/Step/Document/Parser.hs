@@ -38,19 +38,6 @@ instance Monad m => Monad (Parser text 'Any m)
   where
     AnyParser x >>= f = AnyParser $ anyParser' $ AnyParser' x >>= (\(AnyParser y) -> AnyParser' y) . f
 
-instance Functor m => Functor (Parser text 'Committing1 m)
-  where
-    fmap f (AnyParser p) = AnyParser $ anyParser' $ fmap f $ AnyParser' p
-
-instance Monad m => Applicative (Parser text 'Committing1 m)
-  where
-    pure x = AnyParser $ anyParser' $ pure x
-    (AnyParser f) <*> (AnyParser x) = AnyParser $ anyParser' $ AnyParser' f <*> AnyParser' x
-
-instance Monad m => Monad (Parser text 'Committing1 m)
-  where
-    AnyParser x >>= f = AnyParser $ anyParser' $ AnyParser' x >>= (\(AnyParser y) -> AnyParser' y) . f
-
 newtype AnyParser' text m a = AnyParser'{ anyParser' :: (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a)) }
     deriving (Functor, Applicative, Monad)
         via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
@@ -91,33 +78,48 @@ parse config p = let AnyParser p' = generalizeTo @'Any p in p' config
 generalizeTo :: forall b a text m r. Monad m => Is a b => Parser text a m r -> Parser text b m r
 generalizeTo = generalize @a @b
 
-class Is a b where generalize :: Monad m => Parser text a m r -> Parser text b m r
+class Bind pt1 pt2 pt3 | pt1 pt2 -> pt3 where
+    bind :: Parser text pt1 m a
+          -> (a -> Parser text pt2 m b)
+          -> Parser text pt3 m b
 
-instance Is 'Any 'Any where generalize (AnyParser p) = AnyParser p
-instance Is 'Committing1 'Committing1 where generalize (AnyParser p) = AnyParser p
-instance Is 'Backtracking1 'Backtracking1 where generalize (AnyParser p) = AnyParser p
+instance Bind 'Backtracking 'Certainty0 'Committing where
 
-instance Is 'Committing 'Any where generalize (AnyParser p) = AnyParser p
-instance Is 'Backtracking 'Any where generalize (AnyParser p) = AnyParser p
-instance Is 'Backtracking1 'Any where generalize (AnyParser p) = AnyParser p
-instance Is 'Committing1 'Any where generalize (AnyParser p) = AnyParser p
-instance Is 'Failure 'Any where generalize (AnyParser p) = AnyParser p
-instance Is 'Certainty0 'Any where generalize (CertainParser p) = AnyParser \config -> Right <$> p config
-instance Is 'Certainty1 'Any where generalize (CertainParser p) = AnyParser \config -> Right <$> p config
-instance Is 'Certainty 'Any where generalize (CertainParser p) = AnyParser \config -> Right <$> p config
+instance Bind 'Backtracking1 'Certainty0 'Committing1 where
 
-instance Is 'Committing 'Committing
-instance Is 'Backtracking 'Committing
-instance Is 'Backtracking1 'Committing
-instance Is 'Committing1 'Committing
-instance Is 'Certainty0 'Committing
-instance Is 'Certainty1 'Committing
-instance Is 'Certainty 'Committing
-instance Is 'Failure 'Committing
+instance Bind 'Backtracking1 'Committing1 'Committing1 where
 
-instance Is 'Backtracking1 'Committing1
-instance Is 'Certainty1 'Committing1
-instance Is 'Failure 'Committing1
+instance Bind 'Committing1 'Committing1 'Committing1 where
 
-parseOnly :: Monad m => Is pt 'Any => ListLike text Char => Config text -> Parser text pt m a -> ListT m text -> m (Either (Error text) a)
+instance Bind 'Committing1 'Committing 'Committing1 where
+
+instance Bind 'Backtracking1 'Any 'Committing1 where
+
+instance Bind 'Committing1 'Any 'Committing1 where
+
+instance Bind 'Any 'Any 'Any where
+
+class Is pt1 pt2 where
+    generalize :: Monad m => Parser text pt1 m a -> Parser text pt2 m a
+
+instance Is 'Any 'Any where
+
+instance Is 'Committing1 'Any where
+
+instance Is 'Backtracking1 'Any where
+
+instance Is 'Backtracking1 'Committing1 where
+
+instance Is 'Certainty 'Any where
+
+instance Is 'Committing 'Any where
+
+instance Is 'Certainty0 'Any
+
+instance Is 'Certainty0 'Certainty
+
+to :: forall pt2 pt1 text m a. Is pt1 pt2 => Monad m => Parser text pt1 m a -> Parser text pt2 m a
+to = generalize
+
+parseOnly :: Is pt 'Any => Monad m => ListLike text Char => Config text -> Parser text pt m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)

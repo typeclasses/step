@@ -29,7 +29,7 @@ common base
         MultiParamTypeClasses
         NoImplicitPrelude
         OverloadedStrings
-        -- QualifiedDo
+        QualifiedDo
         RankNTypes
         ScopedTypeVariables
         StandaloneDeriving

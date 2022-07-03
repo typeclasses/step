@@ -20,29 +20,6 @@ data Fallibility = MightFail | AlwaysSucceeds
 
 data Commitment = Noncommittal | MightCommitFailure
 
-type family Join (a :: StepKind) (b :: StepKind) :: StepKind
-
-type instance Join 'Any 'Any = 'Any
-type instance Join 'Committing 'Committing = 'Committing
-type instance Join 'Backtracking 'Backtracking = 'Committing
-type instance Join 'Committing1 'Committing1 = 'Committing1
-type instance Join 'Backtracking1 'Backtracking1 = 'Committing1
-
-type instance Join 'Any 'Committing = 'Any
-type instance Join 'Committing 'Any = 'Any
-
-type instance Join 'Committing 'Backtracking = 'Committing
-type instance Join 'Backtracking 'Committing = 'Committing
-
-type instance Join 'Backtracking1 'Certainty1 = 'Committing1
-type instance Join 'Certainty1 'Backtracking1 = 'Committing1
-
-type instance Join 'Certainty0 'Backtracking1 = 'Committing1
-type instance Join 'Backtracking1 'Certainty0 = 'Committing1
-
-type instance Join 'Committing1 'Backtracking1 = 'Committing1
-type instance Join 'Backtracking1 'Committing1 = 'Committing1
-
 type family CanBeStationary (p :: Advancement) :: Bool
 
 type instance CanBeStationary 'Stationary = 'True
