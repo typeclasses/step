@@ -3,15 +3,14 @@ module Step.Kind.Base where
 import Bool (Bool (..))
 
 data StepKind =
-    Any
-  | Committing1
-  | Backtracking
-  | Backtracking1
-  | Certainty0
-  | Certainty1
-  | Certainty
-  | Fallible0
-  | Failure
+    Any        -- ^ No known properties
+  | Static     -- ^ Does not move the cursor
+  | Move       -- ^ Always moves the cursor
+  | Undo       -- ^ Fails noncommitally
+  | MoveUndo   -- ^ Always moves the cursor, fails noncommitally
+  | Sure       -- ^ Always succeeds
+  | SureStatic -- ^ Always succeeds, does not move the cursor
+  | SureMove   -- ^ Always succeeds, always moves the cursor
 
 data Advancement = Stationary | Advances | MightAdvance
 
@@ -34,38 +33,35 @@ type instance CanAdvance 'Advances = 'True
 type family AdvancementOf (p :: StepKind) :: Advancement
 
 type instance AdvancementOf 'Any = 'MightAdvance
-type instance AdvancementOf 'Backtracking = 'MightAdvance
-type instance AdvancementOf 'Certainty = 'MightAdvance
+type instance AdvancementOf 'Undo = 'MightAdvance
+type instance AdvancementOf 'Sure = 'MightAdvance
 
-type instance AdvancementOf 'Certainty0 = 'Stationary
-type instance AdvancementOf 'Failure = 'Stationary
-type instance AdvancementOf 'Fallible0 = 'Stationary
+type instance AdvancementOf 'SureStatic = 'Stationary
+type instance AdvancementOf 'Static = 'Stationary
 
-type instance AdvancementOf 'Backtracking1 = 'Advances
-type instance AdvancementOf 'Committing1 = 'Advances
-type instance AdvancementOf 'Certainty1 = 'Advances
+type instance AdvancementOf 'MoveUndo = 'Advances
+type instance AdvancementOf 'Move = 'Advances
+type instance AdvancementOf 'SureMove = 'Advances
 
 type family FallibilityOf (p :: StepKind) :: Fallibility
 
 type instance FallibilityOf 'Any = 'MightFail
-type instance FallibilityOf 'Backtracking = 'MightFail
-type instance FallibilityOf 'Backtracking1 = 'MightFail
-type instance FallibilityOf 'Committing1 = 'MightFail
-type instance FallibilityOf 'Failure = 'MightFail
-type instance FallibilityOf 'Fallible0 = 'MightFail
+type instance FallibilityOf 'Undo = 'MightFail
+type instance FallibilityOf 'MoveUndo = 'MightFail
+type instance FallibilityOf 'Move = 'MightFail
+type instance FallibilityOf 'Static = 'MightFail
 
-type instance FallibilityOf 'Certainty0 = 'AlwaysSucceeds
-type instance FallibilityOf 'Certainty1 = 'AlwaysSucceeds
-type instance FallibilityOf 'Certainty = 'AlwaysSucceeds
+type instance FallibilityOf 'SureStatic = 'AlwaysSucceeds
+type instance FallibilityOf 'SureMove = 'AlwaysSucceeds
+type instance FallibilityOf 'Sure = 'AlwaysSucceeds
 
 type family CommitmentOf (p :: StepKind) :: Commitment
 
 type instance CommitmentOf 'Any = 'MightCommitFailure
-type instance CommitmentOf 'Committing1 = 'MightCommitFailure
-type instance CommitmentOf 'Backtracking = 'Noncommittal
-type instance CommitmentOf 'Backtracking1 = 'Noncommittal
-type instance CommitmentOf 'Certainty0 = 'Noncommittal
-type instance CommitmentOf 'Certainty1 = 'Noncommittal
-type instance CommitmentOf 'Certainty = 'Noncommittal
-type instance CommitmentOf 'Failure = 'Noncommittal
-type instance CommitmentOf 'Fallible0 = 'Noncommittal
+type instance CommitmentOf 'Move = 'MightCommitFailure
+type instance CommitmentOf 'Undo = 'Noncommittal
+type instance CommitmentOf 'MoveUndo = 'Noncommittal
+type instance CommitmentOf 'SureStatic = 'Noncommittal
+type instance CommitmentOf 'SureMove = 'Noncommittal
+type instance CommitmentOf 'Sure = 'Noncommittal
+type instance CommitmentOf 'Static = 'Noncommittal

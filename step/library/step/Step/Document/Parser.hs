@@ -42,16 +42,16 @@ newtype AnyParser' text m a = AnyParser'{ anyParser' :: (Config text -> StateT (
     deriving (Functor, Applicative, Monad)
         via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
 
-instance Functor m => Functor (Parser text 'Certainty0 m)
+instance Functor m => Functor (Parser text 'SureStatic m)
   where
     fmap f (CertainParser p) = CertainParser $ certainParser' $ fmap f $ CertainParser' p
 
-instance Monad m => Applicative (Parser text 'Certainty0 m)
+instance Monad m => Applicative (Parser text 'SureStatic m)
   where
     pure x = CertainParser $ certainParser' $ pure x
     (CertainParser f) <*> (CertainParser x) = CertainParser $ certainParser' $ CertainParser' f <*> CertainParser' x
 
-instance Monad m => Monad (Parser text 'Certainty0 m)
+instance Monad m => Monad (Parser text 'SureStatic m)
   where
     CertainParser x >>= f = CertainParser $ certainParser' $ CertainParser' x >>= (\(CertainParser y) -> CertainParser' y) . f
 
@@ -83,15 +83,15 @@ class Bind pt1 pt2 pt3 | pt1 pt2 -> pt3 where
           -> (a -> Parser text pt2 m b)
           -> Parser text pt3 m b
 
-instance Bind 'Backtracking1 'Certainty0 'Committing1 where
+instance Bind 'MoveUndo 'SureStatic 'Move where
 
-instance Bind 'Backtracking1 'Committing1 'Committing1 where
+instance Bind 'MoveUndo 'Move 'Move where
 
-instance Bind 'Committing1 'Committing1 'Committing1 where
+instance Bind 'Move 'Move 'Move where
 
-instance Bind 'Backtracking1 'Any 'Committing1 where
+instance Bind 'MoveUndo 'Any 'Move where
 
-instance Bind 'Committing1 'Any 'Committing1 where
+instance Bind 'Move 'Any 'Move where
 
 instance Bind 'Any 'Any 'Any where
 
@@ -100,17 +100,17 @@ class Is pt1 pt2 where
 
 instance Is 'Any 'Any where
 
-instance Is 'Committing1 'Any where
+instance Is 'Move 'Any where
 
-instance Is 'Backtracking1 'Any where
+instance Is 'MoveUndo 'Any where
 
-instance Is 'Backtracking1 'Committing1 where
+instance Is 'MoveUndo 'Move where
 
-instance Is 'Certainty 'Any where
+instance Is 'Sure 'Any where
 
-instance Is 'Certainty0 'Any
+instance Is 'SureStatic 'Any
 
-instance Is 'Certainty0 'Certainty
+instance Is 'SureStatic 'Sure
 
 to :: forall pt2 pt1 text m a. Is pt1 pt2 => Monad m => Parser text pt1 m a -> Parser text pt2 m a
 to = generalize

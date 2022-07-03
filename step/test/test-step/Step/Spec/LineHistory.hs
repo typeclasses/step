@@ -31,7 +31,7 @@ spec :: SpecWith ()
 spec = describe "Line history" do
 
     specify "example 1" $ hedgehog do
-        input :: [Text] <- forAll (genChunks "One\r\nTwo\rThree")
+        input :: [Text] <- forAll (genChunks "Move\r\nTwo\rThree")
         let lh = LineHistory.build input
         LineHistory.locateCursorInDocument  0 lh === Just (LineHistory.CursorAt (loc 1 1))
         LineHistory.locateCursorInDocument  1 lh === Just (LineHistory.CursorAt (loc 1 2))

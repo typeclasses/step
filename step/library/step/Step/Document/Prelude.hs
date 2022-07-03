@@ -51,11 +51,11 @@ import qualified Step.Document.Do as P
 
 import Step.Kind.Base
 
-char :: Monad m => ListLike text Char => Parser text 'Backtracking1 m Char
+char :: Monad m => ListLike text Char => Parser text 'MoveUndo m Char
 char = AnyParser \config ->
     DocumentMemory.State.takeChar <&> maybe (Left (makeError config)) Right
 
-satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text 'Backtracking1 m Char
+satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text 'MoveUndo m Char
 satisfy ok = AnyParser \config ->
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (makeError config)
@@ -67,10 +67,10 @@ text x = AnyParser \config ->
         True -> Right ()
         False -> Left (makeError config)
 
-atEnd :: Monad m => ListLike text Char => Parser text 'Certainty0 m Bool
+atEnd :: Monad m => ListLike text Char => Parser text 'SureStatic m Bool
 atEnd = CertainParser \_config -> DocumentMemory.State.atEnd
 
-end :: Monad m => ListLike text Char => Parser text 'Backtracking m ()
+end :: Monad m => ListLike text Char => Parser text 'Undo m ()
 end = AnyParser \config ->
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
@@ -91,7 +91,7 @@ contextualize c = \case
     -> Parser text pt m a
 p <?> c = contextualize c p
 
-position :: Monad m => ListLike text char => Parser text 'Certainty0 m Loc
+position :: Monad m => ListLike text char => Parser text 'SureStatic m Loc
 position = CertainParser \_config -> DocumentMemory.State.getPosition
 
 withLocation :: ListLike text Char => Monad m =>
@@ -117,17 +117,17 @@ repetition :: Monad m =>
     CommitmentOf pt ~ 'Noncommittal =>
     CanBeStationary (AdvancementOf pt) ~ 'False =>
     Parser text pt m a
-    -> Parser text 'Certainty m list
+    -> Parser text 'Sure m list
 repetition (AnyParser p) = CertainParser \config -> fix \r ->
     p config >>= \case
         Left _ -> return ListLike.empty
         Right x -> ListLike.cons x <$> r
 
 -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
-all :: Monad m => ListLike text Char => Parser text 'Certainty m text
+all :: Monad m => ListLike text Char => Parser text 'Sure m text
 all = CertainParser \_config -> DocumentMemory.State.takeAll
 
-failure :: Monad m => Parser text 'Failure m a
+failure :: Monad m => Parser text 'Any m a
 failure = AnyParser \config -> return (Left (makeError config))
 
 -- under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
