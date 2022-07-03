@@ -25,39 +25,41 @@ data Parser (text :: Type) (pt :: StepKind) (m :: Type -> Type) (a :: Type)
         (Config text -> StateT (DocumentMemory text m) m a)
         -> Parser text pt m a
 
-instance Functor m => Functor (Parser text 'Any m)
-  where
-    fmap f (AnyParser p) = AnyParser $ anyParser' $ fmap f $ AnyParser' p
+deriving stock instance Functor m => Functor (Parser text pt m)
 
-instance Monad m => Applicative (Parser text 'Any m)
-  where
-    pure x = AnyParser $ anyParser' $ pure x
-    (AnyParser f) <*> (AnyParser x) = AnyParser $ anyParser' $ AnyParser' f <*> AnyParser' x
+-- instance Functor m => Functor (Parser text 'Any m)
+--   where
+--     fmap f (AnyParser p) = AnyParser $ anyParser' $ fmap f $ AnyParser' p
 
-instance Monad m => Monad (Parser text 'Any m)
-  where
-    AnyParser x >>= f = AnyParser $ anyParser' $ AnyParser' x >>= (\(AnyParser y) -> AnyParser' y) . f
+-- instance Monad m => Applicative (Parser text 'Any m)
+--   where
+--     pure x = AnyParser $ anyParser' $ pure x
+--     (AnyParser f) <*> (AnyParser x) = AnyParser $ anyParser' $ AnyParser' f <*> AnyParser' x
 
-newtype AnyParser' text m a = AnyParser'{ anyParser' :: (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a)) }
-    deriving (Functor, Applicative, Monad)
-        via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
+-- instance Monad m => Monad (Parser text 'Any m)
+--   where
+--     AnyParser x >>= f = AnyParser $ anyParser' $ AnyParser' x >>= (\(AnyParser y) -> AnyParser' y) . f
 
-instance Functor m => Functor (Parser text 'SureStatic m)
-  where
-    fmap f (CertainParser p) = CertainParser $ certainParser' $ fmap f $ CertainParser' p
+-- newtype AnyParser' text m a = AnyParser'{ anyParser' :: (Config text -> StateT (DocumentMemory text m) m (Either (Error text) a)) }
+--     deriving (Functor, Applicative, Monad)
+--         via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
 
-instance Monad m => Applicative (Parser text 'SureStatic m)
-  where
-    pure x = CertainParser $ certainParser' $ pure x
-    (CertainParser f) <*> (CertainParser x) = CertainParser $ certainParser' $ CertainParser' f <*> CertainParser' x
+-- instance Functor m => Functor (Parser text 'SureStatic m)
+--   where
+--     fmap f (CertainParser p) = CertainParser $ certainParser' $ fmap f $ CertainParser' p
 
-instance Monad m => Monad (Parser text 'SureStatic m)
-  where
-    CertainParser x >>= f = CertainParser $ certainParser' $ CertainParser' x >>= (\(CertainParser y) -> CertainParser' y) . f
+-- instance Monad m => Applicative (Parser text 'SureStatic m)
+--   where
+--     pure x = CertainParser $ certainParser' $ pure x
+--     (CertainParser f) <*> (CertainParser x) = CertainParser $ certainParser' $ CertainParser' f <*> CertainParser' x
 
-newtype CertainParser' text m a = CertainParser'{ certainParser' :: (Config text -> StateT (DocumentMemory text m) m a) }
-    deriving (Functor, Applicative, Monad)
-        via (ReaderT (Config text) (StateT (DocumentMemory text m) m))
+-- instance Monad m => Monad (Parser text 'SureStatic m)
+--   where
+--     CertainParser x >>= f = CertainParser $ certainParser' $ CertainParser' x >>= (\(CertainParser y) -> CertainParser' y) . f
+
+-- newtype CertainParser' text m a = CertainParser'{ certainParser' :: (Config text -> StateT (DocumentMemory text m) m a) }
+--     deriving (Functor, Applicative, Monad)
+--         via (ReaderT (Config text) (StateT (DocumentMemory text m) m))
 
 -- deriving via (ReaderT (Config text) (ExceptT (Error text) (StateT (DocumentMemory text m) m)))
 --     instance Functor (Parser text 'Any m)
@@ -83,15 +85,27 @@ class PolyJoin (pt1 :: StepKind) (pt2 :: StepKind) (pt3 :: StepKind) | pt1 pt2 -
 
 instance PolyJoin 'MoveUndo 'SureStatic 'Move where
 
+instance PolyJoin 'SureStatic 'MoveUndo 'Move where
+
 instance PolyJoin 'MoveUndo 'Move 'Move where
+
+instance PolyJoin 'Move 'MoveUndo 'Move where
 
 instance PolyJoin 'Move 'Move 'Move where
 
 instance PolyJoin 'MoveUndo 'Any 'Move where
 
+instance PolyJoin 'Any 'MoveUndo 'Move where
+
 instance PolyJoin 'Move 'Any 'Move where
 
+instance PolyJoin 'Any 'Move 'Move where
+
 instance PolyJoin 'Any 'Any 'Any where
+
+instance PolyJoin 'Any 'SureStatic 'Any where
+
+instance PolyJoin 'SureStatic 'Any 'Any where
 
 class Is pt1 pt2 where
     generalize :: Monad m => Parser text pt1 m a -> Parser text pt2 m a

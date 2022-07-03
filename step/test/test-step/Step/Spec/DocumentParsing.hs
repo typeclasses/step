@@ -18,7 +18,7 @@ import Test.Hspec.Hedgehog
 
 import Text (Text)
 
-import Loc (loc)
+import Loc (loc, SpanOrLoc)
 import qualified SpanOrLoc
 
 -- The modules under test
@@ -35,7 +35,6 @@ spec = describe "Document parsing" do
 
     describe "p = char, char, char" do
         let p = P.do{ a <- char; b <- char; c <- char; return (a, b, c) }
-        -- let p = (,,) P.<$> char P.<*> char P.<*> char
 
         specify "(p <* end) parses \"abc\"" $ hedgehog do
             input :: [Text] <- forAll (genChunks "abc")
@@ -125,7 +124,8 @@ spec = describe "Document parsing" do
     describe "withLocation" do
 
         specify "one-line example" $ hedgehog do
-            let p = P.do{ text "abc"; x <- withLocation (text "def"); text "ghi"; return x }
+            let p :: Parser Text 'Move Identity (SpanOrLoc, ()) =
+                  P.do{ text "abc"; x <- withLocation (text "def"); text "ghi"; return x }
             input :: [Text] <- forAll (genChunks "abcdefghi")
             let x = runIdentity $ parseOnly def p (ListT.select input)
             x === Right (SpanOrLoc.fromTo (loc 1 4) (loc 1 7), ())
