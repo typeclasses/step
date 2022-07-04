@@ -24,8 +24,6 @@ import Variado.Monad.Class
 newtype Parser (text :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Type) =
     Parser (Action kind (Config text) (DocumentMemory text m) (Error text) m a)
     deriving newtype (Functor, Applicative, Monad)
-    -- deriving (Functor, Configurable (Config text))
-    --     via (Action kind (Config text) (DocumentMemory text m) (Error text) m)
 
 instance (Monad m, IsAction kind1, IsAction kind2, ActionJoin kind1 kind2) => PolyMonad (Parser text kind1 m) (Parser text kind2 m)
   where
@@ -45,18 +43,6 @@ action' :: IsAction kind => Iso
     (kind (Config text1) (DocumentMemory text1 m1) (Error text1) m1 a1)
     (kind (Config text2) (DocumentMemory text2 m2) (Error text2) m2 a2)
 action' = coerced % re actionIso
-
--- instance PolyMonad
-
--- instance (Functor m) => Functor (Parser text kind m)
---   where
---     fmap = coerce fmapAction
-
--- deriving newtype instance Functor m => Functor (Parser text kind m)
-
--- deriving newtype instance Monad m => Applicative (Parser text kind m)
-
--- deriving newtype instance Monad m => Monad (Parser text kind m)
 
 parse :: Monad m => ActionLift k T.Any => Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
