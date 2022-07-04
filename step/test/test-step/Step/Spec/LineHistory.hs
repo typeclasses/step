@@ -38,17 +38,18 @@ spec = describe "Line history" do
         LineHistory.locateCursorInDocument  2 lh === Just (LineHistory.CursorAt (loc 1 3))
         LineHistory.locateCursorInDocument  3 lh === Just (LineHistory.CursorAt (loc 1 4))
         LineHistory.locateCursorInDocument  4 lh === Just (LineHistory.CursorAt (loc 1 5))
-        LineHistory.locateCursorInDocument  5 lh === Just (LineHistory.CursorAt (loc 2 1))
-        LineHistory.locateCursorInDocument  6 lh === Just (LineHistory.CursorAt (loc 2 2))
-        LineHistory.locateCursorInDocument  7 lh === Just (LineHistory.CursorAt (loc 2 3))
-        LineHistory.locateCursorInDocument  8 lh === Just (LineHistory.CursorAt (loc 2 4))
-        LineHistory.locateCursorInDocument  9 lh === Just (LineHistory.CursorAt (loc 3 1))
-        LineHistory.locateCursorInDocument 10 lh === Just (LineHistory.CursorAt (loc 3 2))
-        LineHistory.locateCursorInDocument 11 lh === Just (LineHistory.CursorAt (loc 3 3))
-        LineHistory.locateCursorInDocument 12 lh === Just (LineHistory.CursorAt (loc 3 4))
-        LineHistory.locateCursorInDocument 13 lh === Just (LineHistory.CursorAt (loc 3 5))
-        LineHistory.locateCursorInDocument 14 lh === Just (LineHistory.CursorAt (loc 3 6))
-        LineHistory.locateCursorInDocument 15 lh === Nothing
+        LineHistory.locateCursorInDocument  5 lh === Just (LineHistory.CursorAt (loc 1 6))
+        LineHistory.locateCursorInDocument  6 lh === Just (LineHistory.CursorAt (loc 2 1))
+        LineHistory.locateCursorInDocument  7 lh === Just (LineHistory.CursorAt (loc 2 2))
+        LineHistory.locateCursorInDocument  8 lh === Just (LineHistory.CursorAt (loc 2 3))
+        LineHistory.locateCursorInDocument  9 lh === Just (LineHistory.CursorAt (loc 2 4))
+        LineHistory.locateCursorInDocument 10 lh === Just (LineHistory.CursorAt (loc 3 1))
+        LineHistory.locateCursorInDocument 11 lh === Just (LineHistory.CursorAt (loc 3 2))
+        LineHistory.locateCursorInDocument 12 lh === Just (LineHistory.CursorAt (loc 3 3))
+        LineHistory.locateCursorInDocument 13 lh === Just (LineHistory.CursorAt (loc 3 4))
+        LineHistory.locateCursorInDocument 14 lh === Just (LineHistory.CursorAt (loc 3 5))
+        LineHistory.locateCursorInDocument 15 lh === Just (LineHistory.CursorAt (loc 3 6))
+        LineHistory.locateCursorInDocument 16 lh === Nothing
 
     specify "example 2" $ hedgehog do
         input :: [Text] <- forAll (genChunks "ab\r")
@@ -57,3 +58,4 @@ spec = describe "Line history" do
         LineHistory.locateCursorInDocument  1 lh === Just (LineHistory.CursorAt (loc 1 2))
         LineHistory.locateCursorInDocument  2 lh === Just (LineHistory.CursorAt (loc 1 3))
         LineHistory.locateCursorInDocument  3 lh === Just (LineHistory.CursorLocationNeedsMoreInput{ LineHistory.ifEndOfInput = loc 2 1 })
+        LineHistory.locateCursorInDocument  4 lh === Nothing

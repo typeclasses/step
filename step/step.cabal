@@ -29,9 +29,12 @@ common base
         GeneralizedNewtypeDeriving
         MonadComprehensions
         MultiParamTypeClasses
+        NoMonomorphismRestriction
         NoImplicitPrelude
         OverloadedStrings
+        PolyKinds
         QualifiedDo
+        QuantifiedConstraints
         RankNTypes
         ScopedTypeVariables
         StandaloneDeriving
@@ -51,7 +54,7 @@ common base
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , transformers
-      , optics
+      , optics ^>= 0.4
     mixins:
         base
           ( Data.Bool as Bool
@@ -99,7 +102,7 @@ common base
 library
     import: base
     hs-source-dirs: library/step
-    build-depends: step-internal
+    build-depends: step-internal, variado
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Buffer.Base
@@ -115,6 +118,7 @@ library
         Step.CursorPosition.Base
 
         Step.Document.Config
+        Step.Document.Do
         Step.Document.Error
         Step.Document.Parser
         Step.Document.Prelude
@@ -122,11 +126,9 @@ library
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
 
-        Step.Action.Family
         Step.Action.Do
-        Step.Action.Join
-        Step.Action.Kind
-        Step.Action.Lift
+        Step.Action.SeparateTypes
+        Step.Action.UnifiedType
 
         Step.Nontrivial.Base
         Step.Nontrivial.List
@@ -146,8 +148,6 @@ library
 library step-internal
     import: base
     hs-source-dirs: library/step-internal
-    build-depends:
-        optics ^>= 0.4
     exposed-modules:
         Step.Internal.Prelude
     other-modules:
@@ -155,6 +155,13 @@ library step-internal
         Step.Internal.RecordStream
         Step.Internal.Times
         Step.Internal.While
+
+library variado
+    import: base
+    hs-source-dirs: library/variado
+    exposed-modules:
+        Variado.Monad.Class
+        Variado.Monad.Do
 
 test-suite test-step
     import: base

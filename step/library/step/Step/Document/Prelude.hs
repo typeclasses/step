@@ -13,7 +13,9 @@ module Step.Document.Prelude
 
 import Step.Internal.Prelude hiding (while, under, Is)
 
-import Step.Document.Parser
+import Optics
+
+import Step.Document.Parser (makeError, action, action', Parser)
 import qualified Step.Document.Parser as Parser
 
 import qualified Loc
@@ -47,55 +49,56 @@ import qualified Step.Document.Config as Config
 
 import Step.Nontrivial.Base (Nontrivial)
 
-import qualified Step.Action.Do as P
+import qualified Step.Document.Do as P
 
-import Step.Action.Kind
-import Step.Action.Family (Configurable, configure, Action)
 import qualified Step.Action.Do as Action
-import qualified Step.Action.Family as Action
+import qualified Step.Action.UnifiedType as Action
+import Step.Action.UnifiedType (IsAction, (:>), ActionJoin)
+import Step.Action.SeparateTypes
 
-char :: Monad m => ListLike text Char => Parser text 'MoveUndo m Char
-char = Parser $ Action.MoveUndo \config -> runStateT $
+char :: Monad m => ListLike text Char => Parser text MoveUndo m Char
+char = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeChar <&> maybe (Left (makeError config)) Right
 
-satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text 'MoveUndo m Char
-satisfy ok = Parser $ Action.MoveUndo \config -> runStateT $
+satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text MoveUndo m Char
+satisfy ok = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (makeError config)
         Just x -> Right x
 
-text :: Monad m => ListLike text Char => Eq text => text -> Parser text 'Any m ()
-text x = Parser $ Action.Any \config -> runStateT $
+text :: Monad m => ListLike text Char => Eq text => text -> Parser text Any m ()
+text x = review action' $ Any \config -> runStateT $
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()
         False -> Left (makeError config)
 
-atEnd :: Monad m => ListLike text Char => Parser text 'SureStatic m Bool
-atEnd = Parser $ Action.SureStatic \_config -> runStateT DocumentMemory.State.atEnd
+atEnd :: Monad m => ListLike text Char => Parser text SureStatic m Bool
+atEnd = review action' $ SureStatic \_config -> runStateT DocumentMemory.State.atEnd
 
-end :: Monad m => ListLike text Char => Parser text 'Static m ()
-end = Parser $ Action.Static \config -> runStateT $
+end :: Monad m => ListLike text Char => Parser text Static m ()
+end = review action' $ Static \config -> runStateT $
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
         False -> Left (makeError config)
 
-contextualize :: Monad m => Configurable k =>
+contextualize :: (Monad m, ConfigurableAction k, IsAction k) =>
     text -> Parser text k m a -> Parser text k m a
-contextualize c (Parser p) = Parser (configure (over Config.contextLens (c :)) p)
+contextualize c = Optics.over action (Action.configure (over Config.contextLens (c :)))
 
-(<?>) :: Monad m => Configurable k => Parser text k m a -> text -> Parser text k m a
+(<?>) :: (Monad m, ConfigurableAction k, IsAction k) => Parser text k m a -> text -> Parser text k m a
 p <?> c = contextualize c p
 
-position :: Monad m => ListLike text char => Parser text 'SureStatic m Loc
-position = Parser $ Action.SureStatic \_config -> runStateT DocumentMemory.State.getPosition
+position :: Monad m => ListLike text char => Parser text SureStatic m Loc
+position = review action' $ SureStatic \_config -> runStateT DocumentMemory.State.getPosition
 
-withLocation :: ListLike text char => Functor (Parser text k m) => Monad m =>
+withLocation ::
+    ListLike text char => Monad m => IsAction k =>
     Parser text k m a -> Parser text k m (SpanOrLoc, a)
-withLocation p = Parser $ Action.do
+withLocation p = P.do
     a <- position
     x <- p
     b <- position
-    Action.return (Loc.spanOrLocFromTo a b, x)
+    P.return (Loc.spanOrLocFromTo a b, x)
 
 -- repetition :: Monad m =>
 --     ListLike list a =>

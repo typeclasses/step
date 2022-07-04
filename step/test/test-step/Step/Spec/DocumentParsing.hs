@@ -21,14 +21,14 @@ import Text (Text)
 import Loc (loc)
 import qualified SpanOrLoc
 
+import Monad (replicateM_)
+
 -- The modules under test
 import Step.Document.Parser
 import Step.Document.Prelude
 import Step.Document.Error (Error (Error))
-
+import Step.Action.SeparateTypes
 import qualified Step.Document.Do as P
-
-import Step.Kind.Base
 
 spec :: SpecWith ()
 spec = describe "Document parsing" do
@@ -64,18 +64,18 @@ spec = describe "Document parsing" do
             let x = runIdentity $ parseOnly def p (ListT.select input)
             x === Left (Error ["Digit"])
 
-    describe "p = repetition (satisfy isDigit)" do
-        let p = repetition (satisfy Char.isDigit)
+    -- describe "p = repetition (satisfy isDigit)" do
+    --     let p = repetition (satisfy Char.isDigit)
 
-        specify "p parses 123 from 123abc" $ hedgehog do
-            input :: [Text] <- forAll (genChunks "123abc")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
-            x === Right ("123" :: [Char])
+    --     specify "p parses 123 from 123abc" $ hedgehog do
+    --         input :: [Text] <- forAll (genChunks "123abc")
+    --         let x = runIdentity $ parseOnly def p (ListT.select input)
+    --         x === Right ("123" :: [Char])
 
-        specify "p parses nothing from abc" $ hedgehog do
-            input :: [Text] <- forAll (genChunks "abc")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
-            x === Right ([] :: [Char])
+    --     specify "p parses nothing from abc" $ hedgehog do
+    --         input :: [Text] <- forAll (genChunks "abc")
+    --         let x = runIdentity $ parseOnly def p (ListT.select input)
+    --         x === Right ([] :: [Char])
 
     describe "p = text \"abc\"" do
         let p = text "abc"
@@ -99,14 +99,20 @@ spec = describe "Document parsing" do
 
         specify "column is incremented by char when input contains no line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = appEndo (times n (Endo (to @'Any char P.*>))) (to @'Any position)
+            let
+                p = P.do
+                    P.replicateM_ (fromIntegral n) char
+                    position
             input :: [Text] <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
             let x = runIdentity $ parseOnly def p (ListT.select input)
             x === Right (Loc.loc 1 (fromIntegral $ n + 1))
 
         specify "line is incremented by char when input is line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = appEndo (times n (Endo (to @'Any char P.*>))) (to @'Any position)
+            let
+                p = P.do
+                    P.replicateM_ (fromIntegral n) char
+                    position
             input :: [Text] <- forAll (genChunks (ListLike.replicate 50 '\n'))
             let x = runIdentity $ parseOnly def p (ListT.select input)
             x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
@@ -115,7 +121,10 @@ spec = describe "Document parsing" do
             let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
             input :: [Text] <- forAll (genChunks =<< times 10 genInputLine)
             n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
-            let p = appEndo (times n (Endo (to @'Any char P.*>))) (to @'Any position)
+            let
+                p = P.do
+                    P.replicateM_ (fromIntegral n) char
+                    position
             let x = runIdentity $ parseOnly def p (ListT.select input)
             let (a, b) = n `quotRem` 20
             let l = Loc.loc (fromIntegral $ 1 + a) (fromIntegral $ 1 + b)

@@ -2,16 +2,6 @@ module Step.Action.Kind where
 
 import Bool (Bool (..))
 
-data ActionKind =
-    Any        -- ^ No known properties
-  | Static     -- ^ Does not move the cursor
-  | Move       -- ^ Always moves the cursor
-  | Undo       -- ^ Fails noncommittally
-  | MoveUndo   -- ^ Always moves the cursor, fails noncommittally
-  | Sure       -- ^ Always succeeds
-  | SureStatic -- ^ Always succeeds, does not move the cursor
-  | SureMove   -- ^ Always succeeds, always moves the cursor
-
 data Advancement = Stationary | Advances | MightAdvance
 
 data Fallibility = MightFail | AlwaysSucceeds
