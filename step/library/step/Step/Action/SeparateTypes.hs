@@ -8,16 +8,14 @@ import qualified Monad
 
 type ActionKind = Type -> Type -> Type -> (Type -> Type) -> Type -> Type
 
--- type Any        :: ActionKind
--- type Static     :: ActionKind
--- type Move       :: ActionKind
--- type Undo       :: ActionKind
--- type MoveUndo   :: ActionKind
--- type Sure       :: ActionKind
--- type SureStatic :: ActionKind
--- type SureMove   :: ActionKind
-
--- type role Any representational nominal nominal representational nominal
+type Any        :: ActionKind
+type Static     :: ActionKind
+type Move       :: ActionKind
+type Undo       :: ActionKind
+type MoveUndo   :: ActionKind
+type Sure       :: ActionKind
+type SureStatic :: ActionKind
+type SureMove   :: ActionKind
 
 -- | No known properties
 --
@@ -192,48 +190,3 @@ instance ConfigurableAction SureStatic where
     configureAction f (SureStatic g) = SureStatic (g . f)
 instance ConfigurableAction SureMove where
     configureAction f (SureMove g) = SureMove (g . f)
-
--- class Configurable config m | m -> config where
---     configure :: (config -> config) -> m a -> m a
-
--- instance ConfigurableAction kind => Configurable config (Action kind config cursor error m)
---   where
---     configure f (Action a) = Action (configureAction f a)
-
--- data RefinedAction (config :: Type) (cursor :: Type) (error :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Type)
---   where
---     RefinedAction'General ::
---         FallibilityOf kind ~ 'MightFail =>
---         (config -> state -> m (Either error a, state))
---         -> RefinedAction config cursor error kind m a
---     RefinedAction'Certain ::
---         FallibilityOf kind ~ 'AlwaysSucceeds =>
---         (config -> state -> m (a, state))
---         -> RefinedAction config cursor error kind m a
-
--- deriving stock instance Functor m => Functor (RefinedAction config cursor error kind m)
-
--- instance (Monad m, IsSequenceable (CommitmentOf kind) ~ 'True, Trivial kind) => Applicative (RefinedAction config cursor error kind m)
---   where
---     pure = trivial
-
--- class Trivial (kind :: ActionKind) where
---     trivial :: Monad m => a -> RefinedAction config cursor error kind m a
--- instance Trivial 'Any where trivial = trivialGeneral
--- instance Trivial 'Static where trivial = trivialGeneral
--- instance Trivial 'Move where trivial = trivialGeneral
--- instance Trivial 'Undo where trivial = trivialGeneral
-
--- trivialGeneral x =  RefinedAction'General \_ s -> return (Right x, s)
-
--- instance Monad m => Applicative (RefinedAction config cursor error 'Any m)
--- instance Monad m => Monad (RefinedAction config cursor error 'Any m)
-
--- Monads: any, static, move, sure, surestatic, suremove
-
--- instance
---     forall (k1 :: ActionKind) (k2 :: ActionKind) config cursor error m.
---     (Functor (Action k1 config cursor error m), Functor (Action k2 config cursor error m)) =>
---     PolyMonad (Action k1 config cursor error m) (Action k2 config cursor error m)
---   where
---     type Join (Action k1 config cursor error m) (Action k2 config cursor error m) = (Action (k1 :> k2) config cursor error m)
