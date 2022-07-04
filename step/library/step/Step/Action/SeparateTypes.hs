@@ -17,33 +17,35 @@ type ActionKind = Type -> Type -> Type -> (Type -> Type) -> Type -> Type
 -- type SureStatic :: ActionKind
 -- type SureMove   :: ActionKind
 
+-- type role Any representational nominal nominal representational nominal
+
 -- | No known properties
 --
 newtype Any config cursor error m a =
-    Any (config -> cursor -> m (Either error a, cursor))
+    Any (config -> cursor -> m (Either (StateT cursor m error) a, cursor))
     deriving (Functor, Applicative, Monad)
-        via (ReaderT config (ExceptT error (StateT cursor m)))
+        via (ReaderT config (ExceptT (StateT cursor m error) (StateT cursor m)))
 
 -- | Does not move the cursor
 --
 newtype Static config cursor error m a =
-    Static (config -> cursor -> m (Either error a, cursor))
+    Static (config -> cursor -> m (Either (StateT cursor m error) a, cursor))
     deriving (Functor, Applicative, Monad)
-        via (ReaderT config (ExceptT error (StateT cursor m)))
+        via (ReaderT config (ExceptT (StateT cursor m error) (StateT cursor m)))
 
 -- | Always moves the cursor
 --
 newtype Move config cursor error m a =
-    Move (config -> cursor -> m (Either error a, cursor))
+    Move (config -> cursor -> m (Either (StateT cursor m error) a, cursor))
     deriving (Functor, Applicative, Monad)
-        via (ReaderT config (ExceptT error (StateT cursor m)))
+        via (ReaderT config (ExceptT (StateT cursor m error) (StateT cursor m)))
 
 -- | Fails noncommittally
 --
 -- No Applicative/Monad instances here because sequencing does not preserve the noncommittal property
 --
 newtype Undo config cursor error m a =
-    Undo (config -> cursor -> m (Either error a, cursor))
+    Undo (config -> cursor -> m (Either (StateT cursor m error) a, cursor))
     deriving stock Functor
 
 -- | Always moves the cursor, fails noncommittally
@@ -51,7 +53,7 @@ newtype Undo config cursor error m a =
 -- No Applicative/Monad instances here because sequencing does not preserve the noncommittal property
 --
 newtype MoveUndo config cursor error m a =
-    MoveUndo (config -> cursor -> m (Either error a, cursor))
+    MoveUndo (config -> cursor -> m (Either (StateT cursor m error) a, cursor))
     deriving stock Functor
 
 -- | Always succeeds
@@ -104,6 +106,11 @@ tryAny :: Functor m => Any config cursor error m a -> Sure config cursor error m
 tryAny (Any p) = Sure \c s -> p c s <&> \(e, s') -> case e of
     Left _ -> (Nothing, s')
     Right x -> (Just x, s')
+
+---
+
+failureAny :: Monad m => (config -> (StateT cursor m error)) -> Any config cursor error m a
+failureAny f = Any \c s -> return (Left (f c), s)
 
 ---
 

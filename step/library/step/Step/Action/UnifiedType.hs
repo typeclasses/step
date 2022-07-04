@@ -47,6 +47,16 @@ class IsAction k => Noncommittal k
 instance Noncommittal T.Undo     where try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAny . view (T.actionIso' @T.Any) . review (actionIso' @T.Undo)
 instance Noncommittal T.MoveUndo where try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAny . view (T.actionIso' @T.Any) . review (actionIso' @T.MoveUndo)
 
+class IsAction k => CanFail k
+  where
+    failure :: Monad m => (config -> StateT cursor m error) -> Action k config cursor error m a
+
+instance CanFail T.Any      where failure = view (actionIso') . review (T.actionIso') . T.failureAny
+instance CanFail T.Static   where failure = view (actionIso') . review (T.actionIso') . T.failureAny
+instance CanFail T.Move     where failure = view (actionIso') . review (T.actionIso') . T.failureAny
+instance CanFail T.Undo     where failure = view (actionIso') . review (T.actionIso') . T.failureAny
+instance CanFail T.MoveUndo where failure = view (actionIso') . review (T.actionIso') . T.failureAny
+
 class
     ( ActionJoin k T.SureStatic
     , ActionJoin T.SureStatic k

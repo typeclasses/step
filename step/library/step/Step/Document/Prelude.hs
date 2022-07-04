@@ -6,7 +6,7 @@ module Step.Document.Prelude
     {- * Repetition -} repetition,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
-    {- * Failure -} -- failure,
+    {- * Failure -} failure,
     -- {- * Transformation -} under, while,
   )
   where
@@ -15,7 +15,7 @@ import Step.Internal.Prelude hiding (while, under, Is)
 
 import Optics
 
-import Step.Document.Parser (makeError, action, action', Parser)
+import Step.Document.Parser (action, action', Parser)
 import qualified Step.Document.Parser as Parser
 
 import qualified Loc
@@ -58,19 +58,22 @@ import Step.Action.SeparateTypes
 
 char :: Monad m => ListLike text Char => Parser text MoveUndo m Char
 char = review action' $ MoveUndo \config -> runStateT $
-    DocumentMemory.State.takeChar <&> maybe (Left (makeError config)) Right
+    DocumentMemory.State.takeChar <&> \case
+        Nothing -> Left (Parser.makeError config)
+        Just x -> Right x
+        -- maybe (Left (makeError config)) Right
 
 satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text MoveUndo m Char
 satisfy ok = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeCharIf ok <&> \case
-        Nothing -> Left (makeError config)
+        Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 text :: Monad m => ListLike text Char => Eq text => text -> Parser text Any m ()
 text x = review action' $ Any \config -> runStateT $
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()
-        False -> Left (makeError config)
+        False -> Left (Parser.makeError config)
 
 atEnd :: Monad m => ListLike text Char => Parser text SureStatic m Bool
 atEnd = review action' $ SureStatic \_config -> runStateT DocumentMemory.State.atEnd
@@ -79,7 +82,7 @@ end :: Monad m => ListLike text Char => Parser text Static m ()
 end = review action' $ Static \config -> runStateT $
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
-        False -> Left (makeError config)
+        False -> Left (Parser.makeError config)
 
 contextualize :: (Monad m, ConfigurableAction k, IsAction k) =>
     text -> Parser text k m a -> Parser text k m a
@@ -115,12 +118,12 @@ repetition p = fix \r -> P.do
         Nothing -> return ListLike.empty
         Just x -> ListLike.cons x <$> r
 
+failure :: Monad m => Action.CanFail k => Parser text k m a
+failure = review action $ Action.failure Parser.makeError
+
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 -- all :: Monad m => ListLike text Char => Parser text 'Sure m text
 -- all = CertainParser \_config -> DocumentMemory.State.takeAll
-
--- failure :: Monad m => Parser text 'Any m a
--- failure = AnyParser \config -> return (Left (makeError config))
 
 -- under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do

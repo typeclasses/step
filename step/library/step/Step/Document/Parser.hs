@@ -58,11 +58,15 @@ action' = coerced % re actionIso
 
 -- deriving newtype instance Monad m => Monad (Parser text kind m)
 
-makeError :: Config text -> Error text
-makeError config = Error{ Error.context = Config.context config }
-
 parse :: Monad m => ActionLift k T.Any => Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
-parse config (Parser p) = let Action.Any (T.Any p') = actionLiftTo @T.Any p in StateT (p' config)
+parse config (Parser p) =
+    actionLiftTo @T.Any p & \(Action.Any (T.Any p')) ->
+    StateT (p' config) >>= \case
+        Left errorMaker -> Left <$> errorMaker
+        Right x -> return (Right x)
 
 parseOnly :: ActionLift k T.Any => Monad m => ListLike text Char => Config text -> Parser text k m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
+
+makeError :: Monad m => Config text -> m (Error text)
+makeError c = return Error{ Error.context = Config.context c }

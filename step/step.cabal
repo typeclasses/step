@@ -36,6 +36,7 @@ common base
         QualifiedDo
         QuantifiedConstraints
         RankNTypes
+        RoleAnnotations
         ScopedTypeVariables
         StandaloneDeriving
         StandaloneKindSignatures
