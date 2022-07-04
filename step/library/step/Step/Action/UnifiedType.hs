@@ -35,6 +35,18 @@ instance (Monad m, IsAction k, T.MonadAction k) => Applicative (Action k config 
 instance (Monad m, IsAction k, T.MonadAction k) => Monad (Action k config cursor error m) where
     a >>= b = view actionIso (T.bindAction (review actionIso a) (fmap (review actionIso) b))
 
+class IsAction k => AlwaysMoves k
+instance AlwaysMoves T.Move
+instance AlwaysMoves T.MoveUndo
+instance AlwaysMoves T.SureMove
+
+class IsAction k => Noncommittal k
+  where
+    try :: Functor m => Action k config cursor error m a -> Action T.Sure config cursor error m (Maybe a)
+
+instance Noncommittal T.Undo     where try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAny . view (T.actionIso' @T.Any) . review (actionIso' @T.Undo)
+instance Noncommittal T.MoveUndo where try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAny . view (T.actionIso' @T.Any) . review (actionIso' @T.MoveUndo)
+
 class
     ( ActionJoin k T.SureStatic
     , ActionJoin T.SureStatic k
@@ -111,6 +123,7 @@ class ActionJoin (k1 :: ActionKind) (k2 :: ActionKind)
 
 -- todo: 64 instances
 
+instance ActionJoin T.Sure       T.Sure       where type T.Sure       :> T.Sure       = T.Sure       ; actionJoin = joinSureToSure
 instance ActionJoin T.SureStatic T.SureStatic where type T.SureStatic :> T.SureStatic = T.SureStatic ; actionJoin = joinSureToSure
 instance ActionJoin T.Move       T.Move       where type T.Move       :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
 instance ActionJoin T.MoveUndo   T.MoveUndo   where type T.MoveUndo   :> T.MoveUndo   = T.Move       ; actionJoin = joinAnyToAny

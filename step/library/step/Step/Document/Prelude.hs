@@ -3,7 +3,7 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy,
     {- * Text result -} text, -- all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Repetition -} -- repetition,
+    {- * Repetition -} repetition,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} -- failure,
@@ -100,17 +100,20 @@ withLocation p = P.do
     b <- position
     P.return (Loc.spanOrLocFromTo a b, x)
 
--- repetition :: Monad m =>
---     ListLike list a =>
---     FallibilityOf pt ~ 'MightFail =>
---     CommitmentOf pt ~ 'Noncommittal =>
---     CanBeStationary (AdvancementOf pt) ~ 'False =>
---     Parser text pt m a
---     -> Parser text 'Sure m list
--- repetition p = Action.Sure \config -> fix \r ->
---     p config >>= \case
---         Left _ -> return ListLike.empty
---         Right x -> ListLike.cons x <$> r
+try :: Monad m => Action.Noncommittal k => Parser text k m a -> Parser text Sure m (Maybe a)
+try = review action . Action.try . view action
+
+repetition ::
+    Monad m => ListLike list a =>
+    Action.AlwaysMoves k =>
+    Action.Noncommittal k =>
+    Parser text k m a
+    -> Parser text Sure m list
+repetition p = fix \r -> P.do
+    xm <- try p
+    case xm of
+        Nothing -> return ListLike.empty
+        Just x -> ListLike.cons x <$> r
 
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 -- all :: Monad m => ListLike text Char => Parser text 'Sure m text
