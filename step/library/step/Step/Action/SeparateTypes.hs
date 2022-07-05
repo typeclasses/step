@@ -43,22 +43,6 @@ failureAny f = Any \c s -> return (Left (f c), s)
 
 ---
 
-class FunctorAction (action :: ActionKind) where
-    fmapAction :: Functor m => (a -> b)
-        -> action config cursor error m a
-        -> action config cursor error m b
-
-instance FunctorAction Any        where fmapAction = fmap
-instance FunctorAction Static     where fmapAction = fmap
-instance FunctorAction Move       where fmapAction = fmap
-instance FunctorAction Undo       where fmapAction = fmap
-instance FunctorAction MoveUndo   where fmapAction = fmap
-instance FunctorAction Sure       where fmapAction = fmap
-instance FunctorAction SureStatic where fmapAction = fmap
-instance FunctorAction SureMove   where fmapAction = fmap
-
----
-
 class MonadAction (action :: ActionKind) where
     pureAction :: Monad m => a -> action config cursor error m a
     bindAction :: Monad m => action config cursor error m a -> (a -> action config cursor error m b) -> action config cursor error m b

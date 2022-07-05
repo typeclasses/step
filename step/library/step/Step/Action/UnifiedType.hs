@@ -31,7 +31,7 @@ data Action (k :: ActionKind) config cursor error m a
     SureMove   :: !(T.SureMove   config cursor error m a) -> Action T.SureMove   config cursor error m a
 
 instance (Functor m, IsAction k) => Functor (Action k config cursor error m) where
-    fmap = under actionIso . T.fmapAction
+    fmap = under actionIso . fmap
 
 instance (Monad m, IsAction k, T.MonadAction k) => Applicative (Action k config cursor error m) where
     pure = view actionIso . T.pureAction
@@ -88,7 +88,7 @@ class
     , ActionJoin T.SureStatic k
     , k :> T.SureStatic ~ k
     , T.SureStatic :> k ~ k
-    , T.FunctorAction k
+    , forall config cursor error m. Functor m => Functor (k config cursor error m)
     )
     => IsAction (k :: ActionKind)
   where
