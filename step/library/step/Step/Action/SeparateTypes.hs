@@ -100,8 +100,8 @@ joinSureToAny (Sure p) =
 
 ---
 
-tryAny :: Functor m => Any config cursor error m a -> Sure config cursor error m (Maybe a)
-tryAny (Any p) = Sure \c s -> p c s <&> \(e, s') -> case e of
+tryAnySure :: Functor m => Any config cursor error m a -> Sure config cursor error m (Maybe a)
+tryAnySure (Any p) = Sure \c s -> p c s <&> \(e, s') -> case e of
     Left _ -> (Nothing, s')
     Right x -> (Just x, s')
 

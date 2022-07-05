@@ -35,17 +35,36 @@ instance (Monad m, IsAction k, T.MonadAction k) => Applicative (Action k config 
 instance (Monad m, IsAction k, T.MonadAction k) => Monad (Action k config cursor error m) where
     a >>= b = view actionIso (T.bindAction (review actionIso a) (fmap (review actionIso) b))
 
+---
+
 class IsAction k => AlwaysMoves k
 instance AlwaysMoves T.Move
 instance AlwaysMoves T.MoveUndo
 instance AlwaysMoves T.SureMove
 
+---
+
 class IsAction k => Noncommittal k
   where
-    try :: Functor m => Action k config cursor error m a -> Action T.Sure config cursor error m (Maybe a)
+    type Try k :: ActionKind
+    try :: Functor m => Action k config cursor error m a -> Action (Try k) config cursor error m (Maybe a)
 
-instance Noncommittal T.Undo     where try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAny . view (T.actionIso' @T.Any) . review (actionIso' @T.Undo)
-instance Noncommittal T.MoveUndo where try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAny . view (T.actionIso' @T.Any) . review (actionIso' @T.MoveUndo)
+instance Noncommittal T.Undo
+  where
+    type Try T.Undo = T.Sure
+    try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAnySure . view (T.actionIso' @T.Any) . review (actionIso' @T.Undo)
+
+instance Noncommittal T.MoveUndo
+  where
+    type Try T.MoveUndo = T.SureMove
+    try = view (actionIso' @T.SureMove) . review (T.actionIso' @T.Sure) . T.tryAnySure . view (T.actionIso' @T.Any) . review (actionIso' @T.MoveUndo)
+
+instance Noncommittal T.Static
+  where
+    type Try T.Static = T.SureStatic
+    try = view (actionIso' @T.SureStatic) . review (T.actionIso' @T.Sure) . T.tryAnySure . view (T.actionIso' @T.Any) . review (actionIso' @T.Static)
+
+---
 
 class IsAction k => CanFail k
   where
@@ -56,6 +75,8 @@ instance CanFail T.Static   where failure = view (actionIso') . review (T.action
 instance CanFail T.Move     where failure = view (actionIso') . review (T.actionIso') . T.failureAny
 instance CanFail T.Undo     where failure = view (actionIso') . review (T.actionIso') . T.failureAny
 instance CanFail T.MoveUndo where failure = view (actionIso') . review (T.actionIso') . T.failureAny
+
+---
 
 class
     ( ActionJoin k T.SureStatic
@@ -89,11 +110,13 @@ instance IsAction T.Sure       where actionIso = iso Sure       (\(Sure x)      
 instance IsAction T.SureStatic where actionIso = iso SureStatic (\(SureStatic x) -> x)
 instance IsAction T.SureMove   where actionIso = iso SureMove   (\(SureMove x)   -> x)
 
+---
+
 class ActionLift (k1 :: ActionKind) (k2 :: ActionKind)
   where
     actionLift :: Monad m => Action k1 config cursor error m a -> Action k2 config cursor error m a
 
--- todo: less than 64 ActionLift instances
+-- todo: all instances, less than 64
 
 instance ActionLift T.Any        T.Any        where actionLift = coerce
 instance ActionLift T.Static     T.Static     where actionLift = coerce
@@ -118,7 +141,7 @@ actionLiftTo :: forall k2 k1 config cursor error m a.
     -> Action k2 config cursor error m a
 actionLiftTo = actionLift @k1 @k2
 
--- type family (a :: ActionKind) :> (b :: ActionKind) :: ActionKind
+---
 
 configure :: (IsAction k, T.ConfigurableAction k) =>
     (config1 -> config2)
@@ -126,18 +149,23 @@ configure :: (IsAction k, T.ConfigurableAction k) =>
     -> Action k config1 cursor error m a
 configure = under actionIso . T.configureAction
 
+---
+
 class ActionJoin (k1 :: ActionKind) (k2 :: ActionKind)
   where
     type (k1 :> k2) :: ActionKind
     actionJoin :: Monad m => Action k1 config cursor error m (Action k2 config cursor error m a) -> Action (k1 :> k2) config cursor error m a
 
--- todo: 64 instances
+-- todo: all 64 instances
 
 instance ActionJoin T.Sure       T.Sure       where type T.Sure       :> T.Sure       = T.Sure       ; actionJoin = joinSureToSure
 instance ActionJoin T.SureStatic T.SureStatic where type T.SureStatic :> T.SureStatic = T.SureStatic ; actionJoin = joinSureToSure
 instance ActionJoin T.Move       T.Move       where type T.Move       :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
 instance ActionJoin T.MoveUndo   T.MoveUndo   where type T.MoveUndo   :> T.MoveUndo   = T.Move       ; actionJoin = joinAnyToAny
 instance ActionJoin T.Any        T.Any        where type T.Any        :> T.Any        = T.Any        ; actionJoin = joinAnyToAny
+
+instance ActionJoin T.Sure       T.SureMove   where type T.Sure       :> T.SureMove   = T.Sure       ; actionJoin = joinSureToSure
+instance ActionJoin T.SureMove   T.Sure       where type T.SureMove   :> T.Sure       = T.Sure       ; actionJoin = joinSureToSure
 
 instance ActionJoin T.MoveUndo   T.Move       where type T.MoveUndo   :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
 instance ActionJoin T.Move       T.MoveUndo   where type T.Move       :> T.MoveUndo   = T.Move       ; actionJoin = joinAnyToAny

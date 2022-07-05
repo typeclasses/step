@@ -44,14 +44,16 @@ action' :: IsAction kind => Iso
     (kind (Config text2) (DocumentMemory text2 m2) (Error text2) m2 a2)
 action' = coerced % re actionIso
 
-parse :: Monad m => ActionLift k T.Any => Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
+parse :: Monad m => ActionLift k T.Any =>
+    Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
     actionLiftTo @T.Any p & \(Action.Any (T.Any p')) ->
     StateT (p' config) >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)
 
-parseOnly :: ActionLift k T.Any => Monad m => ListLike text Char => Config text -> Parser text k m a -> ListT m text -> m (Either (Error text) a)
+parseOnly ::  ActionLift k T.Any => Monad m => ListLike text Char =>
+    Config text -> Parser text k m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
 
 makeError :: Monad m => Config text -> m (Error text)

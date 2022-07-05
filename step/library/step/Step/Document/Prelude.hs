@@ -115,15 +115,12 @@ withLocation p = P.do
     b <- position
     P.return (Loc.spanOrLocFromTo a b, x)
 
--- todo: this should map Static to SureStatic
-try :: Monad m => Action.Noncommittal k => Parser text k m a -> Parser text Sure m (Maybe a)
+try :: Monad m => Action.Noncommittal k => Parser text k m a -> Parser text (Action.Try k) m (Maybe a)
 try = review action . Action.try . view action
 
 repetition ::
     Monad m => ListLike list a =>
-    Action.AlwaysMoves k =>
-    Action.Noncommittal k =>
-    Parser text k m a
+    Parser text MoveUndo m a
     -> Parser text Sure m list
 repetition p = fix \r -> P.do
     xm <- try p
