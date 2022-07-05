@@ -56,7 +56,7 @@ import qualified Step.Action.UnifiedType as Action
 import Step.Action.UnifiedType (IsAction, (:>), ActionJoin)
 import Step.Action.SeparateTypes
 
-char :: Monad m => ListLike text Char => Parser text MoveUndo m Char
+char :: Monad m => ListLike text char => Parser text MoveUndo m char
 char = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeChar <&> \case
         Nothing -> Left (Parser.makeError config)

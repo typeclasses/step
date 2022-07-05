@@ -40,7 +40,7 @@ runCursorState go = do
     put DocumentMemory{ DocumentMemory.cursor = cursor', DocumentMemory.content = content' }
     return x
 
-takeChar :: Monad m => ListLike text Char => StateT (DocumentMemory text m) m (Maybe Char)
+takeChar :: Monad m => ListLike text char => StateT (DocumentMemory text m) m (Maybe char)
 takeChar = runCursorState Cursor.State.takeChar
 
 peekCharMaybe :: Monad m => ListLike text Char => StateT (DocumentMemory text m) m (Maybe Char)

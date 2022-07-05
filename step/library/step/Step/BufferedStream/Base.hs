@@ -22,44 +22,44 @@ import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.ListT as Nontrivial.ListT
 
-data BufferedStream m chunk =
+data BufferedStream m text =
   BufferedStream
-    { buffer :: Buffer chunk
-    , pending :: Maybe (ListT m (Nontrivial chunk))
+    { buffer :: Buffer text
+    , pending :: Maybe (ListT m (Nontrivial text))
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
 makeLensesFor [("buffer", "bufferLens"), ("pending", "pendingLens")] ''BufferedStream
 
-empty :: BufferedStream m chunk
+empty :: BufferedStream m text
 empty = BufferedStream Buffer.empty Nothing
 
-toListT :: Monad m => BufferedStream m chunk -> ListT m (Nontrivial chunk)
+toListT :: Monad m => BufferedStream m text -> ListT m (Nontrivial text)
 toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
 
-fromListT :: ListLike chunk char => Monad m => ListT m chunk -> BufferedStream m chunk
+fromListT :: ListLike text char => Monad m => ListT m text -> BufferedStream m text
 fromListT x = BufferedStream{ buffer = Buffer.empty, pending = Just (Nontrivial.ListT.filter x) }
 
-bufferSize :: BufferedStream m chunk -> Natural
+bufferSize :: BufferedStream m text -> Natural
 bufferSize = Buffer.size . buffer
 
-bufferIsEmpty :: BufferedStream m chunk -> Bool
+bufferIsEmpty :: BufferedStream m text -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer
 
-bufferUnconsChunk :: ListLike chunk char => BufferedStream m chunk -> Maybe (Nontrivial chunk, BufferedStream m chunk)
+bufferUnconsChunk :: ListLike text char => BufferedStream m text -> Maybe (Nontrivial text, BufferedStream m text)
 bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, s{ buffer = b' })
 
-putChunk :: ListLike chunk char => chunk -> BufferedStream m chunk -> BufferedStream m chunk
+putChunk :: ListLike text char => text -> BufferedStream m text -> BufferedStream m text
 putChunk x s = case Nontrivial.refine x of Nothing -> s; Just y -> putNontrivialChunk y s
 
-putNontrivialChunk :: ListLike chunk char => Nontrivial chunk -> BufferedStream m chunk -> BufferedStream m chunk
+putNontrivialChunk :: ListLike text char => Nontrivial text -> BufferedStream m text -> BufferedStream m text
 putNontrivialChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
-fillBuffer :: (Monad m, ListLike chunk char) =>
-    Natural -> BufferedStream m chunk -> m (BufferedStream m chunk)
+fillBuffer :: (Monad m, ListLike text char) =>
+    Natural -> BufferedStream m text -> m (BufferedStream m text)
 fillBuffer n = while continue bufferMore
   where
     continue s =
@@ -67,8 +67,8 @@ fillBuffer n = while continue bufferMore
         && Buffer.size (buffer s) < n
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-bufferMore :: (Monad m, ListLike chunk char) =>
-    BufferedStream m chunk -> m (BufferedStream m chunk)
+bufferMore :: (Monad m, ListLike text char) =>
+    BufferedStream m text -> m (BufferedStream m text)
 bufferMore s = case pending s of
     Nothing -> return s -- If the end of the stream has been reached, do nothing
     Just p ->

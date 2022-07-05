@@ -8,7 +8,7 @@ import qualified Step.Buffer.Base as Buffer
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
 
-takeChar :: (Monad m, ListLike chunk char) => StateT (Buffer chunk) m (Maybe char)
+takeChar :: (Monad m, ListLike text char) => StateT (Buffer text) m (Maybe char)
 takeChar = do
     b <- get
     case Buffer.unconsChar b of
@@ -17,7 +17,7 @@ takeChar = do
             put b'
             return (Just c)
 
-takeChunk :: (Monad m, ListLike chunk char) => StateT (Buffer chunk) m (Maybe (Nontrivial chunk))
+takeChunk :: (Monad m, ListLike text char) => StateT (Buffer text) m (Maybe (Nontrivial text))
 takeChunk = do
     b <- get
     case Buffer.unconsChunk b of
@@ -26,17 +26,17 @@ takeChunk = do
             put b'
             return (Just c)
 
-data TakeStringResult chunk =
+data TakeStringResult text =
     TakeStringFail
-  | TakeStringPartial (Nontrivial chunk) -- ^ What further needed text remains
+  | TakeStringPartial (Nontrivial text) -- ^ What further needed text remains
   | TakeStringSuccess
 
-takeString :: (Monad m, ListLike chunk char, Eq chunk, Eq char) =>
-    chunk -> StateT (Buffer chunk) m (TakeStringResult chunk)
+takeString :: (Monad m, ListLike text char, Eq text, Eq char) =>
+    text -> StateT (Buffer text) m (TakeStringResult text)
 takeString x = case Nontrivial.refine x of Nothing -> return TakeStringSuccess; Just y -> takeNontrivialString y
 
-takeNontrivialString :: (Monad m, ListLike chunk char, Eq chunk, Eq char) =>
-    Nontrivial chunk -> StateT (Buffer chunk) m (TakeStringResult chunk)
+takeNontrivialString :: (Monad m, ListLike text char, Eq text, Eq char) =>
+    Nontrivial text -> StateT (Buffer text) m (TakeStringResult text)
 takeNontrivialString c = do
     b <- get
     case Buffer.stripNontrivialPrefix c b of

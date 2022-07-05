@@ -15,20 +15,20 @@ import qualified Step.Buffer.Base as Buffer
 import qualified ListLike
 
 -- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
-fillBuffer :: (Monad m, ListLike chunk char) => Natural -> StateT (Cursor m chunk) m ()
+fillBuffer :: (Monad m, ListLike text char) => Natural -> StateT (Cursor m text) m ()
 fillBuffer n = modifyM (Cursor.fillBuffer n)
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-bufferMore :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m ()
+bufferMore :: (Monad m, ListLike text char) => StateT (Cursor m text) m ()
 bufferMore = modifyM Cursor.bufferMore
 
-takeChar :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m (Maybe char)
+takeChar :: (Monad m, ListLike text char) => StateT (Cursor m text) m (Maybe char)
 takeChar = fillBuffer 1 *> takeBufferedChar
 
 peekCharMaybe :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
 peekCharMaybe = fillBuffer 1 *> peekBufferedChar
 
-takeBufferedChar :: Monad m => ListLike chunk char => StateT (Cursor m chunk) m (Maybe char)
+takeBufferedChar :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
 takeBufferedChar = do
     s <- get
     case Cursor.bufferUnconsChar s of
@@ -40,39 +40,39 @@ takeBufferedChar = do
 peekBufferedChar :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
 peekBufferedChar = get <&> Cursor.bufferHeadChar
 
-takeCharIf :: Monad m => ListLike chunk char => (char -> Bool) -> StateT (Cursor m chunk) m (Maybe char)
+takeCharIf :: Monad m => ListLike text char => (char -> Bool) -> StateT (Cursor m text) m (Maybe char)
 takeCharIf f = Tentative.State.ifJust (\case Just x | f x -> Just x; _ -> Nothing) Cursor.Tentative.takeChar
 
-takeCharJust :: Monad m => ListLike chunk char => (char -> Maybe r) -> StateT (Cursor m chunk) m (Maybe r)
+takeCharJust :: Monad m => ListLike text char => (char -> Maybe r) -> StateT (Cursor m text) m (Maybe r)
 takeCharJust f = Tentative.State.ifJust (>>= f) Cursor.Tentative.takeChar
 
-takeText :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => chunk -> StateT (Cursor m chunk) m Bool
+takeText :: (Monad m, ListLike text char, Eq text, Eq char) => text -> StateT (Cursor m text) m Bool
 takeText x = do
     y <- zoom Cursor.bufferedStreamLens (BufferedStream.State.takeText x)
     modifying Cursor.positionLens (+ fromIntegral (ListLike.length x))
     return y
 
-bufferAll :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m ()
+bufferAll :: (Monad m, ListLike text char) => StateT (Cursor m text) m ()
 bufferAll = modifyM Cursor.bufferAll
 
-takeAll :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m chunk
+takeAll :: (Monad m, ListLike text char) => StateT (Cursor m text) m text
 takeAll = do
     bufferAll
     takeBuffer
 
-takeBuffer :: Monoid chunk => Monad m => StateT (Cursor m chunk) m chunk
+takeBuffer :: Monoid text => Monad m => StateT (Cursor m text) m text
 takeBuffer = do
     b <- use Cursor.bufferLens
     assign Cursor.bufferLens Buffer.empty
     modifying Cursor.positionLens (+ fromIntegral (Buffer.size b))
     return (Buffer.fold b)
 
-atEnd :: ListLike chunk char => Monad m => StateT (Cursor m chunk) m Bool
+atEnd :: ListLike text char => Monad m => StateT (Cursor m text) m Bool
 atEnd = do
     fillBuffer 1
     get <&> Cursor.bufferIsEmpty
 
-isAllBuffered :: Monad m => StateT (Cursor m chunk) m Bool
+isAllBuffered :: Monad m => StateT (Cursor m text) m Bool
 isAllBuffered = get <&> Cursor.isAllBuffered
 
 --     zoom ParseState.futureLens Stream.State.bufferAll

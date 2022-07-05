@@ -7,5 +7,5 @@ import Step.Tentative.Base (Tentative (Tentative))
 import Step.Cursor.Base (Cursor)
 import qualified Step.Cursor.Base as Cursor
 
-takeChar :: Monad m => ListLike chunk char => Tentative (Cursor m chunk) m (Maybe char)
+takeChar :: Monad m => ListLike text char => Tentative (Cursor m text) m (Maybe char)
 takeChar = Tentative (Cursor.unconsCharTentative)

@@ -10,39 +10,39 @@ import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.List as Nontrivial.List
 
-data Buffer chunk =
+data Buffer text =
   Buffer
-    { chunks :: Seq (Nontrivial chunk)
+    { chunks :: Seq (Nontrivial text)
     , size :: Natural
     }
 
-instance Semigroup (Buffer chunk) where
+instance Semigroup (Buffer text) where
     a <> b = Buffer{ chunks = chunks a <> chunks b,
                      size = size a + size b }
 
-singleton :: ListLike chunk char => Nontrivial chunk -> Buffer chunk
+singleton :: ListLike text char => Nontrivial text -> Buffer text
 singleton x =
     Buffer{ chunks = Seq.singleton x, size = Nontrivial.length x }
 
-isEmpty :: Buffer chunk -> Bool
+isEmpty :: Buffer text -> Bool
 isEmpty = (== 0) . size
 
-empty :: Buffer chunk
+empty :: Buffer text
 empty = Buffer{ chunks = Seq.empty, size = 0 }
 
 toListT :: Monad m => Buffer a -> ListT m (Nontrivial a)
 toListT = ListT.select . chunks
 
-fold :: Monoid chunk => Buffer chunk -> chunk
+fold :: Monoid text => Buffer text -> text
 fold = ListLike.fold . fmap Nontrivial.generalize . chunks
 
-headChar :: ListLike chunk char => Buffer chunk -> Maybe char
+headChar :: ListLike text char => Buffer text -> Maybe char
 headChar b =
     case chunks b of
         Seq.Empty -> Nothing
         (Seq.:<|) x _ -> let (c, _) = Nontrivial.uncons x in Just c
 
-unconsChar :: ListLike chunk char => Buffer chunk -> Maybe (char, Buffer chunk)
+unconsChar :: ListLike text char => Buffer text -> Maybe (char, Buffer text)
 unconsChar b =
     case chunks b of
         Seq.Empty -> Nothing
@@ -52,22 +52,22 @@ unconsChar b =
                 size = size b - 1
             })
 
-unconsChunk :: ListLike chunk char => Buffer chunk -> Maybe (Nontrivial chunk, Buffer chunk)
+unconsChunk :: ListLike text char => Buffer text -> Maybe (Nontrivial text, Buffer text)
 unconsChunk b = case ListLike.uncons (chunks b) of
     Nothing -> Nothing
     Just (c, cs) -> Just (c, Buffer{ chunks = cs, size = size b - Nontrivial.length c } )
 
-data StripPrefixResult chunk =
+data StripPrefixResult text =
     StripPrefixFail
-  | StripPrefixPartial (Nontrivial chunk) -- ^ What further needed text remains
-  | StripPrefixSuccess (Buffer chunk) -- ^ What buffer is left after removing the text
+  | StripPrefixPartial (Nontrivial text) -- ^ What further needed text remains
+  | StripPrefixSuccess (Buffer text) -- ^ What buffer is left after removing the text
 
-stripPrefix :: (ListLike chunk char, Eq chunk, Eq char) => chunk -> Buffer chunk -> StripPrefixResult chunk
+stripPrefix :: (ListLike text char, Eq text, Eq char) => text -> Buffer text -> StripPrefixResult text
 stripPrefix c b = case Nontrivial.refine c of
     Nothing -> StripPrefixSuccess b
     Just c' -> stripNontrivialPrefix c' b
 
-stripNontrivialPrefix :: (ListLike chunk char, Eq chunk, Eq char) => Nontrivial chunk -> Buffer chunk -> StripPrefixResult chunk
+stripNontrivialPrefix :: (ListLike text char, Eq text, Eq char) => Nontrivial text -> Buffer text -> StripPrefixResult text
 stripNontrivialPrefix c b = case chunks b of
     Seq.Empty -> StripPrefixPartial c
     (Seq.:<|) x xs -> case compare (Nontrivial.length x) (Nontrivial.length c) of

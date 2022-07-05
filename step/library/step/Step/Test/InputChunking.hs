@@ -10,7 +10,7 @@ import qualified Hedgehog.Range as Range
 import qualified ListLike
 
 -- | Generates various ways of chunking a given input text. Shrinks toward the smallest number of chunks.
-genChunks :: ListLike chunk char => chunk -> Gen [chunk]
+genChunks :: ListLike text char => text -> Gen [text]
 genChunks x =
     if ListLike.null x
     then Gen.integral (Range.linear 0 4) <&> \n -> ListLike.replicate n ListLike.empty
@@ -19,14 +19,14 @@ genChunks x =
         ListLike.toList <$> execStateT (replicateM (numberOfChunks - 1) (modifyM fragment)) (ListLike.singleton x)
 
 -- | From a list of chunks, pick one and divide it in some way
-fragment :: MonadGen m => ListLike chunk char => Seq chunk -> m (Seq chunk)
+fragment :: MonadGen m => ListLike text char => Seq text -> m (Seq text)
 fragment xs = do
     (before, target, after) <- genSplitAround xs
     (a, b) <- genSplit target
     return (ListLike.fold [before, ListLike.fromList [a, b], after])
 
 -- | Split a chunk into two. The input chunk may be empty. May produce an empty chunk.
-genSplit :: ListLike chunk char => MonadGen m => chunk -> m (chunk, chunk)
+genSplit :: ListLike text char => MonadGen m => text -> m (text, text)
 genSplit x = Gen.integral (Range.constant 0 (ListLike.length x)) <&> \i -> ListLike.splitAt i x
 
 -- | Pick a random position in the sequence. Return a 3-tuple with the items (before, at, after) the chosen position. Undefined if the list is empty.
