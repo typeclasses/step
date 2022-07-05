@@ -129,7 +129,7 @@ class ActionIso (k :: ActionKind)
         (Action k config2 cursor2 error2 m2 a2)
 
 actionIso' :: forall k config1 cursor1 error1 m1 a1 config2 cursor2 error2 m2 a2.
-    IsAction k => Iso
+    ActionIso k => Iso
         (k config1 cursor1 error1 m1 a1)
         (k config2 cursor2 error2 m2 a2)
         (Action k config1 cursor1 error1 m1 a1)
