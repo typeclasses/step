@@ -53,7 +53,8 @@ import qualified Step.Document.Do as P
 
 import qualified Step.Action.Do as Action
 import qualified Step.Action.UnifiedType as Action
-import Step.Action.UnifiedType (IsAction, (:>), ActionJoin)
+import Step.Action.UnifiedType (IsAction, ActionJoin)
+import Step.Action.KindJoin ((:>))
 import Step.Action.Kinds
 import Step.Action.SeparateTypes (ConfigurableAction, MonadAction)
 

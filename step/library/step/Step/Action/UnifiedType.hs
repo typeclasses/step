@@ -18,6 +18,8 @@ import qualified Variado.Monad.Class as V
 
 import qualified Monad
 
+import Step.Action.KindJoin
+
 data Action (k :: ActionKind) config cursor error m a
   where
     Any        :: !(T.Any        config cursor error m a) -> Action T.Any        config cursor error m a
@@ -187,53 +189,42 @@ configure = under actionIso . T.configureAction
 
 class ActionJoin (k1 :: ActionKind) (k2 :: ActionKind)
   where
-    type (k1 :> k2) :: ActionKind
     actionJoin :: Monad m => Action k1 config cursor error m (Action k2 config cursor error m a) -> Action (k1 :> k2) config cursor error m a
 
 -- todo: all 64 instances
 
-instance ActionJoin T.Sure       T.Sure       where type T.Sure       :> T.Sure       = T.Sure       ; actionJoin = joinSureToSure
-instance ActionJoin T.SureStatic T.SureStatic where type T.SureStatic :> T.SureStatic = T.SureStatic ; actionJoin = joinSureToSure
-instance ActionJoin T.Move       T.Move       where type T.Move       :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.MoveUndo   T.MoveUndo   where type T.MoveUndo   :> T.MoveUndo   = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Any        T.Any        where type T.Any        :> T.Any        = T.Any        ; actionJoin = joinAnyToAny
+instance ActionJoin T.Sure       T.Sure       where actionJoin = joinSureToSure
+instance ActionJoin T.SureStatic T.SureStatic where actionJoin = joinSureToSure
+instance ActionJoin T.Move       T.Move       where actionJoin = joinAnyToAny
+instance ActionJoin T.MoveUndo   T.MoveUndo   where actionJoin = joinAnyToAny
+instance ActionJoin T.Any        T.Any        where actionJoin = joinAnyToAny
+instance ActionJoin T.Sure       T.SureMove   where actionJoin = joinSureToSure
+instance ActionJoin T.SureMove   T.Sure       where actionJoin = joinSureToSure
+instance ActionJoin T.MoveUndo   T.Move       where actionJoin = joinAnyToAny
+instance ActionJoin T.Move       T.MoveUndo   where actionJoin = joinAnyToAny
+instance ActionJoin T.MoveUndo   T.Any        where actionJoin = joinAnyToAny
+instance ActionJoin T.Any        T.MoveUndo   where actionJoin = joinAnyToAny
+instance ActionJoin T.Move       T.Any        where actionJoin = joinAnyToAny
+instance ActionJoin T.Any        T.Move       where actionJoin = joinAnyToAny
+instance ActionJoin T.Move       T.Undo       where actionJoin = joinAnyToAny
+instance ActionJoin T.Undo       T.Move       where actionJoin = joinAnyToAny
+instance ActionJoin T.Move       T.Static     where actionJoin = joinAnyToAny
+instance ActionJoin T.Static     T.Move       where actionJoin = joinAnyToAny
 
-instance ActionJoin T.Sure       T.SureMove   where type T.Sure       :> T.SureMove   = T.Sure       ; actionJoin = joinSureToSure
-instance ActionJoin T.SureMove   T.Sure       where type T.SureMove   :> T.Sure       = T.Sure       ; actionJoin = joinSureToSure
-
-instance ActionJoin T.MoveUndo   T.Move       where type T.MoveUndo   :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.MoveUndo   where type T.Move       :> T.MoveUndo   = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.MoveUndo   T.Any        where type T.MoveUndo   :> T.Any        = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Any        T.MoveUndo   where type T.Any        :> T.MoveUndo   = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.Any        where type T.Move       :> T.Any        = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Any        T.Move       where type T.Any        :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.Undo       where type T.Move       :> T.Undo       = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Undo       T.Move       where type T.Undo       :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.Static     where type T.Move       :> T.Static     = T.Move       ; actionJoin = joinAnyToAny
-instance ActionJoin T.Static     T.Move       where type T.Static     :> T.Move       = T.Move       ; actionJoin = joinAnyToAny
-
--- SureStatic is easy: It never changes the kind of whatever it's joined with.
-
-instance ActionJoin T.Any        T.SureStatic where type T.Any        :> T.SureStatic = T.Any        ; actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Any        where type T.SureStatic :> T.Any        = T.Any        ; actionJoin = joinSureToAny
-
-instance ActionJoin T.Static     T.SureStatic where type T.Static     :> T.SureStatic = T.Static     ; actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Static     where type T.SureStatic :> T.Static     = T.Static     ; actionJoin = joinSureToAny
-
-instance ActionJoin T.Move       T.SureStatic where type T.Move       :> T.SureStatic = T.Move       ; actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Move       where type T.SureStatic :> T.Move       = T.Move       ; actionJoin = joinSureToAny
-
-instance ActionJoin T.Undo       T.SureStatic where type T.Undo       :> T.SureStatic = T.Undo       ; actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Undo       where type T.SureStatic :> T.Undo       = T.Undo       ; actionJoin = joinSureToAny
-
-instance ActionJoin T.MoveUndo   T.SureStatic where type T.MoveUndo   :> T.SureStatic = T.MoveUndo   ; actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.MoveUndo   where type T.SureStatic :> T.MoveUndo   = T.MoveUndo   ; actionJoin = joinSureToAny
-
-instance ActionJoin T.Sure       T.SureStatic where type T.Sure       :> T.SureStatic = T.Sure       ; actionJoin = joinSureToSure
-instance ActionJoin T.SureStatic T.Sure       where type T.SureStatic :> T.Sure       = T.Sure       ; actionJoin = joinSureToSure
-
-instance ActionJoin T.SureMove   T.SureStatic where type T.SureMove   :> T.SureStatic = T.SureMove   ; actionJoin = joinSureToSure
-instance ActionJoin T.SureStatic T.SureMove   where type T.SureStatic :> T.SureMove   = T.SureMove   ; actionJoin = joinSureToSure
+instance ActionJoin T.Any        T.SureStatic where actionJoin = joinAnyToSure
+instance ActionJoin T.SureStatic T.Any        where actionJoin = joinSureToAny
+instance ActionJoin T.Static     T.SureStatic where actionJoin = joinAnyToSure
+instance ActionJoin T.SureStatic T.Static     where actionJoin = joinSureToAny
+instance ActionJoin T.Move       T.SureStatic where actionJoin = joinAnyToSure
+instance ActionJoin T.SureStatic T.Move       where actionJoin = joinSureToAny
+instance ActionJoin T.Undo       T.SureStatic where actionJoin = joinAnyToSure
+instance ActionJoin T.SureStatic T.Undo       where actionJoin = joinSureToAny
+instance ActionJoin T.MoveUndo   T.SureStatic where actionJoin = joinAnyToSure
+instance ActionJoin T.SureStatic T.MoveUndo   where actionJoin = joinSureToAny
+instance ActionJoin T.Sure       T.SureStatic where actionJoin = joinSureToSure
+instance ActionJoin T.SureStatic T.Sure       where actionJoin = joinSureToSure
+instance ActionJoin T.SureMove   T.SureStatic where actionJoin = joinSureToSure
+instance ActionJoin T.SureStatic T.SureMove   where actionJoin = joinSureToSure
 
 ---
 
