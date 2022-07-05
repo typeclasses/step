@@ -19,6 +19,8 @@ import qualified Step.Action.SeparateTypes as T
 import Step.Action.UnifiedType (Action (..), ActionLift, actionLiftTo, IsAction, actionIso, ActionJoin, (:>))
 import qualified Step.Action.UnifiedType as Action
 
+import Step.LineHistory.Char (Char)
+
 import Variado.Monad.Class
 
 newtype Parser (text :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Type) =
@@ -52,7 +54,7 @@ parse config (Parser p) =
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)
 
-parseOnly ::  ActionLift k T.Any => Monad m => ListLike text Char =>
+parseOnly ::  ActionLift k T.Any => Monad m => Char char => ListLike text char =>
     Config text -> Parser text k m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
 

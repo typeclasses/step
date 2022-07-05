@@ -138,6 +138,7 @@ library
 
         Step.LineHistory.Base
         Step.LineHistory.Build
+        Step.LineHistory.Char
         Step.LineHistory.State
 
         Step.Loc.Optics

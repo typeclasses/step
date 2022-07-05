@@ -2,6 +2,7 @@ module Step.DocumentMemory.Base where
 
 import Step.Internal.Prelude
 
+import Step.LineHistory.Char (Char)
 import Step.LineHistory.Base (LineHistory)
 import qualified Step.LineHistory.Base as LineHistory
 import qualified Step.LineHistory.State as LineHistory.State
@@ -31,7 +32,7 @@ makeLensesFor
 
 type DocumentCursor text m = Cursor (StateT (LineHistory text) m) text
 
-fromListT :: ListLike text Char => Monad m => ListT m text -> DocumentMemory text m
+fromListT :: Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text m
 fromListT xs =
   DocumentMemory
     { content = LineHistory.empty

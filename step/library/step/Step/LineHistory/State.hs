@@ -8,6 +8,9 @@ import Step.Internal.Prelude
 
 import Optics
 
+import Step.LineHistory.Char (Char)
+import qualified Step.LineHistory.Char as Char
+
 import Step.LineHistory.Base (LineHistory, CursorLocation (..))
 import qualified Step.LineHistory.Base as LineHistory
 
@@ -19,18 +22,18 @@ import qualified Step.CursorPosition.Base as CursorPosition
 
 import qualified Loc
 
-record :: Monad m => ListLike text Char => text -> StateT (LineHistory text) m ()
+record :: Monad m => Char char => ListLike text char => text -> StateT (LineHistory text) m ()
 record x =
     case ListLike.uncons x of
         Nothing -> return ()
-        Just ('\r', x') -> do
+        Just (c, x') | c == Char.carriageReturn -> do
             recordCR
             record x'
-        Just ('\n', x') -> do
+        Just (c, x') | c == Char.lineFeed -> do
             recordLF
             record x'
         Just _ -> do
-            let (a, b) = ListLike.break (`elem` ['\r', '\n']) x
+            let (a, b) = ListLike.break (`elem` [Char.carriageReturn, Char.lineFeed]) x
             recordOther a
             record b
 
@@ -55,7 +58,7 @@ recordLF = do
     startNewLine
     assign LineHistory.afterCRLens False
 
-recordOther :: Monad m => ListLike text Char => text -> StateT (LineHistory text) m ()
+recordOther :: Monad m => ListLike text char => text -> StateT (LineHistory text) m ()
 recordOther x = do
     acr <- use LineHistory.afterCRLens
     when acr startNewLine
