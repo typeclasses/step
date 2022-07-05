@@ -132,6 +132,7 @@ library
 
         Step.Action.Coerce
         Step.Action.Do
+        Step.Action.Functor
         Step.Action.Kinds
         Step.Action.SeparateTypes
         Step.Action.UnifiedType

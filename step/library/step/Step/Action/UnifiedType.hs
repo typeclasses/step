@@ -12,8 +12,7 @@ import qualified Step.Action.Coerce as Coerce
 
 import qualified Step.Action.SeparateTypes as T
 
--- import qualified Step.Action.Kind as Kind
--- import Step.Action.Kind ((:>), ActionKind)
+import Step.Action.Functor (FunctorAction)
 
 import qualified Variado.Monad.Class as V
 
@@ -80,19 +79,6 @@ instance CanFail T.Static   where failure = view (actionIso') . view Coerce.coer
 instance CanFail T.Move     where failure = view (actionIso') . view Coerce.coerced . T.failureAny
 instance CanFail T.Undo     where failure = view (actionIso') . view Coerce.coerced . T.failureAny
 instance CanFail T.MoveUndo where failure = view (actionIso') . view Coerce.coerced . T.failureAny
-
----
-
-class (forall config cursor error m. Functor m => Functor (k config cursor error m)) => FunctorAction k
-
-instance FunctorAction T.Any
-instance FunctorAction T.Static
-instance FunctorAction T.Move
-instance FunctorAction T.Undo
-instance FunctorAction T.MoveUndo
-instance FunctorAction T.Sure
-instance FunctorAction T.SureStatic
-instance FunctorAction T.SureMove
 
 ---
 
