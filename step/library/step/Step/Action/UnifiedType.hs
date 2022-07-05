@@ -89,8 +89,22 @@ class
     , k :> T.SureStatic ~ k
     , T.SureStatic :> k ~ k
     , forall config cursor error m. Functor m => Functor (k config cursor error m)
+    , ActionIso k
     )
     => IsAction (k :: ActionKind)
+
+instance IsAction T.Any
+instance IsAction T.Static
+instance IsAction T.Move
+instance IsAction T.Undo
+instance IsAction T.MoveUndo
+instance IsAction T.Sure
+instance IsAction T.SureStatic
+instance IsAction T.SureMove
+
+---
+
+class ActionIso (k :: ActionKind)
   where
     actionIso :: Iso
         (k config1 cursor1 error1 m1 a1)
@@ -106,14 +120,14 @@ actionIso' :: forall k config1 cursor1 error1 m1 a1 config2 cursor2 error2 m2 a2
         (Action k config2 cursor2 error2 m2 a2)
 actionIso' = actionIso
 
-instance IsAction T.Any        where actionIso = iso Any        (\(Any x)        -> x)
-instance IsAction T.Static     where actionIso = iso Static     (\(Static x)     -> x)
-instance IsAction T.Move       where actionIso = iso Move       (\(Move x)       -> x)
-instance IsAction T.Undo       where actionIso = iso Undo       (\(Undo x)       -> x)
-instance IsAction T.MoveUndo   where actionIso = iso MoveUndo   (\(MoveUndo x)   -> x)
-instance IsAction T.Sure       where actionIso = iso Sure       (\(Sure x)       -> x)
-instance IsAction T.SureStatic where actionIso = iso SureStatic (\(SureStatic x) -> x)
-instance IsAction T.SureMove   where actionIso = iso SureMove   (\(SureMove x)   -> x)
+instance ActionIso T.Any        where actionIso = iso Any        (\(Any x)        -> x)
+instance ActionIso T.Static     where actionIso = iso Static     (\(Static x)     -> x)
+instance ActionIso T.Move       where actionIso = iso Move       (\(Move x)       -> x)
+instance ActionIso T.Undo       where actionIso = iso Undo       (\(Undo x)       -> x)
+instance ActionIso T.MoveUndo   where actionIso = iso MoveUndo   (\(MoveUndo x)   -> x)
+instance ActionIso T.Sure       where actionIso = iso Sure       (\(Sure x)       -> x)
+instance ActionIso T.SureStatic where actionIso = iso SureStatic (\(SureStatic x) -> x)
+instance ActionIso T.SureMove   where actionIso = iso SureMove   (\(SureMove x)   -> x)
 
 ---
 
