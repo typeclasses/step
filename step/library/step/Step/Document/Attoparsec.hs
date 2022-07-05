@@ -154,8 +154,8 @@ count = P.count
 -- todo
 -- match :: Parser a -> Parser (Text, a)
 
--- todo
--- endOfInput :: Parser ()
+endOfInput :: Monad m => ListLike text char => Parser text Static m ()
+endOfInput = P.end
 
--- todo
--- atEnd :: Parser Bool
+atEnd :: Monad m => ListLike text char => Parser text SureStatic m Bool
+atEnd = P.atEnd
