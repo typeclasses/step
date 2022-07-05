@@ -6,7 +6,8 @@ import Step.Internal.Prelude
 
 import Step.Document.Parser
 
-import Step.Action.SeparateTypes
+import Step.Action.SeparateTypes (MonadAction)
+import Step.Action.Kinds
 import Step.Action.UnifiedType (IsAction, (:>), ActionJoin)
 
 import qualified Step.Document.Prelude as P

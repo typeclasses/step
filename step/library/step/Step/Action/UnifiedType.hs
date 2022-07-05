@@ -4,8 +4,9 @@ import Step.Internal.Prelude
 
 import Optics
 
-import Step.Action.SeparateTypes (ActionKind)
+import Step.Action.Kinds (ActionKind)
 import qualified Step.Action.SeparateTypes as T
+import qualified Step.Action.Kinds as T
 
 -- import qualified Step.Action.Kind as Kind
 -- import Step.Action.Kind ((:>), ActionKind)

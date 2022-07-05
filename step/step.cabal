@@ -131,6 +131,7 @@ library
         Step.DocumentMemory.State
 
         Step.Action.Do
+        Step.Action.Kinds
         Step.Action.SeparateTypes
         Step.Action.UnifiedType
 

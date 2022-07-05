@@ -14,7 +14,8 @@ import qualified Step.Document.Error as Error
 
 import Loc (Loc)
 
-import Step.Action.SeparateTypes (ActionKind)
+import Step.Action.Kinds (ActionKind)
+import qualified Step.Action.Kinds as T
 import qualified Step.Action.SeparateTypes as T
 import Step.Action.UnifiedType (Action (..), ActionLift, actionLiftTo, IsAction, actionIso, ActionJoin, (:>))
 import qualified Step.Action.UnifiedType as Action

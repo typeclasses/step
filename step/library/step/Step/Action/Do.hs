@@ -12,12 +12,12 @@ import Optics
 import qualified BasePrelude
 import BasePrelude (Monad)
 
-import qualified Step.Action.UnifiedType as U
-import qualified Step.Action.SeparateTypes as S
+import Step.Action.UnifiedType (Action, actionIso)
+import Step.Action.Kinds (SureStatic)
 
 import Variado.Monad.Do
 
-pure :: Monad m => a -> U.Action S.SureStatic config cursor error m a
-pure x = view U.actionIso (BasePrelude.pure x)
+pure :: Monad m => a -> Action SureStatic config cursor error m a
+pure x = view actionIso (BasePrelude.pure x)
 
 return = pure

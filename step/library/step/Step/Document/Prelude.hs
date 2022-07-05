@@ -54,7 +54,8 @@ import qualified Step.Document.Do as P
 import qualified Step.Action.Do as Action
 import qualified Step.Action.UnifiedType as Action
 import Step.Action.UnifiedType (IsAction, (:>), ActionJoin)
-import Step.Action.SeparateTypes
+import Step.Action.Kinds
+import Step.Action.SeparateTypes (ConfigurableAction, MonadAction)
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
 char = review action' $ MoveUndo \config -> runStateT $

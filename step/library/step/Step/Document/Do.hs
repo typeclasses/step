@@ -19,7 +19,8 @@ import qualified Variado.Monad.Do as Variado
 
 import Step.Document.Parser (Parser, action')
 import Step.Action.UnifiedType (ActionJoin, IsAction, (:>))
-import Step.Action.SeparateTypes (SureStatic (SureStatic), MonadAction)
+import Step.Action.SeparateTypes (MonadAction)
+import Step.Action.Kinds (SureStatic (SureStatic))
 
 import qualified Optics as O
 
