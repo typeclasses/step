@@ -25,6 +25,9 @@ bufferMore = modifyM Cursor.bufferMore
 takeChar :: (Monad m, ListLike chunk char) => StateT (Cursor m chunk) m (Maybe char)
 takeChar = fillBuffer 1 *> takeBufferedChar
 
+peekCharMaybe :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
+peekCharMaybe = fillBuffer 1 *> peekBufferedChar
+
 takeBufferedChar :: Monad m => ListLike chunk char => StateT (Cursor m chunk) m (Maybe char)
 takeBufferedChar = do
     s <- get
@@ -34,8 +37,14 @@ takeBufferedChar = do
             put s'
             return (Just c)
 
+peekBufferedChar :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
+peekBufferedChar = get <&> Cursor.bufferHeadChar
+
 takeCharIf :: Monad m => ListLike chunk char => (char -> Bool) -> StateT (Cursor m chunk) m (Maybe char)
 takeCharIf f = Tentative.State.ifJust (\case Just x | f x -> Just x; _ -> Nothing) Cursor.Tentative.takeChar
+
+takeCharJust :: Monad m => ListLike chunk char => (char -> Maybe r) -> StateT (Cursor m chunk) m (Maybe r)
+takeCharJust f = Tentative.State.ifJust (>>= f) Cursor.Tentative.takeChar
 
 takeText :: (Monad m, ListLike chunk char, Eq chunk, Eq char) => chunk -> StateT (Cursor m chunk) m Bool
 takeText x = do

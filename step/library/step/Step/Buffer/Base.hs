@@ -36,12 +36,18 @@ toListT = ListT.select . chunks
 fold :: Monoid chunk => Buffer chunk -> chunk
 fold = ListLike.fold . fmap Nontrivial.generalize . chunks
 
-unconsChar :: ListLike chunk char => Buffer chunk -> Maybe (char, Buffer chunk)
-unconsChar b = if isEmpty b then Nothing else Just $
+headChar :: ListLike chunk char => Buffer chunk -> Maybe char
+headChar b =
     case chunks b of
-        Seq.Empty -> error "Buffer size is 0 but it has no chunks"
+        Seq.Empty -> Nothing
+        (Seq.:<|) x _ -> let (c, _) = Nontrivial.uncons x in Just c
+
+unconsChar :: ListLike chunk char => Buffer chunk -> Maybe (char, Buffer chunk)
+unconsChar b =
+    case chunks b of
+        Seq.Empty -> Nothing
         (Seq.:<|) x xs -> let (c, x') = Nontrivial.uncons x in
-            (c, Buffer{
+            Just (c, Buffer{
                 chunks = Nontrivial.List.cons x' xs,
                 size = size b - 1
             })

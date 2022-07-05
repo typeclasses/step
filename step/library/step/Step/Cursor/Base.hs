@@ -3,7 +3,8 @@ module Step.Cursor.Base
     {- * The type -} Cursor (..),
     {- * Optics -} positionLens, bufferLens, pendingLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
-    {- * Buffering -} fillBuffer, bufferMore, bufferAll, isAllBuffered, bufferIsEmpty,
+    {- * Buffer actions -} fillBuffer, bufferMore, bufferAll,
+    {- * Buffer inspection -} isAllBuffered, bufferIsEmpty, bufferHeadChar,
     {- * Taking from the stream -} unconsChar, bufferUnconsChar, unconsCharTentative,
   )
   where
@@ -56,6 +57,9 @@ bufferUnconsChar :: ListLike chunk char => Cursor m chunk -> Maybe (char, Cursor
 bufferUnconsChar cbs = case Buffer.unconsChar (buffer cbs) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, cbs{ buffer = b', position = position cbs + 1 })
+
+bufferHeadChar :: Monad m => ListLike chunk char => Cursor m chunk -> Maybe char
+bufferHeadChar = Buffer.headChar . buffer
 
 unconsChar :: Monad m => ListLike chunk char => Cursor m chunk -> m (Cursor m chunk, Maybe char)
 unconsChar cbs = do

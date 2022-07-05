@@ -118,6 +118,7 @@ library
 
         Step.CursorPosition.Base
 
+        Step.Document.Attoparsec
         Step.Document.Config
         Step.Document.Do
         Step.Document.Error

@@ -1,6 +1,6 @@
 module Step.Document.Prelude
   (
-    {- * Single character result -} char, satisfy,
+    {- * Single character result -} char, satisfy, satisfyJust, peekCharMaybe,
     {- * Text result -} text, -- all,
     {- * Inspecting the position -} position, withLocation,
     {- * Repetition -} repetition,
@@ -61,11 +61,22 @@ char = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeChar <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
-        -- maybe (Left (makeError config)) Right
+
+-- peekChar :: Monad m => ListLike text Char => Parser text Static m Char
+-- peekChar
+
+peekCharMaybe :: Monad m => ListLike text Char => Parser text SureStatic m (Maybe Char)
+peekCharMaybe = review action' $ SureStatic \_ -> runStateT DocumentMemory.State.peekCharMaybe
 
 satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text MoveUndo m Char
 satisfy ok = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeCharIf ok <&> \case
+        Nothing -> Left (Parser.makeError config)
+        Just x -> Right x
+
+satisfyJust :: Monad m => ListLike text Char => (Char -> Maybe a) -> Parser text MoveUndo m a
+satisfyJust ok = review action' $ MoveUndo \config -> runStateT $
+    DocumentMemory.State.takeCharJust ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
@@ -88,6 +99,7 @@ contextualize :: (Monad m, ConfigurableAction k, IsAction k) =>
     text -> Parser text k m a -> Parser text k m a
 contextualize c = Optics.over action (Action.configure (over Config.contextLens (c :)))
 
+infix 0 <?>
 (<?>) :: (Monad m, ConfigurableAction k, IsAction k) => Parser text k m a -> text -> Parser text k m a
 p <?> c = contextualize c p
 
@@ -103,6 +115,7 @@ withLocation p = P.do
     b <- position
     P.return (Loc.spanOrLocFromTo a b, x)
 
+-- todo: this should map Static to SureStatic
 try :: Monad m => Action.Noncommittal k => Parser text k m a -> Parser text Sure m (Maybe a)
 try = review action . Action.try . view action
 
