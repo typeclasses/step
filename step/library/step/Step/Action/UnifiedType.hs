@@ -245,9 +245,9 @@ instance (ActionJoin k1 k2, Monad m) => V.PolyMonad (Action k1 config cursor err
 
 joinAnyToAny :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => Coerce T.Any k1 =>
-    IsAction k2 => Coerce T.Any k2 =>
-    IsAction (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
+    ActionIso k1 => Coerce T.Any k1 =>
+    ActionIso k2 => Coerce T.Any k2 =>
+    ActionIso (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinAnyToAny = view $
@@ -260,9 +260,9 @@ joinAnyToAny = view $
 
 joinSureToSure :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => Coerce T.Sure k1 =>
-    IsAction k2 => Coerce T.Sure k2 =>
-    IsAction (k1 :> k2) => Coerce T.Sure (k1 :> k2) =>
+    ActionIso k1 => Coerce T.Sure k1 =>
+    ActionIso k2 => Coerce T.Sure k2 =>
+    ActionIso (k1 :> k2) => Coerce T.Sure (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinSureToSure = view $
@@ -275,9 +275,9 @@ joinSureToSure = view $
 
 joinAnyToSure :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => Coerce T.Any k1 =>
-    IsAction k2 => Coerce T.Sure k2 =>
-    IsAction (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
+    ActionIso k1 => Coerce T.Any k1 =>
+    ActionIso k2 => Coerce T.Sure k2 =>
+    ActionIso (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinAnyToSure = view $
@@ -290,9 +290,9 @@ joinAnyToSure = view $
 
 joinSureToAny :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => Coerce T.Sure k1 =>
-    IsAction k2 => Coerce T.Any k2 =>
-    IsAction (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
+    ActionIso k1 => Coerce T.Sure k1 =>
+    ActionIso k2 => Coerce T.Any k2 =>
+    ActionIso (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinSureToAny = view $
