@@ -30,14 +30,14 @@ data Action (k :: ActionKind) config cursor error m a
     SureStatic :: !(T.SureStatic config cursor error m a) -> Action T.SureStatic config cursor error m a
     SureMove   :: !(T.SureMove   config cursor error m a) -> Action T.SureMove   config cursor error m a
 
-instance (Functor m, IsAction k) => Functor (Action k config cursor error m) where
+instance (Functor m, FunctorAction k, ActionIso k) => Functor (Action k config cursor error m) where
     fmap = under actionIso . fmap
 
-instance (Monad m, IsAction k, T.MonadAction k) => Applicative (Action k config cursor error m) where
+instance (Monad m, FunctorAction k, T.MonadAction k, ActionIso k) => Applicative (Action k config cursor error m) where
     pure = view actionIso . T.pureAction
     (<*>) = Monad.ap
 
-instance (Monad m, IsAction k, T.MonadAction k) => Monad (Action k config cursor error m) where
+instance (Monad m, FunctorAction k, T.MonadAction k, ActionIso k) => Monad (Action k config cursor error m) where
     a >>= b = view actionIso (T.bindAction (review actionIso a) (fmap (review actionIso) b))
 
 ---
@@ -83,9 +83,22 @@ instance CanFail T.MoveUndo where failure = view (actionIso') . view Coerce.coer
 
 ---
 
+class (forall config cursor error m. Functor m => Functor (k config cursor error m)) => FunctorAction k
+
+instance FunctorAction T.Any
+instance FunctorAction T.Static
+instance FunctorAction T.Move
+instance FunctorAction T.Undo
+instance FunctorAction T.MoveUndo
+instance FunctorAction T.Sure
+instance FunctorAction T.SureStatic
+instance FunctorAction T.SureMove
+
+---
+
 class
     ( SureStaticId k
-    , forall config cursor error m. Functor m => Functor (k config cursor error m)
+    , FunctorAction k
     , ActionIso k
     )
     => IsAction (k :: ActionKind)
