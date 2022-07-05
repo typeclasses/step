@@ -62,34 +62,34 @@ char = review action' $ MoveUndo \config -> runStateT $
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
--- peekChar :: Monad m => ListLike text Char => Parser text Static m Char
+-- peekChar :: Monad m => ListLike text char => Parser text Static m char
 -- peekChar
 
-peekCharMaybe :: Monad m => ListLike text Char => Parser text SureStatic m (Maybe Char)
+peekCharMaybe :: Monad m => ListLike text char => Parser text SureStatic m (Maybe char)
 peekCharMaybe = review action' $ SureStatic \_ -> runStateT DocumentMemory.State.peekCharMaybe
 
-satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text MoveUndo m Char
+satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveUndo m char
 satisfy ok = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
-satisfyJust :: Monad m => ListLike text Char => (Char -> Maybe a) -> Parser text MoveUndo m a
+satisfyJust :: Monad m => ListLike text char => (char -> Maybe a) -> Parser text MoveUndo m a
 satisfyJust ok = review action' $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeCharJust ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
-text :: Monad m => ListLike text Char => Eq text => text -> Parser text Any m ()
+text :: Monad m => ListLike text char => Eq text => Eq char => text -> Parser text Any m ()
 text x = review action' $ Any \config -> runStateT $
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
 
-atEnd :: Monad m => ListLike text Char => Parser text SureStatic m Bool
+atEnd :: Monad m => ListLike text char => Parser text SureStatic m Bool
 atEnd = review action' $ SureStatic \_config -> runStateT DocumentMemory.State.atEnd
 
-end :: Monad m => ListLike text Char => Parser text Static m ()
+end :: Monad m => ListLike text char => Parser text Static m ()
 end = review action' $ Static \config -> runStateT $
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
@@ -132,23 +132,23 @@ failure :: Monad m => Action.CanFail k => Parser text k m a
 failure = review action $ Action.failure Parser.makeError
 
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
--- all :: Monad m => ListLike text Char => Parser text 'Sure m text
+-- all :: Monad m => ListLike text char => Parser text 'Sure m text
 -- all = CertainParser \_config -> DocumentMemory.State.takeAll
 
--- under :: Monad m => ListLike text Char => Transform text m text -> Parser text m a -> Parser text m a
+-- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do
 --     s <- get
 --     (s', x) <- zoom ParseState.futureLens $ lift $ runStateT (p eo) _
 --     _
 
--- match :: ListLike text Char => Monad m => Extent text m -> Parser text m text
+-- match :: ListLike text char => Monad m => Extent text m -> Parser text m text
 -- match (Extent e) = Parser \_eo -> do
 --     s <- get
 --     (s', t) <- lift $ execStateT (match' e) (s, ListLike.empty)
 --     put s'
 --     return (Right (ListLike.fold t))
 
--- match' :: Monad m => ListLike text Char =>
+-- match' :: Monad m => ListLike text char =>
 --     ListT (StateT (Stream m text) m) text
 --     -> StateT (ParseState text m, Seq text) m ()
 -- match' e = do
@@ -160,7 +160,7 @@ failure = review action $ Action.failure Parser.makeError
 --             modifying _2 (`ListLike.snoc` x)
 --             match' e'
 
--- while :: ListLike text Char => Monad m => (Char -> Bool) -> Transform text m text
+-- while :: ListLike text char => Monad m => (Char -> Bool) -> Transform text m text
 -- while f = Transform while'
 --   where
 --     while' = ListT do

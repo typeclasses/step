@@ -10,25 +10,25 @@ import Step.Action.SeparateTypes
 
 import qualified Step.Document.Prelude as P
 
-char :: ListLike text Char => Monad m => Char -> Parser text MoveUndo m Char
+char :: ListLike text char => Monad m => Eq char => char -> Parser text MoveUndo m char
 char x = P.satisfy (== x)
 
-anyChar :: ListLike text Char => Monad m => Parser text MoveUndo m Char
+anyChar :: ListLike text char => Monad m => Parser text MoveUndo m char
 anyChar = P.char
 
-notChar :: ListLike text Char => Monad m => Char -> Parser text MoveUndo m Char
+notChar :: ListLike text char => Eq char => Monad m => char -> Parser text MoveUndo m char
 notChar x = P.satisfy (/= x)
 
-satisfy :: Monad m => ListLike text Char => (Char -> Bool) -> Parser text MoveUndo m Char
+satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveUndo m char
 satisfy = P.satisfy
 
-satisfyWith :: Monad m => ListLike text Char => (Char -> a) -> (a -> Bool) -> Parser text MoveUndo m a
+satisfyWith :: Monad m => ListLike text char => (char -> a) -> (a -> Bool) -> Parser text MoveUndo m a
 satisfyWith f ok = P.satisfyJust ((\x -> if ok x then Just x else Nothing) . f)
 
-skip :: ListLike text Char => Monad m => (Char -> Bool) -> Parser text MoveUndo m ()
+skip :: ListLike text char => Monad m => (char -> Bool) -> Parser text MoveUndo m ()
 skip f = void (P.satisfy f)
 
-peekChar :: ListLike text Char => Monad m => Parser text SureStatic m (Maybe Char)
+peekChar :: ListLike text char => Monad m => Parser text SureStatic m (Maybe char)
 peekChar = P.peekCharMaybe
 
 -- peekChar' :: Parser Char

@@ -43,19 +43,19 @@ runCursorState go = do
 takeChar :: Monad m => ListLike text char => StateT (DocumentMemory text m) m (Maybe char)
 takeChar = runCursorState Cursor.State.takeChar
 
-peekCharMaybe :: Monad m => ListLike text Char => StateT (DocumentMemory text m) m (Maybe Char)
+peekCharMaybe :: Monad m => ListLike text char => StateT (DocumentMemory text m) m (Maybe char)
 peekCharMaybe = runCursorState Cursor.State.peekCharMaybe
 
-takeCharIf :: Monad m => ListLike text Char => (Char -> Bool) -> StateT (DocumentMemory text m) m (Maybe Char)
+takeCharIf :: Monad m => ListLike text char => (char -> Bool) -> StateT (DocumentMemory text m) m (Maybe char)
 takeCharIf ok = runCursorState (Cursor.State.takeCharIf ok)
 
-takeCharJust :: Monad m => ListLike text Char => (Char -> Maybe r) -> StateT (DocumentMemory text m) m (Maybe r)
+takeCharJust :: Monad m => ListLike text char => (char -> Maybe r) -> StateT (DocumentMemory text m) m (Maybe r)
 takeCharJust ok = runCursorState (Cursor.State.takeCharJust ok)
 
-takeText :: Monad m => Eq text => ListLike text Char => text -> StateT (DocumentMemory text m) m Bool
+takeText :: Monad m => Eq text => Eq char => ListLike text char => text -> StateT (DocumentMemory text m) m Bool
 takeText x = runCursorState (Cursor.State.takeText x)
 
-takeAll :: Monad m => ListLike text Char => StateT (DocumentMemory text m) m text
+takeAll :: Monad m => ListLike text char => StateT (DocumentMemory text m) m text
 takeAll = runCursorState Cursor.State.takeAll
 
 atEnd :: Monad m => ListLike text char => StateT (DocumentMemory text m) m Bool
