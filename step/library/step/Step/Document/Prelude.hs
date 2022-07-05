@@ -1,6 +1,6 @@
 module Step.Document.Prelude
   (
-    {- * Single character result -} char, satisfy, satisfyJust, peekCharMaybe,
+    {- * Single character result -} char, satisfy, satisfyJust, peekChar, peekCharMaybe,
     {- * Text result -} text, -- all,
     {- * Inspecting the position -} position, withLocation,
     {- * Repetition -} repetition, count,
@@ -62,8 +62,11 @@ char = review action' $ MoveUndo \config -> runStateT $
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
--- peekChar :: Monad m => ListLike text char => Parser text Static m char
--- peekChar
+peekChar :: Monad m => ListLike text char => Parser text Static m char
+peekChar = review action' $ Static \config -> runStateT $
+    DocumentMemory.State.peekCharMaybe <&> \case
+        Nothing -> Left (Parser.makeError config)
+        Just x -> Right x
 
 peekCharMaybe :: Monad m => ListLike text char => Parser text SureStatic m (Maybe char)
 peekCharMaybe = review action' $ SureStatic \_ -> runStateT DocumentMemory.State.peekCharMaybe

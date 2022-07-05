@@ -32,8 +32,8 @@ skip f = void (P.satisfy f)
 peekChar :: ListLike text char => Monad m => Parser text SureStatic m (Maybe char)
 peekChar = P.peekCharMaybe
 
--- todo
--- peekChar' :: Parser Char
+peekChar' :: Monad m => ListLike text char => Parser text Static m char
+peekChar' = P.peekChar
 
 -- todo
 -- digit :: Parser Char
