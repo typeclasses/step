@@ -23,6 +23,8 @@ import qualified SpanOrLoc
 
 import Monad (replicateM_)
 
+import Char (Char)
+
 -- The modules under test
 import Step.Document.Parser
 import Step.Document.Prelude

@@ -3,7 +3,7 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy, satisfyJust, peekCharMaybe,
     {- * Text result -} text, -- all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Repetition -} repetition,
+    {- * Repetition -} repetition, count,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} failure,
@@ -127,6 +127,16 @@ repetition p = fix \r -> P.do
     case xm of
         Nothing -> return ListLike.empty
         Just x -> ListLike.cons x <$> r
+
+count ::
+    Monad m => IsAction k1 => IsAction k2 => ActionJoin k1 k2 =>
+    MonadAction k2 => k1 :> k2 ~ k2 => ListLike list a =>
+    Natural -> Parser text k1 m a -> Parser text k2 m list
+count = \n a -> go a n
+  where
+    go a = fix \r -> \case
+        0 -> pure ListLike.empty
+        n -> a P.*> r (n - 1)
 
 failure :: Monad m => Action.CanFail k => Parser text k m a
 failure = review action $ Action.failure Parser.makeError

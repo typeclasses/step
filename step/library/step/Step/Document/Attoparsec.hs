@@ -7,6 +7,7 @@ import Step.Internal.Prelude
 import Step.Document.Parser
 
 import Step.Action.SeparateTypes
+import Step.Action.UnifiedType (IsAction, (:>), ActionJoin)
 
 import qualified Step.Document.Prelude as P
 
@@ -116,8 +117,11 @@ peekChar = P.peekCharMaybe
 -- todo
 -- choice :: ListLike list (Parser a) => list -> Parser a
 
--- todo
--- count :: ListLike list a => Natural -> Parser a -> Parser list
+count ::
+    Monad m => IsAction k1 => IsAction k2 => ActionJoin k1 k2 =>
+    MonadAction k2 => k1 :> k2 ~ k2 => ListLike list a =>
+    Natural -> Parser text k1 m a -> Parser text k2 m list
+count = P.count
 
 -- todo
 -- option :: a -> Parser a -> Parser a

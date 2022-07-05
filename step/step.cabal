@@ -55,6 +55,7 @@ common base
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , transformers
+      , nat-optics
       , optics ^>= 0.4
     mixins:
         base
@@ -91,6 +92,7 @@ common base
       , data-default-class (Data.Default.Class as Default)
       , list-transformer (List.Transformer as ListT)
       , ListLike (Data.ListLike as ListLike)
+      , nat-optics (NatOptics.Positive as Positive)
       , transformers
           ( Control.Monad.Trans.State.Strict as State
           , Control.Monad.Trans.Class as MonadTrans
@@ -155,6 +157,7 @@ library step-internal
         Step.Internal.Prelude
     other-modules:
         Step.Internal.Modify
+        Step.Internal.Positive
         Step.Internal.RecordStream
         Step.Internal.Times
         Step.Internal.While

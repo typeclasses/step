@@ -8,3 +8,8 @@ class Eq a => Char a
   where
     carriageReturn :: a
     lineFeed :: a
+
+instance Char Char.Char
+  where
+    carriageReturn = '\r'
+    lineFeed = '\n'

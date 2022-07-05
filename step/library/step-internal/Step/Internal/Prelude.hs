@@ -24,10 +24,12 @@ import Default as X (Default (def))
 import Coerce as X (coerce)
 import Kind as X (Type)
 import Void as X (Void, absurd)
+import Positive as X (Positive)
 
 import Optics as X
 
 import Step.Internal.Modify as X
 import Step.Internal.RecordStream as X
+import Step.Internal.Positive as X
 import Step.Internal.Times as X
 import Step.Internal.While as X
