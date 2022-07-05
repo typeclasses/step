@@ -84,10 +84,7 @@ instance CanFail T.MoveUndo where failure = view (actionIso') . view Coerce.coer
 ---
 
 class
-    ( ActionJoin k T.SureStatic
-    , ActionJoin T.SureStatic k
-    , k :> T.SureStatic ~ k
-    , T.SureStatic :> k ~ k
+    ( SureStaticId k
     , forall config cursor error m. Functor m => Functor (k config cursor error m)
     , ActionIso k
     )
@@ -101,6 +98,25 @@ instance IsAction T.MoveUndo
 instance IsAction T.Sure
 instance IsAction T.SureStatic
 instance IsAction T.SureMove
+
+---
+
+class
+    ( ActionJoin k T.SureStatic
+    , ActionJoin T.SureStatic k
+    , k :> T.SureStatic ~ k
+    , T.SureStatic :> k ~ k
+    )
+    => SureStaticId k
+
+instance SureStaticId T.Any
+instance SureStaticId T.Static
+instance SureStaticId T.Move
+instance SureStaticId T.Undo
+instance SureStaticId T.MoveUndo
+instance SureStaticId T.Sure
+instance SureStaticId T.SureStatic
+instance SureStaticId T.SureMove
 
 ---
 
