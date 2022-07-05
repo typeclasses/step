@@ -43,34 +43,6 @@ failureAny f = Any \c s -> return (Left (f c), s)
 
 ---
 
-class Like k k'
-  where
-    actionIso :: Iso
-        (k' config1 cursor1 error1 m1 a1)
-        (k' config2 cursor2 error2 m2 a2)
-        (k  config1 cursor1 error1 m1 a1)
-        (k  config2 cursor2 error2 m2 a2)
-
-actionIso' :: forall k k' config1 cursor1 error1 m1 a1 config2 cursor2 error2 m2 a2.
-    Like k k' => Iso
-        (k' config1 cursor1 error1 m1 a1)
-        (k' config2 cursor2 error2 m2 a2)
-        (k  config1 cursor1 error1 m1 a1)
-        (k  config2 cursor2 error2 m2 a2)
-actionIso' = actionIso
-
-instance Like Any Any         where actionIso = coerced
-instance Like Any Static      where actionIso = coerced
-instance Like Any Move        where actionIso = coerced
-instance Like Any Undo        where actionIso = coerced
-instance Like Any MoveUndo    where actionIso = coerced
-
-instance Like Sure Sure       where actionIso = coerced
-instance Like Sure SureStatic where actionIso = coerced
-instance Like Sure SureMove   where actionIso = coerced
-
----
-
 class FunctorAction (action :: ActionKind) where
     fmapAction :: Functor m => (a -> b)
         -> action config cursor error m a

@@ -5,8 +5,12 @@ import Step.Internal.Prelude
 import Optics
 
 import Step.Action.Kinds (ActionKind)
-import qualified Step.Action.SeparateTypes as T
 import qualified Step.Action.Kinds as T
+
+import Step.Action.Coerce (Coerce)
+import qualified Step.Action.Coerce as Coerce
+
+import qualified Step.Action.SeparateTypes as T
 
 -- import qualified Step.Action.Kind as Kind
 -- import Step.Action.Kind ((:>), ActionKind)
@@ -53,17 +57,17 @@ class IsAction k => Noncommittal k
 instance Noncommittal T.Undo
   where
     type Try T.Undo = T.Sure
-    try = view (actionIso' @T.Sure) . review (T.actionIso' @T.Sure) . T.tryAnySure . view (T.actionIso' @T.Any) . review (actionIso' @T.Undo)
+    try = view (actionIso' @T.Sure) . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . review (actionIso' @T.Undo)
 
 instance Noncommittal T.MoveUndo
   where
     type Try T.MoveUndo = T.SureMove
-    try = view (actionIso' @T.SureMove) . review (T.actionIso' @T.Sure) . T.tryAnySure . view (T.actionIso' @T.Any) . review (actionIso' @T.MoveUndo)
+    try = view (actionIso' @T.SureMove) . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . review (actionIso' @T.MoveUndo)
 
 instance Noncommittal T.Static
   where
     type Try T.Static = T.SureStatic
-    try = view (actionIso' @T.SureStatic) . review (T.actionIso' @T.Sure) . T.tryAnySure . view (T.actionIso' @T.Any) . review (actionIso' @T.Static)
+    try = view (actionIso' @T.SureStatic) . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . review (actionIso' @T.Static)
 
 ---
 
@@ -71,11 +75,11 @@ class IsAction k => CanFail k
   where
     failure :: Monad m => (config -> StateT cursor m error) -> Action k config cursor error m a
 
-instance CanFail T.Any      where failure = view (actionIso') . review (T.actionIso') . T.failureAny
-instance CanFail T.Static   where failure = view (actionIso') . review (T.actionIso') . T.failureAny
-instance CanFail T.Move     where failure = view (actionIso') . review (T.actionIso') . T.failureAny
-instance CanFail T.Undo     where failure = view (actionIso') . review (T.actionIso') . T.failureAny
-instance CanFail T.MoveUndo where failure = view (actionIso') . review (T.actionIso') . T.failureAny
+instance CanFail T.Any      where failure = view (actionIso') . view Coerce.coerced . T.failureAny
+instance CanFail T.Static   where failure = view (actionIso') . view Coerce.coerced . T.failureAny
+instance CanFail T.Move     where failure = view (actionIso') . view Coerce.coerced . T.failureAny
+instance CanFail T.Undo     where failure = view (actionIso') . view Coerce.coerced . T.failureAny
+instance CanFail T.MoveUndo where failure = view (actionIso') . view Coerce.coerced . T.failureAny
 
 ---
 
@@ -131,8 +135,8 @@ instance ActionLift T.SureMove   T.SureMove   where actionLift = coerce
 instance ActionLift T.Move       T.Any  where actionLift = view actionIso . coerce . review actionIso
 instance ActionLift T.MoveUndo   T.Any  where actionLift = view actionIso . coerce . review actionIso
 instance ActionLift T.MoveUndo   T.Move where actionLift = view actionIso . coerce . review actionIso
-instance ActionLift T.Sure       T.Any  where actionLift = view actionIso . review (T.actionIso' @T.Any) . T.sureToAny . view (T.actionIso' @T.Sure) . review actionIso
-instance ActionLift T.SureStatic T.Any  where actionLift = view actionIso . review (T.actionIso' @T.Any) . T.sureToAny . view (T.actionIso' @T.Sure) . review actionIso
+instance ActionLift T.Sure       T.Any  where actionLift = view actionIso . Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure . review actionIso
+instance ActionLift T.SureStatic T.Any  where actionLift = view actionIso . Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure . review actionIso
 instance ActionLift T.SureStatic T.Sure where actionLift = view actionIso . coerce . review actionIso
 
 actionLiftTo :: forall k2 k1 config cursor error m a.
@@ -211,60 +215,60 @@ instance (ActionJoin k1 k2, Monad m) => V.PolyMonad (Action k1 config cursor err
 
 joinAnyToAny :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => T.Like T.Any k1 =>
-    IsAction k2 => T.Like T.Any k2 =>
-    IsAction (k1 :> k2) => T.Like T.Any (k1 :> k2) =>
+    IsAction k1 => Coerce T.Any k1 =>
+    IsAction k2 => Coerce T.Any k2 =>
+    IsAction (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinAnyToAny = view $
     re (actionIso' @k1)
-    % T.actionIso' @T.Any @k1
-    % to (fmap (view (re (actionIso' @k2) % T.actionIso' @T.Any @k2)))
+    % to (Coerce.to @T.Any @k1)
+    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Any @k2))))
     % to Monad.join
-    % re (T.actionIso' @T.Any @(k1 :> k2))
+    % to (Coerce.from @T.Any @(k1 :> k2))
     % actionIso' @(k1 :> k2)
 
 joinSureToSure :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => T.Like T.Sure k1 =>
-    IsAction k2 => T.Like T.Sure k2 =>
-    IsAction (k1 :> k2) => T.Like T.Sure (k1 :> k2) =>
+    IsAction k1 => Coerce T.Sure k1 =>
+    IsAction k2 => Coerce T.Sure k2 =>
+    IsAction (k1 :> k2) => Coerce T.Sure (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinSureToSure = view $
     re (actionIso' @k1)
-    % T.actionIso' @T.Sure @k1
-    % to (fmap (view (re (actionIso' @k2) % T.actionIso' @T.Sure @k2)))
+    % to (Coerce.to @T.Sure @k1)
+    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Sure @k2))))
     % to Monad.join
-    % re (T.actionIso' @T.Sure @(k1 :> k2))
+    % to (Coerce.from @T.Sure @(k1 :> k2))
     % actionIso' @(k1 :> k2)
 
 joinAnyToSure :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => T.Like T.Any k1 =>
-    IsAction k2 => T.Like T.Sure k2 =>
-    IsAction (k1 :> k2) => T.Like T.Any (k1 :> k2) =>
+    IsAction k1 => Coerce T.Any k1 =>
+    IsAction k2 => Coerce T.Sure k2 =>
+    IsAction (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinAnyToSure = view $
     re (actionIso' @k1)
-    % T.actionIso' @T.Any @k1
-    % to (fmap (view (re (actionIso' @k2) % T.actionIso' @T.Sure @k2)))
+    % to (Coerce.to @T.Any @k1)
+    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Sure @k2))))
     % to T.joinAnyToSure
-    % re (T.actionIso' @T.Any @(k1 :> k2))
+    % to (Coerce.from @T.Any @(k1 :> k2))
     % actionIso' @(k1 :> k2)
 
 joinSureToAny :: forall k1 k2 config cursor error m a.
     Monad m =>
-    IsAction k1 => T.Like T.Sure k1 =>
-    IsAction k2 => T.Like T.Any k2 =>
-    IsAction (k1 :> k2) => T.Like T.Any (k1 :> k2) =>
+    IsAction k1 => Coerce T.Sure k1 =>
+    IsAction k2 => Coerce T.Any k2 =>
+    IsAction (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
     Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
 joinSureToAny = view $
     re (actionIso' @k1)
-    % T.actionIso' @T.Sure @k1
-    % to (fmap (view (re (actionIso' @k2) % T.actionIso' @T.Any @k2)))
+    % to (Coerce.to @T.Sure @k1)
+    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Any @k2))))
     % to T.joinSureToAny
-    % re (T.actionIso' @T.Any @(k1 :> k2))
+    % to (Coerce.from @T.Any @(k1 :> k2))
     % actionIso' @(k1 :> k2)
