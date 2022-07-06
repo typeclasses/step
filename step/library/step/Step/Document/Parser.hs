@@ -44,7 +44,7 @@ parse :: Monad m => ActionLift k Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
     actionLiftTo @Any p & \(Any p') ->
-    StateT (p' config) >>= \case
+    p' config >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)
 

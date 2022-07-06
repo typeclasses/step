@@ -61,43 +61,43 @@ import Step.Action.SeparateTypes (ConfigurableAction, configureAction)
 import qualified Step.Action.Failure as Action
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
-char = Parser $ MoveUndo \config -> runStateT $
+char = Parser $ MoveUndo \config ->
     DocumentMemory.State.takeChar <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 peekChar :: Monad m => ListLike text char => Parser text Static m char
-peekChar = Parser $ Static \config -> runStateT $
+peekChar = Parser $ Static \config ->
     DocumentMemory.State.peekCharMaybe <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 peekCharMaybe :: Monad m => ListLike text char => Parser text SureStatic m (Maybe char)
-peekCharMaybe = Parser $ SureStatic \_ -> runStateT DocumentMemory.State.peekCharMaybe
+peekCharMaybe = Parser $ SureStatic \_ -> DocumentMemory.State.peekCharMaybe
 
 satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveUndo m char
-satisfy ok = Parser $ MoveUndo \config -> runStateT $
+satisfy ok = Parser $ MoveUndo \config ->
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 satisfyJust :: Monad m => ListLike text char => (char -> Maybe a) -> Parser text MoveUndo m a
-satisfyJust ok = Parser $ MoveUndo \config -> runStateT $
+satisfyJust ok = Parser $ MoveUndo \config ->
     DocumentMemory.State.takeCharJust ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 text :: Monad m => ListLike text char => Eq text => Eq char => text -> Parser text Any m ()
-text x = Parser $ Any \config -> runStateT $
+text x = Parser $ Any \config ->
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
 
 atEnd :: Monad m => ListLike text char => Parser text SureStatic m Bool
-atEnd = Parser $ SureStatic \_config -> runStateT DocumentMemory.State.atEnd
+atEnd = Parser $ SureStatic \_config -> DocumentMemory.State.atEnd
 
 end :: Monad m => ListLike text char => Parser text Static m ()
-end = Parser $ Static \config -> runStateT $
+end = Parser $ Static \config ->
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
@@ -111,7 +111,7 @@ infix 0 <?>
 p <?> c = contextualize c p
 
 position :: Monad m => ListLike text char => Parser text SureStatic m Loc
-position = Parser $ SureStatic \_config -> runStateT DocumentMemory.State.getPosition
+position = Parser $ SureStatic \_config -> DocumentMemory.State.getPosition
 
 withLocation ::
     ListLike text char => Monad m => IsAction k =>

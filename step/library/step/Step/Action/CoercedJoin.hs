@@ -62,16 +62,14 @@ sureToAny =
 
 anyToSure' :: Monad m => Any config cursor error m (Sure config cursor error m a) -> Any config cursor error m a
 anyToSure' (Any p) =
-    Any \c s -> do
-        (e, s') <- p c s
+    Any \c -> do
+        e <- p c
         case e of
-            Left e' -> return (Left e', s')
-            Right (Sure p') -> do
-                (x, s'') <- p' c s'
-                return (Right x, s'')
+            Left e' -> return (Left e')
+            Right (Sure p') -> Right <$> p' c
 
 sureToAny' :: Monad m => Sure config cursor error m (Any config cursor error m a) -> Any config cursor error m a
 sureToAny' (Sure p) =
-    Any \c s -> do
-        (Any p', s') <- p c s
-        p' c s'
+    Any \c -> do
+        Any p' <- p c
+        p' c

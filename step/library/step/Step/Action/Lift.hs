@@ -45,4 +45,4 @@ actionLiftTo :: forall k2 k1 config cursor error m a.
 actionLiftTo = actionLift @k1 @k2
 
 sureToAny :: Functor m => Sure config cursor error m a -> Any config cursor error m a
-sureToAny (Sure p) = Any (\c s -> p c s <&> \(x, s') -> (Right x, s'))
+sureToAny (Sure p) = Any (\c -> p c <&> Right)

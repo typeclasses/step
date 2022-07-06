@@ -17,4 +17,4 @@ instance CanFail Undo     where failure = view Action.coerced . failureAny
 instance CanFail MoveUndo where failure = view Action.coerced . failureAny
 
 failureAny :: Monad m => (config -> (StateT cursor m error)) -> Any config cursor error m a
-failureAny f = Any \c s -> return (Left (f c), s)
+failureAny f = Any \c -> return (Left (f c))

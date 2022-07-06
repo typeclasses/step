@@ -52,6 +52,6 @@ a *> b = join (fmap (\_ -> b) a)
 f <*> x = join (fmap (\f' -> fmap f' x) f)
 
 return :: Monad m => a -> Parser text SureStatic m a
-return x = Parser (SureStatic \_config s -> BasePrelude.return (x, s))
+return x = Parser (BasePrelude.return x)
 
 pure = return
