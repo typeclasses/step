@@ -145,7 +145,10 @@ count = \n a -> go a n
   where
     go a = fix \r -> \case
         0 -> pure []
-        n -> (:) P.<$> a P.<*> r (n - 1)
+        n -> P.do
+            x <- a
+            xs <- r (n - 1)
+            P.return (x : xs)
 
 failure :: Monad m => Action.CanFail k => Parser text k m a
 failure = Parser $ Action.failure Parser.makeError

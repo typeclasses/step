@@ -126,8 +126,7 @@ count ::
     ActionJoin k (k :> k) =>
     MonadAction (k :> k) =>
     (k :> k) ~ (k :> (k :> k)) =>
-    ListLike list a =>
-    Natural -> Parser text k m a -> Parser text (k :> k) m list
+    Natural -> Parser text k m a -> Parser text (k :> k) m [a]
 count = P.count
 
 -- todo

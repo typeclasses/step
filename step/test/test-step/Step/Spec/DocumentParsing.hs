@@ -106,7 +106,7 @@ spec = describe "Document parsing" do
 
         specify "line is incremented by char when input is line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = P.do{ count n char; position }
+            let p = P.do{ _ <- count n char; position }
             input :: [Text] <- forAll (genChunks (ListLike.replicate 50 '\n'))
             let x = runIdentity $ parseOnly def p (ListT.select input)
             x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
@@ -115,7 +115,7 @@ spec = describe "Document parsing" do
             let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
             input :: [Text] <- forAll (genChunks =<< times 10 genInputLine)
             n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
-            let p = P.do{ count n char; position }
+            let p = P.do{ _ <- count n char; position }
             let x = runIdentity $ parseOnly def p (ListT.select input)
             let (a, b) = n `quotRem` 20
             let l = Loc.loc (fromIntegral $ 1 + a) (fromIntegral $ 1 + b)
