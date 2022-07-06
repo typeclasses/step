@@ -21,13 +21,12 @@ instance FunctorAction Sure
 instance FunctorAction SureStatic
 instance FunctorAction SureMove
 
-class FunctorAction action => MonadAction (action :: ActionKind) where
-    pureAction :: Monad m => a -> action config cursor error m a
-    bindAction :: Monad m => action config cursor error m a -> (a -> action config cursor error m b) -> action config cursor error m b
+class (FunctorAction action, forall config cursor error m. Monad m =>
+      Monad (action config cursor error m)) => MonadAction (action :: ActionKind)
 
-instance MonadAction Any        where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction Static     where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction Move       where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction Sure       where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction SureStatic where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction SureMove   where pureAction = pure ; bindAction = (Monad.>>=)
+instance MonadAction Any
+instance MonadAction Static
+instance MonadAction Move
+instance MonadAction Sure
+instance MonadAction SureStatic
+instance MonadAction SureMove

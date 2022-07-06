@@ -23,7 +23,7 @@ import Step.Action.KindJoin ((:>))
 
 import Step.LineHistory.Char (Char)
 
-import Step.Action.Functor (FunctorAction, MonadAction, pureAction, bindAction)
+import Step.Action.Functor (FunctorAction, MonadAction)
 
 import qualified Monad
 
@@ -34,11 +34,11 @@ instance (Functor m, FunctorAction k) => Functor (Parser text k m) where
     fmap f = Parser . fmap f . (\(Parser a) -> a)
 
 instance (Monad m, MonadAction k) => Applicative (Parser text k m) where
-    pure = Parser . pureAction
+    pure = Parser . pure
     (<*>) = Monad.ap
 
 instance (Monad m, MonadAction k) => Monad (Parser text k m) where
-    a >>= b = Parser (bindAction ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
+    a >>= b = Parser ((>>=) ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
 
 parse :: Monad m => ActionLift k Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
