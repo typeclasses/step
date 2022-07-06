@@ -3,7 +3,7 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy, satisfyJust, peekChar, peekCharMaybe,
     {- * Text result -} text, -- all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Repetition -} repetition0, {- repetition1, -} count0, count1,
+    {- * Repetition -} repetition0, repetition1, count0, count1,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} failure,
@@ -136,6 +136,13 @@ repetition0 p = fix \r -> P.do
     case xm of
         Nothing -> return []
         Just x -> (x :) <$> r
+
+repetition1 :: Monad m =>
+    Parser text MoveUndo m a -> Parser text Move m (NonEmpty a)
+repetition1 p = P.do
+    x <- p
+    xs <- repetition0 p
+    P.return (x :| xs)
 
 count0 :: Monad m => Loop0 k k' =>
     Natural -> Parser text k m a -> Parser text k' m [a]
