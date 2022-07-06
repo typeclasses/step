@@ -28,6 +28,7 @@ module Step.Action.Safe
   )
   where
 
+import Step.Action.Config
 import Step.Action.Failure
 import Step.Action.Functor
 import Step.Action.Join

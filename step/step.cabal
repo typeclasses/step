@@ -133,6 +133,7 @@ library
 
         Step.Action.Coerce
         Step.Action.CoercedJoin
+        Step.Action.Config
         Step.Action.Failure
         Step.Action.Functor
         Step.Action.Join
