@@ -13,6 +13,7 @@ import Step.Action.Join (ActionJoin)
 import Step.Action.KindJoin ((:>))
 import Step.Action.Loop
 
+import qualified Step.Document.Do as P
 import qualified Step.Document.Prelude as P
 
 char :: ListLike text char => Monad m => Eq char => char -> Parser text MoveUndo m char
@@ -134,8 +135,9 @@ count = P.count0
 -- -- | 0 or more
 -- many, many' :: ListLike list a => Parser a -> Parser list
 
--- todo
--- many1, many1' :: ListLike list a => Parser a -> Parser (Nontrivial list)
+many1, many1' :: Monad m => Parser text MoveUndo m a -> Parser text Move m (NonEmpty a)
+many1 = P.repetition1
+many1' p = P.do{ x <- many1 p; P.return $! x }
 
 -- todo
 -- manyTill, manyTill' :: ListLike list a => Parser a -> Parser b -> Parser list
