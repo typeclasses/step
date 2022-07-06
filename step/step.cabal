@@ -135,6 +135,7 @@ library
         Step.Action.Functor
         Step.Action.Kinds
         Step.Action.KindJoin
+        Step.Action.Lift
         Step.Action.SeparateTypes
         Step.Action.UnifiedType
 

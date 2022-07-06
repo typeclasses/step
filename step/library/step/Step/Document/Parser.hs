@@ -17,7 +17,8 @@ import Loc (Loc)
 import Step.Action.Kinds (ActionKind)
 import qualified Step.Action.Kinds as T
 import qualified Step.Action.SeparateTypes as T
-import Step.Action.UnifiedType (Action (..), ActionLift, actionLiftTo, IsAction, actionIso, ActionJoin)
+import Step.Action.Lift (ActionLift, actionLiftTo)
+import Step.Action.UnifiedType (Action (..), IsAction, actionIso, ActionJoin)
 import qualified Step.Action.UnifiedType as Action
 import Step.Action.KindJoin ((:>))
 
