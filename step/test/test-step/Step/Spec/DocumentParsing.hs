@@ -64,8 +64,8 @@ spec = describe "Document parsing" do
             let x = runIdentity $ parseOnly def p (ListT.select input)
             x === Left (Error ["Digit"])
 
-    describe "p = repetition (satisfy isDigit)" do
-        let p = repetition (satisfy Char.isDigit)
+    describe "p = repetition0 (satisfy isDigit)" do
+        let p = repetition0 (satisfy Char.isDigit)
 
         specify "p parses 123 from 123abc" $ hedgehog do
             input :: [Text] <- forAll (genChunks "123abc")

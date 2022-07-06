@@ -3,7 +3,7 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy, satisfyJust, peekChar, peekCharMaybe,
     {- * Text result -} text, -- all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Repetition -} repetition, count0, count1,
+    {- * Repetition -} repetition0, {- repetition1, -} count0, count1,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} failure,
@@ -129,9 +129,9 @@ withLocation p = P.do
 try :: Monad m => Action.Noncommittal k => Parser text k m a -> Parser text (Action.Try k) m (Maybe a)
 try (Parser p) = Parser (Action.try p)
 
-repetition :: Monad m =>
+repetition0 :: Monad m =>
     Parser text MoveUndo m a -> Parser text Sure m [a]
-repetition p = fix \r -> P.do
+repetition0 p = fix \r -> P.do
     xm <- try p
     case xm of
         Nothing -> return []
