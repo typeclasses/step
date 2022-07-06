@@ -62,5 +62,5 @@ instance ActionJoin T.SureMove   T.SureStatic where actionJoin = CJ.sureToSure
 instance ActionJoin T.SureStatic T.SureMove   where actionJoin = CJ.sureToSure
 instance ActionJoin T.Undo       T.Any        where actionJoin = CJ.anyToAny
 instance ActionJoin T.Any        T.Undo       where actionJoin = CJ.anyToAny
-instance ActionJoin T.MoveUndo   T.Sure        where actionJoin = CJ.anyToSure
-instance ActionJoin T.Sure       T.MoveUndo    where actionJoin = CJ.sureToAny
+instance ActionJoin T.MoveUndo   T.Sure       where actionJoin = CJ.anyToSure
+instance ActionJoin T.Sure       T.MoveUndo   where actionJoin = CJ.sureToAny
