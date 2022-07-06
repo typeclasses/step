@@ -6,12 +6,10 @@ module Step.LineHistory.State
 
 import Step.Internal.Prelude
 
-import Optics
-
 import Step.LineHistory.Char (Char)
 import qualified Step.LineHistory.Char as Char
 
-import Step.LineHistory.Base (LineHistory, CursorLocation (..))
+import Step.LineHistory.Base (LineHistory)
 import qualified Step.LineHistory.Base as LineHistory
 
 import qualified ListLike

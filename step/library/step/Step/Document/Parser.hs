@@ -4,7 +4,6 @@ import Step.Internal.Prelude hiding (Is)
 
 import Step.DocumentMemory.Base (DocumentMemory)
 import qualified Step.DocumentMemory.Base as DocumentMemory
-import qualified Step.DocumentMemory.State as DocumentMemory.State
 
 import Step.Document.Config (Config)
 import qualified Step.Document.Config as Config
@@ -12,12 +11,10 @@ import qualified Step.Document.Config as Config
 import Step.Document.Error (Error (Error))
 import qualified Step.Document.Error as Error
 
-import Loc (Loc)
-
 import Step.LineHistory.Char (Char)
 
 import Step.Action.Safe
-import Step.Action.Kinds (ActionKind, Any (Any))
+import Step.Action.Kinds (Any (Any))
 
 import qualified Monad
 

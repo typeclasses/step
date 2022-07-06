@@ -27,7 +27,6 @@ import Char (Char)
 import Step.Document.Parser
 import Step.Document.Prelude
 import Step.Document.Error (Error (Error))
-import Step.Action.SeparateTypes
 import qualified Step.Document.Do as P
 
 spec :: SpecWith ()

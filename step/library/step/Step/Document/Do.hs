@@ -9,15 +9,11 @@ module Step.Document.Do
   where
 
 import qualified BasePrelude
-import Natural (Natural)
-import BasePrelude (fmap, (<$>), Functor, Monad, (.))
-import Kind (Type)
+import BasePrelude (fmap, (<$>), Monad, (.))
 
 import Step.Document.Parser (Parser (Parser))
 
 import Step.Action.Safe
-
-import qualified Optics as O
 
 join :: (ActionJoin k1 k2, Monad m,
     FunctorAction k1) =>

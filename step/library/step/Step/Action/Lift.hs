@@ -2,18 +2,9 @@ module Step.Action.Lift where
 
 import Step.Internal.Prelude
 
-import Optics
-
 import Step.Action.Kinds
 
-import Step.Action.Coerce (Coerce)
 import qualified Step.Action.Coerce as Coerce
-
-import qualified Step.Action.SeparateTypes as T
-
-import qualified Monad
-
-import Step.Action.KindJoin
 
 class ActionLift (k1 :: ActionKind) (k2 :: ActionKind)
   where

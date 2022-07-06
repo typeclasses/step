@@ -9,8 +9,6 @@ module Step.Action.CoercedJoin
 
 import Step.Internal.Prelude
 
-import Optics
-
 import Step.Action.Kinds
 
 import Step.Action.Coerce (Coerce)

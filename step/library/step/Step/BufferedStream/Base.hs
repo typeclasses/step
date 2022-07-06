@@ -13,7 +13,6 @@ module Step.BufferedStream.Base
 import Step.Internal.Prelude
 
 import qualified ListT
-import qualified ListLike
 
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer

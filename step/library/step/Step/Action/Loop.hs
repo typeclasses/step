@@ -3,9 +3,7 @@ module Step.Action.Loop where
 import Step.Action.Kinds
 import Step.Action.UnifiedType
 import Step.Action.Join
-import Step.Action.Functor
 import Step.Action.KindJoin
-import Step.Action.SeparateTypes
 import Step.Action.Lift
 
 -- | Loop0 k k' means that a repetition of 0 or more k actions results in a k' action.

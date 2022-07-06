@@ -9,16 +9,9 @@ module Step.LineHistory.Base
 
 import Step.Internal.Prelude
 
-import Step.Buffer.Base (Buffer)
-import qualified Step.Buffer.Base as Buffer
-
 import Loc (Line, Loc, loc)
-import qualified Loc
-import qualified Step.Loc.Optics as Loc
 
 import qualified Map
-
-import qualified ListLike
 
 import Step.CursorPosition.Base (CursorPosition)
 import qualified Step.CursorPosition.Base as CursorPosition

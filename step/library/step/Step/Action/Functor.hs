@@ -4,8 +4,6 @@ import Step.Internal.Prelude
 
 import Step.Action.Kinds
 
-import qualified Monad
-
 class
   ( forall config cursor error m. Functor m =>
       Functor (k config cursor error m)

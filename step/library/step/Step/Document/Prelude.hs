@@ -23,33 +23,9 @@ import qualified Step.Document.Parser as Parser
 import qualified Loc
 import Loc (Loc, SpanOrLoc)
 
-import Step.Cursor.Base (Cursor (Cursor))
-import qualified Step.Cursor.Base as Cursor
-
-import Step.Buffer.Base (Buffer)
-import qualified Step.Buffer.Base as Buffer
-
-import Step.BufferedStream.Base (BufferedStream)
-import qualified Step.BufferedStream.Base as BufferedStream
-
-import qualified Step.Cursor.State as Cursor.State
-
 import qualified Step.DocumentMemory.State as DocumentMemory.State
 
-import qualified ListLike
-
-import qualified ListT
-import ListT (ListT (ListT))
-
-import qualified Step.Tentative.State as Tentative.State
-
-import Step.Document.Error (Error (Error))
-import qualified Step.Document.Error as Error
-
-import Step.Document.Config (Config)
 import qualified Step.Document.Config as Config
-
-import Step.Nontrivial.Base (Nontrivial)
 
 import qualified Step.Document.Do as P
 

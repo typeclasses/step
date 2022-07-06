@@ -2,21 +2,14 @@ module Step.Action.UnifiedType where
 
 import Step.Internal.Prelude
 
-import Optics
-
 import Step.Action.Kinds (ActionKind)
 import qualified Step.Action.Kinds as T
 
-import Step.Action.Coerce (Coerce)
 import qualified Step.Action.Coerce as Coerce
 
 import qualified Step.Action.SeparateTypes as T
 
 import Step.Action.Functor (FunctorAction)
-
-import qualified Monad
-
-import qualified Step.Action.CoercedJoin as CJ
 
 import Step.Action.KindJoin
 

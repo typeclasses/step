@@ -8,7 +8,6 @@ import Step.DocumentMemory.Base (DocumentMemory (DocumentMemory), DocumentCursor
 import qualified Step.DocumentMemory.Base as DocumentMemory
 
 import Step.LineHistory.Base (LineHistory)
-import qualified Step.LineHistory.Base as LineHistory
 
 import qualified Step.Cursor.State as Cursor.State
 

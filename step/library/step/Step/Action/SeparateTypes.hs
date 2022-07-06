@@ -2,8 +2,6 @@ module Step.Action.SeparateTypes where
 
 import Step.Internal.Prelude
 
-import qualified Monad
-
 import Step.Action.Kinds
 
 ---
