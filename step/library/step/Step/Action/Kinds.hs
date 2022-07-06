@@ -29,7 +29,7 @@ newtype Static config cursor error m a =
 
 -- | Always moves the cursor
 --
--- No Applicative/Monad instances here because pure/return doesn't move the cursor
+-- No Applicative or Monad instance here because pure and return don't move the cursor
 --
 newtype Move config cursor error m a =
     Move (config -> StateT cursor m (Either (StateT cursor m error) a))
@@ -38,7 +38,7 @@ newtype Move config cursor error m a =
 
 -- | Fails noncommittally
 --
--- No Applicative/Monad instances here because sequencing does not preserve the noncommittal property
+-- No Applicative or Monad instance here because sequencing does not preserve the noncommittal property
 --
 newtype Atom config cursor error m a =
     Atom (config -> StateT cursor m (Either (StateT cursor m error) a))
@@ -46,7 +46,7 @@ newtype Atom config cursor error m a =
 
 -- | Always moves the cursor, fails noncommittally
 --
--- No Applicative/Monad instances here because sequencing does not preserve the noncommittal property, and because pure/return doesn't move the cursor
+-- No Applicative or Monad instance here because sequencing does not preserve the noncommittal property, and because pure and return don't move the cursor
 --
 newtype MoveAtom config cursor error m a =
     MoveAtom (config -> StateT cursor m (Either (StateT cursor m error) a))
@@ -68,7 +68,7 @@ newtype SureStatic config cursor error m a =
 
 -- | Always succeeds, always moves the cursor
 --
--- No Applicative/Monad instances here because pure/return doesn't move the cursor
+-- No Applicative or Monad instance here because pure and return don't move the cursor
 --
 newtype SureMove config cursor error m a =
     SureMove (config -> StateT cursor m a)

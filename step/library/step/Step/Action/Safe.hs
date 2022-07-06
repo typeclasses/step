@@ -1,4 +1,4 @@
--- | Summary of all the safe (not possible to construct invalid actions) parts of the `Step.Action.(...)` modules.
+-- | Summary of all the safe (not possible to construct invalid actions) parts of the @Step.Action.(...)@ modules.
 --
 module Step.Action.Safe
   (
