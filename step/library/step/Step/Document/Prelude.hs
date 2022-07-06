@@ -129,15 +129,13 @@ withLocation p = P.do
 try :: Monad m => Action.Noncommittal k => Parser text k m a -> Parser text (Action.Try k) m (Maybe a)
 try (Parser p) = Parser (Action.try p)
 
-repetition ::
-    Monad m => ListLike list a =>
-    Parser text MoveUndo m a
-    -> Parser text Sure m list
+repetition :: Monad m =>
+    Parser text MoveUndo m a -> Parser text Sure m [a]
 repetition p = fix \r -> P.do
     xm <- try p
     case xm of
-        Nothing -> return ListLike.empty
-        Just x -> ListLike.cons x <$> r
+        Nothing -> return []
+        Just x -> (x :) <$> r
 
 count0 :: Monad m => Loop0 k k' =>
     Natural -> Parser text k m a -> Parser text k' m [a]
