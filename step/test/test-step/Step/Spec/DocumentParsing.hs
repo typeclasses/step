@@ -24,98 +24,98 @@ import qualified SpanOrLoc
 import Char (Char)
 
 -- The modules under test
-import Step.Document.Parser
-import Step.Document.Prelude
-import Step.Document.Error (Error (Error))
+import qualified Step.Document.Parser as P
+import qualified Step.Document.Prelude as P
+import qualified Step.Document.Error as P
 import qualified Step.Document.Do as P
 
 spec :: SpecWith ()
 spec = describe "Document parsing" do
 
     describe "p = char, char, char" do
-        let p = P.do{ a <- char; b <- char; c <- char; P.return (a, b, c) }
+        let p = P.do{ a <- P.char; b <- P.char; c <- P.char; P.return (a, b, c) }
 
         specify "(p <* end) parses \"abc\"" $ hedgehog do
             input :: [Text] <- forAll (genChunks "abc")
-            let x = runIdentity $ parseOnly def (p P.<* end) (ListT.select input)
+            let x = runIdentity $ P.parseOnly def (p P.<* P.end) (ListT.select input)
             x === Right ('a', 'b', 'c')
 
         specify "p parses \"abcd\"" $ hedgehog do
             input :: [Text] <- forAll (genChunks "abcd")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right ('a', 'b', 'c')
 
         specify "(p <* end) fails on \"abcd\"" $ hedgehog do
             input :: [Text] <- forAll (genChunks "abcd")
-            let x = runIdentity $ parseOnly def (p P.<* end) (ListT.select input)
-            x === Left (Error [])
+            let x = runIdentity $ P.parseOnly def (p P.<* P.end) (ListT.select input)
+            x === Left (P.Error [])
 
     describe "p = contextualize \"Digit\" (require (satisfy isDigit))" do
-        let p = contextualize "Digit" (satisfy Char.isDigit)
+        let p = P.contextualize "Digit" (P.satisfy Char.isDigit)
 
         specify "p parses \"2\"" $ hedgehog do
             input :: [Text] <- forAll (genChunks "2")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right '2'
 
         specify "p fails on \"a\"" $ hedgehog do
             input :: [Text] <- forAll (genChunks "a")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
-            x === Left (Error ["Digit"])
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
+            x === Left (P.Error ["Digit"])
 
     describe "p = repetition0 (satisfy isDigit)" do
-        let p = repetition0 (satisfy Char.isDigit)
+        let p = P.repetition0 (P.satisfy Char.isDigit)
 
         specify "p parses 123 from 123abc" $ hedgehog do
             input :: [Text] <- forAll (genChunks "123abc")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right ("123" :: [Char])
 
         specify "p parses nothing from abc" $ hedgehog do
             input :: [Text] <- forAll (genChunks "abc")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right ([] :: [Char])
 
     describe "p = text \"abc\"" do
-        let p = text "abc"
+        let p = P.text "abc"
 
         specify "p parses \"abc\" and \"abcd\"" $ hedgehog do
             input :: [Text] <- forAll (Gen.element ["abc", "abcd"] >>= genChunks)
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right ()
 
         specify "p fails on any input that does not start with abc" $ hedgehog do
             input :: [Text] <- forAll (Gen.element ["", "ab", "bc"] >>= genChunks)
-            let x = runIdentity $ parseOnly def p (ListT.select input)
-            x === Left (Error [])
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
+            x === Left (P.Error [])
 
     describe "position" do
 
         specify "starts at 1:1" $ hedgehog do
             input :: [Text] <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
-            let x = runIdentity $ parseOnly def position (ListT.select input)
+            let x = runIdentity $ P.parseOnly def P.position (ListT.select input)
             x === Right (Loc.loc 1 1)
 
         specify "column is incremented by char when input contains no line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = P.do{ _ <- count0 n char; position }
+            let p = P.do{ _ <- P.count0 n P.char; P.position }
             input :: [Text] <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right (Loc.loc 1 (fromIntegral $ n + 1))
 
         specify "line is incremented by char when input is line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = P.do{ _ <- count0 n char; position }
+            let p = P.do{ _ <- P.count0 n P.char; P.position }
             input :: [Text] <- forAll (genChunks (ListLike.replicate 50 '\n'))
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
 
         specify "both line and column increments" $ hedgehog do
             let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
             input :: [Text] <- forAll (genChunks =<< times 10 genInputLine)
             n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
-            let p = P.do{ _ <- count0 n char; position }
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let p = P.do{ _ <- P.count0 n P.char; P.position }
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             let (a, b) = n `quotRem` 20
             let l = Loc.loc (fromIntegral $ 1 + a) (fromIntegral $ 1 + b)
             x === Right l
@@ -123,21 +123,21 @@ spec = describe "Document parsing" do
     describe "withLocation" do
 
         specify "one-line example" $ hedgehog do
-            let p = P.do{ text "abc"; x <- withLocation (text "def"); text "ghi"; P.return x }
+            let p = P.do{ P.text "abc"; x <- P.withLocation (P.text "def"); P.text "ghi"; P.return x }
             input :: [Text] <- forAll (genChunks "abcdefghi")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right (SpanOrLoc.fromTo (loc 1 4) (loc 1 7), ())
 
         specify "second-line example" $ hedgehog do
-            let p = P.do{ text "xyz\nabc"; x <- withLocation (text "def"); text "ghi"; P.return x }
+            let p = P.do{ P.text "xyz\nabc"; x <- P.withLocation (P.text "def"); P.text "ghi"; P.return x }
             input :: [Text] <- forAll (genChunks "xyz\nabcdefghi")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right (SpanOrLoc.fromTo (loc 2 4) (loc 2 7), ())
 
         specify "empty example" $ hedgehog do
-            let p = P.do{ text "abc"; x <- withLocation (text ""); text "def"; P.return x }
+            let p = P.do{ P.text "abc"; x <- P.withLocation (P.text ""); P.text "def"; P.return x }
             input :: [Text] <- forAll (genChunks "abcdef")
-            let x = runIdentity $ parseOnly def p (ListT.select input)
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right (SpanOrLoc.loc (loc 1 4), ())
 
     -- describe "while" do
