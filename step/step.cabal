@@ -131,6 +131,7 @@ library
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
 
+        Step.Action.AlwaysMoves
         Step.Action.Atom
         Step.Action.Coerce
         Step.Action.CoercedJoin

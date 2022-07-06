@@ -15,11 +15,6 @@ import Step.Action.Join
 
 import Step.Action.Kinds
 
-class AlwaysMoves (k :: ActionKind)
-instance AlwaysMoves T.Move
-instance AlwaysMoves T.MoveUndo
-instance AlwaysMoves T.SureMove
-
 ---
 
 class CanBeStatic (k :: ActionKind)
