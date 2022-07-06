@@ -15,7 +15,7 @@ import Step.Internal.Prelude hiding (while, under, Is)
 
 import Optics
 
-import Step.Document.Parser (action, action', Parser)
+import Step.Document.Parser (Parser (Parser))
 import qualified Step.Document.Parser as Parser
 
 import qualified Loc
@@ -51,65 +51,64 @@ import Step.Nontrivial.Base (Nontrivial)
 
 import qualified Step.Document.Do as P
 
-import qualified Step.Action.Do as Action
 import qualified Step.Action.UnifiedType as Action
 import Step.Action.UnifiedType (IsAction, ActionJoin)
 import Step.Action.KindJoin ((:>))
 import Step.Action.Kinds
-import Step.Action.SeparateTypes (ConfigurableAction, MonadAction)
+import Step.Action.SeparateTypes (ConfigurableAction, MonadAction, configureAction)
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
-char = review action' $ MoveUndo \config -> runStateT $
+char = Parser $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeChar <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 peekChar :: Monad m => ListLike text char => Parser text Static m char
-peekChar = review action' $ Static \config -> runStateT $
+peekChar = Parser $ Static \config -> runStateT $
     DocumentMemory.State.peekCharMaybe <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 peekCharMaybe :: Monad m => ListLike text char => Parser text SureStatic m (Maybe char)
-peekCharMaybe = review action' $ SureStatic \_ -> runStateT DocumentMemory.State.peekCharMaybe
+peekCharMaybe = Parser $ SureStatic \_ -> runStateT DocumentMemory.State.peekCharMaybe
 
 satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveUndo m char
-satisfy ok = review action' $ MoveUndo \config -> runStateT $
+satisfy ok = Parser $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 satisfyJust :: Monad m => ListLike text char => (char -> Maybe a) -> Parser text MoveUndo m a
-satisfyJust ok = review action' $ MoveUndo \config -> runStateT $
+satisfyJust ok = Parser $ MoveUndo \config -> runStateT $
     DocumentMemory.State.takeCharJust ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 text :: Monad m => ListLike text char => Eq text => Eq char => text -> Parser text Any m ()
-text x = review action' $ Any \config -> runStateT $
+text x = Parser $ Any \config -> runStateT $
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
 
 atEnd :: Monad m => ListLike text char => Parser text SureStatic m Bool
-atEnd = review action' $ SureStatic \_config -> runStateT DocumentMemory.State.atEnd
+atEnd = Parser $ SureStatic \_config -> runStateT DocumentMemory.State.atEnd
 
 end :: Monad m => ListLike text char => Parser text Static m ()
-end = review action' $ Static \config -> runStateT $
+end = Parser $ Static \config -> runStateT $
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
 
 contextualize :: (Monad m, ConfigurableAction k, IsAction k) =>
     text -> Parser text k m a -> Parser text k m a
-contextualize c = Optics.over action (Action.configure (over Config.contextLens (c :)))
+contextualize c (Parser p) = Parser $ configureAction (over Config.contextLens (c :)) p
 
 infix 0 <?>
 (<?>) :: (Monad m, ConfigurableAction k, IsAction k) => Parser text k m a -> text -> Parser text k m a
 p <?> c = contextualize c p
 
 position :: Monad m => ListLike text char => Parser text SureStatic m Loc
-position = review action' $ SureStatic \_config -> runStateT DocumentMemory.State.getPosition
+position = Parser $ SureStatic \_config -> runStateT DocumentMemory.State.getPosition
 
 withLocation ::
     ListLike text char => Monad m => IsAction k =>
@@ -121,7 +120,7 @@ withLocation p = P.do
     P.return (Loc.spanOrLocFromTo a b, x)
 
 try :: Monad m => Action.Noncommittal k => Parser text k m a -> Parser text (Action.Try k) m (Maybe a)
-try = review action . Action.try . view action
+try (Parser p) = Parser (Action.try p)
 
 repetition ::
     Monad m => ListLike list a =>
@@ -144,7 +143,7 @@ count = \n a -> go a n
         n -> a P.*> r (n - 1)
 
 failure :: Monad m => Action.CanFail k => Parser text k m a
-failure = review action $ Action.failure Parser.makeError
+failure = Parser $ Action.failure Parser.makeError
 
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 -- all :: Monad m => ListLike text char => Parser text 'Sure m text

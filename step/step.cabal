@@ -132,7 +132,6 @@ library
 
         Step.Action.Coerce
         Step.Action.CoercedJoin
-        Step.Action.Do
         Step.Action.Functor
         Step.Action.Kinds
         Step.Action.KindJoin

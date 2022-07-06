@@ -18,7 +18,7 @@ import Step.Action.Kinds (ActionKind)
 import qualified Step.Action.Kinds as T
 import qualified Step.Action.SeparateTypes as T
 import Step.Action.Lift (ActionLift, actionLiftTo)
-import Step.Action.UnifiedType (Action (Action), IsAction, ActionJoin)
+import Step.Action.UnifiedType (IsAction, ActionJoin, actionJoin)
 import qualified Step.Action.UnifiedType as Action
 import Step.Action.KindJoin ((:>))
 
@@ -26,33 +26,33 @@ import Step.LineHistory.Char (Char)
 
 import Variado.Monad.Class
 
+import Step.Action.Functor (FunctorAction)
+
+import qualified Monad
+
 newtype Parser (text :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Type) =
-    Parser (Action kind (Config text) (DocumentMemory text m) (Error text) m a)
-    deriving newtype (Functor, Applicative, Monad)
+    Parser (kind (Config text) (DocumentMemory text m) (Error text) m a)
 
-instance (Monad m, IsAction kind1, IsAction kind2, ActionJoin kind1 kind2) => PolyMonad (Parser text kind1 m) (Parser text kind2 m)
+instance (Functor m, FunctorAction k) => Functor (Parser text k m) where
+    fmap f = Parser . fmap f . (\(Parser a) -> a)
+
+instance (Monad m, FunctorAction k, T.MonadAction k) => Applicative (Parser text k m) where
+    pure = Parser . T.pureAction
+    (<*>) = Monad.ap
+
+instance (Monad m, FunctorAction k, T.MonadAction k) => Monad (Parser text k m) where
+    a >>= b = Parser (T.bindAction ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
+
+-- (Functor (k1 config cursor error m))
+instance (ActionJoin k1 k2, Monad m) => PolyMonad (Parser text k1 m) (Parser text k2 m)
   where
-    type Join (Parser text kind1 m) (Parser text kind2 m) = Parser text (kind1 :> kind2) m
-    join (Parser a) = Parser (join (fmap (\(Parser b) -> b) a))
-
-action :: Iso
-    (Parser text1 kind m1 a1)
-    (Parser text2 kind m2 a2)
-    (Action kind (Config text1) (DocumentMemory text1 m1) (Error text1) m1 a1)
-    (Action kind (Config text2) (DocumentMemory text2 m2) (Error text2) m2 a2)
-action = coerced
-
-action' :: IsAction kind => Iso
-    (Parser text1 kind m1 a1)
-    (Parser text2 kind m2 a2)
-    (kind (Config text1) (DocumentMemory text1 m1) (Error text1) m1 a1)
-    (kind (Config text2) (DocumentMemory text2 m2) (Error text2) m2 a2)
-action' = coerced % iso (\(Action a) -> a) Action
+    type Join (Parser text k1 m) (Parser text k2 m) = Parser text (k1 :> k2) m
+    join = Parser . actionJoin . (\(Parser a) -> a) . fmap (\(Parser a) -> a)
 
 parse :: Monad m => ActionLift k T.Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
-    actionLiftTo @T.Any p & \(Action (T.Any p')) ->
+    actionLiftTo @T.Any p & \(T.Any p') ->
     StateT (p' config) >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)

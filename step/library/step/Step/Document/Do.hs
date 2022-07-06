@@ -17,7 +17,7 @@ import Kind (Type)
 import Variado.Monad.Class
 import qualified Variado.Monad.Do as Variado
 
-import Step.Document.Parser (Parser, action')
+import Step.Document.Parser (Parser (Parser))
 import Step.Action.UnifiedType (ActionJoin, IsAction)
 import Step.Action.KindJoin ((:>))
 import Step.Action.SeparateTypes (MonadAction)
@@ -48,7 +48,7 @@ import qualified Optics as O
 (<*>) = (Variado.<*>)
 
 return :: Monad m => a -> Parser text SureStatic m a
-return x = O.review action' (SureStatic \_config s -> BasePrelude.return (x, s))
+return x = Parser (SureStatic \_config s -> BasePrelude.return (x, s))
 
 pure = return
 
