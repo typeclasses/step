@@ -14,8 +14,6 @@ import qualified Step.Action.SeparateTypes as T
 
 import Step.Action.Functor (FunctorAction)
 
-import qualified Variado.Monad.Class as V
-
 import qualified Monad
 
 import qualified Step.Action.CoercedJoin as CJ

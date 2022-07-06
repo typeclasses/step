@@ -24,8 +24,6 @@ import Step.Action.KindJoin ((:>))
 
 import Step.LineHistory.Char (Char)
 
-import Variado.Monad.Class
-
 import Step.Action.Functor (FunctorAction)
 
 import qualified Monad
@@ -44,10 +42,10 @@ instance (Monad m, FunctorAction k, T.MonadAction k) => Monad (Parser text k m) 
     a >>= b = Parser (T.bindAction ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
 
 -- (Functor (k1 config cursor error m))
-instance (ActionJoin k1 k2, Monad m) => PolyMonad (Parser text k1 m) (Parser text k2 m)
-  where
-    type Join (Parser text k1 m) (Parser text k2 m) = Parser text (k1 :> k2) m
-    join = Parser . actionJoin . (\(Parser a) -> a) . fmap (\(Parser a) -> a)
+-- instance (ActionJoin k1 k2, Monad m) => PolyMonad (Parser text k1 m) (Parser text k2 m)
+--   where
+--     type Join (Parser text k1 m) (Parser text k2 m) = Parser text (k1 :> k2) m
+
 
 parse :: Monad m => ActionLift k T.Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)

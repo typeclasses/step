@@ -55,6 +55,7 @@ import qualified Step.Action.UnifiedType as Action
 import Step.Action.UnifiedType (IsAction, ActionJoin)
 import Step.Action.KindJoin ((:>))
 import Step.Action.Kinds
+import Step.Action.Functor
 import Step.Action.SeparateTypes (ConfigurableAction, MonadAction, configureAction)
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
@@ -133,14 +134,18 @@ repetition p = fix \r -> P.do
         Just x -> ListLike.cons x <$> r
 
 count ::
-    Monad m => IsAction k1 => IsAction k2 => ActionJoin k1 k2 =>
-    MonadAction k2 => k1 :> k2 ~ k2 => ListLike list a =>
-    Natural -> Parser text k1 m a -> Parser text k2 m list
+    Monad m =>
+    IsAction k =>
+    IsAction (k :> k) =>
+    ActionJoin k (k :> k) =>
+    MonadAction (k :> k) =>
+    (k :> k) ~ (k :> (k :> k)) =>
+    Natural -> Parser text k m a -> Parser text (k :> k) m [a]
 count = \n a -> go a n
   where
     go a = fix \r -> \case
-        0 -> pure ListLike.empty
-        n -> a P.*> r (n - 1)
+        0 -> pure []
+        n -> (:) P.<$> a P.<*> r (n - 1)
 
 failure :: Monad m => Action.CanFail k => Parser text k m a
 failure = Parser $ Action.failure Parser.makeError

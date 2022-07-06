@@ -105,7 +105,7 @@ common base
 library
     import: base
     hs-source-dirs: library/step
-    build-depends: step-internal, variado
+    build-depends: step-internal
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Buffer.Base
@@ -166,13 +166,6 @@ library step-internal
         Step.Internal.RecordStream
         Step.Internal.Times
         Step.Internal.While
-
-library variado
-    import: base
-    hs-source-dirs: library/variado
-    exposed-modules:
-        Variado.Monad.Class
-        Variado.Monad.Do
 
 test-suite test-step
     import: base

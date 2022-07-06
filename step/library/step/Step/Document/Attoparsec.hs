@@ -120,9 +120,14 @@ peekChar' = P.peekChar
 -- choice :: ListLike list (Parser a) => list -> Parser a
 
 count ::
-    Monad m => IsAction k1 => IsAction k2 => ActionJoin k1 k2 =>
-    MonadAction k2 => k1 :> k2 ~ k2 => ListLike list a =>
-    Natural -> Parser text k1 m a -> Parser text k2 m list
+    Monad m =>
+    IsAction k =>
+    IsAction (k :> k) =>
+    ActionJoin k (k :> k) =>
+    MonadAction (k :> k) =>
+    (k :> k) ~ (k :> (k :> k)) =>
+    ListLike list a =>
+    Natural -> Parser text k m a -> Parser text (k :> k) m list
 count = P.count
 
 -- todo
