@@ -27,8 +27,8 @@ instance Loop0 SureMove Sure
 
 instance Loop0 Any Any
 instance Loop0 Sure Sure
-instance Loop0 SureStatic SureStatic
-instance Loop0 Static Static
+instance Loop0 SureQuery SureQuery
+instance Loop0 Query Query
 
 ---
 
@@ -49,8 +49,8 @@ instance Loop1 MoveAtom Move
 -- All other kinds are preserved by sequencing
 
 instance Loop1 Any Any
-instance Loop1 Static Static
+instance Loop1 Query Query
 instance Loop1 Move Move
 instance Loop1 Sure Sure
-instance Loop1 SureStatic SureStatic
+instance Loop1 SureQuery SureQuery
 instance Loop1 SureMove SureMove

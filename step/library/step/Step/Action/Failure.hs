@@ -11,7 +11,7 @@ class CanFail (k :: ActionKind)
     failure :: Monad m => (config -> StateT cursor m error) -> k config cursor error m a
 
 instance CanFail Any      where failure = view Action.coerced . failureAny
-instance CanFail Static   where failure = view Action.coerced . failureAny
+instance CanFail Query    where failure = view Action.coerced . failureAny
 instance CanFail Move     where failure = view Action.coerced . failureAny
 instance CanFail Atom     where failure = view Action.coerced . failureAny
 instance CanFail MoveAtom where failure = view Action.coerced . failureAny

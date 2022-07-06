@@ -21,9 +21,9 @@ instance Atomic MoveAtom
     type Try MoveAtom = SureMove
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
-instance Atomic Static
+instance Atomic Query
   where
-    type Try Static = SureStatic
+    type Try Query = SureQuery
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
 tryAnySure :: Functor m => Any config cursor error m a -> Sure config cursor error m (Maybe a)

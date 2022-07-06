@@ -40,14 +40,14 @@ char = Parser $ MoveAtom \config ->
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
-peekChar :: Monad m => ListLike text char => Parser text Static m char
-peekChar = Parser $ Static \config ->
+peekChar :: Monad m => ListLike text char => Parser text Query m char
+peekChar = Parser $ Query \config ->
     DocumentMemory.State.peekCharMaybe <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
-peekCharMaybe :: Monad m => ListLike text char => Parser text SureStatic m (Maybe char)
-peekCharMaybe = Parser $ SureStatic \_ -> DocumentMemory.State.peekCharMaybe
+peekCharMaybe :: Monad m => ListLike text char => Parser text SureQuery m (Maybe char)
+peekCharMaybe = Parser $ SureQuery \_ -> DocumentMemory.State.peekCharMaybe
 
 satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveAtom m char
 satisfy ok = Parser $ MoveAtom \config ->
@@ -67,11 +67,11 @@ text x = Parser $ Any \config ->
         True -> Right ()
         False -> Left (Parser.makeError config)
 
-atEnd :: Monad m => ListLike text char => Parser text SureStatic m Bool
-atEnd = Parser $ SureStatic \_config -> DocumentMemory.State.atEnd
+atEnd :: Monad m => ListLike text char => Parser text SureQuery m Bool
+atEnd = Parser $ SureQuery \_config -> DocumentMemory.State.atEnd
 
-end :: Monad m => ListLike text char => Parser text Static m ()
-end = Parser $ Static \config ->
+end :: Monad m => ListLike text char => Parser text Query m ()
+end = Parser $ Query \config ->
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
@@ -84,8 +84,8 @@ infix 0 <?>
 (<?>) :: (Monad m, ConfigurableAction k, IsAction k) => Parser text k m a -> text -> Parser text k m a
 p <?> c = contextualize c p
 
-position :: Monad m => ListLike text char => Parser text SureStatic m Loc
-position = Parser $ SureStatic \_config -> DocumentMemory.State.getPosition
+position :: Monad m => ListLike text char => Parser text SureQuery m Loc
+position = Parser $ SureQuery \_config -> DocumentMemory.State.getPosition
 
 withLocation ::
     ListLike text char => Monad m => IsAction k =>

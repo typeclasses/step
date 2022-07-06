@@ -11,18 +11,18 @@ class
       FunctorAction k
 
 instance FunctorAction Any
-instance FunctorAction Static
+instance FunctorAction Query
 instance FunctorAction Move
 instance FunctorAction Atom
 instance FunctorAction MoveAtom
 instance FunctorAction Sure
-instance FunctorAction SureStatic
+instance FunctorAction SureQuery
 instance FunctorAction SureMove
 
 class (FunctorAction action, forall config cursor error m. Monad m =>
       Monad (action config cursor error m)) => MonadAction (action :: ActionKind)
 
 instance MonadAction Any
-instance MonadAction Static
+instance MonadAction Query
 instance MonadAction Sure
-instance MonadAction SureStatic
+instance MonadAction SureQuery

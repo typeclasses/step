@@ -11,8 +11,8 @@ class ConfigurableAction (action :: ActionKind) where
 
 instance ConfigurableAction Any where
     configureAction f (Any g) = Any (g . f)
-instance ConfigurableAction Static where
-    configureAction f (Static g) = Static (g . f)
+instance ConfigurableAction Query where
+    configureAction f (Query g) = Query (g . f)
 instance ConfigurableAction Move where
     configureAction f (Move g) = Move (g . f)
 instance ConfigurableAction Atom where
@@ -21,7 +21,7 @@ instance ConfigurableAction MoveAtom where
     configureAction f (MoveAtom g) = MoveAtom (g . f)
 instance ConfigurableAction Sure where
     configureAction f (Sure g) = Sure (g . f)
-instance ConfigurableAction SureStatic where
-    configureAction f (SureStatic g) = SureStatic (g . f)
+instance ConfigurableAction SureQuery where
+    configureAction f (SureQuery g) = SureQuery (g . f)
 instance ConfigurableAction SureMove where
     configureAction f (SureMove g) = SureMove (g . f)

@@ -9,8 +9,8 @@ import Step.Action.KindJoin
 
 type IsAction (k :: ActionKind) =
     ( FunctorAction k
-    , ActionJoin k SureStatic
-    , ActionJoin SureStatic k
-    , k :> SureStatic ~ k
-    , SureStatic :> k ~ k
+    , ActionJoin k SureQuery
+    , ActionJoin SureQuery k
+    , k :> SureQuery ~ k
+    , SureQuery :> k ~ k
     )

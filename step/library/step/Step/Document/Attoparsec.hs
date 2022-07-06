@@ -29,10 +29,10 @@ satisfyWith f ok = P.satisfyJust ((\x -> if ok x then Just x else Nothing) . f)
 skip :: ListLike text char => Monad m => (char -> Bool) -> Parser text MoveAtom m ()
 skip f = void (P.satisfy f)
 
-peekChar :: ListLike text char => Monad m => Parser text SureStatic m (Maybe char)
+peekChar :: ListLike text char => Monad m => Parser text SureQuery m (Maybe char)
 peekChar = P.peekCharMaybe
 
-peekChar' :: Monad m => ListLike text char => Parser text Static m char
+peekChar' :: Monad m => ListLike text char => Parser text Query m char
 peekChar' = P.peekChar
 
 -- todo
@@ -156,8 +156,8 @@ many1' p = many1 P.do{ x <- p; P.return $! x }
 -- todo
 -- match :: Parser a -> Parser (Text, a)
 
-endOfInput :: Monad m => ListLike text char => Parser text Static m ()
+endOfInput :: Monad m => ListLike text char => Parser text Query m ()
 endOfInput = P.end
 
-atEnd :: Monad m => ListLike text char => Parser text SureStatic m Bool
+atEnd :: Monad m => ListLike text char => Parser text SureQuery m Bool
 atEnd = P.atEnd

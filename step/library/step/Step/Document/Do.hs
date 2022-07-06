@@ -43,7 +43,7 @@ a *> b = join (fmap (\_ -> b) a)
     Parser text k1 m (a -> b) -> Parser text k2 m a -> Parser text k3 m b
 f <*> x = join (fmap (\f' -> fmap f' x) f)
 
-return :: Monad m => a -> Parser text SureStatic m a
+return :: Monad m => a -> Parser text SureQuery m a
 return x = Parser (BasePrelude.return x)
 
 pure = return
