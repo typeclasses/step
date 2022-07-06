@@ -80,8 +80,8 @@ peekChar' = P.peekChar
 -- todo
 -- takeTill :: (Char -> Bool) -> Parser Text
 
--- todo
--- takeText :: Parser Text
+takeText :: Monad m => ListLike text char => Parser text Sure m text
+takeText = P.all
 
 -- todo
 -- takeLazyText :: Parser Text

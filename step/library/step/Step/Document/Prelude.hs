@@ -1,7 +1,7 @@
 module Step.Document.Prelude
   (
     {- * Single character result -} char, satisfy, satisfyJust, peekChar, peekCharMaybe,
-    {- * Text result -} text, -- all,
+    {- * Text result -} text, all,
     {- * Inspecting the position -} position, withLocation,
     {- * Repetition -} repetition0, repetition1, count0, count1,
     {- * The end -} atEnd, end,
@@ -142,8 +142,8 @@ failure :: Monad m => Action.CanFail k => Parser text k m a
 failure = Parser $ Action.failure Parser.makeError
 
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
--- all :: Monad m => ListLike text char => Parser text 'Sure m text
--- all = CertainParser \_config -> DocumentMemory.State.takeAll
+all :: Monad m => ListLike text char => Parser text Sure m text
+all = Parser $ Sure \_config -> DocumentMemory.State.takeAll
 
 -- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do
