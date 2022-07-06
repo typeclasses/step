@@ -9,6 +9,7 @@ import Step.Document.Parser
 import Step.Action.Functor (MonadAction)
 import Step.Action.Kinds
 import Step.Action.UnifiedType (IsAction)
+import Step.Action.UnifiedType (Noncommittal, Try)
 import Step.Action.Join (ActionJoin)
 import Step.Action.KindJoin ((:>))
 import Step.Action.Loop
@@ -128,16 +129,17 @@ count ::
     Natural -> Parser text k m a -> Parser text k' m [a]
 count = P.count0
 
--- todo
--- option :: a -> Parser a -> Parser a
+option :: Monad m => IsAction (Try k) => Noncommittal k =>
+    a -> Parser text k m a -> Parser text (Try k) m a
+option b p = fromMaybe b P.<$> P.try p
 
 many, many' :: Monad m => Parser text MoveUndo m a -> Parser text Sure m [a]
 many = P.repetition0
-many' p = P.do{ x <- many p; P.return $! x }
+many' p = many P.do{ x <- p; P.return $! x }
 
 many1, many1' :: Monad m => Parser text MoveUndo m a -> Parser text Move m (NonEmpty a)
 many1 = P.repetition1
-many1' p = P.do{ x <- many1 p; P.return $! x }
+many1' p = many1 P.do{ x <- p; P.return $! x }
 
 -- todo
 -- manyTill, manyTill' :: ListLike list a => Parser a -> Parser b -> Parser list

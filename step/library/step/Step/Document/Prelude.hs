@@ -6,7 +6,7 @@ module Step.Document.Prelude
     {- * Repetition -} repetition0, repetition1, count0, count1,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
-    {- * Failure -} failure,
+    {- * Failure -} failure, try,
     -- {- * Transformation -} under, while,
   )
   where
