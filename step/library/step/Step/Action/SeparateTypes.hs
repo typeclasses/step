@@ -38,19 +38,6 @@ failureAny f = Any \c s -> return (Left (f c), s)
 
 ---
 
-class MonadAction (action :: ActionKind) where
-    pureAction :: Monad m => a -> action config cursor error m a
-    bindAction :: Monad m => action config cursor error m a -> (a -> action config cursor error m b) -> action config cursor error m b
-
-instance MonadAction Any        where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction Static     where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction Move       where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction Sure       where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction SureStatic where pureAction = pure ; bindAction = (Monad.>>=)
-instance MonadAction SureMove   where pureAction = pure ; bindAction = (Monad.>>=)
-
----
-
 class ConfigurableAction (action :: ActionKind) where
     configureAction :: (config1 -> config2)
         -> action config2 cursor error m a

@@ -14,9 +14,7 @@ import qualified Step.Document.Error as Error
 
 import Loc (Loc)
 
-import Step.Action.Kinds (ActionKind)
-import qualified Step.Action.Kinds as T
-import qualified Step.Action.SeparateTypes as T
+import Step.Action.Kinds (ActionKind, Any (Any))
 import Step.Action.Lift (ActionLift, actionLiftTo)
 import Step.Action.UnifiedType (IsAction)
 import Step.Action.Join (ActionJoin, actionJoin)
@@ -25,7 +23,7 @@ import Step.Action.KindJoin ((:>))
 
 import Step.LineHistory.Char (Char)
 
-import Step.Action.Functor (FunctorAction)
+import Step.Action.Functor (FunctorAction, MonadAction, pureAction, bindAction)
 
 import qualified Monad
 
@@ -35,22 +33,22 @@ newtype Parser (text :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Typ
 instance (Functor m, FunctorAction k) => Functor (Parser text k m) where
     fmap f = Parser . fmap f . (\(Parser a) -> a)
 
-instance (Monad m, FunctorAction k, T.MonadAction k) => Applicative (Parser text k m) where
-    pure = Parser . T.pureAction
+instance (Monad m, MonadAction k) => Applicative (Parser text k m) where
+    pure = Parser . pureAction
     (<*>) = Monad.ap
 
-instance (Monad m, FunctorAction k, T.MonadAction k) => Monad (Parser text k m) where
-    a >>= b = Parser (T.bindAction ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
+instance (Monad m, MonadAction k) => Monad (Parser text k m) where
+    a >>= b = Parser (bindAction ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
 
-parse :: Monad m => ActionLift k T.Any =>
+parse :: Monad m => ActionLift k Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
-    actionLiftTo @T.Any p & \(T.Any p') ->
+    actionLiftTo @Any p & \(Any p') ->
     StateT (p' config) >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)
 
-parseOnly ::  ActionLift k T.Any => Monad m => Char char => ListLike text char =>
+parseOnly ::  ActionLift k Any => Monad m => Char char => ListLike text char =>
     Config text -> Parser text k m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
 

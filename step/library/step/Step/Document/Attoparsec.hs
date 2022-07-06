@@ -6,7 +6,7 @@ import Step.Internal.Prelude
 
 import Step.Document.Parser
 
-import Step.Action.SeparateTypes (MonadAction)
+import Step.Action.Functor (MonadAction)
 import Step.Action.Kinds
 import Step.Action.UnifiedType (IsAction)
 import Step.Action.Join (ActionJoin)

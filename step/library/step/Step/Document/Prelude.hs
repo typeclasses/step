@@ -57,7 +57,7 @@ import Step.Action.Join (ActionJoin)
 import Step.Action.KindJoin ((:>))
 import Step.Action.Kinds
 import Step.Action.Functor
-import Step.Action.SeparateTypes (ConfigurableAction, MonadAction, configureAction)
+import Step.Action.SeparateTypes (ConfigurableAction, configureAction)
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
 char = Parser $ MoveUndo \config -> runStateT $
