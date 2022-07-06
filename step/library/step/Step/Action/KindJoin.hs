@@ -16,7 +16,7 @@ type instance KindJoin Sure       Sure       = Sure
 type instance KindJoin SureStatic SureStatic = SureStatic
 type instance KindJoin SureMove   SureMove   = SureMove
 
--- Backtracking kinds, however, lose their backtracking property when put in sequence.
+-- Atomic, however, lose their atomicity when put in sequence.
 
 type instance KindJoin MoveAtom   MoveAtom   = Move
 type instance KindJoin Atom       Atom       = Any

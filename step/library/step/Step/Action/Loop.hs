@@ -16,7 +16,7 @@ class
     ) =>
     Loop0 k k' | k -> k'
 
--- Backtracking actions loose their backtracking property when sequenced 2 or more times; guaranteed advancement is lost when sequencing 0 times
+-- Atomic actions loose their atomicity when sequenced 2 or more times; guaranteed advancement is lost when sequencing 0 times
 
 instance Loop0 Atom Any
 instance Loop0 MoveAtom Any
@@ -41,7 +41,7 @@ class
     ) =>
     Loop1 k k' | k -> k'
 
--- Backtracking actions loose their backtracking property when sequenced 2 or more times
+-- Atomic actions loose their atomicity when sequenced 2 or more times
 
 instance Loop1 Atom Any
 instance Loop1 MoveAtom Move
