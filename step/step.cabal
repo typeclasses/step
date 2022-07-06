@@ -78,6 +78,7 @@ common base
           , Data.Semigroup as Semigroup
           , Data.Monoid as Monoid
           , Data.Void as Void
+          , Data.List.NonEmpty as NonEmpty
           )
       , bytestring
           ( Data.ByteString as ByteString
@@ -138,6 +139,7 @@ library
         Step.Action.Kinds
         Step.Action.KindJoin
         Step.Action.Lift
+        Step.Action.Loop
         Step.Action.SeparateTypes
         Step.Action.UnifiedType
 

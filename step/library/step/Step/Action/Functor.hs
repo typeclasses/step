@@ -26,7 +26,5 @@ class (FunctorAction action, forall config cursor error m. Monad m =>
 
 instance MonadAction Any
 instance MonadAction Static
-instance MonadAction Move
 instance MonadAction Sure
 instance MonadAction SureStatic
-instance MonadAction SureMove

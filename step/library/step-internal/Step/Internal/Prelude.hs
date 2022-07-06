@@ -25,6 +25,7 @@ import Coerce as X (coerce)
 import Kind as X (Type)
 import Void as X (Void, absurd)
 import Positive as X (Positive)
+import NonEmpty as X (NonEmpty (..))
 
 import Optics as X
 

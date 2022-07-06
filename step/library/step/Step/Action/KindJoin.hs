@@ -58,3 +58,5 @@ type instance KindJoin Move       Undo       = Move
 type instance KindJoin Undo       Move       = Move
 type instance KindJoin Move       Static     = Move
 type instance KindJoin Static     Move       = Move
+type instance KindJoin Undo       Any        = Any
+type instance KindJoin Any        Undo       = Any

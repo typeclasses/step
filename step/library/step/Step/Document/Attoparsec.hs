@@ -11,6 +11,7 @@ import Step.Action.Kinds
 import Step.Action.UnifiedType (IsAction)
 import Step.Action.Join (ActionJoin)
 import Step.Action.KindJoin ((:>))
+import Step.Action.Loop
 
 import qualified Step.Document.Prelude as P
 
@@ -122,13 +123,9 @@ peekChar' = P.peekChar
 
 count ::
     Monad m =>
-    IsAction k =>
-    IsAction (k :> k) =>
-    ActionJoin k (k :> k) =>
-    MonadAction (k :> k) =>
-    (k :> k) ~ (k :> (k :> k)) =>
-    Natural -> Parser text k m a -> Parser text (k :> k) m [a]
-count = P.count
+    Loop0 k k' =>
+    Natural -> Parser text k m a -> Parser text k' m [a]
+count = P.count0
 
 -- todo
 -- option :: a -> Parser a -> Parser a

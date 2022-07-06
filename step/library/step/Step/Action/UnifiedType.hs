@@ -51,6 +51,18 @@ instance Noncommittal T.Static
 
 ---
 
+class CanBeStatic (k :: ActionKind)
+  where
+    trivial :: Monad m => a -> k config cursor error m a
+
+instance CanBeStatic T.Any        where trivial x = T.Any        \_ -> StateT \s -> return (Right x, s)
+instance CanBeStatic T.Static     where trivial x = T.Static     \_ -> StateT \s -> return (Right x, s)
+instance CanBeStatic T.Undo       where trivial x = T.Undo       \_ -> StateT \s -> return (Right x, s)
+instance CanBeStatic T.Sure       where trivial x = T.Sure       \_ -> StateT \s -> return (x, s)
+instance CanBeStatic T.SureStatic where trivial x = T.SureStatic \_ -> StateT \s -> return (x, s)
+
+---
+
 type IsAction k =
     ( FunctorAction k
     , ActionJoin k T.SureStatic

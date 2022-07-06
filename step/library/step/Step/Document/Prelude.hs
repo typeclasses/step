@@ -3,7 +3,7 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy, satisfyJust, peekChar, peekCharMaybe,
     {- * Text result -} text, -- all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Repetition -} repetition, count,
+    {- * Repetition -} repetition, count0, count1,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} failure,
@@ -14,6 +14,8 @@ module Step.Document.Prelude
 import Step.Internal.Prelude hiding (while, under, Is)
 
 import Optics
+
+import qualified NonEmpty
 
 import Step.Document.Parser (Parser (Parser))
 import qualified Step.Document.Parser as Parser
@@ -52,13 +54,15 @@ import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Document.Do as P
 
 import qualified Step.Action.UnifiedType as Action
-import Step.Action.UnifiedType (IsAction)
+import Step.Action.UnifiedType (IsAction, trivial)
 import Step.Action.Join (ActionJoin)
 import Step.Action.KindJoin ((:>))
 import Step.Action.Kinds
 import Step.Action.Functor
 import Step.Action.SeparateTypes (ConfigurableAction, configureAction)
 import qualified Step.Action.Failure as Action
+import Step.Action.Loop
+import Step.Action.Lift
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
 char = Parser $ MoveUndo \config ->
@@ -135,22 +139,29 @@ repetition p = fix \r -> P.do
         Nothing -> return ListLike.empty
         Just x -> ListLike.cons x <$> r
 
-count ::
-    Monad m =>
-    IsAction k =>
-    IsAction (k :> k) =>
-    ActionJoin k (k :> k) =>
-    MonadAction (k :> k) =>
-    (k :> k) ~ (k :> (k :> k)) =>
-    Natural -> Parser text k m a -> Parser text (k :> k) m [a]
-count = \n a -> go a n
+count0 :: Monad m => Loop0 k k' =>
+    Natural -> Parser text k m a -> Parser text k' m [a]
+count0 = \n a -> go a n
   where
     go a = fix \r -> \case
-        0 -> pure []
-        n -> P.do
+        0 -> Parser (trivial [])
+        n -> under (iso Parser (\(Parser z) -> z)) actionLift P.do
             x <- a
             xs <- r (n - 1)
             P.return (x : xs)
+
+count1 :: Monad m => Loop1 k k' =>
+    Positive Natural -> Parser text k m a -> Parser text k' m (NonEmpty a)
+count1 = \n a -> go a n
+  where
+    go a = fix \r -> \p ->
+        case preview positive (review positive p - 1) of
+            Nothing ->
+                (:| []) <$> under (iso Parser (\(Parser z) -> z)) actionLift a
+            Just p' -> under (iso Parser (\(Parser z) -> z)) actionLift P.do
+                x <- a
+                xs <- r p'
+                P.return (NonEmpty.cons x xs)
 
 failure :: Monad m => Action.CanFail k => Parser text k m a
 failure = Parser $ Action.failure Parser.makeError

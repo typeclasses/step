@@ -36,6 +36,7 @@ instance ActionLift MoveUndo   Move where actionLift = coerce
 instance ActionLift Sure       Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
 instance ActionLift SureStatic Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
 instance ActionLift SureStatic Sure where actionLift = coerce
+instance ActionLift Undo       Any  where actionLift = coerce
 
 actionLiftTo :: forall k2 k1 config cursor error m a.
     Monad m =>
