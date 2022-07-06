@@ -123,7 +123,7 @@ count ::
     Natural -> Parser text k m a -> Parser text k' m [a]
 count = P.count0
 
-option :: Monad m => IsAction (Try k) => Noncommittal k =>
+option :: Monad m => IsAction (Try k) => Atomic k =>
     a -> Parser text k m a -> Parser text (Try k) m a
 option b p = fromMaybe b P.<$> P.try p
 

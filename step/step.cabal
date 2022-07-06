@@ -132,7 +132,7 @@ library
         Step.DocumentMemory.State
 
         Step.Action.AlwaysMoves
-        Step.Action.Atom
+        Step.Action.Atomic
         Step.Action.CanBeStatic
         Step.Action.Coerce
         Step.Action.CoercedJoin

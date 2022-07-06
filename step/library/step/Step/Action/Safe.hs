@@ -11,8 +11,8 @@ module Step.Action.Safe
     ConfigurableAction, configureAction,
     -- * Always moves
     AlwaysMoves,
-    -- * Noncommittal, Try
-    Noncommittal, Try, try,
+    -- * Atomic, Try
+    Atomic, Try, try,
     -- * Can be static
     CanBeStatic, trivial,
     -- * Lift
@@ -29,7 +29,7 @@ module Step.Action.Safe
   where
 
 import Step.Action.AlwaysMoves
-import Step.Action.Atom
+import Step.Action.Atomic
 import Step.Action.CanBeStatic
 import Step.Action.Config
 import Step.Action.Failure
