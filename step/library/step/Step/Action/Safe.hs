@@ -30,6 +30,7 @@ module Step.Action.Safe
 
 import Step.Action.AlwaysMoves
 import Step.Action.Atom
+import Step.Action.CanBeStatic
 import Step.Action.Config
 import Step.Action.Failure
 import Step.Action.Functor

@@ -133,6 +133,7 @@ library
 
         Step.Action.AlwaysMoves
         Step.Action.Atom
+        Step.Action.CanBeStatic
         Step.Action.Coerce
         Step.Action.CoercedJoin
         Step.Action.Config

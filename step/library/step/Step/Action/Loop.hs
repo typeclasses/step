@@ -1,5 +1,6 @@
 module Step.Action.Loop where
 
+import Step.Action.CanBeStatic
 import Step.Action.Kinds
 import Step.Action.UnifiedType
 import Step.Action.Join
