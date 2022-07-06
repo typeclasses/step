@@ -131,9 +131,9 @@ count = P.count0
 -- todo
 -- option :: a -> Parser a -> Parser a
 
--- todo
--- -- | 0 or more
--- many, many' :: ListLike list a => Parser a -> Parser list
+many, many' :: Monad m => Parser text MoveUndo m a -> Parser text Sure m [a]
+many = P.repetition0
+many' p = P.do{ x <- many p; P.return $! x }
 
 many1, many1' :: Monad m => Parser text MoveUndo m a -> Parser text Move m (NonEmpty a)
 many1 = P.repetition1
