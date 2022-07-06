@@ -45,14 +45,14 @@ instance (Monad m, FunctorAction k, T.MonadAction k, ActionIso k) => Monad (Acti
 
 ---
 
-class IsAction k => AlwaysMoves k
+class AlwaysMoves (k :: ActionKind)
 instance AlwaysMoves T.Move
 instance AlwaysMoves T.MoveUndo
 instance AlwaysMoves T.SureMove
 
 ---
 
-class IsAction k => Noncommittal k
+class Noncommittal (k :: ActionKind)
   where
     type Try k :: ActionKind
     try :: Functor m => Action k config cursor error m a -> Action (Try k) config cursor error m (Maybe a)
@@ -74,7 +74,7 @@ instance Noncommittal T.Static
 
 ---
 
-class IsAction k => CanFail k
+class CanFail (k :: ActionKind)
   where
     failure :: Monad m => (config -> StateT cursor m error) -> Action k config cursor error m a
 
@@ -86,21 +86,11 @@ instance CanFail T.MoveUndo where failure = view (actionIso') . view Coerce.coer
 
 ---
 
-class
+type IsAction k =
     ( SureStaticId k
     , FunctorAction k
     , ActionIso k
     )
-    => IsAction (k :: ActionKind)
-
-instance IsAction T.Any
-instance IsAction T.Static
-instance IsAction T.Move
-instance IsAction T.Undo
-instance IsAction T.MoveUndo
-instance IsAction T.Sure
-instance IsAction T.SureStatic
-instance IsAction T.SureMove
 
 ---
 
