@@ -58,19 +58,9 @@ type IsAction k =
 
 ---
 
-class
+type SureStaticId k =
     ( ActionJoin k T.SureStatic
     , ActionJoin T.SureStatic k
     , k :> T.SureStatic ~ k
     , T.SureStatic :> k ~ k
     )
-    => SureStaticId k
-
-instance SureStaticId T.Any
-instance SureStaticId T.Static
-instance SureStaticId T.Move
-instance SureStaticId T.Undo
-instance SureStaticId T.MoveUndo
-instance SureStaticId T.Sure
-instance SureStaticId T.SureStatic
-instance SureStaticId T.SureMove
