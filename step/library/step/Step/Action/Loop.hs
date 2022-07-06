@@ -18,8 +18,8 @@ class
 
 -- Backtracking actions loose their backtracking property when sequenced 2 or more times; guaranteed advancement is lost when sequencing 0 times
 
-instance Loop0 Undo Any
-instance Loop0 MoveUndo Any
+instance Loop0 Atom Any
+instance Loop0 MoveAtom Any
 instance Loop0 Move Any
 instance Loop0 SureMove Sure
 
@@ -43,8 +43,8 @@ class
 
 -- Backtracking actions loose their backtracking property when sequenced 2 or more times
 
-instance Loop1 Undo Any
-instance Loop1 MoveUndo Move
+instance Loop1 Atom Any
+instance Loop1 MoveAtom Move
 
 -- All other kinds are preserved by sequencing
 

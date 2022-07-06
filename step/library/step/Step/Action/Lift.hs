@@ -15,19 +15,19 @@ class ActionLift (k1 :: ActionKind) (k2 :: ActionKind)
 instance ActionLift Any        Any        where actionLift = coerce
 instance ActionLift Static     Static     where actionLift = coerce
 instance ActionLift Move       Move       where actionLift = coerce
-instance ActionLift Undo       Undo       where actionLift = coerce
-instance ActionLift MoveUndo   MoveUndo   where actionLift = coerce
+instance ActionLift Atom       Atom       where actionLift = coerce
+instance ActionLift MoveAtom   MoveAtom   where actionLift = coerce
 instance ActionLift Sure       Sure       where actionLift = coerce
 instance ActionLift SureStatic SureStatic where actionLift = coerce
 instance ActionLift SureMove   SureMove   where actionLift = coerce
 
 instance ActionLift Move       Any  where actionLift = coerce
-instance ActionLift MoveUndo   Any  where actionLift = coerce
-instance ActionLift MoveUndo   Move where actionLift = coerce
+instance ActionLift MoveAtom   Any  where actionLift = coerce
+instance ActionLift MoveAtom   Move where actionLift = coerce
 instance ActionLift Sure       Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
 instance ActionLift SureStatic Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
 instance ActionLift SureStatic Sure where actionLift = coerce
-instance ActionLift Undo       Any  where actionLift = coerce
+instance ActionLift Atom       Any  where actionLift = coerce
 
 actionLiftTo :: forall k2 k1 config cursor error m a.
     Monad m =>

@@ -7,8 +7,8 @@ type ActionKind = Type -> Type -> Type -> (Type -> Type) -> Type -> Type
 type Any        :: ActionKind
 type Static     :: ActionKind
 type Move       :: ActionKind
-type Undo       :: ActionKind
-type MoveUndo   :: ActionKind
+type Atom       :: ActionKind
+type MoveAtom   :: ActionKind
 type Sure       :: ActionKind
 type SureStatic :: ActionKind
 type SureMove   :: ActionKind
@@ -40,16 +40,16 @@ newtype Move config cursor error m a =
 --
 -- No Applicative/Monad instances here because sequencing does not preserve the noncommittal property
 --
-newtype Undo config cursor error m a =
-    Undo (config -> StateT cursor m (Either (StateT cursor m error) a))
+newtype Atom config cursor error m a =
+    Atom (config -> StateT cursor m (Either (StateT cursor m error) a))
     deriving stock Functor
 
 -- | Always moves the cursor, fails noncommittally
 --
 -- No Applicative/Monad instances here because sequencing does not preserve the noncommittal property, and because pure/return doesn't move the cursor
 --
-newtype MoveUndo config cursor error m a =
-    MoveUndo (config -> StateT cursor m (Either (StateT cursor m error) a))
+newtype MoveAtom config cursor error m a =
+    MoveAtom (config -> StateT cursor m (Either (StateT cursor m error) a))
     deriving stock Functor
 
 -- | Always succeeds

@@ -24,8 +24,8 @@ from = view coerced
 instance Coerce Any Any         where coerced = Optics.coerced
 instance Coerce Any Static      where coerced = Optics.coerced
 instance Coerce Any Move        where coerced = Optics.coerced
-instance Coerce Any Undo        where coerced = Optics.coerced
-instance Coerce Any MoveUndo    where coerced = Optics.coerced
+instance Coerce Any Atom        where coerced = Optics.coerced
+instance Coerce Any MoveAtom    where coerced = Optics.coerced
 
 instance Coerce Sure Sure       where coerced = Optics.coerced
 instance Coerce Sure SureStatic where coerced = Optics.coerced

@@ -18,8 +18,8 @@ type instance KindJoin SureMove   SureMove   = SureMove
 
 -- Backtracking kinds, however, lose their backtracking property when put in sequence.
 
-type instance KindJoin MoveUndo   MoveUndo   = Move
-type instance KindJoin Undo       Undo       = Any
+type instance KindJoin MoveAtom   MoveAtom   = Move
+type instance KindJoin Atom       Atom       = Any
 
 -- SureStatic is easy: It never changes the kind of whatever it's joined with.
 
@@ -32,11 +32,11 @@ type instance KindJoin SureStatic Static     = Static
 type instance KindJoin Move       SureStatic = Move
 type instance KindJoin SureStatic Move       = Move
 
-type instance KindJoin Undo       SureStatic = Undo
-type instance KindJoin SureStatic Undo       = Undo
+type instance KindJoin Atom       SureStatic = Atom
+type instance KindJoin SureStatic Atom       = Atom
 
-type instance KindJoin MoveUndo   SureStatic = MoveUndo
-type instance KindJoin SureStatic MoveUndo   = MoveUndo
+type instance KindJoin MoveAtom   SureStatic = MoveAtom
+type instance KindJoin SureStatic MoveAtom   = MoveAtom
 
 type instance KindJoin Sure       SureStatic = Sure
 type instance KindJoin SureStatic Sure       = Sure
@@ -48,17 +48,17 @@ type instance KindJoin SureStatic SureMove   = SureMove
 
 type instance KindJoin Sure       SureMove   = Sure
 type instance KindJoin SureMove   Sure       = Sure
-type instance KindJoin MoveUndo   Move       = Move
-type instance KindJoin Move       MoveUndo   = Move
-type instance KindJoin MoveUndo   Any        = Move
-type instance KindJoin Any        MoveUndo   = Move
+type instance KindJoin MoveAtom   Move       = Move
+type instance KindJoin Move       MoveAtom   = Move
+type instance KindJoin MoveAtom   Any        = Move
+type instance KindJoin Any        MoveAtom   = Move
 type instance KindJoin Move       Any        = Move
 type instance KindJoin Any        Move       = Move
-type instance KindJoin Move       Undo       = Move
-type instance KindJoin Undo       Move       = Move
+type instance KindJoin Move       Atom       = Move
+type instance KindJoin Atom       Move       = Move
 type instance KindJoin Move       Static     = Move
 type instance KindJoin Static     Move       = Move
-type instance KindJoin Undo       Any        = Any
-type instance KindJoin Any        Undo       = Any
-type instance KindJoin MoveUndo   Sure       = Move
-type instance KindJoin Sure       MoveUndo   = Move
+type instance KindJoin Atom       Any        = Any
+type instance KindJoin Any        Atom       = Any
+type instance KindJoin MoveAtom   Sure       = Move
+type instance KindJoin Sure       MoveAtom   = Move

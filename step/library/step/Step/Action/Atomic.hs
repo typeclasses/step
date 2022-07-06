@@ -11,14 +11,14 @@ class Atomic (k :: ActionKind)
     type Try k :: ActionKind
     try :: Functor m => k config cursor error m a -> (Try k) config cursor error m (Maybe a)
 
-instance Atomic Undo
+instance Atomic Atom
   where
-    type Try Undo = Sure
+    type Try Atom = Sure
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
-instance Atomic MoveUndo
+instance Atomic MoveAtom
   where
-    type Try MoveUndo = SureMove
+    type Try MoveAtom = SureMove
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
 instance Atomic Static

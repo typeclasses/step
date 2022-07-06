@@ -34,8 +34,8 @@ import Step.Action.Kinds
 
 import qualified Step.Action.Safe as Action
 
-char :: Monad m => ListLike text char => Parser text MoveUndo m char
-char = Parser $ MoveUndo \config ->
+char :: Monad m => ListLike text char => Parser text MoveAtom m char
+char = Parser $ MoveAtom \config ->
     DocumentMemory.State.takeChar <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
@@ -49,14 +49,14 @@ peekChar = Parser $ Static \config ->
 peekCharMaybe :: Monad m => ListLike text char => Parser text SureStatic m (Maybe char)
 peekCharMaybe = Parser $ SureStatic \_ -> DocumentMemory.State.peekCharMaybe
 
-satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveUndo m char
-satisfy ok = Parser $ MoveUndo \config ->
+satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveAtom m char
+satisfy ok = Parser $ MoveAtom \config ->
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
-satisfyJust :: Monad m => ListLike text char => (char -> Maybe a) -> Parser text MoveUndo m a
-satisfyJust ok = Parser $ MoveUndo \config ->
+satisfyJust :: Monad m => ListLike text char => (char -> Maybe a) -> Parser text MoveAtom m a
+satisfyJust ok = Parser $ MoveAtom \config ->
     DocumentMemory.State.takeCharJust ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
@@ -100,7 +100,7 @@ try :: Monad m => Atomic k => Parser text k m a -> Parser text (Action.Try k) m 
 try (Parser p) = Parser (Action.try p)
 
 repetition0 :: Monad m =>
-    Parser text MoveUndo m a -> Parser text Sure m [a]
+    Parser text MoveAtom m a -> Parser text Sure m [a]
 repetition0 p = fix \r -> P.do
     xm <- try p
     case xm of
@@ -108,7 +108,7 @@ repetition0 p = fix \r -> P.do
         Just x -> (x :) <$> r
 
 repetition1 :: Monad m =>
-    Parser text MoveUndo m a -> Parser text Move m (NonEmpty a)
+    Parser text MoveAtom m a -> Parser text Move m (NonEmpty a)
 repetition1 p = P.do
     x <- p
     xs <- repetition0 p

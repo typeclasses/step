@@ -13,8 +13,8 @@ class CanFail (k :: ActionKind)
 instance CanFail Any      where failure = view Action.coerced . failureAny
 instance CanFail Static   where failure = view Action.coerced . failureAny
 instance CanFail Move     where failure = view Action.coerced . failureAny
-instance CanFail Undo     where failure = view Action.coerced . failureAny
-instance CanFail MoveUndo where failure = view Action.coerced . failureAny
+instance CanFail Atom     where failure = view Action.coerced . failureAny
+instance CanFail MoveAtom where failure = view Action.coerced . failureAny
 
 failureAny :: Monad m => (config -> (StateT cursor m error)) -> Any config cursor error m a
 failureAny f = Any \c -> return (Left (f c))

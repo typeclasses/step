@@ -13,8 +13,8 @@ class
 instance FunctorAction Any
 instance FunctorAction Static
 instance FunctorAction Move
-instance FunctorAction Undo
-instance FunctorAction MoveUndo
+instance FunctorAction Atom
+instance FunctorAction MoveAtom
 instance FunctorAction Sure
 instance FunctorAction SureStatic
 instance FunctorAction SureMove

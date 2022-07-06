@@ -15,10 +15,10 @@ instance ConfigurableAction Static where
     configureAction f (Static g) = Static (g . f)
 instance ConfigurableAction Move where
     configureAction f (Move g) = Move (g . f)
-instance ConfigurableAction Undo where
-    configureAction f (Undo g) = Undo (g . f)
-instance ConfigurableAction MoveUndo where
-    configureAction f (MoveUndo g) = MoveUndo (g . f)
+instance ConfigurableAction Atom where
+    configureAction f (Atom g) = Atom (g . f)
+instance ConfigurableAction MoveAtom where
+    configureAction f (MoveAtom g) = MoveAtom (g . f)
 instance ConfigurableAction Sure where
     configureAction f (Sure g) = Sure (g . f)
 instance ConfigurableAction SureStatic where
