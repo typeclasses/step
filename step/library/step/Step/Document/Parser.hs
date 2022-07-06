@@ -18,7 +18,7 @@ import Step.Action.Kinds (ActionKind)
 import qualified Step.Action.Kinds as T
 import qualified Step.Action.SeparateTypes as T
 import Step.Action.Lift (ActionLift, actionLiftTo)
-import Step.Action.UnifiedType (Action (..), IsAction, actionIso, ActionJoin)
+import Step.Action.UnifiedType (Action (Action), IsAction, ActionJoin)
 import qualified Step.Action.UnifiedType as Action
 import Step.Action.KindJoin ((:>))
 
@@ -47,12 +47,12 @@ action' :: IsAction kind => Iso
     (Parser text2 kind m2 a2)
     (kind (Config text1) (DocumentMemory text1 m1) (Error text1) m1 a1)
     (kind (Config text2) (DocumentMemory text2 m2) (Error text2) m2 a2)
-action' = coerced % re actionIso
+action' = coerced % iso (\(Action a) -> a) Action
 
 parse :: Monad m => ActionLift k T.Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
-    actionLiftTo @T.Any p & \(Action.Any (T.Any p')) ->
+    actionLiftTo @T.Any p & \(Action (T.Any p')) ->
     StateT (p' config) >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)

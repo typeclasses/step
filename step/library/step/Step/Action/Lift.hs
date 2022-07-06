@@ -20,7 +20,7 @@ import qualified Monad
 
 import Step.Action.KindJoin
 
-import Step.Action.UnifiedType (ActionIso, actionIso, Action)
+import Step.Action.UnifiedType (Action (Action))
 
 class ActionLift (k1 :: ActionKind) (k2 :: ActionKind)
   where
@@ -37,12 +37,12 @@ instance ActionLift T.Sure       T.Sure       where actionLift = coerce
 instance ActionLift T.SureStatic T.SureStatic where actionLift = coerce
 instance ActionLift T.SureMove   T.SureMove   where actionLift = coerce
 
-instance ActionLift T.Move       T.Any  where actionLift = view actionIso . coerce . review actionIso
-instance ActionLift T.MoveUndo   T.Any  where actionLift = view actionIso . coerce . review actionIso
-instance ActionLift T.MoveUndo   T.Move where actionLift = view actionIso . coerce . review actionIso
-instance ActionLift T.Sure       T.Any  where actionLift = view actionIso . Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure . review actionIso
-instance ActionLift T.SureStatic T.Any  where actionLift = view actionIso . Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure . review actionIso
-instance ActionLift T.SureStatic T.Sure where actionLift = view actionIso . coerce . review actionIso
+instance ActionLift T.Move       T.Any  where actionLift = Action . coerce . (\(Action a) -> a)
+instance ActionLift T.MoveUndo   T.Any  where actionLift = Action . coerce . (\(Action a) -> a)
+instance ActionLift T.MoveUndo   T.Move where actionLift = Action . coerce . (\(Action a) -> a)
+instance ActionLift T.Sure       T.Any  where actionLift = Action . Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure . (\(Action a) -> a)
+instance ActionLift T.SureStatic T.Any  where actionLift = Action . Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure . (\(Action a) -> a)
+instance ActionLift T.SureStatic T.Sure where actionLift = Action . coerce . (\(Action a) -> a)
 
 actionLiftTo :: forall k2 k1 config cursor error m a.
     Monad m =>

@@ -22,26 +22,18 @@ import qualified Step.Action.CoercedJoin as CJ
 
 import Step.Action.KindJoin
 
-data Action (k :: ActionKind) config cursor error m a
-  where
-    Any        :: !(T.Any        config cursor error m a) -> Action T.Any        config cursor error m a
-    Static     :: !(T.Static     config cursor error m a) -> Action T.Static     config cursor error m a
-    Move       :: !(T.Move       config cursor error m a) -> Action T.Move       config cursor error m a
-    Undo       :: !(T.Undo       config cursor error m a) -> Action T.Undo       config cursor error m a
-    MoveUndo   :: !(T.MoveUndo   config cursor error m a) -> Action T.MoveUndo   config cursor error m a
-    Sure       :: !(T.Sure       config cursor error m a) -> Action T.Sure       config cursor error m a
-    SureStatic :: !(T.SureStatic config cursor error m a) -> Action T.SureStatic config cursor error m a
-    SureMove   :: !(T.SureMove   config cursor error m a) -> Action T.SureMove   config cursor error m a
+newtype Action (k :: ActionKind) config cursor error m a =
+    Action (k config cursor error m a)
 
-instance (Functor m, FunctorAction k, ActionIso k) => Functor (Action k config cursor error m) where
-    fmap = under actionIso . fmap
+instance (Functor m, FunctorAction k) => Functor (Action k config cursor error m) where
+    fmap f = Action . fmap f . (\(Action a) -> a)
 
-instance (Monad m, FunctorAction k, T.MonadAction k, ActionIso k) => Applicative (Action k config cursor error m) where
-    pure = view actionIso . T.pureAction
+instance (Monad m, FunctorAction k, T.MonadAction k) => Applicative (Action k config cursor error m) where
+    pure = Action . T.pureAction
     (<*>) = Monad.ap
 
-instance (Monad m, FunctorAction k, T.MonadAction k, ActionIso k) => Monad (Action k config cursor error m) where
-    a >>= b = view actionIso (T.bindAction (review actionIso a) (fmap (review actionIso) b))
+instance (Monad m, FunctorAction k, T.MonadAction k) => Monad (Action k config cursor error m) where
+    a >>= b = Action (T.bindAction ((\(Action x) -> x) a) (fmap ((\(Action x) -> x)) b))
 
 ---
 
@@ -60,17 +52,17 @@ class Noncommittal (k :: ActionKind)
 instance Noncommittal T.Undo
   where
     type Try T.Undo = T.Sure
-    try = view (actionIso' @T.Sure) . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . review (actionIso' @T.Undo)
+    try = Action . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . (\(Action a) -> a)
 
 instance Noncommittal T.MoveUndo
   where
     type Try T.MoveUndo = T.SureMove
-    try = view (actionIso' @T.SureMove) . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . review (actionIso' @T.MoveUndo)
+    try = Action . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . (\(Action a) -> a)
 
 instance Noncommittal T.Static
   where
     type Try T.Static = T.SureStatic
-    try = view (actionIso' @T.SureStatic) . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . review (actionIso' @T.Static)
+    try = Action . Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any . (\(Action a) -> a)
 
 ---
 
@@ -78,18 +70,17 @@ class CanFail (k :: ActionKind)
   where
     failure :: Monad m => (config -> StateT cursor m error) -> Action k config cursor error m a
 
-instance CanFail T.Any      where failure = view (actionIso') . view Coerce.coerced . T.failureAny
-instance CanFail T.Static   where failure = view (actionIso') . view Coerce.coerced . T.failureAny
-instance CanFail T.Move     where failure = view (actionIso') . view Coerce.coerced . T.failureAny
-instance CanFail T.Undo     where failure = view (actionIso') . view Coerce.coerced . T.failureAny
-instance CanFail T.MoveUndo where failure = view (actionIso') . view Coerce.coerced . T.failureAny
+instance CanFail T.Any      where failure = Action . view Coerce.coerced . T.failureAny
+instance CanFail T.Static   where failure = Action . view Coerce.coerced . T.failureAny
+instance CanFail T.Move     where failure = Action . view Coerce.coerced . T.failureAny
+instance CanFail T.Undo     where failure = Action . view Coerce.coerced . T.failureAny
+instance CanFail T.MoveUndo where failure = Action . view Coerce.coerced . T.failureAny
 
 ---
 
 type IsAction k =
     ( SureStaticId k
     , FunctorAction k
-    , ActionIso k
     )
 
 ---
@@ -113,38 +104,11 @@ instance SureStaticId T.SureMove
 
 ---
 
-class ActionIso (k :: ActionKind)
-  where
-    actionIso :: Iso
-        (k config1 cursor1 error1 m1 a1)
-        (k config2 cursor2 error2 m2 a2)
-        (Action k config1 cursor1 error1 m1 a1)
-        (Action k config2 cursor2 error2 m2 a2)
-
-actionIso' :: forall k config1 cursor1 error1 m1 a1 config2 cursor2 error2 m2 a2.
-    ActionIso k => Iso
-        (k config1 cursor1 error1 m1 a1)
-        (k config2 cursor2 error2 m2 a2)
-        (Action k config1 cursor1 error1 m1 a1)
-        (Action k config2 cursor2 error2 m2 a2)
-actionIso' = actionIso
-
-instance ActionIso T.Any        where actionIso = iso Any        (\(Any x)        -> x)
-instance ActionIso T.Static     where actionIso = iso Static     (\(Static x)     -> x)
-instance ActionIso T.Move       where actionIso = iso Move       (\(Move x)       -> x)
-instance ActionIso T.Undo       where actionIso = iso Undo       (\(Undo x)       -> x)
-instance ActionIso T.MoveUndo   where actionIso = iso MoveUndo   (\(MoveUndo x)   -> x)
-instance ActionIso T.Sure       where actionIso = iso Sure       (\(Sure x)       -> x)
-instance ActionIso T.SureStatic where actionIso = iso SureStatic (\(SureStatic x) -> x)
-instance ActionIso T.SureMove   where actionIso = iso SureMove   (\(SureMove x)   -> x)
-
----
-
 configure :: (IsAction k, T.ConfigurableAction k) =>
     (config1 -> config2)
     -> Action k config2 cursor error m a
     -> Action k config1 cursor error m a
-configure = under actionIso . T.configureAction
+configure f = Action . T.configureAction f . (\(Action a) -> a)
 
 ---
 
@@ -188,14 +152,14 @@ instance ActionJoin T.SureMove   T.SureStatic where actionJoin = cj CJ.sureToSur
 instance ActionJoin T.SureStatic T.SureMove   where actionJoin = cj CJ.sureToSure
 
 cj ::
-    (ActionIso k1, ActionIso k2, ActionIso (KindJoin k1 k2), Functor (k1 config cursor error m)) =>
+    (Functor (k1 config cursor error m)) =>
     (
       k1 config cursor error m (k2 config cursor error m a)
       -> (k1 :> k2) config cursor error m a
     )
     -> Action k1 config cursor error m (Action k2 config cursor error m a)
     -> Action (k1 :> k2) config cursor error m a
-cj f = view actionIso' . f . fmap (review actionIso') . review actionIso'
+cj f = Action . f . fmap ((\(Action a) -> a)) . (\(Action a) -> a)
 
 ---
 
