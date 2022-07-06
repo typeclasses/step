@@ -7,13 +7,13 @@ import qualified Step.Action.Kinds as T
 
 import qualified Step.Action.Coerce as Coerce
 
-import qualified Step.Action.SeparateTypes as T
-
 import Step.Action.Functor (FunctorAction)
 
 import Step.Action.KindJoin
 
 import Step.Action.Join
+
+import Step.Action.Kinds
 
 class AlwaysMoves (k :: ActionKind)
 instance AlwaysMoves T.Move
@@ -30,17 +30,22 @@ class Noncommittal (k :: ActionKind)
 instance Noncommittal T.Undo
   where
     type Try T.Undo = T.Sure
-    try = Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any
+    try = Coerce.from @T.Sure . tryAnySure . Coerce.to @T.Any
 
 instance Noncommittal T.MoveUndo
   where
     type Try T.MoveUndo = T.SureMove
-    try = Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any
+    try = Coerce.from @T.Sure . tryAnySure . Coerce.to @T.Any
 
 instance Noncommittal T.Static
   where
     type Try T.Static = T.SureStatic
-    try = Coerce.from @T.Sure . T.tryAnySure . Coerce.to @T.Any
+    try = Coerce.from @T.Sure . tryAnySure . Coerce.to @T.Any
+
+tryAnySure :: Functor m => Any config cursor error m a -> Sure config cursor error m (Maybe a)
+tryAnySure (Any p) = Sure \c -> p c <&> \case
+    Left _ -> Nothing
+    Right x -> Just x
 
 ---
 

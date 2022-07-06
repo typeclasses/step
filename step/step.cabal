@@ -142,7 +142,6 @@ library
         Step.Action.Lift
         Step.Action.Loop
         Step.Action.Safe
-        Step.Action.SeparateTypes
         Step.Action.UnifiedType
 
         Step.Nontrivial.Base
