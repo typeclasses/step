@@ -8,11 +8,6 @@ import Step.Action.Kinds
 
 ---
 
-sureToAny :: Functor m => Sure config cursor error m a -> Any config cursor error m a
-sureToAny (Sure p) = Any (\c s -> p c s <&> \(x, s') -> (Right x, s'))
-
----
-
 joinAnyToSure :: Monad m => Any config cursor error m (Sure config cursor error m a) -> Any config cursor error m a
 joinAnyToSure (Any p) =
     Any \c s -> do

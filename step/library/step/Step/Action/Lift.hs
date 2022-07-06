@@ -4,8 +4,7 @@ import Step.Internal.Prelude
 
 import Optics
 
-import Step.Action.Kinds (ActionKind)
-import qualified Step.Action.Kinds as T
+import Step.Action.Kinds
 
 import Step.Action.Coerce (Coerce)
 import qualified Step.Action.Coerce as Coerce
@@ -24,21 +23,21 @@ class ActionLift (k1 :: ActionKind) (k2 :: ActionKind)
 
 -- todo: all instances, less than 64
 
-instance ActionLift T.Any        T.Any        where actionLift = coerce
-instance ActionLift T.Static     T.Static     where actionLift = coerce
-instance ActionLift T.Move       T.Move       where actionLift = coerce
-instance ActionLift T.Undo       T.Undo       where actionLift = coerce
-instance ActionLift T.MoveUndo   T.MoveUndo   where actionLift = coerce
-instance ActionLift T.Sure       T.Sure       where actionLift = coerce
-instance ActionLift T.SureStatic T.SureStatic where actionLift = coerce
-instance ActionLift T.SureMove   T.SureMove   where actionLift = coerce
+instance ActionLift Any        Any        where actionLift = coerce
+instance ActionLift Static     Static     where actionLift = coerce
+instance ActionLift Move       Move       where actionLift = coerce
+instance ActionLift Undo       Undo       where actionLift = coerce
+instance ActionLift MoveUndo   MoveUndo   where actionLift = coerce
+instance ActionLift Sure       Sure       where actionLift = coerce
+instance ActionLift SureStatic SureStatic where actionLift = coerce
+instance ActionLift SureMove   SureMove   where actionLift = coerce
 
-instance ActionLift T.Move       T.Any  where actionLift = coerce
-instance ActionLift T.MoveUndo   T.Any  where actionLift = coerce
-instance ActionLift T.MoveUndo   T.Move where actionLift = coerce
-instance ActionLift T.Sure       T.Any  where actionLift = Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure
-instance ActionLift T.SureStatic T.Any  where actionLift = Coerce.from @T.Any . T.sureToAny . Coerce.to @T.Sure
-instance ActionLift T.SureStatic T.Sure where actionLift = coerce
+instance ActionLift Move       Any  where actionLift = coerce
+instance ActionLift MoveUndo   Any  where actionLift = coerce
+instance ActionLift MoveUndo   Move where actionLift = coerce
+instance ActionLift Sure       Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
+instance ActionLift SureStatic Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
+instance ActionLift SureStatic Sure where actionLift = coerce
 
 actionLiftTo :: forall k2 k1 config cursor error m a.
     Monad m =>
@@ -46,3 +45,6 @@ actionLiftTo :: forall k2 k1 config cursor error m a.
     k1 config cursor error m a
     -> k2 config cursor error m a
 actionLiftTo = actionLift @k1 @k2
+
+sureToAny :: Functor m => Sure config cursor error m a -> Any config cursor error m a
+sureToAny (Sure p) = Any (\c s -> p c s <&> \(x, s') -> (Right x, s'))
