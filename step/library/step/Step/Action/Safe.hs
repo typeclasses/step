@@ -39,4 +39,4 @@ import Step.Action.KindJoin
 import Step.Action.Kinds
 import Step.Action.Lift
 import Step.Action.Loop
-import Step.Action.UnifiedType
+import Step.Action.IsAction
