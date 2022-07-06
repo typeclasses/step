@@ -52,14 +52,8 @@ instance Noncommittal T.Static
 ---
 
 type IsAction k =
-    ( SureStaticId k
-    , FunctorAction k
-    )
-
----
-
-type SureStaticId k =
-    ( ActionJoin k T.SureStatic
+    ( FunctorAction k
+    , ActionJoin k T.SureStatic
     , ActionJoin T.SureStatic k
     , k :> T.SureStatic ~ k
     , T.SureStatic :> k ~ k
