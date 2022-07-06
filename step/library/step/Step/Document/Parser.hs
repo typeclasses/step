@@ -18,7 +18,8 @@ import Step.Action.Kinds (ActionKind)
 import qualified Step.Action.Kinds as T
 import qualified Step.Action.SeparateTypes as T
 import Step.Action.Lift (ActionLift, actionLiftTo)
-import Step.Action.UnifiedType (IsAction, ActionJoin, actionJoin)
+import Step.Action.UnifiedType (IsAction)
+import Step.Action.Join (ActionJoin, actionJoin)
 import qualified Step.Action.UnifiedType as Action
 import Step.Action.KindJoin ((:>))
 
