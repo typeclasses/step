@@ -18,6 +18,8 @@ import qualified Variado.Monad.Class as V
 
 import qualified Monad
 
+import qualified Step.Action.CoercedJoin as CJ
+
 import Step.Action.KindJoin
 
 data Action (k :: ActionKind) config cursor error m a
@@ -162,38 +164,48 @@ class ActionJoin (k1 :: ActionKind) (k2 :: ActionKind)
 
 -- todo: all 64 instances
 
-instance ActionJoin T.Sure       T.Sure       where actionJoin = joinSureToSure
-instance ActionJoin T.SureStatic T.SureStatic where actionJoin = joinSureToSure
-instance ActionJoin T.Move       T.Move       where actionJoin = joinAnyToAny
-instance ActionJoin T.MoveUndo   T.MoveUndo   where actionJoin = joinAnyToAny
-instance ActionJoin T.Any        T.Any        where actionJoin = joinAnyToAny
-instance ActionJoin T.Sure       T.SureMove   where actionJoin = joinSureToSure
-instance ActionJoin T.SureMove   T.Sure       where actionJoin = joinSureToSure
-instance ActionJoin T.MoveUndo   T.Move       where actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.MoveUndo   where actionJoin = joinAnyToAny
-instance ActionJoin T.MoveUndo   T.Any        where actionJoin = joinAnyToAny
-instance ActionJoin T.Any        T.MoveUndo   where actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.Any        where actionJoin = joinAnyToAny
-instance ActionJoin T.Any        T.Move       where actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.Undo       where actionJoin = joinAnyToAny
-instance ActionJoin T.Undo       T.Move       where actionJoin = joinAnyToAny
-instance ActionJoin T.Move       T.Static     where actionJoin = joinAnyToAny
-instance ActionJoin T.Static     T.Move       where actionJoin = joinAnyToAny
+instance ActionJoin T.Sure       T.Sure       where actionJoin = cj CJ.sureToSure
+instance ActionJoin T.SureStatic T.SureStatic where actionJoin = cj CJ.sureToSure
+instance ActionJoin T.Move       T.Move       where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.MoveUndo   T.MoveUndo   where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Any        T.Any        where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Sure       T.SureMove   where actionJoin = cj CJ.sureToSure
+instance ActionJoin T.SureMove   T.Sure       where actionJoin = cj CJ.sureToSure
+instance ActionJoin T.MoveUndo   T.Move       where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Move       T.MoveUndo   where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.MoveUndo   T.Any        where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Any        T.MoveUndo   where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Move       T.Any        where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Any        T.Move       where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Move       T.Undo       where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Undo       T.Move       where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Move       T.Static     where actionJoin = cj CJ.anyToAny
+instance ActionJoin T.Static     T.Move       where actionJoin = cj CJ.anyToAny
 
-instance ActionJoin T.Any        T.SureStatic where actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Any        where actionJoin = joinSureToAny
-instance ActionJoin T.Static     T.SureStatic where actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Static     where actionJoin = joinSureToAny
-instance ActionJoin T.Move       T.SureStatic where actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Move       where actionJoin = joinSureToAny
-instance ActionJoin T.Undo       T.SureStatic where actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.Undo       where actionJoin = joinSureToAny
-instance ActionJoin T.MoveUndo   T.SureStatic where actionJoin = joinAnyToSure
-instance ActionJoin T.SureStatic T.MoveUndo   where actionJoin = joinSureToAny
-instance ActionJoin T.Sure       T.SureStatic where actionJoin = joinSureToSure
-instance ActionJoin T.SureStatic T.Sure       where actionJoin = joinSureToSure
-instance ActionJoin T.SureMove   T.SureStatic where actionJoin = joinSureToSure
-instance ActionJoin T.SureStatic T.SureMove   where actionJoin = joinSureToSure
+instance ActionJoin T.Any        T.SureStatic where actionJoin = cj CJ.anyToSure
+instance ActionJoin T.SureStatic T.Any        where actionJoin = cj CJ.sureToAny
+instance ActionJoin T.Static     T.SureStatic where actionJoin = cj CJ.anyToSure
+instance ActionJoin T.SureStatic T.Static     where actionJoin = cj CJ.sureToAny
+instance ActionJoin T.Move       T.SureStatic where actionJoin = cj CJ.anyToSure
+instance ActionJoin T.SureStatic T.Move       where actionJoin = cj CJ.sureToAny
+instance ActionJoin T.Undo       T.SureStatic where actionJoin = cj CJ.anyToSure
+instance ActionJoin T.SureStatic T.Undo       where actionJoin = cj CJ.sureToAny
+instance ActionJoin T.MoveUndo   T.SureStatic where actionJoin = cj CJ.anyToSure
+instance ActionJoin T.SureStatic T.MoveUndo   where actionJoin = cj CJ.sureToAny
+instance ActionJoin T.Sure       T.SureStatic where actionJoin = cj CJ.sureToSure
+instance ActionJoin T.SureStatic T.Sure       where actionJoin = cj CJ.sureToSure
+instance ActionJoin T.SureMove   T.SureStatic where actionJoin = cj CJ.sureToSure
+instance ActionJoin T.SureStatic T.SureMove   where actionJoin = cj CJ.sureToSure
+
+cj ::
+    (ActionIso k1, ActionIso k2, ActionIso (KindJoin k1 k2), Functor (k1 config cursor error m)) =>
+    (
+      k1 config cursor error m (k2 config cursor error m a)
+      -> (k1 :> k2) config cursor error m a
+    )
+    -> Action k1 config cursor error m (Action k2 config cursor error m a)
+    -> Action (k1 :> k2) config cursor error m a
+cj f = view actionIso' . f . fmap (review actionIso') . review actionIso'
 
 ---
 
@@ -201,63 +213,3 @@ instance (ActionJoin k1 k2, Monad m) => V.PolyMonad (Action k1 config cursor err
   where
     type Join (Action k1 config cursor error m) (Action k2 config cursor error m) = Action (k1 :> k2) config cursor error m
     join = actionJoin
-
-joinAnyToAny :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    ActionIso k1 => Coerce T.Any k1 =>
-    ActionIso k2 => Coerce T.Any k2 =>
-    ActionIso (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
-    Action k1 config cursor error m (Action k2 config cursor error m a)
-    -> Action (k1 :> k2) config cursor error m a
-joinAnyToAny = view $
-    re (actionIso' @k1)
-    % to (Coerce.to @T.Any @k1)
-    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Any @k2))))
-    % to Monad.join
-    % to (Coerce.from @T.Any @(k1 :> k2))
-    % actionIso' @(k1 :> k2)
-
-joinSureToSure :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    ActionIso k1 => Coerce T.Sure k1 =>
-    ActionIso k2 => Coerce T.Sure k2 =>
-    ActionIso (k1 :> k2) => Coerce T.Sure (k1 :> k2) =>
-    Action k1 config cursor error m (Action k2 config cursor error m a)
-    -> Action (k1 :> k2) config cursor error m a
-joinSureToSure = view $
-    re (actionIso' @k1)
-    % to (Coerce.to @T.Sure @k1)
-    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Sure @k2))))
-    % to Monad.join
-    % to (Coerce.from @T.Sure @(k1 :> k2))
-    % actionIso' @(k1 :> k2)
-
-joinAnyToSure :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    ActionIso k1 => Coerce T.Any k1 =>
-    ActionIso k2 => Coerce T.Sure k2 =>
-    ActionIso (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
-    Action k1 config cursor error m (Action k2 config cursor error m a)
-    -> Action (k1 :> k2) config cursor error m a
-joinAnyToSure = view $
-    re (actionIso' @k1)
-    % to (Coerce.to @T.Any @k1)
-    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Sure @k2))))
-    % to T.joinAnyToSure
-    % to (Coerce.from @T.Any @(k1 :> k2))
-    % actionIso' @(k1 :> k2)
-
-joinSureToAny :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    ActionIso k1 => Coerce T.Sure k1 =>
-    ActionIso k2 => Coerce T.Any k2 =>
-    ActionIso (k1 :> k2) => Coerce T.Any (k1 :> k2) =>
-    Action k1 config cursor error m (Action k2 config cursor error m a)
-    -> Action (k1 :> k2) config cursor error m a
-joinSureToAny = view $
-    re (actionIso' @k1)
-    % to (Coerce.to @T.Sure @k1)
-    % to (fmap (view (re (actionIso' @k2) % to (Coerce.to @T.Any @k2))))
-    % to T.joinSureToAny
-    % to (Coerce.from @T.Any @(k1 :> k2))
-    % actionIso' @(k1 :> k2)
