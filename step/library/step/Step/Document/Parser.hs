@@ -14,16 +14,10 @@ import qualified Step.Document.Error as Error
 
 import Loc (Loc)
 
-import Step.Action.Kinds (ActionKind, Any (Any))
-import Step.Action.Lift (ActionLift, actionLiftTo)
-import Step.Action.UnifiedType (IsAction)
-import Step.Action.Join (ActionJoin, actionJoin)
-import qualified Step.Action.UnifiedType as Action
-import Step.Action.KindJoin ((:>))
-
 import Step.LineHistory.Char (Char)
 
-import Step.Action.Functor (FunctorAction, MonadAction)
+import Step.Action.Safe
+import Step.Action.Kinds (ActionKind, Any (Any))
 
 import qualified Monad
 

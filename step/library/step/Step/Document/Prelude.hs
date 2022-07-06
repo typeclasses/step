@@ -53,16 +53,10 @@ import Step.Nontrivial.Base (Nontrivial)
 
 import qualified Step.Document.Do as P
 
-import qualified Step.Action.UnifiedType as Action
-import Step.Action.UnifiedType (IsAction, trivial)
-import Step.Action.Join (ActionJoin)
-import Step.Action.KindJoin ((:>))
+import Step.Action.Safe hiding (try, failure)
 import Step.Action.Kinds
-import Step.Action.Functor
-import Step.Action.SeparateTypes (ConfigurableAction, configureAction)
-import qualified Step.Action.Failure as Action
-import Step.Action.Loop
-import Step.Action.Lift
+
+import qualified Step.Action.Safe as Action
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
 char = Parser $ MoveUndo \config ->
@@ -150,7 +144,7 @@ count0 = \n a -> go a n
   where
     go a = fix \r -> \case
         0 -> Parser (trivial [])
-        n -> under (iso Parser (\(Parser z) -> z)) actionLift P.do
+        n -> under (iso Parser (\(Parser z) -> z)) actionLiftTo P.do
             x <- a
             xs <- r (n - 1)
             P.return (x : xs)
@@ -162,8 +156,8 @@ count1 = \n a -> go a n
     go a = fix \r -> \p ->
         case preview positive (review positive p - 1) of
             Nothing ->
-                (:| []) <$> under (iso Parser (\(Parser z) -> z)) actionLift a
-            Just p' -> under (iso Parser (\(Parser z) -> z)) actionLift P.do
+                (:| []) <$> under (iso Parser (\(Parser z) -> z)) actionLiftTo a
+            Just p' -> under (iso Parser (\(Parser z) -> z)) actionLiftTo P.do
                 x <- a
                 xs <- r p'
                 P.return (NonEmpty.cons x xs)

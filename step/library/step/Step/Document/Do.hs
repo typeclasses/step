@@ -14,12 +14,8 @@ import BasePrelude (fmap, (<$>), Functor, Monad, (.))
 import Kind (Type)
 
 import Step.Document.Parser (Parser (Parser))
-import Step.Action.UnifiedType (IsAction)
-import Step.Action.KindJoin ((:>))
-import Step.Action.Kinds (SureStatic (SureStatic))
-import Step.Action.UnifiedType (IsAction)
-import Step.Action.Join (ActionJoin, actionJoin)
-import Step.Action.Functor (FunctorAction, MonadAction)
+
+import Step.Action.Safe
 
 import qualified Optics as O
 
