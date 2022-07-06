@@ -51,18 +51,6 @@ instance Noncommittal T.Static
 
 ---
 
-class CanFail (k :: ActionKind)
-  where
-    failure :: Monad m => (config -> StateT cursor m error) -> k config cursor error m a
-
-instance CanFail T.Any      where failure = view Coerce.coerced . T.failureAny
-instance CanFail T.Static   where failure = view Coerce.coerced . T.failureAny
-instance CanFail T.Move     where failure = view Coerce.coerced . T.failureAny
-instance CanFail T.Undo     where failure = view Coerce.coerced . T.failureAny
-instance CanFail T.MoveUndo where failure = view Coerce.coerced . T.failureAny
-
----
-
 type IsAction k =
     ( SureStaticId k
     , FunctorAction k

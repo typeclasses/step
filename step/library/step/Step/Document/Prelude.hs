@@ -58,6 +58,7 @@ import Step.Action.KindJoin ((:>))
 import Step.Action.Kinds
 import Step.Action.Functor
 import Step.Action.SeparateTypes (ConfigurableAction, configureAction)
+import qualified Step.Action.Failure as Action
 
 char :: Monad m => ListLike text char => Parser text MoveUndo m char
 char = Parser $ MoveUndo \config -> runStateT $

@@ -15,11 +15,6 @@ tryAnySure (Any p) = Sure \c s -> p c s <&> \(e, s') -> case e of
 
 ---
 
-failureAny :: Monad m => (config -> (StateT cursor m error)) -> Any config cursor error m a
-failureAny f = Any \c s -> return (Left (f c), s)
-
----
-
 class ConfigurableAction (action :: ActionKind) where
     configureAction :: (config1 -> config2)
         -> action config2 cursor error m a
