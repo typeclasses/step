@@ -6,19 +6,26 @@ This module defines 'ActionKind' and seven types of that kinds.
 
 These are named for particular properties they have:
 
-- 'Move' - Always advances the cursor
-- 'Atom' - Either fails or advances the cursor, never both
-- 'Sure' - Never fails
-- 'Query' - Never advances the cursor; only gives information about the present state
+* 'Move' — always advances the cursor
+* 'Atom' — either fails or advances the cursor, never both
+* 'Sure' — never fails
+* 'Query' — never advances the cursor; only gives information about the present state
 
 There are also some that have combinations of the properties described above:
 
-- 'MoveAtom' - Atomic and always advances
-- 'SureQuery' - Never fails and never advances
+* 'MoveAtom' — atomic and always advances
+* 'SureQuery' — never fails and never advances
+
+Other combinations do not exist:
+
+* /Sure/ + /Move/ — because there's no such thing as a sure move; since at the end of input there is nowhere to move
+* /Atom/ + /Query/ — because this is just 'Query'; queries never move the cursor, so they are necessarily atomic
+* /Sure/ + /Atom/ — because this is just 'Sure'; a sure action cannot fail, so it necessary cannot fail and move the cursor
+* /Move/ + /Query/ — because this would bes a contradiction; 'Move' means always advance and 'Query' means never advance
 
 Finally, there is one no particular properties:
 
-- 'Any' - The most general type of action; all others can be lifted to it
+* 'Any' — the most general type of action; all others can be lifted to it
 
 The /Sure/ property is guaranteed by construction. The rest of the properties are not. This module is, therefore, unsafe.
 
