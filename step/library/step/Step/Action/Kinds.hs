@@ -23,7 +23,7 @@ Other combinations do not exist:
 * /Sure/ + /Atom/ — because this is just 'Sure'; a sure action cannot fail, so it necessary cannot fail and move the cursor
 * /Move/ + /Query/ — because this would be a contradiction; 'Move' means always advance and 'Query' means never advance
 
-Finally, there is one no particular properties:
+Finally, there is one with no particular properties:
 
 * 'Any' — the most general type of action; all others can be lifted to it
 
