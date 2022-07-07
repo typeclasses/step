@@ -17,7 +17,6 @@ instance FunctorAction Atom
 instance FunctorAction MoveAtom
 instance FunctorAction Sure
 instance FunctorAction SureQuery
-instance FunctorAction SureMove
 
 class (FunctorAction action, forall config cursor error m. Monad m =>
       Monad (action config cursor error m)) => MonadAction (action :: ActionKind)

@@ -24,7 +24,7 @@ module Step.Action.Safe
     -- * Kinds
     ActionKind,
     Any, Query, Move, Atom, MoveAtom,
-    Sure, SureQuery, SureMove,
+    Sure, SureQuery,
   )
   where
 

@@ -21,7 +21,6 @@ class
 instance Loop0 Atom Any
 instance Loop0 MoveAtom Any
 instance Loop0 Move Any
-instance Loop0 SureMove Sure
 
 -- Other kinds are preserved
 
@@ -53,4 +52,3 @@ instance Loop1 Query Query
 instance Loop1 Move Move
 instance Loop1 Sure Sure
 instance Loop1 SureQuery SureQuery
-instance Loop1 SureMove SureMove

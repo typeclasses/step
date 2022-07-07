@@ -18,7 +18,7 @@ instance Atomic Atom
 
 instance Atomic MoveAtom
   where
-    type Try MoveAtom = SureMove
+    type Try MoveAtom = Sure
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
 instance Atomic Query

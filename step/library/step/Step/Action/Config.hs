@@ -23,5 +23,3 @@ instance ConfigurableAction Sure where
     configureAction f (Sure g) = Sure (g . f)
 instance ConfigurableAction SureQuery where
     configureAction f (SureQuery g) = SureQuery (g . f)
-instance ConfigurableAction SureMove where
-    configureAction f (SureMove g) = SureMove (g . f)

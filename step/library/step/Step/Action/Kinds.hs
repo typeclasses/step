@@ -2,7 +2,7 @@
 
 {-|
 
-This module defines 'ActionKind' and eight types of that kinds.
+This module defines 'ActionKind' and seven types of that kinds.
 
 These are named for particular properties they have:
 
@@ -14,7 +14,6 @@ These are named for particular properties they have:
 There are also some that have combinations of the properties described above:
 
 - 'MoveAtom' - Atomic and always advances
-- 'SureMove' - Never fails and always advances
 - 'SureQuery' - Never fails and never advances
 
 Finally, there is one no particular properties:
@@ -43,7 +42,6 @@ type Atom      :: ActionKind
 type MoveAtom  :: ActionKind
 type Sure      :: ActionKind
 type SureQuery :: ActionKind
-type SureMove  :: ActionKind
 
 -- | No known properties
 --
@@ -96,13 +94,4 @@ newtype Sure config cursor error base value =
 newtype SureQuery config cursor error base value =
     SureQuery (config -> StateT cursor base value)
     deriving (Functor, Applicative, Monad)
-        via (ReaderT config (StateT cursor base))
-
--- | Always succeeds, always moves the cursor
---
--- No 'Applicative' or 'Monad' instance here because 'pure' and 'return' don't move the cursor
---
-newtype SureMove config cursor error base value =
-    SureMove (config -> StateT cursor base value)
-    deriving (Functor)
         via (ReaderT config (StateT cursor base))

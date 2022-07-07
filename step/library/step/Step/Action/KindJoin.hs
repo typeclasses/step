@@ -4,7 +4,7 @@ import Step.Action.Kinds
 
 type a :> b = KindJoin a b
 
--- todo: there need to be all 64 instances
+-- todo: there need to be all 49 instances
 type family KindJoin (k1 :: ActionKind) (k2 :: ActionKind) :: ActionKind
 
 -- Some of the action kinds compose very nicely with themselves.
@@ -14,7 +14,6 @@ type instance KindJoin Move      Move      = Move
 type instance KindJoin Query     Query     = Query
 type instance KindJoin Sure      Sure      = Sure
 type instance KindJoin SureQuery SureQuery = SureQuery
-type instance KindJoin SureMove  SureMove  = SureMove
 
 -- Atomic, however, lose their atomicity when put in sequence.
 
@@ -41,13 +40,8 @@ type instance KindJoin SureQuery MoveAtom  = MoveAtom
 type instance KindJoin Sure      SureQuery = Sure
 type instance KindJoin SureQuery Sure      = Sure
 
-type instance KindJoin SureMove  SureQuery = SureMove
-type instance KindJoin SureQuery SureMove  = SureMove
-
 -- ...
 
-type instance KindJoin Sure      SureMove  = Sure
-type instance KindJoin SureMove  Sure      = Sure
 type instance KindJoin MoveAtom  Move      = Move
 type instance KindJoin Move      MoveAtom  = Move
 type instance KindJoin MoveAtom  Any       = Move
