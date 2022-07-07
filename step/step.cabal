@@ -3,6 +3,8 @@ cabal-version: 3.0
 name: step
 version: 0
 
+extra-doc-files: graphics/**/*.svg
+
 common base
     default-language: Haskell2010
     ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
