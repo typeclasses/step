@@ -20,6 +20,9 @@ actionLiftTo = actionLift @k1 @k2
 sureToAny :: Functor m => Sure config cursor error m a -> Any config cursor error m a
 sureToAny (Sure p) = Any (\c -> p c <&> Right)
 
+
+--- Identity
+
 -- | Everything trivially lifts to itself
 instance ActionLift Any Any where actionLift = coerce
 
@@ -41,6 +44,9 @@ instance ActionLift Sure Sure where actionLift = coerce
 -- | Everything trivially lifts to itself
 instance ActionLift SureQuery SureQuery where actionLift = coerce
 
+
+--- Any supertypes everything else
+
 -- | Everything lifts to Any
 instance ActionLift Query Any where actionLift = coerce
 
@@ -59,17 +65,26 @@ instance ActionLift SureQuery Any where actionLift = Coerce.from @Any . sureToAn
 -- | Everything lifts to Any
 instance ActionLift Atom Any where actionLift = coerce
 
+
+--- Atom + Move = AtomicMove
+
 -- | AtomicMove gets its name from the fact that it has the properties of both Atom and Move
 instance ActionLift AtomicMove Move where actionLift = coerce
 
 -- | AtomicMove gets its name from the fact that it has the properties of both Atom and Move
 instance ActionLift AtomicMove Atom where actionLift = coerce
 
+
+--- Sure + Query = SureQuery
+
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
 instance ActionLift SureQuery Sure where actionLift = coerce
 
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
 instance ActionLift SureQuery Query where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
+
+
+--- Trivial subtypes of Atom
 
 -- | A Query is trivially atomic because it never moves the cursor, therefore it cannot move and fail
 instance ActionLift Query Atom where actionLift = coerce
