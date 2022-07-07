@@ -13,7 +13,7 @@ These are named for particular properties they have:
 
 There are also some that have combinations of the properties described above:
 
-* 'MoveAtom' — atomic and always advances
+* 'AtomicMove' — atomic and always advances
 * 'SureQuery' — never fails and never advances
 
 Other combinations do not exist:
@@ -42,13 +42,13 @@ type ActionKind =
     -> Type           -- ^ @value@  - produced upon success
     -> Type
 
-type Any       :: ActionKind
-type Query     :: ActionKind
-type Move      :: ActionKind
-type Atom      :: ActionKind
-type MoveAtom  :: ActionKind
-type Sure      :: ActionKind
-type SureQuery :: ActionKind
+type Any        :: ActionKind
+type Query      :: ActionKind
+type Move       :: ActionKind
+type Atom       :: ActionKind
+type AtomicMove :: ActionKind
+type Sure       :: ActionKind
+type SureQuery  :: ActionKind
 
 -- | No known properties
 --
@@ -85,8 +85,8 @@ newtype Atom config cursor error base value =
 --
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity, and because 'pure' and 'return' don't move the cursor
 --
-newtype MoveAtom config cursor error base value =
-    MoveAtom (config -> StateT cursor base (Either (StateT cursor base error) value))
+newtype AtomicMove config cursor error base value =
+    AtomicMove (config -> StateT cursor base (Either (StateT cursor base error) value))
     deriving stock Functor
 
 -- | Always succeeds

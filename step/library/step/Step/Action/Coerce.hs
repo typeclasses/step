@@ -25,7 +25,7 @@ instance Coerce Any Any        where coerced = Optics.coerced
 instance Coerce Any Query      where coerced = Optics.coerced
 instance Coerce Any Move       where coerced = Optics.coerced
 instance Coerce Any Atom       where coerced = Optics.coerced
-instance Coerce Any MoveAtom   where coerced = Optics.coerced
+instance Coerce Any AtomicMove where coerced = Optics.coerced
 
 instance Coerce Sure Sure      where coerced = Optics.coerced
 instance Coerce Sure SureQuery where coerced = Optics.coerced

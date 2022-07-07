@@ -17,8 +17,8 @@ instance ConfigurableAction Move where
     configureAction f (Move g) = Move (g . f)
 instance ConfigurableAction Atom where
     configureAction f (Atom g) = Atom (g . f)
-instance ConfigurableAction MoveAtom where
-    configureAction f (MoveAtom g) = MoveAtom (g . f)
+instance ConfigurableAction AtomicMove where
+    configureAction f (AtomicMove g) = AtomicMove (g . f)
 instance ConfigurableAction Sure where
     configureAction f (Sure g) = Sure (g . f)
 instance ConfigurableAction SureQuery where

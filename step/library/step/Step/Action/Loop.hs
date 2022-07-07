@@ -19,7 +19,7 @@ class
 -- Atomic actions loose their atomicity when sequenced 2 or more times; guaranteed advancement is lost when sequencing 0 times
 
 instance Loop0 Atom Any
-instance Loop0 MoveAtom Any
+instance Loop0 AtomicMove Any
 instance Loop0 Move Any
 
 -- Other kinds are preserved
@@ -43,7 +43,7 @@ class
 -- Atomic actions loose their atomicity when sequenced 2 or more times
 
 instance Loop1 Atom Any
-instance Loop1 MoveAtom Move
+instance Loop1 AtomicMove Move
 
 -- All other kinds are preserved by sequencing
 

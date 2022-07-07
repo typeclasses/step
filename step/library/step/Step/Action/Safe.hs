@@ -23,7 +23,7 @@ module Step.Action.Safe
     Loop0, Loop1,
     -- * Kinds
     ActionKind,
-    Any, Query, Move, Atom, MoveAtom,
+    Any, Query, Move, Atom, AtomicMove,
     Sure, SureQuery,
   )
   where

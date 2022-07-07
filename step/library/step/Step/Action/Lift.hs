@@ -12,21 +12,21 @@ class ActionLift (k1 :: ActionKind) (k2 :: ActionKind)
 
 -- todo: all instances, less than 49
 
-instance ActionLift Any       Any       where actionLift = coerce
-instance ActionLift Query     Query     where actionLift = coerce
-instance ActionLift Move      Move      where actionLift = coerce
-instance ActionLift Atom      Atom      where actionLift = coerce
-instance ActionLift MoveAtom  MoveAtom  where actionLift = coerce
-instance ActionLift Sure      Sure      where actionLift = coerce
-instance ActionLift SureQuery SureQuery where actionLift = coerce
+instance ActionLift Any        Any        where actionLift = coerce
+instance ActionLift Query      Query      where actionLift = coerce
+instance ActionLift Move       Move       where actionLift = coerce
+instance ActionLift Atom       Atom       where actionLift = coerce
+instance ActionLift AtomicMove AtomicMove where actionLift = coerce
+instance ActionLift Sure       Sure       where actionLift = coerce
+instance ActionLift SureQuery  SureQuery  where actionLift = coerce
 
-instance ActionLift Move      Any  where actionLift = coerce
-instance ActionLift MoveAtom  Any  where actionLift = coerce
-instance ActionLift MoveAtom  Move where actionLift = coerce
-instance ActionLift Sure      Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
-instance ActionLift SureQuery Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
-instance ActionLift SureQuery Sure where actionLift = coerce
-instance ActionLift Atom      Any  where actionLift = coerce
+instance ActionLift Move       Any  where actionLift = coerce
+instance ActionLift AtomicMove Any  where actionLift = coerce
+instance ActionLift AtomicMove Move where actionLift = coerce
+instance ActionLift Sure       Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
+instance ActionLift SureQuery  Any  where actionLift = Coerce.from @Any . sureToAny . Coerce.to @Sure
+instance ActionLift SureQuery  Sure where actionLift = coerce
+instance ActionLift Atom       Any  where actionLift = coerce
 
 actionLiftTo :: forall k2 k1 config cursor error m a.
     Monad m =>

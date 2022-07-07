@@ -14,7 +14,7 @@ instance FunctorAction Any
 instance FunctorAction Query
 instance FunctorAction Move
 instance FunctorAction Atom
-instance FunctorAction MoveAtom
+instance FunctorAction AtomicMove
 instance FunctorAction Sure
 instance FunctorAction SureQuery
 

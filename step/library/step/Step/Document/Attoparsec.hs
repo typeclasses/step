@@ -11,22 +11,22 @@ import Step.Action.Safe
 import qualified Step.Document.Do as P
 import qualified Step.Document.Prelude as P
 
-char :: ListLike text char => Monad m => Eq char => char -> Parser text MoveAtom m char
+char :: ListLike text char => Monad m => Eq char => char -> Parser text AtomicMove m char
 char x = P.satisfy (== x)
 
-anyChar :: ListLike text char => Monad m => Parser text MoveAtom m char
+anyChar :: ListLike text char => Monad m => Parser text AtomicMove m char
 anyChar = P.char
 
-notChar :: ListLike text char => Eq char => Monad m => char -> Parser text MoveAtom m char
+notChar :: ListLike text char => Eq char => Monad m => char -> Parser text AtomicMove m char
 notChar x = P.satisfy (/= x)
 
-satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text MoveAtom m char
+satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text AtomicMove m char
 satisfy = P.satisfy
 
-satisfyWith :: Monad m => ListLike text char => (char -> a) -> (a -> Bool) -> Parser text MoveAtom m a
+satisfyWith :: Monad m => ListLike text char => (char -> a) -> (a -> Bool) -> Parser text AtomicMove m a
 satisfyWith f ok = P.satisfyJust ((\x -> if ok x then Just x else Nothing) . f)
 
-skip :: ListLike text char => Monad m => (char -> Bool) -> Parser text MoveAtom m ()
+skip :: ListLike text char => Monad m => (char -> Bool) -> Parser text AtomicMove m ()
 skip f = void (P.satisfy f)
 
 peekChar :: ListLike text char => Monad m => Parser text SureQuery m (Maybe char)
@@ -127,11 +127,11 @@ option :: Monad m => IsAction (Try k) => Atomic k =>
     a -> Parser text k m a -> Parser text (Try k) m a
 option b p = fromMaybe b P.<$> P.try p
 
-many, many' :: Monad m => Parser text MoveAtom m a -> Parser text Sure m [a]
+many, many' :: Monad m => Parser text AtomicMove m a -> Parser text Sure m [a]
 many = P.repetition0
 many' p = many P.do{ x <- p; P.return $! x }
 
-many1, many1' :: Monad m => Parser text MoveAtom m a -> Parser text Move m (NonEmpty a)
+many1, many1' :: Monad m => Parser text AtomicMove m a -> Parser text Move m (NonEmpty a)
 many1 = P.repetition1
 many1' p = many1 P.do{ x <- p; P.return $! x }
 
