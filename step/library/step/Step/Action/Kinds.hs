@@ -21,7 +21,7 @@ Other combinations do not exist:
 * /Sure/ + /Move/ — because there's no such thing as a sure move; since at the end of input there is nowhere to move
 * /Atom/ + /Query/ — because this is just 'Query'; queries never move the cursor, so they are necessarily atomic
 * /Sure/ + /Atom/ — because this is just 'Sure'; a sure action cannot fail, so it necessary cannot fail and move the cursor
-* /Move/ + /Query/ — because this would bes a contradiction; 'Move' means always advance and 'Query' means never advance
+* /Move/ + /Query/ — because this would be a contradiction; 'Move' means always advance and 'Query' means never advance
 
 Finally, there is one no particular properties:
 
