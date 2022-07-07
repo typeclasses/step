@@ -16,7 +16,7 @@ module Step.Action.Safe
     -- * Can be static
     CanBeStatic, trivial,
     -- * Lift
-    ActionLift, actionLiftTo,
+    Is, cast,
     -- * Join
     ActionJoin, actionJoin, KindJoin, (:>),
     -- * Loop
@@ -34,9 +34,9 @@ import Step.Action.CanBeStatic
 import Step.Action.Config
 import Step.Action.Failure
 import Step.Action.Functor
+import Step.Action.IsAction
 import Step.Action.Join
 import Step.Action.KindJoin
 import Step.Action.Kinds
-import Step.Action.Lift
 import Step.Action.Loop
-import Step.Action.IsAction
+import Step.Action.Subtyping

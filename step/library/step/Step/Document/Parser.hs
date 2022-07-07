@@ -1,6 +1,6 @@
 module Step.Document.Parser where
 
-import Step.Internal.Prelude hiding (Is)
+import Step.Internal.Prelude
 
 import Step.DocumentMemory.Base (DocumentMemory)
 import qualified Step.DocumentMemory.Base as DocumentMemory
@@ -13,7 +13,9 @@ import qualified Step.Document.Error as Error
 
 import Step.LineHistory.Char (Char)
 
-import Step.Action.Safe
+import Step.Action.Safe (ActionKind, FunctorAction, MonadAction)
+import qualified Step.Action.Safe as Action
+
 import Step.Action.Kinds (Any (Any))
 
 import qualified Monad
@@ -31,15 +33,19 @@ instance (Monad m, MonadAction k) => Applicative (Parser text k m) where
 instance (Monad m, MonadAction k) => Monad (Parser text k m) where
     a >>= b = Parser ((>>=) ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
 
-parse :: Monad m => ActionLift k Any =>
+cast :: forall k2 k1 text m a. Monad m => Action.Is k1 k2 =>
+    Parser text k1 m a -> Parser text k2 m a
+cast = under (iso Parser (\(Parser z) -> z)) (Action.cast @k2 @k1)
+
+parse :: Monad m => Action.Is k Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
-    actionLiftTo @Any p & \(Any p') ->
+    Action.cast @Any p & \(Any p') ->
     p' config >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)
 
-parseOnly ::  ActionLift k Any => Monad m => Char char => ListLike text char =>
+parseOnly :: Action.Is k Any => Monad m => Char char => ListLike text char =>
     Config text -> Parser text k m a -> ListT m text -> m (Either (Error text) a)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
 

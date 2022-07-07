@@ -27,7 +27,7 @@ import Void as X (Void, absurd)
 import Positive as X (Positive)
 import NonEmpty as X (NonEmpty (..))
 
-import Optics as X
+import Optics as X hiding (Is)
 
 import Step.Internal.Modify as X
 import Step.Internal.RecordStream as X

@@ -143,9 +143,9 @@ library
         Step.Action.Join
         Step.Action.Kinds
         Step.Action.KindJoin
-        Step.Action.Lift
         Step.Action.Loop
         Step.Action.Safe
+        Step.Action.Subtyping
 
         Step.Nontrivial.Base
         Step.Nontrivial.List

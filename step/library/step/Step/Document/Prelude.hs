@@ -11,13 +11,13 @@ module Step.Document.Prelude
   )
   where
 
-import Step.Internal.Prelude hiding (while, under, Is)
+import Step.Internal.Prelude hiding (while, under)
 
 import Optics
 
 import qualified NonEmpty
 
-import Step.Document.Parser (Parser (Parser))
+import Step.Document.Parser (Parser (Parser), cast)
 import qualified Step.Document.Parser as Parser
 
 import qualified Loc
@@ -29,7 +29,9 @@ import qualified Step.Document.Config as Config
 
 import qualified Step.Document.Do as P
 
-import Step.Action.Safe hiding (try, failure)
+import Step.Action.Safe (ConfigurableAction, IsAction, Atomic, Loop0, Loop1)
+import qualified Step.Action.Safe as Action
+
 import Step.Action.Kinds
 
 import qualified Step.Action.Safe as Action
@@ -78,7 +80,7 @@ end = Parser $ Query \config ->
 
 contextualize :: (Monad m, ConfigurableAction k, IsAction k) =>
     text -> Parser text k m a -> Parser text k m a
-contextualize c (Parser p) = Parser $ configureAction (over Config.contextLens (c :)) p
+contextualize c (Parser p) = Parser $ Action.configureAction (over Config.contextLens (c :)) p
 
 infix 0 <?>
 (<?>) :: (Monad m, ConfigurableAction k, IsAction k) => Parser text k m a -> text -> Parser text k m a
@@ -119,8 +121,8 @@ count0 :: Monad m => Loop0 k k' =>
 count0 = \n a -> go a n
   where
     go a = fix \r -> \case
-        0 -> Parser (trivial [])
-        n -> under (iso Parser (\(Parser z) -> z)) actionLiftTo P.do
+        0 -> Parser (Action.trivial [])
+        n -> cast P.do
             x <- a
             xs <- r (n - 1)
             P.return (x : xs)
@@ -131,9 +133,8 @@ count1 = \n a -> go a n
   where
     go a = fix \r -> \p ->
         case preview positive (review positive p - 1) of
-            Nothing ->
-                (:| []) <$> under (iso Parser (\(Parser z) -> z)) actionLiftTo a
-            Just p' -> under (iso Parser (\(Parser z) -> z)) actionLiftTo P.do
+            Nothing -> (:| []) <$> cast a
+            Just p' -> cast P.do
                 x <- a
                 xs <- r p'
                 P.return (NonEmpty.cons x xs)

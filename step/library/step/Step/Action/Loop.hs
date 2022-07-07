@@ -5,14 +5,14 @@ import Step.Action.Kinds
 import Step.Action.IsAction
 import Step.Action.Join
 import Step.Action.KindJoin
-import Step.Action.Lift
+import Step.Action.Subtyping
 
 -- | Loop0 k k' means that a repetition of 0 or more k actions results in a k' action.
 class
     ( IsAction k, IsAction k', IsAction (k :> k')
     , ActionJoin k k'
     , CanBeStatic k'
-    , ActionLift (k :> k') k'
+    , Is (k :> k') k'
     ) =>
     Loop0 k k' | k -> k'
 
@@ -35,8 +35,8 @@ instance Loop0 Query Query
 class
     ( IsAction k, IsAction k', IsAction (k :> k')
     , ActionJoin k k'
-    , ActionLift k k'
-    , ActionLift (k :> k') k'
+    , Is k k'
+    , Is (k :> k') k'
     ) =>
     Loop1 k k' | k -> k'
 
