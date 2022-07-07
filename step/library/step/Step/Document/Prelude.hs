@@ -78,12 +78,12 @@ end = Parser $ Query \config ->
         True -> Right ()
         False -> Left (Parser.makeError config)
 
-contextualize :: (Monad m, ConfigurableAction k, IsAction k) =>
+contextualize :: (Monad m, ConfigurableAction k) =>
     text -> Parser text k m a -> Parser text k m a
 contextualize c (Parser p) = Parser $ Action.configureAction (over Config.contextLens (c :)) p
 
 infix 0 <?>
-(<?>) :: (Monad m, ConfigurableAction k, IsAction k) => Parser text k m a -> text -> Parser text k m a
+(<?>) :: (Monad m, ConfigurableAction k) => Parser text k m a -> text -> Parser text k m a
 p <?> c = contextualize c p
 
 position :: Monad m => ListLike text char => Parser text SureQuery m Loc
