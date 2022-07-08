@@ -125,8 +125,8 @@ count ::
     Natural -> Parser text k m a -> Parser text k' m [a]
 count = P.count0
 
-option :: Monad m => IsAction (Try k) => Atomic k =>
-    a -> Parser text k m a -> Parser text (Try k) m a
+option :: Monad m => Atomic k1 k2 =>
+    a -> Parser text k1 m a -> Parser text k2 m a
 option b p = fromMaybe b P.<$> P.try p
 
 many, many' :: Monad m => Parser text AtomicMove m a -> Parser text Sure m [a]

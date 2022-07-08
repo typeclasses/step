@@ -1,4 +1,4 @@
-{-# language DataKinds, KindSignatures, Trustworthy, TypeFamilies #-}
+{-# language DataKinds, FlexibleContexts, FunctionalDependencies, KindSignatures, Trustworthy, TypeFamilies #-}
 
 module Step.Action.Atomic where
 
@@ -10,24 +10,22 @@ import Step.Action.Constructors (Any (..), Sure (..))
 
 import qualified Step.Action.Coerce as Coerce
 
-class Atomic (k :: ActionKind)
-  where
-    type Try k :: ActionKind
-    try :: Functor m => k config cursor error m a -> (Try k) config cursor error m (Maybe a)
+import Step.Action.IsAction
 
-instance Atomic Atom
+class (IsAction k, IsAction try) => Atomic (k :: ActionKind) (try :: ActionKind) | k -> try
   where
-    type Try Atom = Sure
+    try :: Functor m => k config cursor error m a -> try config cursor error m (Maybe a)
+
+instance Atomic Atom Sure
+  where
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
-instance Atomic AtomicMove
+instance Atomic AtomicMove Sure
   where
-    type Try AtomicMove = Sure
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
-instance Atomic Query
+instance Atomic Query SureQuery
   where
-    type Try Query = SureQuery
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
 tryAnySure :: Functor m => Any config cursor error m a -> Sure config cursor error m (Maybe a)

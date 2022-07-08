@@ -100,7 +100,7 @@ withLocation p = P.do
     b <- position
     P.return (Loc.spanOrLocFromTo a b, x)
 
-try :: Monad m => Atomic k => Parser text k m a -> Parser text (Action.Try k) m (Maybe a)
+try :: Monad m => Atomic k1 k2 => Parser text k1 m a -> Parser text k2 m (Maybe a)
 try (Parser p) = Parser (Action.try p)
 
 repetition0 :: Monad m =>

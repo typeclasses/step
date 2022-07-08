@@ -11,8 +11,8 @@ module Step.Action.Safe
     FunctorAction, MonadAction,
     -- * Configure
     ConfigurableAction, configureAction,
-    -- * Atomic, Try
-    Atomic, Try, try,
+    -- * Atomic, try
+    Atomic, try,
     -- * Can be static
     CanBeStatic, trivial,
     -- * Lift
