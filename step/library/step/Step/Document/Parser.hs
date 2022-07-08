@@ -20,17 +20,30 @@ import Step.Action.Kinds (Any (Any))
 
 import qualified Monad
 
-newtype Parser (text :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Type) =
-    Parser (kind (Config text) (DocumentMemory text m) (Error text) m a)
-    deriving newtype Monad
+-- | The kind of 'Parser'
+type ParserKind =
+    Type              -- ^ @text@   - what type of input chunks the parser cursors through
+    -> ActionKind     -- ^ @kind@   - what properties the parser guarantees; see "Step.Action.Kinds"
+    -> (Type -> Type) -- ^ @base@   - monadic context
+    -> Type           -- ^ @value@  - produced upon success
+    -> Type
 
-instance (Functor m, FunctorAction k) => Functor (Parser text k m) where
-    fmap f = Parser . fmap f . (\(Parser a) -> a)
+type Parser :: ParserKind
 
-instance (Monad m, MonadAction k) => Applicative (Parser text k m) where
-    pure = Parser . pure
-    (<*>) = Monad.ap
+newtype Parser (text :: Type) (kind :: ActionKind) (base :: Type -> Type) (value :: Type) =
+    Parser (kind (Config text) (DocumentMemory text base) (Error text) base value)
 
+-- | Parser is a Functor for every 'ActionKind'.
+deriving newtype instance (Functor base, FunctorAction k) => Functor (Parser text k base)
+
+-- | Parser is only Applicative + Monadic for certain action kinds; see 'MonadAction'
+deriving newtype instance (Monad base, MonadAction k) => Applicative (Parser text k base)
+
+-- | Parser is only Applicative + Monadic for certain action kinds; see 'MonadAction'
+deriving newtype instance (Monad base, MonadAction k) => Monad (Parser text k base)
+
+-- | Convert a parser's 'ActionKind' to something more general; see "Step.Action.Subtyping"
+--
 cast :: forall k2 k1 text m a. Monad m => Action.Is k1 k2 =>
     Parser text k1 m a -> Parser text k2 m a
 cast = under (iso Parser (\(Parser z) -> z)) (Action.cast @k2 @k1)

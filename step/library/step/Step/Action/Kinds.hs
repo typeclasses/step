@@ -34,6 +34,7 @@ module Step.Action.Kinds where
 
 import Step.Internal.Prelude
 
+-- | The kind of all the types in "Step.Action.Kinds"
 type ActionKind =
        Type           -- ^ @config@ - read-only
     -> Type           -- ^ @cursor@ - mutable state
