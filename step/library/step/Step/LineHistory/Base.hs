@@ -1,4 +1,4 @@
-{-# language DerivingStrategies, TemplateHaskell #-}
+{-# language DerivingStrategies #-}
 
 module Step.LineHistory.Base
   (
@@ -18,7 +18,7 @@ import qualified Map
 import Step.CursorPosition.Base (CursorPosition)
 import qualified Step.CursorPosition.Base as CursorPosition
 
-data LineHistory text =
+data LineHistory =
   LineHistory
     { lineStartPosition :: Map CursorPosition Line
     , lineTracker :: Line
@@ -31,15 +31,19 @@ data CursorLocation =
   | CursorLocationNeedsMoreInput{ ifEndOfInput :: Loc } -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
   deriving stock (Eq, Show)
 
-makeLensesFor
-    [ ("cursorPosition", "cursorPositionLens")
-    , ("lineStartPosition", "lineStartPositionLens")
-    , ("lineTracker", "lineTrackerLens")
-    , ("afterCR", "afterCRLens")
-    ]
-    ''LineHistory
+cursorPositionLens :: Lens' LineHistory CursorPosition
+cursorPositionLens = lens cursorPosition \x y -> x{ cursorPosition = y }
 
-locateCursorInDocument :: CursorPosition -> LineHistory text -> Maybe CursorLocation
+lineStartPositionLens :: Lens' LineHistory (Map CursorPosition Line)
+lineStartPositionLens = lens lineStartPosition \x y -> x{ lineStartPosition = y }
+
+lineTrackerLens :: Lens' LineHistory Line
+lineTrackerLens = lens lineTracker \x y -> x{ lineTracker = y }
+
+afterCRLens :: Lens' LineHistory Bool
+afterCRLens = lens afterCR \x y -> x{ afterCR = y }
+
+locateCursorInDocument :: CursorPosition -> LineHistory -> Maybe CursorLocation
 locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh =
     Just $ CursorLocationNeedsMoreInput{ ifEndOfInput = loc l c }
   where
@@ -55,7 +59,7 @@ locateCursorInDocument cp lh =
               where
                 c = fromIntegral (1 + CursorPosition.absoluteDifference cp cp')
 
-empty :: LineHistory text
+empty :: LineHistory
 empty =
   LineHistory
     { lineStartPosition = Map.singleton 0 1

@@ -1,5 +1,3 @@
-{-# language TemplateHaskell #-}
-
 module Step.DocumentMemory.Base where
 
 import Step.Internal.Prelude
@@ -18,21 +16,25 @@ import Loc (Loc)
 
 data DocumentMemory text m =
   DocumentMemory
-    { content :: LineHistory text
-    , cursor :: Cursor (StateT (LineHistory text) m) text
+    { content :: LineHistory
+    , cursor :: Cursor (StateT (LineHistory) m) text
     }
 
 data CursorLocation =
     CursorAt Loc
   | CursorLocationNeedsMoreInput
 
-makeLensesFor
-    [ ("content", "contentLens")
-    , ("cursor", "cursorLens")
-    ]
-    ''DocumentMemory
+contentLens :: Lens' (DocumentMemory text m) LineHistory
+contentLens = lens content \x y -> x{ content = y }
 
-type DocumentCursor text m = Cursor (StateT (LineHistory text) m) text
+cursorLens :: Lens
+    (DocumentMemory text1 m1)
+    (DocumentMemory text2 m2)
+    (Cursor (StateT LineHistory m1) text1)
+    (Cursor (StateT LineHistory m2) text2)
+cursorLens = lens cursor \x y -> x{ cursor = y }
+
+type DocumentCursor text m = Cursor (StateT LineHistory m) text
 
 fromListT :: Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text m
 fromListT xs =

@@ -20,7 +20,7 @@ import qualified Step.CursorPosition.Base as CursorPosition
 
 import qualified Loc
 
-record :: Monad m => Char char => ListLike text char => text -> StateT (LineHistory text) m ()
+record :: Monad m => Char char => ListLike text char => text -> StateT LineHistory m ()
 record x =
     case ListLike.uncons x of
         Nothing -> return ()
@@ -35,7 +35,7 @@ record x =
             recordOther a
             record b
 
-startNewLine :: Monad m => StateT (LineHistory text) m ()
+startNewLine :: Monad m => StateT LineHistory m ()
 startNewLine = do
     l <- use LineHistory.lineTrackerLens
     let l' = l + 1
@@ -43,20 +43,20 @@ startNewLine = do
     modifying LineHistory.lineStartPositionLens (Map.insert cp (fromIntegral (Loc.toNat l')))
     assign LineHistory.lineTrackerLens l'
 
-recordCR :: Monad m => StateT (LineHistory text) m ()
+recordCR :: Monad m => StateT LineHistory m ()
 recordCR = do
     acr <- use LineHistory.afterCRLens
     when acr startNewLine
     modifying LineHistory.cursorPositionLens (CursorPosition.increase 1)
     assign LineHistory.afterCRLens True
 
-recordLF :: Monad m => StateT (LineHistory text) m ()
+recordLF :: Monad m => StateT LineHistory m ()
 recordLF = do
     modifying LineHistory.cursorPositionLens (CursorPosition.increase 1)
     startNewLine
     assign LineHistory.afterCRLens False
 
-recordOther :: Monad m => ListLike text char => text -> StateT (LineHistory text) m ()
+recordOther :: Monad m => ListLike text char => text -> StateT LineHistory m ()
 recordOther x = do
     acr <- use LineHistory.afterCRLens
     when acr startNewLine

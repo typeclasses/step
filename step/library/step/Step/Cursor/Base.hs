@@ -1,5 +1,3 @@
-{-# language TemplateHaskell #-}
-
 module Step.Cursor.Base
   (
     {- * The type -} Cursor (..),
@@ -34,12 +32,18 @@ data Cursor m text =
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
-makeLensesFor
-    [ ("position", "positionLens")
-    , ("buffer", "bufferLens")
-    , ("pending", "pendingLens")
-    ]
-    ''Cursor
+positionLens :: Lens' (Cursor m text) CursorPosition
+positionLens = lens position \x y -> x{ position = y }
+
+bufferLens :: Lens' (Cursor m text) (Buffer text)
+bufferLens = lens buffer \x y -> x{ buffer = y }
+
+pendingLens :: Lens
+  (Cursor m1 text)
+  (Cursor m2 text)
+  (Maybe (ListT m1 (Nontrivial text)))
+  (Maybe (ListT m2 (Nontrivial text)))
+pendingLens = lens pending \x y -> x{ pending = y }
 
 bufferIsEmpty :: Cursor m text -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer

@@ -1,5 +1,3 @@
-{-# language TemplateHaskell #-}
-
 module Step.BufferedStream.Base
   (
     {- * The type -} BufferedStream (..),
@@ -30,7 +28,15 @@ data BufferedStream m text =
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
-makeLensesFor [("buffer", "bufferLens"), ("pending", "pendingLens")] ''BufferedStream
+bufferLens :: Lens' (BufferedStream m text) (Buffer text)
+bufferLens = lens buffer \x y -> x{ buffer = y }
+
+pendingLens :: Lens
+    (BufferedStream m1 text)
+    (BufferedStream m2 text)
+    (Maybe (ListT m1 (Nontrivial text)))
+    (Maybe (ListT m2 (Nontrivial text)))
+pendingLens = lens pending \x y -> x{ pending = y }
 
 empty :: BufferedStream m text
 empty = BufferedStream Buffer.empty Nothing

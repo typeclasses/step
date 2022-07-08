@@ -29,7 +29,7 @@ isAllBuffered :: Monad m => StateT (DocumentMemory text m) m Bool
 isAllBuffered = get <&> DocumentMemory.isAllBuffered
 
 runCursorState :: Monad m =>
-    StateT (DocumentCursor text m) (StateT (LineHistory text) m) a ->
+    StateT (DocumentCursor text m) (StateT LineHistory m) a ->
     StateT (DocumentMemory text m) m a
 runCursorState go = do
     dm <- get
