@@ -110,7 +110,7 @@ repetition0 p = fix \r -> P.do
         Just x -> (x :) <$> r
 
 repetition1 :: Monad m =>
-    Parser text AtomicMove m a -> Parser text Move m (NonEmpty a)
+    Parser text AtomicMove m a -> Parser text AtomicMove m (NonEmpty a)
 repetition1 p = P.do
     x <- p
     xs <- repetition0 p

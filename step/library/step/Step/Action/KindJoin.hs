@@ -15,7 +15,7 @@ type instance KindJoin Query      Query      = Query
 type instance KindJoin Sure       Sure       = Sure
 type instance KindJoin SureQuery  SureQuery  = SureQuery
 
--- Atomic, however, lose their atomicity when put in sequence.
+-- Atomic, however, lose their atomicity when put in sequence with anything fallible.
 
 type instance KindJoin AtomicMove AtomicMove = Move
 type instance KindJoin Atom       Atom       = Any
@@ -44,15 +44,26 @@ type instance KindJoin SureQuery  Sure       = Sure
 
 type instance KindJoin AtomicMove Move       = Move
 type instance KindJoin Move       AtomicMove = Move
+
 type instance KindJoin AtomicMove Any        = Move
 type instance KindJoin Any        AtomicMove = Move
+
 type instance KindJoin Move       Any        = Move
 type instance KindJoin Any        Move       = Move
+
 type instance KindJoin Move       Atom       = Move
 type instance KindJoin Atom       Move       = Move
+
 type instance KindJoin Move       Query      = Move
 type instance KindJoin Query      Move       = Move
+
 type instance KindJoin Atom       Any        = Any
 type instance KindJoin Any        Atom       = Any
-type instance KindJoin AtomicMove Sure       = Move
+
+type instance KindJoin AtomicMove Sure       = AtomicMove
 type instance KindJoin Sure       AtomicMove = Move
+
+-- This is a weird one! It is the only example where KindJoin is not commutative.
+-- Atomicity is preserved by composition with a Sure action only if the Atom comes first.
+type instance KindJoin Atom       Sure       = Atom
+type instance KindJoin Sure       Atom       = Any

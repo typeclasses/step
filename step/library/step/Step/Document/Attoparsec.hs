@@ -131,7 +131,7 @@ many, many' :: Monad m => Parser text AtomicMove m a -> Parser text Sure m [a]
 many = P.repetition0
 many' p = many P.do{ x <- p; P.return $! x }
 
-many1, many1' :: Monad m => Parser text AtomicMove m a -> Parser text Move m (NonEmpty a)
+many1, many1' :: Monad m => Parser text AtomicMove m a -> Parser text AtomicMove m (NonEmpty a)
 many1 = P.repetition1
 many1' p = many1 P.do{ x <- p; P.return $! x }
 
