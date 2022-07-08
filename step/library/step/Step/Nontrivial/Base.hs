@@ -1,3 +1,5 @@
+{-# language Trustworthy #-}
+
 module Step.Nontrivial.Base
   (
     {- * The type -} Nontrivial,
@@ -8,10 +10,9 @@ module Step.Nontrivial.Base
 
 import Step.Internal.Prelude hiding (uncons)
 
-import qualified ListLike
+import Step.Nontrivial.Constructor
 
-newtype Nontrivial a = Nontrivial a
-    deriving newtype (Semigroup, Eq, Ord, Show)
+import qualified ListLike
 
 refine :: ListLike text char => text -> Maybe (Nontrivial text)
 refine x = if ListLike.null x then Nothing else Just (Nontrivial x)

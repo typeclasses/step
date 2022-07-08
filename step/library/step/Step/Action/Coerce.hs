@@ -1,3 +1,5 @@
+{-# language Unsafe #-}
+
 module Step.Action.Coerce where
 
 import Optics hiding (coerced)

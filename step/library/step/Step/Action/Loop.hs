@@ -1,3 +1,5 @@
+{-# language Safe #-}
+
 module Step.Action.Loop where
 
 import Step.Action.CanBeStatic

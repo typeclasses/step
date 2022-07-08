@@ -1,3 +1,5 @@
+{-# language Safe #-}
+
 module Step.Action.IsAction where
 
 import Step.Internal.Prelude

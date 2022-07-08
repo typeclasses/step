@@ -1,3 +1,5 @@
+{-# language Safe #-}
+
 module Step.Action.KindJoin where
 
 import Step.Action.Types

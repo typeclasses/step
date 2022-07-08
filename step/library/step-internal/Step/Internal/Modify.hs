@@ -1,8 +1,8 @@
+{-# language Safe #-}
+
 module Step.Internal.Modify where
 
-import BasePrelude
-import State
-import MonadTrans
+import Step.Internal.Dependencies
 
 modifyM :: Monad m => (s -> m s) -> StateT s m ()
 modifyM f = do

@@ -1,3 +1,5 @@
+{-# language Trustworthy #-}
+
 module Step.Action.Atomic where
 
 import Step.Internal.Prelude

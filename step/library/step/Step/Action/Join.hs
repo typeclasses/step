@@ -1,3 +1,5 @@
+{-# language Trustworthy #-}
+
 module Step.Action.Join where
 
 import Step.Internal.Prelude

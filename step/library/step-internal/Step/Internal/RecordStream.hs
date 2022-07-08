@@ -1,12 +1,9 @@
+{-# language Trustworthy #-}
+
 module Step.Internal.RecordStream where
 
-import Monad (Monad, return)
+import Step.Internal.Dependencies
 
-import MonadTrans (lift)
-
-import State (StateT, modify')
-
-import ListT (ListT (ListT))
 import qualified ListT
 
 recordStream :: Monad m => (a -> s -> s) -> ListT m a -> ListT (StateT s m) a

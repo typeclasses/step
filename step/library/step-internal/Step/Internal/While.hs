@@ -1,7 +1,8 @@
+{-# language Safe #-}
+
 module Step.Internal.While where
 
-import BasePrelude
-import Function
+import Step.Internal.Dependencies
 
 while :: Monad m =>
     (a -> Bool)    -- ^ While this predicate holds, keep going.

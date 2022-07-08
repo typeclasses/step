@@ -1,3 +1,5 @@
+{-# language Trustworthy #-}
+
 module Step.Action.Config where
 
 import Step.Internal.Prelude

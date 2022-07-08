@@ -1,3 +1,5 @@
+{-# language Trustworthy #-}
+
 module Step.Action.CanBeStatic where
 
 import Step.Internal.Prelude

@@ -1,10 +1,11 @@
+{-# language Safe #-}
+
 module Step.Buffer.Base where
 
 import Step.Internal.Prelude
+import qualified Step.Internal.Prelude as Prelude
 
 import qualified Seq
-import qualified ListLike
-import qualified ListT
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
@@ -31,10 +32,10 @@ empty :: Buffer text
 empty = Buffer{ chunks = Seq.empty, size = 0 }
 
 toListT :: Monad m => Buffer a -> ListT m (Nontrivial a)
-toListT = ListT.select . chunks
+toListT = select . chunks
 
 fold :: Monoid text => Buffer text -> text
-fold = ListLike.fold . fmap Nontrivial.generalize . chunks
+fold = Prelude.fold . fmap Nontrivial.generalize . chunks
 
 headChar :: ListLike text char => Buffer text -> Maybe char
 headChar b =
@@ -53,7 +54,7 @@ unconsChar b =
             })
 
 unconsChunk :: ListLike text char => Buffer text -> Maybe (Nontrivial text, Buffer text)
-unconsChunk b = case ListLike.uncons (chunks b) of
+unconsChunk b = case uncons (chunks b) of
     Nothing -> Nothing
     Just (c, cs) -> Just (c, Buffer{ chunks = cs, size = size b - Nontrivial.length c } )
 

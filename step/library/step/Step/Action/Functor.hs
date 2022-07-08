@@ -1,3 +1,5 @@
+{-# language Safe #-}
+
 module Step.Action.Functor where
 
 import Step.Internal.Prelude

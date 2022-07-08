@@ -1,3 +1,5 @@
+{-# language Trustworthy #-}
+
 module Step.Action.Subtyping
   (
 
@@ -16,6 +18,8 @@ import Step.Internal.Prelude
 import Step.Action.Constructors
 
 import qualified Step.Action.Coerce as Coerce
+
+import Coerce (coerce)
 
 
 -- $graph

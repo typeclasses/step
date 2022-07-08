@@ -153,6 +153,7 @@ library
         Step.Action.Types
 
         Step.Nontrivial.Base
+        Step.Nontrivial.Constructor
         Step.Nontrivial.List
         Step.Nontrivial.ListT
 
@@ -174,6 +175,7 @@ library step-internal
     exposed-modules:
         Step.Internal.Prelude
     other-modules:
+        Step.Internal.Dependencies
         Step.Internal.Modify
         Step.Internal.Positive
         Step.Internal.RecordStream
