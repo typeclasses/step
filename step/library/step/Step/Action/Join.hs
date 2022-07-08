@@ -2,10 +2,9 @@ module Step.Action.Join where
 
 import Step.Internal.Prelude
 
-import Step.Action.Kinds (ActionKind)
-import qualified Step.Action.Kinds as T
+import Step.Action.Types
 
-import qualified Step.Action.CoercedJoin as CJ
+import Step.Action.CoercedJoin
 
 import Step.Action.KindJoin
 
@@ -15,38 +14,38 @@ class ActionJoin (k1 :: ActionKind) (k2 :: ActionKind)
 
 -- todo: all 49 instances
 
-instance ActionJoin T.Move       T.Move       where actionJoin = CJ.anyToAny
-instance ActionJoin T.AtomicMove T.AtomicMove where actionJoin = CJ.anyToAny
-instance ActionJoin T.Any        T.Any        where actionJoin = CJ.anyToAny
-instance ActionJoin T.Query      T.Query      where actionJoin = CJ.anyToAny
-instance ActionJoin T.Atom       T.Atom       where actionJoin = CJ.anyToAny
-instance ActionJoin T.Sure       T.Sure       where actionJoin = CJ.sureToSure
-instance ActionJoin T.SureQuery  T.SureQuery  where actionJoin = CJ.sureToSure
+instance ActionJoin Move       Move       where actionJoin = anyToAny
+instance ActionJoin AtomicMove AtomicMove where actionJoin = anyToAny
+instance ActionJoin Any        Any        where actionJoin = anyToAny
+instance ActionJoin Query      Query      where actionJoin = anyToAny
+instance ActionJoin Atom       Atom       where actionJoin = anyToAny
+instance ActionJoin Sure       Sure       where actionJoin = sureToSure
+instance ActionJoin SureQuery  SureQuery  where actionJoin = sureToSure
 
-instance ActionJoin T.AtomicMove T.Move       where actionJoin = CJ.anyToAny
-instance ActionJoin T.Move       T.AtomicMove where actionJoin = CJ.anyToAny
-instance ActionJoin T.AtomicMove T.Any        where actionJoin = CJ.anyToAny
-instance ActionJoin T.Any        T.AtomicMove where actionJoin = CJ.anyToAny
-instance ActionJoin T.Move       T.Any        where actionJoin = CJ.anyToAny
-instance ActionJoin T.Any        T.Move       where actionJoin = CJ.anyToAny
-instance ActionJoin T.Move       T.Atom       where actionJoin = CJ.anyToAny
-instance ActionJoin T.Atom       T.Move       where actionJoin = CJ.anyToAny
-instance ActionJoin T.Move       T.Query      where actionJoin = CJ.anyToAny
-instance ActionJoin T.Query      T.Move       where actionJoin = CJ.anyToAny
+instance ActionJoin AtomicMove Move       where actionJoin = anyToAny
+instance ActionJoin Move       AtomicMove where actionJoin = anyToAny
+instance ActionJoin AtomicMove Any        where actionJoin = anyToAny
+instance ActionJoin Any        AtomicMove where actionJoin = anyToAny
+instance ActionJoin Move       Any        where actionJoin = anyToAny
+instance ActionJoin Any        Move       where actionJoin = anyToAny
+instance ActionJoin Move       Atom       where actionJoin = anyToAny
+instance ActionJoin Atom       Move       where actionJoin = anyToAny
+instance ActionJoin Move       Query      where actionJoin = anyToAny
+instance ActionJoin Query      Move       where actionJoin = anyToAny
 
-instance ActionJoin T.Any        T.SureQuery  where actionJoin = CJ.anyToSure
-instance ActionJoin T.SureQuery  T.Any        where actionJoin = CJ.sureToAny
-instance ActionJoin T.Query      T.SureQuery  where actionJoin = CJ.anyToSure
-instance ActionJoin T.SureQuery  T.Query      where actionJoin = CJ.sureToAny
-instance ActionJoin T.Move       T.SureQuery  where actionJoin = CJ.anyToSure
-instance ActionJoin T.SureQuery  T.Move       where actionJoin = CJ.sureToAny
-instance ActionJoin T.Atom       T.SureQuery  where actionJoin = CJ.anyToSure
-instance ActionJoin T.SureQuery  T.Atom       where actionJoin = CJ.sureToAny
-instance ActionJoin T.AtomicMove T.SureQuery  where actionJoin = CJ.anyToSure
-instance ActionJoin T.SureQuery  T.AtomicMove where actionJoin = CJ.sureToAny
-instance ActionJoin T.Sure       T.SureQuery  where actionJoin = CJ.sureToSure
-instance ActionJoin T.SureQuery  T.Sure       where actionJoin = CJ.sureToSure
-instance ActionJoin T.Atom       T.Any        where actionJoin = CJ.anyToAny
-instance ActionJoin T.Any        T.Atom       where actionJoin = CJ.anyToAny
-instance ActionJoin T.AtomicMove T.Sure       where actionJoin = CJ.anyToSure
-instance ActionJoin T.Sure       T.AtomicMove where actionJoin = CJ.sureToAny
+instance ActionJoin Any        SureQuery  where actionJoin = anyToSure
+instance ActionJoin SureQuery  Any        where actionJoin = sureToAny
+instance ActionJoin Query      SureQuery  where actionJoin = anyToSure
+instance ActionJoin SureQuery  Query      where actionJoin = sureToAny
+instance ActionJoin Move       SureQuery  where actionJoin = anyToSure
+instance ActionJoin SureQuery  Move       where actionJoin = sureToAny
+instance ActionJoin Atom       SureQuery  where actionJoin = anyToSure
+instance ActionJoin SureQuery  Atom       where actionJoin = sureToAny
+instance ActionJoin AtomicMove SureQuery  where actionJoin = anyToSure
+instance ActionJoin SureQuery  AtomicMove where actionJoin = sureToAny
+instance ActionJoin Sure       SureQuery  where actionJoin = sureToSure
+instance ActionJoin SureQuery  Sure       where actionJoin = sureToSure
+instance ActionJoin Atom       Any        where actionJoin = anyToAny
+instance ActionJoin Any        Atom       where actionJoin = anyToAny
+instance ActionJoin AtomicMove Sure       where actionJoin = anyToSure
+instance ActionJoin Sure       AtomicMove where actionJoin = sureToAny

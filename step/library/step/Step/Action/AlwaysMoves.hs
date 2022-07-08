@@ -1,6 +1,6 @@
 module Step.Action.AlwaysMoves where
 
-import Step.Action.Kinds
+import Step.Action.Types
 
 class AlwaysMoves (k :: ActionKind)
 instance AlwaysMoves Move

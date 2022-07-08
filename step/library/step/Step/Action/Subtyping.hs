@@ -13,7 +13,7 @@ module Step.Action.Subtyping
 
 import Step.Internal.Prelude
 
-import Step.Action.Kinds
+import Step.Action.Constructors
 
 import qualified Step.Action.Coerce as Coerce
 

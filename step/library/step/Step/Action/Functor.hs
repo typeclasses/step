@@ -2,7 +2,7 @@ module Step.Action.Functor where
 
 import Step.Internal.Prelude
 
-import Step.Action.Kinds
+import Step.Action.Types
 
 class
   ( forall config cursor error m. Functor m =>

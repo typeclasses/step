@@ -4,7 +4,7 @@ import Step.Internal.Prelude
 
 import Step.Action.Functor
 import Step.Action.Join
-import Step.Action.Kinds
+import Step.Action.Types
 import Step.Action.KindJoin
 
 type IsAction (k :: ActionKind) =

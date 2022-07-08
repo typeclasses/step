@@ -27,14 +27,14 @@ Finally, there is one with no particular properties:
 
 * 'Any' — the most general type of action; all others can be lifted to it
 
-The /Sure/ property is guaranteed by construction. The rest of the properties are not. This module is, therefore, unsafe.
+The /Sure/ property is guaranteed by construction. The rest of the properties are not. This module is, therefore, unsafe. See "Step.Action.Types" and "Step.Action.Safe".
 
 -}
-module Step.Action.Kinds where
+module Step.Action.Constructors where
 
 import Step.Internal.Prelude
 
--- | The kind of all the types in "Step.Action.Kinds"
+-- | The kind of all the action types in "Step.Action.Types"
 type ActionKind =
        Type           -- ^ @config@ - read-only
     -> Type           -- ^ @cursor@ - mutable state

@@ -146,11 +146,12 @@ library
         Step.Action.Functor
         Step.Action.IsAction
         Step.Action.Join
-        Step.Action.Kinds
+        Step.Action.Constructors
         Step.Action.KindJoin
         Step.Action.Loop
         Step.Action.Safe
         Step.Action.Subtyping
+        Step.Action.Types
 
         Step.Nontrivial.Base
         Step.Nontrivial.List

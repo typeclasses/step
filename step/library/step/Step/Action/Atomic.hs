@@ -2,7 +2,9 @@ module Step.Action.Atomic where
 
 import Step.Internal.Prelude
 
-import Step.Action.Kinds
+import Step.Action.Types
+
+import Step.Action.Constructors (Any (..), Sure (..))
 
 import qualified Step.Action.Coerce as Coerce
 

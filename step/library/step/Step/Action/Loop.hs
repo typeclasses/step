@@ -1,7 +1,7 @@
 module Step.Action.Loop where
 
 import Step.Action.CanBeStatic
-import Step.Action.Kinds
+import Step.Action.Types
 import Step.Action.IsAction
 import Step.Action.Join
 import Step.Action.KindJoin

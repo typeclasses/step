@@ -9,7 +9,7 @@ module Step.Action.CoercedJoin
 
 import Step.Internal.Prelude
 
-import Step.Action.Kinds
+import Step.Action.Constructors (Any (..), Sure (..))
 
 import Step.Action.Coerce (Coerce)
 import qualified Step.Action.Coerce as Coerce

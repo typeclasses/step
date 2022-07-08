@@ -32,7 +32,7 @@ import qualified Step.Document.Do as P
 import Step.Action.Safe (ConfigurableAction, IsAction, Atomic, Loop0, Loop1)
 import qualified Step.Action.Safe as Action
 
-import Step.Action.Kinds
+import Step.Action.Constructors
 
 import qualified Step.Action.Safe as Action
 

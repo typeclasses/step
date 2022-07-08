@@ -1,6 +1,6 @@
 module Step.Action.KindJoin where
 
-import Step.Action.Kinds
+import Step.Action.Types
 
 type a :> b = KindJoin a b
 

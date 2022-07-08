@@ -2,7 +2,7 @@ module Step.Action.Config where
 
 import Step.Internal.Prelude
 
-import Step.Action.Kinds
+import Step.Action.Constructors
 
 class ConfigurableAction (action :: ActionKind) where
     configureAction :: (config1 -> config2)

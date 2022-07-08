@@ -3,7 +3,7 @@ module Step.Action.Coerce where
 import Optics hiding (coerced)
 import qualified Optics
 
-import Step.Action.Kinds
+import Step.Action.Constructors
 
 class Coerce k1 k2
   where

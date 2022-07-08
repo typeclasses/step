@@ -16,14 +16,14 @@ import Step.LineHistory.Char (Char)
 import Step.Action.Safe (ActionKind, FunctorAction, MonadAction)
 import qualified Step.Action.Safe as Action
 
-import Step.Action.Kinds (Any (Any))
+import Step.Action.Constructors (Any (Any))
 
 import qualified Monad
 
 -- | The kind of 'Parser'
 type ParserKind =
     Type              -- ^ @text@   - what type of input chunks the parser cursors through
-    -> ActionKind     -- ^ @kind@   - what properties the parser guarantees; see "Step.Action.Kinds"
+    -> ActionKind     -- ^ @kind@   - what properties the parser guarantees; see "Step.Action.Types"
     -> (Type -> Type) -- ^ @base@   - monadic context
     -> Type           -- ^ @value@  - produced upon success
     -> Type

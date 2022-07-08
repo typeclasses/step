@@ -37,6 +37,6 @@ import Step.Action.Functor
 import Step.Action.IsAction
 import Step.Action.Join
 import Step.Action.KindJoin
-import Step.Action.Kinds
 import Step.Action.Loop
 import Step.Action.Subtyping
+import Step.Action.Types
