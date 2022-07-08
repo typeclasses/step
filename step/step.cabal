@@ -136,7 +136,6 @@ library
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
 
-        Step.Action.AlwaysMoves
         Step.Action.Atomic
         Step.Action.CanBeStatic
         Step.Action.Coerce

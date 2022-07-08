@@ -1,7 +1,0 @@
-module Step.Action.AlwaysMoves where
-
-import Step.Action.Types
-
-class AlwaysMoves (k :: ActionKind)
-instance AlwaysMoves Move
-instance AlwaysMoves AtomicMove

@@ -9,8 +9,6 @@ module Step.Action.Safe
     FunctorAction, MonadAction,
     -- * Configure
     ConfigurableAction, configureAction,
-    -- * Always moves
-    AlwaysMoves,
     -- * Atomic, Try
     Atomic, Try, try,
     -- * Can be static
@@ -28,7 +26,6 @@ module Step.Action.Safe
   )
   where
 
-import Step.Action.AlwaysMoves
 import Step.Action.Atomic
 import Step.Action.CanBeStatic
 import Step.Action.Config
