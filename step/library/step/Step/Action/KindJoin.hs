@@ -4,7 +4,12 @@ import Step.Action.Kinds
 
 type a :> b = KindJoin a b
 
--- todo: there need to be all 49 instances
+-- | @KindJoin a b@ tells you what kind of action @do{ a;  b }@ is.
+--
+-- There is an instance for every pair of action kinds. (todo: there isn't yet)
+--
+-- This function is mostly commutative (@KindJoin a b@ = @KindJoin b a@), with one exception: @KindJoin 'Atom' 'Sure' = 'Atom'@, but @KindJoin 'Sure' 'Atom' = 'Any'@. Atomicity is preserved by composition with a Sure action only if the Atom comes first.
+--
 type family KindJoin (k1 :: ActionKind) (k2 :: ActionKind) :: ActionKind
 
 -- Some of the action kinds compose very nicely with themselves.
