@@ -22,6 +22,7 @@ import qualified Monad
 
 newtype Parser (text :: Type) (kind :: ActionKind) (m :: Type -> Type) (a :: Type) =
     Parser (kind (Config text) (DocumentMemory text m) (Error text) m a)
+    deriving newtype Monad
 
 instance (Functor m, FunctorAction k) => Functor (Parser text k m) where
     fmap f = Parser . fmap f . (\(Parser a) -> a)
@@ -29,9 +30,6 @@ instance (Functor m, FunctorAction k) => Functor (Parser text k m) where
 instance (Monad m, MonadAction k) => Applicative (Parser text k m) where
     pure = Parser . pure
     (<*>) = Monad.ap
-
-instance (Monad m, MonadAction k) => Monad (Parser text k m) where
-    a >>= b = Parser ((>>=) ((\(Parser x) -> x) a) (fmap ((\(Parser x) -> x)) b))
 
 cast :: forall k2 k1 text m a. Monad m => Action.Is k1 k2 =>
     Parser text k1 m a -> Parser text k2 m a
