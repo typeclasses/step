@@ -1,3 +1,5 @@
+{-# language OverloadedStrings #-}
+
 module Step.Spec.LineHistory where
 
 import Step.Internal.Prelude

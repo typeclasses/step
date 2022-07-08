@@ -1,3 +1,5 @@
+{-# language DerivingStrategies, TemplateHaskell #-}
+
 module Step.LineHistory.Base
   (
     {- * The type -} LineHistory (..),

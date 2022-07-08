@@ -1,4 +1,4 @@
-{-# language Trustworthy #-}
+{-# language DataKinds, KindSignatures, MultiParamTypeClasses, Trustworthy, TypeOperators #-}
 
 module Step.Action.Join where
 

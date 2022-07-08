@@ -1,4 +1,4 @@
-{-# language Safe #-}
+{-# language DataKinds, KindSignatures, QuantifiedConstraints, Safe #-}
 
 module Step.Action.Functor where
 

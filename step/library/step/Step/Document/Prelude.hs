@@ -1,3 +1,5 @@
+{-# language FlexibleContexts, QualifiedDo, TypeFamilies #-}
+
 module Step.Document.Prelude
   (
     {- * Single character result -} char, satisfy, satisfyJust, peekChar, peekCharMaybe,

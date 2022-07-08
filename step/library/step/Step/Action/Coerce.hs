@@ -1,4 +1,4 @@
-{-# language Unsafe #-}
+{-# language DataKinds, KindSignatures, MultiParamTypeClasses, Unsafe #-}
 
 module Step.Action.Coerce where
 
@@ -7,7 +7,7 @@ import qualified Optics
 
 import Step.Action.Constructors
 
-class Coerce k1 k2
+class Coerce (k1 :: ActionKind) (k2 :: ActionKind)
   where
     coerced :: Iso
         (k1 config1 cursor1 error1 m1 a1)

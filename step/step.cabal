@@ -16,40 +16,12 @@ common base
     ghc-options: -fno-warn-unused-imports
 
     default-extensions:
-        AllowAmbiguousTypes
-        ApplicativeDo
-        BangPatterns
         BlockArguments
-        ConstraintKinds
-        DataKinds
-        DeriveFunctor
-        DerivingStrategies
-        DerivingVia
-        FlexibleContexts
-        FlexibleInstances
-        FunctionalDependencies
-        InstanceSigs
         LambdaCase
-        GADTs
-        GeneralizedNewtypeDeriving
-        MonadComprehensions
-        MultiParamTypeClasses
         NoMonomorphismRestriction
         NoImplicitPrelude
-        OverloadedStrings
-        PolyKinds
-        QualifiedDo
-        QuantifiedConstraints
-        RankNTypes
-        RoleAnnotations
         ScopedTypeVariables
-        StandaloneDeriving
-        StandaloneKindSignatures
-        TemplateHaskell
         TypeApplications
-        TypeFamilies
-        TypeOperators
-        ViewPatterns
     build-depends:
         base
       , bytestring

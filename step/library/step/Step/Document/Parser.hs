@@ -1,3 +1,6 @@
+{-# language DataKinds, FlexibleContexts, KindSignatures, StandaloneKindSignatures #-}
+{-# language DerivingStrategies, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
+
 module Step.Document.Parser where
 
 import Step.Internal.Prelude
@@ -43,7 +46,6 @@ deriving newtype instance (Monad base, MonadAction k) => Applicative (Parser tex
 deriving newtype instance (Monad base, MonadAction k) => Monad (Parser text k base)
 
 -- | Convert a parser's 'ActionKind' to something more general; see "Step.Action.Subtyping"
---
 cast :: forall k2 k1 text m a. Monad m => Action.Is k1 k2 =>
     Parser text k1 m a -> Parser text k2 m a
 cast = under (iso Parser (\(Parser z) -> z)) (Action.cast @k2 @k1)

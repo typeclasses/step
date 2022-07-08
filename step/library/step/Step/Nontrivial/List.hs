@@ -1,4 +1,4 @@
-{-# language Safe #-}
+{-# language FlexibleContexts, Safe #-}
 
 module Step.Nontrivial.List where
 

@@ -1,3 +1,5 @@
+{-# language TemplateHaskell #-}
+
 module Step.DocumentMemory.Base where
 
 import Step.Internal.Prelude

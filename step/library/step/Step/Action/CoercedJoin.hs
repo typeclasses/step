@@ -1,4 +1,4 @@
-{-# language Unsafe #-}
+{-# language FlexibleContexts, TypeOperators, Unsafe #-}
 
 module Step.Action.CoercedJoin
   (

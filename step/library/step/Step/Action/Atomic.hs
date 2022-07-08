@@ -1,4 +1,4 @@
-{-# language Trustworthy #-}
+{-# language DataKinds, KindSignatures, Trustworthy, TypeFamilies #-}
 
 module Step.Action.Atomic where
 

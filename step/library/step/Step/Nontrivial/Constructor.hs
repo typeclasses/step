@@ -1,3 +1,5 @@
+{-# language DerivingStrategies, GeneralizedNewtypeDeriving #-}
+
 module Step.Nontrivial.Constructor where
 
 import Step.Internal.Prelude

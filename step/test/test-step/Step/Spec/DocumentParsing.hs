@@ -1,3 +1,5 @@
+{-# language FlexibleContexts, QualifiedDo, OverloadedStrings #-}
+
 module Step.Spec.DocumentParsing where
 
 import Step.Internal.Prelude hiding (to)

@@ -1,3 +1,5 @@
+{-# language TemplateHaskell #-}
+
 module Step.Cursor.Base
   (
     {- * The type -} Cursor (..),

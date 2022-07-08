@@ -1,3 +1,5 @@
+{-# language TemplateHaskell #-}
+
 module Step.BufferedStream.Base
   (
     {- * The type -} BufferedStream (..),

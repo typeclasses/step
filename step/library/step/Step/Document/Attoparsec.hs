@@ -1,5 +1,7 @@
+{-# language FlexibleContexts, QualifiedDo, TypeFamilies #-}
+
 -- | This module is just here to demonstrate that we can do everything that "Data.Attoparsec.Text" does.
---
+
 module Step.Document.Attoparsec where
 
 import Step.Internal.Prelude

@@ -1,4 +1,4 @@
-{-# language Safe #-}
+{-# language ConstraintKinds, DataKinds, FlexibleContexts, KindSignatures, Safe, TypeFamilies, TypeOperators #-}
 
 module Step.Action.IsAction where
 

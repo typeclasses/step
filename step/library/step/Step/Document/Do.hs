@@ -1,4 +1,5 @@
 {-# options_ghc -fno-warn-missing-signatures #-}
+{-# language FlexibleContexts, TypeFamilies, TypeOperators #-}
 
 module Step.Document.Do
   (

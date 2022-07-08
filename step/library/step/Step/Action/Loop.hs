@@ -1,4 +1,4 @@
-{-# language Safe #-}
+{-# language FlexibleContexts, FunctionalDependencies, Safe, TypeFamilies, TypeOperators #-}
 
 module Step.Action.Loop where
 

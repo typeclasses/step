@@ -1,3 +1,5 @@
+{-# language DerivingStrategies #-}
+
 module Step.Document.Error where
 
 import Step.Internal.Prelude

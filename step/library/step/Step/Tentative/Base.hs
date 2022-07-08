@@ -1,3 +1,5 @@
+{-# language DerivingStrategies, GeneralizedNewtypeDeriving #-}
+
 module Step.Tentative.Base where
 
 -- | Similar to 'StateT', but offers a choice of two possible new states.

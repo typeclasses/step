@@ -1,3 +1,5 @@
+{-# language DerivingStrategies, TemplateHaskell #-}
+
 module Step.Document.Config where
 
 import Step.Internal.Prelude

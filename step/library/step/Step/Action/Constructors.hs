@@ -1,4 +1,6 @@
-{-# language Unsafe #-}
+{-# language DataKinds, StandaloneKindSignatures, Unsafe #-}
+
+{-# language DeriveFunctor, DerivingVia #-}
 
 {-|
 

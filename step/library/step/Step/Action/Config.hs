@@ -1,4 +1,4 @@
-{-# language Trustworthy #-}
+{-# language DataKinds, KindSignatures, Trustworthy #-}
 
 module Step.Action.Config where
 

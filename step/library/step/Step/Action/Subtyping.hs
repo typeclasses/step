@@ -1,4 +1,4 @@
-{-# language Trustworthy #-}
+{-# language DataKinds, KindSignatures, MultiParamTypeClasses, Trustworthy #-}
 
 module Step.Action.Subtyping
   (
