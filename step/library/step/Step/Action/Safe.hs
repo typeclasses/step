@@ -8,7 +8,7 @@ module Step.Action.Safe
     -- * Failure
     CanFail, failure,
     -- * Functor
-    MonadAction,
+    MonadicAction,
     -- * Configure
     ConfigurableAction, configureAction,
     -- * Atomic, try
@@ -32,10 +32,10 @@ import Step.Action.Atomic
 import Step.Action.CanBeStatic
 import Step.Action.Config
 import Step.Action.Failure
-import Step.Action.Functor
 import Step.Action.IsAction
 import Step.Action.Join
 import Step.Action.KindJoin
 import Step.Action.Loop
+import Step.Action.Monadic
 import Step.Action.Subtyping
 import Step.Action.Types

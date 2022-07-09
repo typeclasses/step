@@ -113,13 +113,13 @@ library
         Step.Action.Coerce
         Step.Action.CoercedJoin
         Step.Action.Config
+        Step.Action.Constructors
         Step.Action.Failure
-        Step.Action.Functor
         Step.Action.IsAction
         Step.Action.Join
-        Step.Action.Constructors
         Step.Action.KindJoin
         Step.Action.Loop
+        Step.Action.Monadic
         Step.Action.Safe
         Step.Action.Subtyping
         Step.Action.Types
