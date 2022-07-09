@@ -13,8 +13,6 @@ class
           Functor (k config cursor error m)
     , ActionJoin k SureQuery
     , ActionJoin SureQuery k
-    , k :> SureQuery ~ k
-    , SureQuery :> k ~ k
     ) =>
     IsAction (k :: ActionKind)
 

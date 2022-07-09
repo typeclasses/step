@@ -14,38 +14,22 @@ type a :> b = KindJoin a b
 --
 type family KindJoin (k1 :: ActionKind) (k2 :: ActionKind) :: ActionKind
 
+-- SureQuery is easy: It never changes the kind of whatever it's joined with.
+
+type instance KindJoin SureQuery k = k
+type instance KindJoin k SureQuery = k
+
 -- Some of the action kinds compose very nicely with themselves.
 
 type instance KindJoin Any        Any        = Any
 type instance KindJoin Move       Move       = Move
 type instance KindJoin Query      Query      = Query
 type instance KindJoin Sure       Sure       = Sure
-type instance KindJoin SureQuery  SureQuery  = SureQuery
 
 -- Atomic, however, lose their atomicity when put in sequence with anything fallible.
 
 type instance KindJoin AtomicMove AtomicMove = Move
 type instance KindJoin Atom       Atom       = Any
-
--- SureQuery is easy: It never changes the kind of whatever it's joined with.
-
-type instance KindJoin Any        SureQuery  = Any
-type instance KindJoin SureQuery  Any        = Any
-
-type instance KindJoin Query      SureQuery  = Query
-type instance KindJoin SureQuery  Query      = Query
-
-type instance KindJoin Move       SureQuery  = Move
-type instance KindJoin SureQuery  Move       = Move
-
-type instance KindJoin Atom       SureQuery  = Atom
-type instance KindJoin SureQuery  Atom       = Atom
-
-type instance KindJoin AtomicMove SureQuery  = AtomicMove
-type instance KindJoin SureQuery  AtomicMove = AtomicMove
-
-type instance KindJoin Sure       SureQuery  = Sure
-type instance KindJoin SureQuery  Sure       = Sure
 
 -- ...
 
