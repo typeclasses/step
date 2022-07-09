@@ -10,13 +10,7 @@ import Step.Action.KindJoin
 import Step.Action.Subtyping
 
 -- | Loop0 k k' means that a repetition of 0 or more k actions results in a k' action.
-class
-    ( FunctorialAction k, FunctorialAction k', FunctorialAction (k :> k')
-    , ActionJoin k k'
-    , CanBeStatic k'
-    , Is (k :> k') k'
-    ) =>
-    Loop0 k k' | k -> k'
+class (ActionJoin k k', CanBeStatic k', Is (k :> k') k') => Loop0 k k' | k -> k'
 
 -- Atomic actions loose their atomicity when sequenced 2 or more times; guaranteed advancement is lost when sequencing 0 times
 
@@ -34,13 +28,7 @@ instance Loop0 Query Query
 ---
 
 -- | Loop1 k k' means that a repetition of 1 or more k actions results in a k' action.
-class
-    ( FunctorialAction k, FunctorialAction k', FunctorialAction (k :> k')
-    , ActionJoin k k'
-    , Is k k'
-    , Is (k :> k') k'
-    ) =>
-    Loop1 k k' | k -> k'
+class (ActionJoin k k', Is k k', Is (k :> k') k') => Loop1 k k' | k -> k'
 
 -- Atomic actions loose their atomicity when sequenced 2 or more times
 
