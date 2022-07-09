@@ -1,4 +1,4 @@
-{-# language Safe #-}
+{-# language ExplicitNamespaces, Safe #-}
 
 -- | Summary of all the safe (not possible to construct invalid actions) parts of the @Step.Action.(...)@ modules.
 
@@ -17,7 +17,7 @@ module Step.Action.Safe
     -- * Lift
     Is, cast,
     -- * Join
-    ActionJoin, actionJoin, KindJoin, (:>),
+    ActionJoin, actionJoin, type (>>),
     -- * Loop
     Loop0, Loop1,
     -- * Kinds

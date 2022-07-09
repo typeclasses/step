@@ -20,9 +20,9 @@ import Step.Action.KindJoin
 class CoercedJoin k1 k2 k3 | k1 k2 -> k3
   where
     join :: forall z1 z2 config cursor error m a. Monad m =>
-        Coerce k1 z1 => Coerce k2 z2 => Coerce k3 (z1 :> z2) =>
+        Coerce k1 z1 => Coerce k2 z2 => Coerce k3 (z1 >> z2) =>
         z1 config cursor error m (z2 config cursor error m a)
-        -> (z1 :> z2) config cursor error m a
+        -> (z1 >> z2) config cursor error m a
 
 instance CoercedJoin Any Any Any
   where
