@@ -4,14 +4,14 @@ module Step.Action.Loop where
 
 import Step.Action.CanBeStatic
 import Step.Action.Types
-import Step.Action.IsAction
+import Step.Action.Functorial
 import Step.Action.Join
 import Step.Action.KindJoin
 import Step.Action.Subtyping
 
 -- | Loop0 k k' means that a repetition of 0 or more k actions results in a k' action.
 class
-    ( IsAction k, IsAction k', IsAction (k :> k')
+    ( FunctorialAction k, FunctorialAction k', FunctorialAction (k :> k')
     , ActionJoin k k'
     , CanBeStatic k'
     , Is (k :> k') k'
@@ -35,7 +35,7 @@ instance Loop0 Query Query
 
 -- | Loop1 k k' means that a repetition of 1 or more k actions results in a k' action.
 class
-    ( IsAction k, IsAction k', IsAction (k :> k')
+    ( FunctorialAction k, FunctorialAction k', FunctorialAction (k :> k')
     , ActionJoin k k'
     , Is k k'
     , Is (k :> k') k'

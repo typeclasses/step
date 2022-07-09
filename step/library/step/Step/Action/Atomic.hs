@@ -10,9 +10,9 @@ import Step.Action.Constructors (Any (..), Sure (..))
 
 import qualified Step.Action.Coerce as Coerce
 
-import Step.Action.IsAction
+import Step.Action.Functorial
 
-class (IsAction k, IsAction try) => Atomic (k :: ActionKind) (try :: ActionKind) | k -> try
+class (FunctorialAction k, FunctorialAction try) => Atomic (k :: ActionKind) (try :: ActionKind) | k -> try
   where
     try :: Functor m => k config cursor error m a -> try config cursor error m (Maybe a)
 

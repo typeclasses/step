@@ -10,7 +10,9 @@ import qualified Step.Action.CoercedJoin as Coerced
 
 import Step.Action.KindJoin
 
-class ActionJoin (k1 :: ActionKind) (k2 :: ActionKind)
+import Step.Action.Functorial
+
+class (FunctorialAction k1, FunctorialAction k2) => ActionJoin (k1 :: ActionKind) (k2 :: ActionKind)
   where
     actionJoin :: Monad m => k1 config cursor error m (k2 config cursor error m a) -> (k1 :> k2) config cursor error m a
 

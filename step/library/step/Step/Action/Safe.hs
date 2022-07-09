@@ -4,11 +4,10 @@
 
 module Step.Action.Safe
   (
-    IsAction,
     -- * Failure
     CanFail, failure,
-    -- * Functor
-    MonadicAction,
+    -- * Functor, Monad
+    FunctorialAction, MonadicAction,
     -- * Configure
     ConfigurableAction, configureAction,
     -- * Atomic, try
@@ -32,7 +31,7 @@ import Step.Action.Atomic
 import Step.Action.CanBeStatic
 import Step.Action.Config
 import Step.Action.Failure
-import Step.Action.IsAction
+import Step.Action.Functorial
 import Step.Action.Join
 import Step.Action.KindJoin
 import Step.Action.Loop

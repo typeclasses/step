@@ -115,7 +115,7 @@ library
         Step.Action.Config
         Step.Action.Constructors
         Step.Action.Failure
-        Step.Action.IsAction
+        Step.Action.Functorial
         Step.Action.Join
         Step.Action.KindJoin
         Step.Action.Loop

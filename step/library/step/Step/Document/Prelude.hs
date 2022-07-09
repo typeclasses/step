@@ -31,7 +31,7 @@ import qualified Step.Document.Config as Config
 
 import qualified Step.Document.Do as P
 
-import Step.Action.Safe (ConfigurableAction, IsAction, Atomic, Loop0, Loop1)
+import Step.Action.Safe (ConfigurableAction, Atomic, Loop0, Loop1)
 import qualified Step.Action.Safe as Action
 
 import Step.Action.Constructors
@@ -92,7 +92,7 @@ position :: Monad m => ListLike text char => Parser text SureQuery m Loc
 position = Parser $ SureQuery \_config -> DocumentMemory.State.getPosition
 
 withLocation ::
-    ListLike text char => Monad m => IsAction k =>
+    ListLike text char => Monad m =>
     Action.ActionJoin SureQuery k =>
     Action.ActionJoin k SureQuery =>
     Parser text k m a -> Parser text k m (SpanOrLoc, a)

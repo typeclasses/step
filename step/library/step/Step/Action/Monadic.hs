@@ -6,9 +6,9 @@ import Step.Internal.Prelude
 
 import Step.Action.Types
 
-import Step.Action.IsAction
+import Step.Action.Functorial
 
-class (IsAction action, forall config cursor error m. Monad m =>
+class (FunctorialAction action, forall config cursor error m. Monad m =>
       Monad (action config cursor error m)) => MonadicAction (action :: ActionKind)
 
 instance MonadicAction Any
