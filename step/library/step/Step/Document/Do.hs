@@ -17,7 +17,7 @@ import Step.Document.Parser (Parser (Parser))
 import Step.Action.Safe
 
 join :: (ActionJoin k1 k2, Monad m,
-    FunctorAction k1) =>
+    IsAction k1) =>
     Parser text k1 m (Parser text k2 m a)
     -> Parser text (k1 :> k2) m a
 join = Parser . actionJoin . (\(Parser a) -> a) . fmap (\(Parser a) -> a)

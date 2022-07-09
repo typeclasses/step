@@ -16,7 +16,7 @@ import qualified Step.Document.Error as Error
 
 import Step.LineHistory.Char (Char)
 
-import Step.Action.Safe (ActionKind, FunctorAction, MonadAction)
+import Step.Action.Safe (ActionKind, IsAction, MonadAction)
 import qualified Step.Action.Safe as Action
 
 import Step.Action.Constructors (Any (Any))
@@ -37,7 +37,7 @@ newtype Parser (text :: Type) (kind :: ActionKind) (base :: Type -> Type) (value
     Parser (kind (Config text) (DocumentMemory text base) (Error text) base value)
 
 -- | Parser is a Functor for every 'ActionKind'.
-deriving newtype instance (Functor base, FunctorAction k) => Functor (Parser text k base)
+deriving newtype instance (Functor base, IsAction k) => Functor (Parser text k base)
 
 -- | Parser is only Applicative + Monadic for certain action kinds; see 'MonadAction'
 deriving newtype instance (Monad base, MonadAction k) => Applicative (Parser text k base)

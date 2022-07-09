@@ -6,21 +6,9 @@ import Step.Internal.Prelude
 
 import Step.Action.Types
 
-class
-  ( forall config cursor error m. Functor m =>
-      Functor (k config cursor error m)
-  ) =>
-      FunctorAction k
+import Step.Action.IsAction
 
-instance FunctorAction Any
-instance FunctorAction Query
-instance FunctorAction Move
-instance FunctorAction Atom
-instance FunctorAction AtomicMove
-instance FunctorAction Sure
-instance FunctorAction SureQuery
-
-class (FunctorAction action, forall config cursor error m. Monad m =>
+class (IsAction action, forall config cursor error m. Monad m =>
       Monad (action config cursor error m)) => MonadAction (action :: ActionKind)
 
 instance MonadAction Any

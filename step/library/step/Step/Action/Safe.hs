@@ -8,7 +8,7 @@ module Step.Action.Safe
     -- * Failure
     CanFail, failure,
     -- * Functor
-    FunctorAction, MonadAction,
+    MonadAction,
     -- * Configure
     ConfigurableAction, configureAction,
     -- * Atomic, try
