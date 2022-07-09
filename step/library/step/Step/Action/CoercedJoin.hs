@@ -1,11 +1,8 @@
-{-# language FlexibleContexts, TypeOperators, Unsafe #-}
+{-# language FlexibleContexts, FunctionalDependencies, TypeOperators, Unsafe #-}
 
 module Step.Action.CoercedJoin
   (
-    anyToAny,
-    sureToSure,
-    anyToSure,
-    sureToAny,
+    CoercedJoin, join,
   )
   where
 
@@ -20,45 +17,28 @@ import qualified Monad
 
 import Step.Action.KindJoin
 
-anyToAny :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    Coerce Any k1 =>
-    Coerce Any k2 =>
-    Coerce Any (k1 :> k2) =>
-    k1 config cursor error m (k2 config cursor error m a)
-    -> (k1 :> k2) config cursor error m a
-anyToAny =
-    Coerce.from @Any @(k1 :> k2) . Monad.join . fmap (Coerce.to @Any @k2) . Coerce.to @Any @k1
+class CoercedJoin k1 k2 k3 | k1 k2 -> k3
+  where
+    join :: forall z1 z2 config cursor error m a. Monad m =>
+        Coerce k1 z1 => Coerce k2 z2 => Coerce k3 (z1 :> z2) =>
+        z1 config cursor error m (z2 config cursor error m a)
+        -> (z1 :> z2) config cursor error m a
 
-sureToSure :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    Coerce Sure k1 =>
-    Coerce Sure k2 =>
-    Coerce Sure (k1 :> k2) =>
-    k1 config cursor error m (k2 config cursor error m a)
-    -> (k1 :> k2) config cursor error m a
-sureToSure =
-    Coerce.from @Sure @(k1 :> k2) . Monad.join . fmap (Coerce.to @Sure @k2) . Coerce.to @Sure @k1
+instance CoercedJoin Any Any Any
+  where
+    join = Coerce.from @Any . Monad.join . fmap (Coerce.to @Any) . Coerce.to @Any
 
-anyToSure :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    Coerce Any k1 =>
-    Coerce Sure k2 =>
-    Coerce Any (k1 :> k2) =>
-    k1 config cursor error m (k2 config cursor error m a)
-    -> (k1 :> k2) config cursor error m a
-anyToSure =
-    Coerce.from @Any @(k1 :> k2) . anyToSure' . fmap (Coerce.to @Sure @k2) . Coerce.to @Any @k1
+instance CoercedJoin Sure Sure Sure
+  where
+    join = Coerce.from @Sure . Monad.join . fmap (Coerce.to @Sure) . Coerce.to @Sure
 
-sureToAny :: forall k1 k2 config cursor error m a.
-    Monad m =>
-    Coerce Sure k1 =>
-    Coerce Any k2 =>
-    Coerce Any (k1 :> k2) =>
-    k1 config cursor error m (k2 config cursor error m a)
-    -> (k1 :> k2) config cursor error m a
-sureToAny =
-    Coerce.from @Any @(k1 :> k2) . sureToAny' . fmap (Coerce.to @Any @k2) . Coerce.to @Sure @k1
+instance CoercedJoin Any Sure Any
+  where
+    join = Coerce.from @Any . anyToSure' . fmap (Coerce.to @Sure) . Coerce.to @Any
+
+instance CoercedJoin Sure Any Any
+  where
+    join = Coerce.from @Any . sureToAny' . fmap (Coerce.to @Any) . Coerce.to @Sure
 
 anyToSure' :: Monad m => Any config cursor error m (Sure config cursor error m a) -> Any config cursor error m a
 anyToSure' (Any p) =
