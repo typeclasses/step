@@ -17,7 +17,7 @@ module Step.Action.Safe
     -- * Lift
     Is, cast,
     -- * Join
-    ActionJoin, actionJoin, type (>>),
+    Join, join, type (>>),
     -- * Loop
     Loop0, Loop1,
     -- * Kinds

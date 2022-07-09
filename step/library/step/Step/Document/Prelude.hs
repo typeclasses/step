@@ -93,8 +93,8 @@ position = Parser $ SureQuery \_config -> DocumentMemory.State.getPosition
 
 withLocation ::
     ListLike text char => Monad m =>
-    Action.ActionJoin SureQuery k =>
-    Action.ActionJoin k SureQuery =>
+    Action.Join SureQuery k =>
+    Action.Join k SureQuery =>
     Parser text k m a -> Parser text k m (SpanOrLoc, a)
 withLocation p =
     (\a x b -> (Loc.spanOrLocFromTo a b, x)) P.<$> position P.<*> p P.<*> position
