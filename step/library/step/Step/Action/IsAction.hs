@@ -9,10 +9,19 @@ import Step.Action.Join
 import Step.Action.Types
 import Step.Action.KindJoin
 
-type IsAction (k :: ActionKind) =
+class
     ( FunctorAction k
     , ActionJoin k SureQuery
     , ActionJoin SureQuery k
     , k :> SureQuery ~ k
     , SureQuery :> k ~ k
-    )
+    ) =>
+    IsAction (k :: ActionKind)
+
+instance IsAction Any
+instance IsAction Query
+instance IsAction Move
+instance IsAction Atom
+instance IsAction AtomicMove
+instance IsAction Sure
+instance IsAction SureQuery
