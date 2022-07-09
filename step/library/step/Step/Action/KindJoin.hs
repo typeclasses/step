@@ -6,20 +6,34 @@ import Step.Action.Types
 
 -- | The type @a >> b@ is type of the expression @a >> b@.
 --
--- There is an instance for every pair of action kinds. (todo: there isn't yet)
+-- There is an instance for every pair of action kinds, 49 in total.
 --
--- This function is mostly commutative (@a >> b@ = @b >> a@), with one exception: @'Atom' >> 'Sure' = 'Atom'@, but @'Sure' >> 'Atom' = 'Any'@. Atomicity is preserved by composition with a Sure action only if the Atom comes first.
+-- ==== Non-commutativity
+--
+-- This function is mostly commutative (@(a >> b) = (b >> a)@), with a few exceptions pertaining to atomicity:
+--
+-- Atomicity is preserved by composition with a Sure action only if the Atom comes first.
+--
+-- * @'Atom' >> 'Sure' = 'Atom'@, but @'Sure' >> 'Atom' = 'Any'@.
+-- * @'AtomicMove' >> 'Sure' = 'AtomicMove'@, but @'Sure' >> 'AtomicMove' = 'Move'@
+--
+-- Atomicity is preserved by composition with a Query only if the Atom comes second.
+--
+-- * @'Query' >> 'Atom' = 'Atom'@, but @'Atom' >> 'Query' = 'Any'@.
+-- * @'Query' >> 'AtomicMove' = 'AtomicMove'@, but @'AtomicMove' >> 'Query' = 'Move'@.
 --
 type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
   where
 
 
     -- SureQuery is easy: It never changes the kind of whatever it's joined with.
+    -- (15 instances)
 
     SureQuery >> k = k
     k >> SureQuery = k
 
     -- Some of the action kinds compose very nicely with themselves.
+    -- (4 instances)
 
     Any >> Any = Any
     Move >> Move = Move
@@ -27,6 +41,7 @@ type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
     Sure >> Sure = Sure
 
     -- Atomic, however, lose their atomicity when put in sequence with anything fallible.
+    -- (2 instances)
 
     AtomicMove >> AtomicMove = Move
     Atom >> Atom = Any
@@ -51,11 +66,22 @@ type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
     Atom >> Any = Any
     Any >> Atom = Any
 
-    AtomicMove >> Sure = AtomicMove
-    Sure >> AtomicMove = Move
 
-    -- This is a weird one! It is the only example where (>>) is not commutative.
     -- Atomicity is preserved by composition with a Sure action only if the Atom comes first.
+    -- (4 instances)
 
     Atom >> Sure = Atom
     Sure >> Atom = Any
+
+    AtomicMove >> Sure = AtomicMove
+    Sure >> AtomicMove = Move
+
+
+    -- Atomicity is preserved by composition with a Query only if the Atom comes second.
+    -- (4 instances)
+
+    Query >> Atom = Atom
+    Atom >> Query = Any
+
+    Query >> AtomicMove = AtomicMove
+    AtomicMove >> Query = Move
