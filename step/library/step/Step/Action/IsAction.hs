@@ -11,8 +11,6 @@ import Step.Action.KindJoin
 class
     ( forall config cursor error m. Functor m =>
           Functor (k config cursor error m)
-    , ActionJoin k SureQuery
-    , ActionJoin SureQuery k
     ) =>
     IsAction (k :: ActionKind)
 

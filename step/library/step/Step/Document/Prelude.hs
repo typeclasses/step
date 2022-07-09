@@ -93,12 +93,11 @@ position = Parser $ SureQuery \_config -> DocumentMemory.State.getPosition
 
 withLocation ::
     ListLike text char => Monad m => IsAction k =>
+    Action.ActionJoin SureQuery k =>
+    Action.ActionJoin k SureQuery =>
     Parser text k m a -> Parser text k m (SpanOrLoc, a)
-withLocation p = P.do
-    a <- position
-    x <- p
-    b <- position
-    P.return (Loc.spanOrLocFromTo a b, x)
+withLocation p =
+    (\a x b -> (Loc.spanOrLocFromTo a b, x)) P.<$> position P.<*> p P.<*> position
 
 try :: Monad m => Atomic k1 k2 => Parser text k1 m a -> Parser text k2 m (Maybe a)
 try (Parser p) = Parser (Action.try p)
@@ -124,10 +123,7 @@ count0 = \n a -> go a n
   where
     go a = fix \r -> \case
         0 -> Parser (Action.trivial [])
-        n -> cast P.do
-            x <- a
-            xs <- r (n - 1)
-            P.return (x : xs)
+        n -> cast ((:) P.<$> a P.<*> (r (n - 1)))
 
 count1 :: Monad m => Loop1 k k' =>
     Positive Natural -> Parser text k m a -> Parser text k' m (NonEmpty a)
@@ -136,10 +132,7 @@ count1 = \n a -> go a n
     go a = fix \r -> \p ->
         case preview positive (review positive p - 1) of
             Nothing -> (:| []) <$> cast a
-            Just p' -> cast P.do
-                x <- a
-                xs <- r p'
-                P.return (NonEmpty.cons x xs)
+            Just p' -> cast (NonEmpty.cons P.<$> a P.<*> r p')
 
 failure :: Monad m => Action.CanFail k => Parser text k m a
 failure = Parser $ Action.failure Parser.makeError
