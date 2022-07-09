@@ -34,22 +34,22 @@ instance CoercedJoin Sure Sure Sure
 
 instance CoercedJoin Any Sure Any
   where
-    join = Coerce.from @Any . anyToSure' . fmap (Coerce.to @Sure) . Coerce.to @Any
+    join = Coerce.from @Any . anyToSure . fmap (Coerce.to @Sure) . Coerce.to @Any
 
 instance CoercedJoin Sure Any Any
   where
-    join = Coerce.from @Any . sureToAny' . fmap (Coerce.to @Any) . Coerce.to @Sure
+    join = Coerce.from @Any . sureToAny . fmap (Coerce.to @Any) . Coerce.to @Sure
 
-anyToSure' :: Monad m => Any config cursor error m (Sure config cursor error m a) -> Any config cursor error m a
-anyToSure' (Any p) =
+anyToSure :: Monad m => Any config cursor error m (Sure config cursor error m a) -> Any config cursor error m a
+anyToSure (Any p) =
     Any \c -> do
         e <- p c
         case e of
             Left e' -> return (Left e')
             Right (Sure p') -> Right <$> p' c
 
-sureToAny' :: Monad m => Sure config cursor error m (Any config cursor error m a) -> Any config cursor error m a
-sureToAny' (Sure p) =
+sureToAny :: Monad m => Sure config cursor error m (Any config cursor error m a) -> Any config cursor error m a
+sureToAny (Sure p) =
     Any \c -> do
         Any p' <- p c
         p' c

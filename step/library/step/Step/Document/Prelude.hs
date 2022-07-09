@@ -134,8 +134,8 @@ count1 = \n a -> go a n
             Nothing -> (:| []) <$> cast a
             Just p' -> cast (NonEmpty.cons P.<$> a P.<*> r p')
 
-failure :: Monad m => Action.CanFail k => Parser text k m a
-failure = Parser $ Action.failure Parser.makeError
+failure :: Monad m => Parser text AtomicFailure m a
+failure = Parser $ AtomicFailure Parser.makeError
 
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 all :: Monad m => ListLike text char => Parser text Sure m text

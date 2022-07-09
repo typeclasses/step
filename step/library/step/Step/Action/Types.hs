@@ -12,6 +12,8 @@ module Step.Action.Types
     AtomicMove,
     Sure,
     SureQuery,
+    Failure,
+    AtomicFailure,
   )
   where
 

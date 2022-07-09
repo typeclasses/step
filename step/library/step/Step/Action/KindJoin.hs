@@ -23,17 +23,30 @@ import Step.Action.Types
 type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
   where
 
+    -- Types we start with: Any, Query, Move, Atom, AtomicMove, Sure, SureQuery, Failure, AtomicFailure
+
     -- Query and Sure are closed.
     Query >> Query = Query
     Sure >> Sure = Sure
 
-    -- SureQuery is subsumed by whatever it is joined with.
+    -- SureQuery has no effect whatsoever on its surroundings.
     SureQuery >> k = k
     k >> SureQuery = k
 
-    -- Move subsumes anything else it is joined with.
-    k >> Move = Move
-    Move >> k = Move
+    -- Types remaining: Any, Query, Move, Atom, AtomicMove, Sure, Failure, AtomicFailure
+
+    -- Anything followed by atomic failure will fail.
+    -- If the atomic failure comes first, the combination is atomic.
+    AtomicFailure >> k = AtomicFailure
+    k >> AtomicFailure = Failure
+
+    -- Types remaining: Any, Query, Move, Atom, AtomicMove, Sure, Failure
+
+    -- Failure in part is failure in the whole.
+    k >> Failure = Failure
+    Failure >> k = Failure
+
+    -- Types remaining: Any, Query, Move, Atom, AtomicMove, Sure
 
     -- Atomicity is preserved by join with a Sure action if the atomic step comes first.
     Atom       >> Sure = Atom
@@ -43,11 +56,17 @@ type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
     Query >> Atom       = Atom
     Query >> AtomicMove = AtomicMove
 
-    -- Atom and AtomicMove lose their atomicity when joined with anything else.
+    -- Movement in part is movement in the whole.
+    k >> Move = Move
+    Move >> k = Move
+
+    -- Types remaining: Any, Query, Atom, AtomicMove, Sure
 
     -- When AtomicMove loses atomicity, it degrades to Move.
     AtomicMove >> _ = Move
     _ >> AtomicMove = Move
+
+    -- Types remaining: Any, Query, Atom, Sure
 
     -- All other combinations degrade to Any.
     _ >> _ = Any

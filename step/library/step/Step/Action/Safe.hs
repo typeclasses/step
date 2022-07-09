@@ -4,8 +4,6 @@
 
 module Step.Action.Safe
   (
-    -- * Failure
-    CanFail, failure,
     -- * Functor, Monad
     FunctorialAction, MonadicAction,
     -- * Configure
@@ -30,7 +28,6 @@ module Step.Action.Safe
 import Step.Action.Atomic
 import Step.Action.CanBeStatic
 import Step.Action.Config
-import Step.Action.Failure
 import Step.Action.Functorial
 import Step.Action.Join
 import Step.Action.KindJoin

@@ -114,7 +114,6 @@ library
         Step.Action.CoercedJoin
         Step.Action.Config
         Step.Action.Constructors
-        Step.Action.Failure
         Step.Action.Functorial
         Step.Action.Join
         Step.Action.KindJoin

@@ -27,7 +27,8 @@ import Coerce (coerce)
 -- Arrows in the graph below indicate permitted casts.
 --
 -- ![Action subtyping graph](graphics/action-subtyping.svg)
-
+--
+-- Not pictured are 'Failure' and 'AtomicFailure'.
 
 class Is (k1 :: ActionKind) (k2 :: ActionKind)
   where
@@ -42,13 +43,18 @@ cast :: forall k2 k1 config cursor error m a.
 cast = cast' @k1 @k2
 
 
+-- Functions used for defining instances below
+
 sureToAny :: Functor m =>
     Sure config cursor error m a
     -> Any config cursor error m a
 
 sureToAny (Sure p) = Any (\c -> p c <&> Right)
 
--- sureToAny is for defining instances, below
+failureAny :: Monad m =>
+    Failure config cursor error m a
+    -> Any config cursor error m a
+failureAny (Failure f) = Any \c -> return (Left (f c))
 
 
 -- Identity
@@ -74,6 +80,9 @@ instance Is Sure Sure where cast' = coerce
 -- | Everything trivially lifts to itself
 instance Is SureQuery SureQuery where cast' = coerce
 
+-- | Everything trivially lifts to itself
+instance Is Failure Failure where cast' = coerce
+
 
 -- Any supertypes everything else
 
@@ -87,10 +96,10 @@ instance Is Move Any where cast' = coerce
 instance Is AtomicMove Any where cast' = coerce
 
 -- | Everything lifts to Any
-instance Is Sure Any where cast' = Coerce.from @Any . sureToAny . Coerce.to @Sure
+instance Is Sure Any where cast' = sureToAny . Coerce.to
 
 -- | Everything lifts to Any
-instance Is SureQuery Any where cast' = Coerce.from @Any . sureToAny . Coerce.to @Sure
+instance Is SureQuery Any where cast' = sureToAny . Coerce.to @Sure
 
 -- | Everything lifts to Any
 instance Is Atom Any where cast' = coerce
@@ -120,4 +129,20 @@ instance Is SureQuery Query where cast' = Coerce.from @Any . sureToAny . Coerce.
 instance Is Query Atom where cast' = coerce
 
 -- | A Sure action is trivially atomic because it never fails, therefore it cannot move and fail
-instance Is Sure Atom where cast' = Coerce.from @Any . sureToAny . Coerce.to @Sure
+instance Is Sure Atom where cast' = Coerce.from @Any . sureToAny
+
+
+-- Failure casts to anything that is neither Sure nor Atomic
+
+instance Is Failure Any where cast' = failureAny
+instance Is Failure Query where cast' = Coerce.from @Any . failureAny
+instance Is Failure Move where cast' = Coerce.from @Any . failureAny
+
+
+-- AtomicFailure casts to anything that isn't Sure
+
+instance Is AtomicFailure Any where cast' = failureAny . Coerce.to @Failure
+instance Is AtomicFailure Query where cast' = Coerce.from @Any . failureAny . Coerce.to @Failure
+instance Is AtomicFailure Move where cast' = Coerce.from @Any . failureAny . Coerce.to @Failure
+instance Is AtomicFailure Atom where cast' = Coerce.from @Any . failureAny . Coerce.to @Failure
+instance Is AtomicFailure AtomicMove where cast' = Coerce.from @Any . failureAny . Coerce.to @Failure

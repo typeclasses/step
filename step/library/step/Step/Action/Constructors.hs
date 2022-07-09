@@ -105,3 +105,13 @@ newtype SureQuery config cursor error base value =
     SureQuery (config -> StateT cursor base value)
     deriving (Functor, Applicative, Monad)
         via (ReaderT config (StateT cursor base))
+
+-- | Never succeeds, which vacuously guarantees that it both always and never moves the cursor when succeeding.
+--
+newtype Failure config cursor error base value =
+    Failure (config -> StateT cursor base error)
+
+-- | Never succeeds and never moves the cursor.
+--
+newtype AtomicFailure config cursor error base value =
+    AtomicFailure (config -> StateT cursor base error)

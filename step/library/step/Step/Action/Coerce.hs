@@ -23,11 +23,14 @@ from :: forall k1 k2 config cursor error m a. Coerce k1 k2 =>
     k1 config cursor error m a -> k2 config cursor error m a
 from = view coerced
 
-instance Coerce Any Any        where coerced = Optics.coerced
-instance Coerce Any Query      where coerced = Optics.coerced
-instance Coerce Any Move       where coerced = Optics.coerced
-instance Coerce Any Atom       where coerced = Optics.coerced
+instance Coerce Any Any where coerced = Optics.coerced
+instance Coerce Any Query where coerced = Optics.coerced
+instance Coerce Any Move where coerced = Optics.coerced
+instance Coerce Any Atom where coerced = Optics.coerced
 instance Coerce Any AtomicMove where coerced = Optics.coerced
 
-instance Coerce Sure Sure      where coerced = Optics.coerced
+instance Coerce Sure Sure where coerced = Optics.coerced
 instance Coerce Sure SureQuery where coerced = Optics.coerced
+
+instance Coerce Failure Failure where coerced = Optics.coerced
+instance Coerce Failure AtomicFailure where coerced = Optics.coerced
