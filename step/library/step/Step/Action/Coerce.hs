@@ -31,3 +31,5 @@ instance Coerce Any AtomicMove where coerced = Optics.coerced
 
 instance Coerce Sure Sure where coerced = Optics.coerced
 instance Coerce Sure SureQuery where coerced = Optics.coerced
+
+instance Coerce Fail Fail where coerced = Optics.coerced
