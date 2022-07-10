@@ -1,6 +1,6 @@
 {-# language Trustworthy #-}
 
--- | Abstract types whose unsafe constructors may be found in "Step.Action.Constructors"
+-- | Abstract types whose unsafe constructors may be found in "Step.ActionTypes.Unsafe"
 
 module Step.ActionTypes.Types
   (
