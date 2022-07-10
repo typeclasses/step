@@ -31,65 +31,65 @@ import qualified Step.Document.Config as Config
 
 import qualified Step.Document.Do as P
 
-import Step.Action.Safe (ConfigurableAction, Atomic, Loop0, Loop1)
-import qualified Step.Action.Safe as Action
+import Step.ActionTypes (Configurable, Atomic, Loop0, Loop1)
+import qualified Step.ActionTypes as Action
+import Step.ActionTypes.Types
 
-import Step.Action.Constructors
-
-import qualified Step.Action.Safe as Action
+import qualified Step.ActionTypes.Unsafe as Action.Unsafe
 
 char :: Monad m => ListLike text char => Parser text AtomicMove m char
-char = Parser $ AtomicMove \config ->
+char = Parser $ Action.Unsafe.AtomicMove \config ->
     DocumentMemory.State.takeChar <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 peekChar :: Monad m => ListLike text char => Parser text Query m char
-peekChar = Parser $ Query \config ->
+peekChar = Parser $ Action.Unsafe.Query \config ->
     DocumentMemory.State.peekCharMaybe <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 peekCharMaybe :: Monad m => ListLike text char => Parser text SureQuery m (Maybe char)
-peekCharMaybe = Parser $ SureQuery \_ -> DocumentMemory.State.peekCharMaybe
+peekCharMaybe = Parser $ Action.Unsafe.SureQuery \_ ->
+    DocumentMemory.State.peekCharMaybe
 
 satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text AtomicMove m char
-satisfy ok = Parser $ AtomicMove \config ->
+satisfy ok = Parser $ Action.Unsafe.AtomicMove \config ->
     DocumentMemory.State.takeCharIf ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 satisfyJust :: Monad m => ListLike text char => (char -> Maybe a) -> Parser text AtomicMove m a
-satisfyJust ok = Parser $ AtomicMove \config ->
+satisfyJust ok = Parser $ Action.Unsafe.AtomicMove \config ->
     DocumentMemory.State.takeCharJust ok <&> \case
         Nothing -> Left (Parser.makeError config)
         Just x -> Right x
 
 text :: Monad m => ListLike text char => Eq text => Eq char => text -> Parser text Any m ()
-text x = Parser $ Any \config ->
+text x = Parser $ Action.Unsafe.Any \config ->
     DocumentMemory.State.takeText x <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
 
 atEnd :: Monad m => ListLike text char => Parser text SureQuery m Bool
-atEnd = Parser $ SureQuery \_config -> DocumentMemory.State.atEnd
+atEnd = Parser $ Action.Unsafe.SureQuery \_config -> DocumentMemory.State.atEnd
 
 end :: Monad m => ListLike text char => Parser text Query m ()
-end = Parser $ Query \config ->
+end = Parser $ Action.Unsafe.Query \config ->
     DocumentMemory.State.atEnd <&> \case
         True -> Right ()
         False -> Left (Parser.makeError config)
 
-contextualize :: (Monad m, ConfigurableAction k) =>
+contextualize :: (Monad m, Configurable k) =>
     text -> Parser text k m a -> Parser text k m a
-contextualize c (Parser p) = Parser $ Action.configureAction (over Config.contextLens (c :)) p
+contextualize c (Parser p) = Parser $ Action.configure (over Config.contextLens (c :)) p
 
 infix 0 <?>
-(<?>) :: (Monad m, ConfigurableAction k) => Parser text k m a -> text -> Parser text k m a
+(<?>) :: (Monad m, Configurable k) => Parser text k m a -> text -> Parser text k m a
 p <?> c = contextualize c p
 
 position :: Monad m => ListLike text char => Parser text SureQuery m Loc
-position = Parser $ SureQuery \_config -> DocumentMemory.State.getPosition
+position = Parser $ Action.Unsafe.SureQuery \_config -> DocumentMemory.State.getPosition
 
 withLocation ::
     ListLike text char => Monad m =>
@@ -135,11 +135,11 @@ count1 = \n a -> go a n
             Just p' -> cast (NonEmpty.cons P.<$> a P.<*> r p')
 
 failure :: Monad m => Parser text Fail m a
-failure = Parser $ Fail Parser.makeError
+failure = Parser $ Action.Unsafe.Fail Parser.makeError
 
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
 all :: Monad m => ListLike text char => Parser text Sure m text
-all = Parser $ Sure \_config -> DocumentMemory.State.takeAll
+all = Parser $ Action.Unsafe.Sure \_config -> DocumentMemory.State.takeAll
 
 -- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do

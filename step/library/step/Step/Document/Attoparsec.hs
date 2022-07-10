@@ -8,7 +8,7 @@ import Step.Internal.Prelude
 
 import Step.Document.Parser
 
-import Step.Action.Safe
+import Step.ActionTypes
 
 import qualified Step.Document.Do as P
 import qualified Step.Document.Prelude as P

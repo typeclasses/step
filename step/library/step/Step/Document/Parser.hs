@@ -16,17 +16,16 @@ import qualified Step.Document.Error as Error
 
 import Step.LineHistory.Char (Char)
 
-import Step.Action.Safe (ActionKind, FunctorialAction, MonadicAction)
-import qualified Step.Action.Safe as Action
-
-import Step.Action.Constructors (Any (Any))
+import Step.ActionTypes (ActionKind, FunctorialAction, MonadicAction)
+import qualified Step.ActionTypes as Action (Is, cast)
+import Step.ActionTypes.Unsafe (Any (Any))
 
 import qualified Monad
 
 -- | The kind of 'Parser'
 type ParserKind =
     Type              -- ^ @text@   - what type of input chunks the parser cursors through
-    -> ActionKind     -- ^ @kind@   - what properties the parser guarantees; see "Step.Action.Types"
+    -> ActionKind     -- ^ @kind@   - what properties the parser guarantees; see "Step.ActionTypes"
     -> (Type -> Type) -- ^ @base@   - monadic context
     -> Type           -- ^ @value@  - produced upon success
     -> Type
@@ -45,7 +44,7 @@ deriving newtype instance (Monad base, MonadicAction k) => Applicative (Parser t
 -- | Parser is only Applicative + Monadic for certain action kinds; see 'MonadAction'
 deriving newtype instance (Monad base, MonadicAction k) => Monad (Parser text k base)
 
--- | Convert a parser's 'ActionKind' to something more general; see "Step.Action.Subtyping"
+-- | Convert a parser's 'ActionKind' to something more general; see "Step.ActionTypes"
 cast :: forall k2 k1 text m a. Monad m => Action.Is k1 k2 =>
     Parser text k1 m a -> Parser text k2 m a
 cast = under (iso Parser (\(Parser z) -> z)) (Action.cast @k2 @k1)

@@ -1,16 +1,16 @@
 {-# language DataKinds, FlexibleContexts, MultiParamTypeClasses, KindSignatures, Trustworthy, TypeFamilies, TypeOperators #-}
 
-module Step.Action.Join where
+module Step.ActionTypes.Join where
 
 import Step.Internal.Prelude
 
-import Step.Action.Types
+import Step.ActionTypes.Types
 
-import qualified Step.Action.CoercedJoin as Coerced
+import qualified Step.ActionTypes.CoercedJoin as Coerced
 
-import Step.Action.KindJoin
+import Step.ActionTypes.KindJoin
 
-import Step.Action.Functorial
+import Step.ActionTypes.Functorial
 
 class (FunctorialAction k1, FunctorialAction k2, FunctorialAction (k1 >> k2)) => Join (k1 :: ActionKind) (k2 :: ActionKind)
   where

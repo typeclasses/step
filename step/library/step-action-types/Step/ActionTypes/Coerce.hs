@@ -1,11 +1,11 @@
 {-# language DataKinds, FunctionalDependencies, KindSignatures, MultiParamTypeClasses, Unsafe #-}
 
-module Step.Action.Coerce where
+module Step.ActionTypes.Coerce where
 
 import Optics hiding (coerced)
 import qualified Optics
 
-import Step.Action.Constructors
+import Step.ActionTypes.Constructors
 
 class Coerce (k1 :: ActionKind) (k2 :: ActionKind) | k2 -> k1
   where

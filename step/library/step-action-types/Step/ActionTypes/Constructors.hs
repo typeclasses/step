@@ -2,35 +2,9 @@
 
 {-# language DeriveFunctor, DerivingVia #-}
 
-{-|
+-- | This module defines 'ActionKind' and types of that kind.
 
-This module defines 'ActionKind' and types of that kind.
-
-+--------------+----------+------------+------------+
-|              | Succeeds | Advances   | Advances   |
-|              |          | on success | on failure |
-+--------------+----------+------------+------------+
-| 'Move'       |          | Yes        |            |
-+--------------+----------+------------+------------+
-| 'Query'      |          | No         | No         |
-+--------------+----------+------------+------------+
-| 'Atom'       |          |            | No         |
-+--------------+----------+------------+------------+
-| 'AtomicMove' |          | Yes        | No         |
-+--------------+----------+------------+------------+
-| 'Sure'       | Yes      |            |            |
-+--------------+----------+------------+------------+
-| 'SureQuery'  | Yes      | No         | No         |
-+--------------+----------+------------+------------+
-| 'Fail'       | No       | No         | No         |
-+--------------+----------+------------+------------+
-| 'Any'        |          |            |            |
-+--------------+----------+------------+------------+
-
-The only properties guaranteed by construction are that /Sure/ always succeeds and /Fail/ never does. The rest of the properties are not enforced by constructors. This module is, therefore, unsafe. See "Step.Action.Types" and "Step.Action.Safe".
-
--}
-module Step.Action.Constructors where
+module Step.ActionTypes.Constructors where
 
 import Step.Internal.Prelude
 
@@ -44,10 +18,11 @@ type ActionKind =
     -> Type
 
 type Any        :: ActionKind
-type Query      :: ActionKind
-type Move       :: ActionKind
 type Atom       :: ActionKind
 type AtomicMove :: ActionKind
+type Fail       :: ActionKind
+type Move       :: ActionKind
+type Query      :: ActionKind
 type Sure       :: ActionKind
 type SureQuery  :: ActionKind
 

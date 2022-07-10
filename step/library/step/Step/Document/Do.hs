@@ -14,8 +14,8 @@ import BasePrelude (fmap, (<$>), Monad, (.))
 
 import Step.Document.Parser (Parser (Parser))
 
-import Step.Action.Safe (Join, type (>>), SureQuery)
-import qualified Step.Action.Safe as Action
+import Step.ActionTypes (Join, type (>>), SureQuery)
+import qualified Step.ActionTypes as Action
 
 join :: (Join k1 k2, Monad m) =>
     Parser text k1 m (Parser text k2 m a)

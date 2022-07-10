@@ -1,6 +1,6 @@
 {-# language FlexibleContexts, FunctionalDependencies, TypeOperators, Unsafe #-}
 
-module Step.Action.CoercedJoin
+module Step.ActionTypes.CoercedJoin
   (
     CoercedJoin, join,
   )
@@ -8,14 +8,14 @@ module Step.Action.CoercedJoin
 
 import Step.Internal.Prelude
 
-import Step.Action.Constructors (Any (..), Fail (..), Sure (..))
+import Step.ActionTypes.Constructors (Any (..), Fail (..), Sure (..))
 
-import Step.Action.Coerce (Coerce)
-import qualified Step.Action.Coerce as Coerce
+import Step.ActionTypes.Coerce (Coerce)
+import qualified Step.ActionTypes.Coerce as Coerce
 
 import qualified Monad
 
-import Step.Action.KindJoin
+import Step.ActionTypes.KindJoin
 
 class CoercedJoin k1 k2 k3
   where

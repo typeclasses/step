@@ -83,7 +83,7 @@ common base
 library
     import: base
     hs-source-dirs: library/step
-    build-depends: step-internal
+    build-depends: step-internal, step-action-types
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Buffer.Base
@@ -108,21 +108,6 @@ library
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
 
-        Step.Action.Atomic
-        Step.Action.CanBeStatic
-        Step.Action.Coerce
-        Step.Action.CoercedJoin
-        Step.Action.Config
-        Step.Action.Constructors
-        Step.Action.Functorial
-        Step.Action.Join
-        Step.Action.KindJoin
-        Step.Action.Loop
-        Step.Action.Monadic
-        Step.Action.Safe
-        Step.Action.Subtyping
-        Step.Action.Types
-
         Step.Nontrivial.Base
         Step.Nontrivial.Constructor
         Step.Nontrivial.List
@@ -139,6 +124,33 @@ library
         Step.Tentative.State
 
         Step.Test.InputChunking
+
+    reexported-modules:
+        Step.ActionTypes
+      , Step.ActionTypes.Types
+      , Step.ActionTypes.Unsafe
+
+library step-action-types
+    import: base
+    hs-source-dirs: library/step-action-types
+    build-depends: step-internal
+    exposed-modules:
+        Step.ActionTypes
+        Step.ActionTypes.Types
+        Step.ActionTypes.Unsafe
+    other-modules:
+        Step.ActionTypes.Atomic
+        Step.ActionTypes.Returnable
+        Step.ActionTypes.Coerce
+        Step.ActionTypes.CoercedJoin
+        Step.ActionTypes.Config
+        Step.ActionTypes.Constructors
+        Step.ActionTypes.Functorial
+        Step.ActionTypes.Join
+        Step.ActionTypes.KindJoin
+        Step.ActionTypes.Loop
+        Step.ActionTypes.Monadic
+        Step.ActionTypes.Subtyping
 
 library step-internal
     import: base

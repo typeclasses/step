@@ -1,10 +1,10 @@
 {-# language ConstraintKinds, DataKinds, FlexibleContexts, KindSignatures, QuantifiedConstraints, Safe, TypeFamilies, TypeOperators #-}
 
-module Step.Action.Functorial where
+module Step.ActionTypes.Functorial where
 
 import Step.Internal.Prelude
 
-import Step.Action.Types
+import Step.ActionTypes.Types
 
 class (forall config cursor error m. Functor m =>
       Functor (k config cursor error m)) => FunctorialAction (k :: ActionKind)

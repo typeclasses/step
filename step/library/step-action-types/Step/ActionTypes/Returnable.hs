@@ -1,26 +1,26 @@
 {-# language DataKinds, KindSignatures, Trustworthy #-}
 
-module Step.Action.CanBeStatic where
+module Step.ActionTypes.Returnable where
 
 import Step.Internal.Prelude
 
-import Step.Action.Constructors
+import Step.ActionTypes.Constructors
 
-class CanBeStatic (k :: ActionKind)
+class Returnable (k :: ActionKind)
   where
     trivial :: Monad m => a -> k config cursor error m a
 
-instance CanBeStatic Any where
+instance Returnable Any where
     trivial x = Any \_ -> StateT \s -> return (Right x, s)
 
-instance CanBeStatic Query where
+instance Returnable Query where
     trivial x = Query \_ -> StateT \s -> return (Right x, s)
 
-instance CanBeStatic Atom where
+instance Returnable Atom where
     trivial x = Atom \_ -> StateT \s -> return (Right x, s)
 
-instance CanBeStatic Sure where
+instance Returnable Sure where
     trivial x = Sure \_ -> StateT \s -> return (x, s)
 
-instance CanBeStatic SureQuery where
+instance Returnable SureQuery where
     trivial x = SureQuery \_ -> StateT \s -> return (x, s)

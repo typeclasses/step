@@ -1,16 +1,16 @@
 {-# language DataKinds, FlexibleContexts, FunctionalDependencies, KindSignatures, Trustworthy, TypeFamilies #-}
 
-module Step.Action.Atomic where
+module Step.ActionTypes.Atomic where
 
 import Step.Internal.Prelude
 
-import Step.Action.Types
+import Step.ActionTypes.Types
 
-import Step.Action.Constructors (Any (..), Sure (..))
+import Step.ActionTypes.Constructors (Any (..), Sure (..))
 
-import qualified Step.Action.Coerce as Coerce
+import qualified Step.ActionTypes.Coerce as Coerce
 
-import Step.Action.Functorial
+import Step.ActionTypes.Functorial
 
 class (FunctorialAction k, FunctorialAction try) => Atomic (k :: ActionKind) (try :: ActionKind) | k -> try
   where

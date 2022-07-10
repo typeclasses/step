@@ -2,7 +2,7 @@
 
 -- | Abstract types whose unsafe constructors may be found in "Step.Action.Constructors"
 
-module Step.Action.Types
+module Step.ActionTypes.Types
   (
     ActionKind,
     -- * The types
@@ -17,4 +17,4 @@ module Step.Action.Types
   )
   where
 
-import Step.Action.Constructors
+import Step.ActionTypes.Constructors

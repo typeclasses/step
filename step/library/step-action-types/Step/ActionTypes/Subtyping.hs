@@ -1,11 +1,9 @@
 {-# language DataKinds, KindSignatures, MultiParamTypeClasses, Trustworthy #-}
 
-module Step.Action.Subtyping
+module Step.ActionTypes.Subtyping
   (
 
     cast,
-
-    -- $graph
 
     Is,
     -- The class's method is not exported because there is no reason to define new instances of the class outside of this module.
@@ -15,20 +13,12 @@ module Step.Action.Subtyping
 
 import Step.Internal.Prelude
 
-import Step.Action.Constructors
+import Step.ActionTypes.Constructors
 
-import qualified Step.Action.Coerce as Coerce
+import qualified Step.ActionTypes.Coerce as Coerce
 
 import Coerce (coerce)
 
-
--- $graph
---
--- Arrows in the graph below indicate permitted casts.
---
--- ![Action subtyping graph](graphics/action-subtyping.svg)
---
--- Not pictured: 'Fail'
 
 class Is (k1 :: ActionKind) (k2 :: ActionKind)
   where

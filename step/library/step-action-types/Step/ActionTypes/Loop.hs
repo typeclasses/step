@@ -1,16 +1,16 @@
 {-# language FlexibleContexts, FunctionalDependencies, Safe, TypeFamilies, TypeOperators #-}
 
-module Step.Action.Loop where
+module Step.ActionTypes.Loop where
 
-import Step.Action.CanBeStatic
-import Step.Action.Types
-import Step.Action.Functorial
-import Step.Action.Join
-import Step.Action.KindJoin
-import Step.Action.Subtyping
+import Step.ActionTypes.Returnable
+import Step.ActionTypes.Types
+import Step.ActionTypes.Functorial
+import Step.ActionTypes.Join
+import Step.ActionTypes.KindJoin
+import Step.ActionTypes.Subtyping
 
 -- | Loop0 k k' means that a repetition of 0 or more k actions results in a k' action.
-class (Join k k', CanBeStatic k', Is (k >> k') k') => Loop0 k k' | k -> k'
+class (Join k k', Returnable k', Is (k >> k') k') => Loop0 k k' | k -> k'
 
 -- Atomic actions loose their atomicity when sequenced 2 or more times; guaranteed advancement is lost when sequencing 0 times
 
