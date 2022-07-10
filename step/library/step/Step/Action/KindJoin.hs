@@ -6,20 +6,8 @@ import Step.Action.Types
 
 -- | The type @a >> b@ is type of the expression @a >> b@.
 --
--- ==== Non-commutativity
---
--- This function is mostly commutative (@(a >> b) = (b >> a)@), with a few exceptions pertaining to atomicity:
---
--- Atomicity is preserved by composition with a Sure action only if the atomic part comes first.
---
--- * @'Atom' >> 'Sure' = 'Atom'@, but @'Sure' >> 'Atom' = 'Any'@.
--- * @'AtomicMove' >> 'Sure' = 'AtomicMove'@, but @'Sure' >> 'AtomicMove' = 'Move'@
---
--- Atomicity is preserved by composition with a Query only if the atomic part comes second.
---
--- * @'Query' >> 'Atom' = 'Atom'@, but @'Atom' >> 'Query' = 'Any'@.
--- * @'Query' >> 'AtomicMove' = 'AtomicMove'@, but @'AtomicMove' >> 'Query' = 'Move'@.
---
+-- This function is mostly not commutative (@a >> b@ is not the same as @b >> a@) because whether an atomic action's atomicity is preserved depends on the order of the composition in some cases.
+
 type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
   where
 
