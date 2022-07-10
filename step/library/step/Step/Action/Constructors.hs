@@ -10,34 +10,17 @@ This module defines 'ActionKind' and types of that kind.
 
 The actions are named for particular properties they have:
 
-* 'Move' — always advances the cursor if it succeeds
-* 'Atom' — either fails or advances the cursor, never both
-* 'Sure' — never fails
-* 'Query' — never advances the cursor; only gives information about the present state
-
-There are also some that have combinations of the properties described above:
-
+* 'Move' — advances if it succeeds
+* 'Query' — never advances
+* 'Atom' — either fails or advances, never both
 * 'AtomicMove' — atomic, and always advances if it succeeds
-* 'SureQuery' — never fails, and never advances
-
-Additionally, we have a type representing an action that always fails:
-
-* 'Fail' — never succeeds and never advances; this vacuously supports /Move/, /Atom/, and /Query/ properties
+* 'Sure' — never fails
+* 'SureQuery' — never fails and never advances
+* 'Fail' — never succeeds and never advances
 
 Finally, there is one with no particular properties:
 
 * 'Any' — the most general type of action; all others can be lifted to it
-
-
-=== Actions not defined
-
-Several conceivable combinations of properties are not defined as action types:
-
-* /Sure/ + /Move/ — because there's no such thing as a sure move; since at the end of input there is nowhere to move
-* /Atom/ + /Query/ — because this is just 'Query'; queries never move the cursor, so they are necessarily atomic
-* /Atom/ + /Sure/ — because this is just 'Sure'; a sure action cannot fail, so it necessary cannot fail and move the cursor
-* /Move/ + /Query/ — this would be a contradiction, if the action ever succeeded; 'Move' means always advance and 'Query' means never advance
-* A non-atomic failure type, which is allowed to move the cursor but always fails, is not defined because it is of no use
 
 
 == Unsafety
