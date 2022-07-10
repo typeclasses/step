@@ -4,30 +4,43 @@
 
 {-|
 
-This module defines 'ActionKind' and seven types of that kinds.
+This module defines 'ActionKind' and types of that kind.
 
-These are named for particular properties they have:
+== Actions
 
-* 'Move' — always advances the cursor
+The actions are named for particular properties they have:
+
+* 'Move' — always advances the cursor if it succeeds
 * 'Atom' — either fails or advances the cursor, never both
 * 'Sure' — never fails
 * 'Query' — never advances the cursor; only gives information about the present state
 
 There are also some that have combinations of the properties described above:
 
-* 'AtomicMove' — atomic and always advances
-* 'SureQuery' — never fails and never advances
+* 'AtomicMove' — atomic, and always advances if it succeeds
+* 'SureQuery' — never fails, and never advances
 
-Other combinations do not exist:
+Additionally, we have a type representing an action that always fails:
 
-* /Sure/ + /Move/ — because there's no such thing as a sure move; since at the end of input there is nowhere to move
-* /Atom/ + /Query/ — because this is just 'Query'; queries never move the cursor, so they are necessarily atomic
-* /Atom/ + /Sure/ — because this is just 'Sure'; a sure action cannot fail, so it necessary cannot fail and move the cursor
-* /Move/ + /Query/ — because this would be a contradiction; 'Move' means always advance and 'Query' means never advance
+* 'Fail' — never succeeds and never advances; this vacuously supports /Move/, /Atom/, and /Query/ properties
 
 Finally, there is one with no particular properties:
 
 * 'Any' — the most general type of action; all others can be lifted to it
+
+
+=== Actions not defined
+
+Several conceivable combinations of properties are not defined as action types:
+
+* /Sure/ + /Move/ — because there's no such thing as a sure move; since at the end of input there is nowhere to move
+* /Atom/ + /Query/ — because this is just 'Query'; queries never move the cursor, so they are necessarily atomic
+* /Atom/ + /Sure/ — because this is just 'Sure'; a sure action cannot fail, so it necessary cannot fail and move the cursor
+* /Move/ + /Query/ — this would be a contradiction, if the action ever succeeded; 'Move' means always advance and 'Query' means never advance
+* A non-atomic failure type, which is allowed to move the cursor but always fails, is not defined because it is of no use
+
+
+== Unsafety
 
 The /Sure/ property is guaranteed by construction. The rest of the properties are not. This module is, therefore, unsafe. See "Step.Action.Types" and "Step.Action.Safe".
 
@@ -106,12 +119,7 @@ newtype SureQuery config cursor error base value =
     deriving (Functor, Applicative, Monad)
         via (ReaderT config (StateT cursor base))
 
--- | Never succeeds, which vacuously guarantees that it both always and never moves the cursor when succeeding.
+-- | Never succeeds and never moves the cursor, which vacuously guarantees 'Move.
 --
-newtype Failure config cursor error base value =
-    Failure (config -> StateT cursor base error)
-
--- | Never succeeds and never moves the cursor.
---
-newtype AtomicFailure config cursor error base value =
-    AtomicFailure (config -> StateT cursor base error)
+newtype Fail config cursor error base value =
+    Fail (config -> StateT cursor base error)

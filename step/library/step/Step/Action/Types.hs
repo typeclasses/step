@@ -5,6 +5,7 @@
 module Step.Action.Types
   (
     ActionKind,
+    -- * The types
     Any,
     Query,
     Move,
@@ -12,8 +13,7 @@ module Step.Action.Types
     AtomicMove,
     Sure,
     SureQuery,
-    Failure,
-    AtomicFailure,
+    Fail,
   )
   where
 

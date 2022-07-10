@@ -23,50 +23,34 @@ import Step.Action.Types
 type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
   where
 
-    -- Types we start with: Any, Query, Move, Atom, AtomicMove, Sure, SureQuery, Failure, AtomicFailure
-
-    -- Query and Sure are closed.
-    Query >> Query = Query
-    Sure >> Sure = Sure
-
-    -- SureQuery has no effect whatsoever on its surroundings.
+    -- Joining with SureQuery has no effect on the type
     SureQuery >> k = k
     k >> SureQuery = k
 
-    -- Types remaining: Any, Query, Move, Atom, AtomicMove, Sure, Failure, AtomicFailure
+    -- Properties other than atomicity are closed under composition.
+    Query >> Query = Query
+    Sure >> Sure = Sure
+    -- (Move >> Move = Move) is covered later below.
 
-    -- Anything followed by atomic failure will fail.
-    -- If the atomic failure comes first, the combination is atomic.
-    AtomicFailure >> k = AtomicFailure
-    k >> AtomicFailure = Failure
-
-    -- Types remaining: Any, Query, Move, Atom, AtomicMove, Sure, Failure
-
-    -- Failure in part is failure in the whole.
-    k >> Failure = Failure
-    Failure >> k = Failure
-
-    -- Types remaining: Any, Query, Move, Atom, AtomicMove, Sure
-
-    -- Atomicity is preserved by join with a Sure action if the atomic step comes first.
-    Atom       >> Sure = Atom
+    -- When an atomic step is followed by an infallible step, atomicity is preserved.
+    Atom >> Sure = Atom
     AtomicMove >> Sure = AtomicMove
+    Fail >> k = Fail -- k never fails because it is never reached
+    -- (>> SureQuery) has already been covered above.
 
-    -- Atomicity is preserved by join with a Query if the atom step comes second.
-    Query >> Atom       = Atom
+    -- When an atomic step is preceded by a query, atomicity is preserved.
+    Query >> Atom = Atom
     Query >> AtomicMove = AtomicMove
+    Query >> Fail = Fail
+    -- (SureQuery >>) has already been covered above.
 
-    -- Movement in part is movement in the whole.
+    -- Movement of a part implies movement of the whole.
     k >> Move = Move
     Move >> k = Move
-
-    -- Types remaining: Any, Query, Atom, AtomicMove, Sure
 
     -- When AtomicMove loses atomicity, it degrades to Move.
     AtomicMove >> _ = Move
     _ >> AtomicMove = Move
-
-    -- Types remaining: Any, Query, Atom, Sure
 
     -- All other combinations degrade to Any.
     _ >> _ = Any
