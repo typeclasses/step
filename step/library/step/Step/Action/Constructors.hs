@@ -6,26 +6,28 @@
 
 This module defines 'ActionKind' and types of that kind.
 
-== Actions
++--------------+----------+------------+------------+
+|              | Succeeds | Advances   | Advances   |
+|              |          | on success | on failure |
++--------------+----------+------------+------------+
+| 'Move'       |          | Yes        |            |
++--------------+----------+------------+------------+
+| 'Query'      |          | No         | No         |
++--------------+----------+------------+------------+
+| 'Atom'       |          |            | No         |
++--------------+----------+------------+------------+
+| 'AtomicMove' |          | Yes        | No         |
++--------------+----------+------------+------------+
+| 'Sure'       | Yes      |            |            |
++--------------+----------+------------+------------+
+| 'SureQuery'  | Yes      | No         | No         |
++--------------+----------+------------+------------+
+| 'Fail'       | No       | No         | No         |
++--------------+----------+------------+------------+
+| 'Any'        |          |            |            |
++--------------+----------+------------+------------+
 
-The actions are named for particular properties they have:
-
-* 'Move' — advances if it succeeds
-* 'Query' — never advances
-* 'Atom' — either fails or advances, never both
-* 'AtomicMove' — atomic, and always advances if it succeeds
-* 'Sure' — never fails
-* 'SureQuery' — never fails and never advances
-* 'Fail' — never succeeds and never advances
-
-Finally, there is one with no particular properties:
-
-* 'Any' — the most general type of action; all others can be lifted to it
-
-
-== Unsafety
-
-The /Sure/ property is guaranteed by construction. The rest of the properties are not. This module is, therefore, unsafe. See "Step.Action.Types" and "Step.Action.Safe".
+The only properties guaranteed by construction are that /Sure/ always succeeds and /Fail/ never does. The rest of the properties are not enforced by constructors. This module is, therefore, unsafe. See "Step.Action.Types" and "Step.Action.Safe".
 
 -}
 module Step.Action.Constructors where
@@ -102,7 +104,8 @@ newtype SureQuery config cursor error base value =
     deriving (Functor, Applicative, Monad)
         via (ReaderT config (StateT cursor base))
 
--- | Never succeeds and never moves the cursor, which vacuously guarantees 'Move.
+-- | Never succeeds and never moves the cursor
 --
 newtype Fail config cursor error base value =
     Fail (config -> StateT cursor base error)
+    deriving stock Functor
