@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, QualifiedDo, TypeFamilies #-}
+{-# language FlexibleContexts, OverloadedStrings, QualifiedDo, TypeFamilies #-}
 
 -- | This module is just here to demonstrate that we can do everything that "Data.Attoparsec.Text" does.
 
@@ -13,35 +13,40 @@ import Step.ActionTypes
 import qualified Step.Document.Do as P
 import qualified Step.Document.Prelude as P
 
-char :: ListLike text char => Monad m => Eq char => char -> Parser text AtomicMove m char
-char x = P.satisfy (== x)
+import Char (Char)
+import qualified Char
 
-anyChar :: ListLike text char => Monad m => Parser text AtomicMove m char
-anyChar = P.char
+import qualified Text
 
-notChar :: ListLike text char => Eq char => Monad m => char -> Parser text AtomicMove m char
-notChar x = P.satisfy (/= x)
+char :: Monad m => Char -> Parser Text AtomicMove m Char
+char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)
 
-satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text AtomicMove m char
-satisfy = P.satisfy
+anyChar :: Monad m => Parser Text AtomicMove m Char
+anyChar = P.char P.<?> "anyChar"
 
-satisfyWith :: Monad m => ListLike text char => (char -> a) -> (a -> Bool) -> Parser text AtomicMove m a
-satisfyWith f ok = P.satisfyJust ((\x -> if ok x then Just x else Nothing) . f)
+notChar :: Monad m => Char -> Parser Text AtomicMove m Char
+notChar x = P.satisfy (/= x) P.<?> "not " <> Text.singleton x
 
-skip :: ListLike text char => Monad m => (char -> Bool) -> Parser text AtomicMove m ()
-skip f = void (P.satisfy f)
+satisfy :: Monad m => (Char -> Bool) -> Parser Text AtomicMove m Char
+satisfy f = P.satisfy f P.<?> "satisfy"
 
-peekChar :: ListLike text char => Monad m => Parser text SureQuery m (Maybe char)
+satisfyWith :: Monad m => (Char -> a) -> (a -> Bool) -> Parser Text AtomicMove m a
+satisfyWith f ok = P.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) P.<?> "satisfyWith"
+
+skip :: Monad m => (Char -> Bool) -> Parser Text AtomicMove m ()
+skip f = void (P.satisfy f) P.<?> "skip"
+
+peekChar :: Monad m => Parser Text SureQuery m (Maybe Char)
 peekChar = P.peekCharMaybe
 
-peekChar' :: Monad m => ListLike text char => Parser text Query m char
-peekChar' = P.peekChar
+peekChar' :: Monad m => Parser Text Query m Char
+peekChar' = P.peekChar P.<?> "peekChar'"
 
--- todo
--- digit :: Parser Char
+digit :: Monad m => Parser Text AtomicMove m Char
+digit = P.satisfy Char.isDigit P.<?> "digit"
 
--- todo
--- letter :: Parser Char
+letter :: Monad m => Parser Text AtomicMove m Char
+letter = P.satisfy Char.isAlpha P.<?> "letter"
 
 -- todo
 -- space :: Parser Char
@@ -159,7 +164,7 @@ many1' p = many1 P.do{ x <- p; P.return $! x }
 -- match :: Parser a -> Parser (Text, a)
 
 endOfInput :: Monad m => ListLike text char => Parser text Query m ()
-endOfInput = P.end
+endOfInput = P.end P.<?> "endOfInput"
 
 atEnd :: Monad m => ListLike text char => Parser text SureQuery m Bool
 atEnd = P.atEnd

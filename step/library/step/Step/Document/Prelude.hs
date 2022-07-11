@@ -79,11 +79,11 @@ end = Parser \c -> Action.Unsafe.Query $
         True -> Right ()
         False -> Left (Parser.makeError c)
 
-contextualize :: Monad m => text -> Parser text k m a -> Parser text k m a
+contextualize :: Monad m => Text -> Parser text k m a -> Parser text k m a
 contextualize n (Parser p) = Parser \c -> p (over Config.contextLens (n :) c)
 
 infix 0 <?>
-(<?>) :: Monad m => Parser text k m a -> text -> Parser text k m a
+(<?>) :: Monad m => Parser text k m a -> Text -> Parser text k m a
 p <?> c = contextualize c p
 
 position :: Monad m => ListLike text char => Parser text SureQuery m Loc

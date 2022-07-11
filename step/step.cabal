@@ -34,6 +34,7 @@ common base
       , transformers
       , nat-optics
       , optics ^>= 0.4
+      , text
     mixins:
         base
           ( Data.Bool as Bool
@@ -79,6 +80,7 @@ common base
           )
       , loc (Data.Loc as Loc, Data.Loc.SpanOrLoc as SpanOrLoc)
       , optics (Optics)
+      , text (Data.Text as Text)
 
 library
     import: base

@@ -3,7 +3,7 @@
 module Step.Internal.Dependencies (module X) where
 
 import Applicative as X ((<|>))
-import BasePrelude as X (Bool (..), Semigroup ((<>)), Monoid (mempty), Ordering (..), Maybe (..), Either (..), Eq, (==), (/=), Ord (compare), Show, Num, (+), (-), Integer, Int, fromIntegral, ($), (.), (<$>), error, id, Monad (return, (>>=)), (=<<), elem, (&&), (||), (<), (>), (<=), (>=), Functor, Applicative (pure), fmap, IO, (<*), (*>), (<*>), Integral, not, quotRem, ($!))
+import BasePrelude as X (Bool (..), Semigroup ((<>)), Monoid (mempty), Ordering (..), Maybe (..), Either (..), Eq, (==), (/=), Ord (compare), Show, Num, (+), (-), Integer, Int, fromIntegral, ($), (.), (<$>), error, id, Monad (return, (>>=)), (=<<), elem, (&&), (||), (<), (>), (<=), (>=), Functor, Applicative (pure), fmap, IO, (<*), (*>), (<*>), Integral, not, quotRem, ($!), show)
 import Default as X (Default (def))
 import Except as X (ExceptT (ExceptT))
 import Foldable as X (asum, traverse_)
@@ -27,4 +27,5 @@ import Seq as X (Seq)
 import Set as X (Set)
 import State as X (evalStateT, execStateT, StateT(..), put, get, modify', runState, evalState, execState)
 import String as X (IsString)
+import Text as X (Text)
 import Void as X (Void, absurd)
