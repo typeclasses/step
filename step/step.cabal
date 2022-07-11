@@ -152,6 +152,7 @@ library step-action-types
         Step.ActionTypes.Loop
         Step.ActionTypes.Monadic
         Step.ActionTypes.Subtyping
+        Step.ActionTypes.Transformers
 
 library step-internal
     import: base

@@ -19,29 +19,26 @@ import Step.ActionTypes (Join, type (>>), SureQuery)
 import qualified Step.ActionTypes as Action
 
 join :: (Join k1 k2, Monad m) =>
-    Parser text k1 m (Parser text k2 m a)
-    -> Parser text (k1 >> k2) m a
-join p = Parser \c ->
-    p & fmap (\(Parser a) -> a c)
-      & (\(Parser a) -> a c)
-      & Action.join
+    Parser text m k1 (Parser text m k2 a)
+    -> Parser text m (k1 >> k2) a
+join = Action.joinT
 
 infixl 1 >>=
 (>>=) ::
     Monad m => Join k1 k2 => k1 >> k2 ~ k3 =>
-    Parser text k1 m a -> (a -> Parser text k2 m b) -> Parser text k3 m b
+    Parser text m k1 a -> (a -> Parser text m k2 b) -> Parser text m k3 b
 x >>= f = join (fmap f x)
 
 infixl 4 <*
 (<*) ::
     Monad m => Join k1 k2 => k1 >> k2 ~ k3 =>
-    Parser text k1 m a -> Parser text k2 m b -> Parser text k3 m a
+    Parser text m k1 a -> Parser text m k2 b -> Parser text m k3 a
 a <* b = join (fmap (\x -> fmap (\_ -> x) b) a)
 
 infixl 4 *>
 (*>) ::
     Monad m => Join k1 k2 => k1 >> k2 ~ k3 =>
-    Parser text k1 m a -> Parser text k2 m b -> Parser text k3 m b
+    Parser text m k1 a -> Parser text m k2 b -> Parser text m k3 b
 a *> b = join (fmap (\_ -> b) a)
 
 infixl 1 >>
@@ -50,10 +47,10 @@ infixl 1 >>
 infixl 4 <*>
 (<*>) ::
     Monad m => Join k1 k2 => k1 >> k2 ~ k3 =>
-    Parser text k1 m (a -> b) -> Parser text k2 m a -> Parser text k3 m b
+    Parser text m k1 (a -> b) -> Parser text m k2 a -> Parser text m k3 b
 f <*> x = join (fmap (\f' -> fmap f' x) f)
 
-return :: Monad m => a -> Parser text SureQuery m a
-return x = Parser (\_ -> BasePrelude.return x)
+return :: Monad m => a -> Parser text m SureQuery a
+return = BasePrelude.return
 
 pure = return
