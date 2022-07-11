@@ -40,7 +40,6 @@ deriving
     via (ReaderT Config (kind (DocumentMemory text base) Error base))
     instance (Functor base, FunctorialAction kind) => Functor (Parser text kind base)
 
-
 -- | Parser is only Applicative + Monadic for certain action kinds; see 'MonadAction'
 deriving
     via (ReaderT Config (kind (DocumentMemory text base) Error base))
