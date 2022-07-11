@@ -14,7 +14,7 @@ import Step.ActionTypes.Functorial
 
 class (FunctorialAction k1, FunctorialAction k2, FunctorialAction (k1 >> k2)) => Join (k1 :: ActionKind) (k2 :: ActionKind)
   where
-    join :: Monad m => k1 config cursor error m (k2 config cursor error m a) -> (k1 >> k2) config cursor error m a
+    join :: Monad m => k1 cursor error m (k2 cursor error m a) -> (k1 >> k2) cursor error m a
 
 instance Join Any        Any        where join = Coerced.join
 instance Join Any        Atom       where join = Coerced.join

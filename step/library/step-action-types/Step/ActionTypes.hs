@@ -15,8 +15,6 @@ module Step.ActionTypes
     -- * Miscellaneous classes
     -- ** Functorial, Monadic
     FunctorialAction, MonadicAction,
-    -- ** Configurable
-    Configurable (configure),
     -- ** Atomic
     Atomic (try),
     -- ** Returnable
@@ -28,7 +26,6 @@ module Step.ActionTypes
 
 import Step.ActionTypes.Atomic
 import Step.ActionTypes.Returnable
-import Step.ActionTypes.Config
 import Step.ActionTypes.Functorial
 import Step.ActionTypes.Join
 import Step.ActionTypes.KindJoin

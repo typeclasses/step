@@ -22,29 +22,21 @@ import Coerce (coerce)
 
 class Is (k1 :: ActionKind) (k2 :: ActionKind)
   where
-    cast' :: Monad m => k1 config cursor error m a -> k2 config cursor error m a
+    cast' :: Monad m => k1 cursor error m a -> k2 cursor error m a
 
 
-cast :: forall k2 k1 config cursor error m a.
-    Monad m =>
-    Is k1 k2 =>
-    k1 config cursor error m a
-    -> k2 config cursor error m a
+cast :: forall k2 k1 cursor error m a. (Monad m, Is k1 k2) =>
+    k1 cursor error m a -> k2 cursor error m a
 cast = cast' @k1 @k2
 
 
 -- Functions used for defining instances below
 
-sureToAny :: Functor m =>
-    Sure config cursor error m a
-    -> Any config cursor error m a
+sureToAny :: Functor m => Sure cursor error m a -> Any cursor error m a
+sureToAny (Sure p) = Any $ p <&> Right
 
-sureToAny (Sure p) = Any (\c -> p c <&> Right)
-
-failureAny :: Monad m =>
-    Fail config cursor error m a
-    -> Any config cursor error m a
-failureAny (Fail f) = Any \c -> return (Left (f c))
+failureAny :: Monad m => Fail cursor error m a -> Any cursor error m a
+failureAny (Fail f) = Any $ return (Left f)
 
 
 -- Identity

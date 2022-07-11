@@ -143,7 +143,6 @@ library step-action-types
         Step.ActionTypes.Returnable
         Step.ActionTypes.Coerce
         Step.ActionTypes.CoercedJoin
-        Step.ActionTypes.Config
         Step.ActionTypes.Constructors
         Step.ActionTypes.Functorial
         Step.ActionTypes.Join

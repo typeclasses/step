@@ -11,6 +11,7 @@ module Step.Document.Do
 
 import qualified BasePrelude
 import BasePrelude (fmap, (<$>), Monad, (.))
+import Function ((&))
 
 import Step.Document.Parser (Parser (Parser))
 
@@ -20,7 +21,10 @@ import qualified Step.ActionTypes as Action
 join :: (Join k1 k2, Monad m) =>
     Parser text k1 m (Parser text k2 m a)
     -> Parser text (k1 >> k2) m a
-join = Parser . Action.join . (\(Parser a) -> a) . fmap (\(Parser a) -> a)
+join p = Parser \c ->
+    p & fmap (\(Parser a) -> a c)
+      & (\(Parser a) -> a c)
+      & Action.join
 
 infixl 1 >>=
 (>>=) ::
@@ -50,6 +54,6 @@ infixl 4 <*>
 f <*> x = join (fmap (\f' -> fmap f' x) f)
 
 return :: Monad m => a -> Parser text SureQuery m a
-return x = Parser (BasePrelude.return x)
+return x = Parser (\_ -> BasePrelude.return x)
 
 pure = return

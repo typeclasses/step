@@ -1,5 +1,5 @@
 {-# language DataKinds, FlexibleContexts, KindSignatures, StandaloneKindSignatures #-}
-{-# language DerivingStrategies, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
+{-# language DerivingVia, StandaloneDeriving #-}
 
 module Step.Document.Parser where
 
@@ -33,27 +33,33 @@ type ParserKind =
 type Parser :: ParserKind
 
 newtype Parser (text :: Type) (kind :: ActionKind) (base :: Type -> Type) (value :: Type) =
-    Parser (kind (Config text) (DocumentMemory text base) (Error text) base value)
+    Parser (Config text -> kind (DocumentMemory text base) (Error text) base value)
 
 -- | Parser is a Functor for every 'ActionKind'.
-deriving newtype instance (Functor base, FunctorialAction k) => Functor (Parser text k base)
+deriving
+    via (ReaderT (Config text) (kind (DocumentMemory text base) (Error text) base))
+    instance (Functor base, FunctorialAction kind) => Functor (Parser text kind base)
+
 
 -- | Parser is only Applicative + Monadic for certain action kinds; see 'MonadAction'
-deriving newtype instance (Monad base, MonadicAction k) => Applicative (Parser text k base)
+deriving
+    via (ReaderT (Config text) (kind (DocumentMemory text base) (Error text) base))
+    instance (Monad base, MonadicAction kind) => Applicative (Parser text kind base)
 
 -- | Parser is only Applicative + Monadic for certain action kinds; see 'MonadAction'
-deriving newtype instance (Monad base, MonadicAction k) => Monad (Parser text k base)
+deriving
+    via (ReaderT (Config text) (kind (DocumentMemory text base) (Error text) base))
+    instance (Monad base, MonadicAction kind) => Monad (Parser text kind base)
 
 -- | Convert a parser's 'ActionKind' to something more general; see "Step.ActionTypes"
 cast :: forall k2 k1 text m a. Monad m => Action.Is k1 k2 =>
     Parser text k1 m a -> Parser text k2 m a
-cast = under (iso Parser (\(Parser z) -> z)) (Action.cast @k2 @k1)
+cast (Parser p) = Parser (Action.cast @k2 @k1 . p)
 
 parse :: Monad m => Action.Is k Any =>
     Config text -> Parser text k m a -> StateT (DocumentMemory text m) m (Either (Error text) a)
 parse config (Parser p) =
-    Action.cast @Any p & \(Any p') ->
-    p' config >>= \case
+    Action.cast @Any (p config) & \(Any p') -> p' >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)
 

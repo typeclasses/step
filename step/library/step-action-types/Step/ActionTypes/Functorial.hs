@@ -6,8 +6,8 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Types
 
-class (forall config cursor error m. Functor m =>
-      Functor (k config cursor error m)) => FunctorialAction (k :: ActionKind)
+class (forall cursor error m. Functor m =>
+      Functor (k cursor error m)) => FunctorialAction (k :: ActionKind)
 
 instance FunctorialAction Any
 instance FunctorialAction Atom

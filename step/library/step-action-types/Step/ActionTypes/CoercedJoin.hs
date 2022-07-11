@@ -19,10 +19,10 @@ import Step.ActionTypes.KindJoin
 
 class CoercedJoin k1 k2 k3
   where
-    join :: forall z1 z2 config cursor error m a. Monad m =>
+    join :: forall z1 z2 cursor error m a. Monad m =>
         Coerce k1 z1 => Coerce k2 z2 => Coerce k3 (z1 >> z2) =>
-        z1 config cursor error m (z2 config cursor error m a)
-        -> (z1 >> z2) config cursor error m a
+        z1 cursor error m (z2 cursor error m a)
+        -> (z1 >> z2) cursor error m a
 
 instance CoercedJoin Any Any Any
   where
@@ -39,65 +39,50 @@ instance CoercedJoin Fail Fail Fail
 instance CoercedJoin Any Sure Any
   where
     join =
-        Coerce.from @Any . (
-            \(Any p) ->
-                Any \c -> do
-                    e <- p c
-                    case e of
-                        Left e' -> return (Left e')
-                        Right (Sure p') -> Right <$> p' c
-        ) . fmap (Coerce.to @Sure) . Coerce.to @Any
+        Coerce.from @Any
+        . (\(Any p) -> Any $ p >>= \case
+              Left e' -> return (Left e')
+              Right (Sure p') -> Right <$> p')
+        . fmap (Coerce.to @Sure) . Coerce.to @Any
 
 instance CoercedJoin Sure Any Any
   where
     join =
-        Coerce.from @Any . (
-            \(Sure p) ->
-                Any \c -> do
-                    Any p' <- p c
-                    p' c
-        ) . fmap (Coerce.to @Any) . Coerce.to @Sure
+        Coerce.from @Any
+        . (\(Sure p) -> Any $ p >>= \(Any p') -> p')
+        . fmap (Coerce.to @Any) . Coerce.to @Sure
 
 instance CoercedJoin Any Fail Any
   where
     join =
-        Coerce.from @Any . (
-            \(Any p) ->
-                Any \c ->
-                    p c <&> (Left . \case
-                        Left e' -> e'
-                        Right (Fail p') -> p' c)
-        ) . fmap (Coerce.to @Fail) . Coerce.to @Any
+        Coerce.from @Any
+        . (\(Any p) -> Any $ p <&> (Left . \case
+              Left e' -> e'
+              Right (Fail p') -> p'))
+        . fmap (Coerce.to @Fail) . Coerce.to @Any
 
 instance CoercedJoin Any Fail Fail
   where
     join =
-        Coerce.from @Fail . (
-            \(Any p) ->
-                Fail \c ->
-                    p c >>= \case
-                        Left e' -> e'
-                        Right (Fail p') -> p' c
-        ) . fmap (Coerce.to @Fail) . Coerce.to @Any
+        Coerce.from @Fail
+        . (\(Any p) -> Fail $ p >>= \case
+              Left e' -> e'
+              Right (Fail p') -> p')
+        . fmap (Coerce.to @Fail) . Coerce.to @Any
 
 instance CoercedJoin Sure Fail Any
   where
     join =
-        Coerce.from @Any . (
-            \(Sure p) ->
-                Any \c ->
-                    p c <&> \(Fail p') ->
-                        Left (p' c)
-        ) . fmap (Coerce.to @Fail) . Coerce.to @Sure
+        Coerce.from @Any
+        . (\(Sure p) -> Any $ p <&> \(Fail p') -> Left p')
+        . fmap (Coerce.to @Fail) . Coerce.to @Sure
 
 instance CoercedJoin Sure Fail Fail
   where
     join =
-        Coerce.from @Fail . (
-            \(Sure p) ->
-                Fail \c ->
-                    p c >>= \(Fail p') -> p' c
-        ) . fmap (Coerce.to @Fail) . Coerce.to @Sure
+        Coerce.from @Fail
+        . (\(Sure p) -> Fail $ p >>= \(Fail p') -> p')
+        . fmap (Coerce.to @Fail) . Coerce.to @Sure
 
 instance CoercedJoin Fail Any Fail
   where
