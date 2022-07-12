@@ -7,6 +7,8 @@ import qualified ListLike
 import Step.BufferedStream.Base (BufferedStream)
 import qualified Step.BufferedStream.Base as BufferedStream
 
+import qualified Step.Buffer.Base as Buffer
+
 import qualified Step.Buffer.State as Buffer.State
 
 import Step.Nontrivial.Base (Nontrivial)
@@ -78,3 +80,9 @@ putChunk x = modify' (BufferedStream.putChunk x)
 
 putNontrivialChunk :: (Monad m, ListLike text char) => Nontrivial text -> StateT (BufferedStream m text) m ()
 putNontrivialChunk x = modify' (BufferedStream.putNontrivialChunk x)
+
+takeBuffer :: (Monad m, Monoid text) => StateT (BufferedStream m text) m text
+takeBuffer = do
+    s <- get
+    put s{ BufferedStream.buffer = Buffer.empty }
+    return (Buffer.fold (BufferedStream.buffer s))

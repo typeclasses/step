@@ -1,7 +1,7 @@
 module Step.Cursor.Base
   (
     {- * The type -} Cursor (..),
-    {- * Optics -} positionLens, bufferLens, pendingLens, bufferedStreamLens,
+    {- * Optics -} positionLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
     {- * Buffer actions -} fillBuffer, bufferMore, bufferAll,
     {- * Buffer inspection -} isAllBuffered, bufferIsEmpty, bufferHeadChar,
@@ -27,45 +27,31 @@ import qualified Step.Nontrivial.ListT as Nontrivial.ListT
 data Cursor m text =
   Cursor
     { position :: CursorPosition
-    , buffer :: Buffer text
-    , pending :: Maybe (ListT m (Nontrivial text))
-        -- ^ 'Nothing' indicates that the end of the stream has been reached.
+    , bufferedStream :: BufferedStream m text
     }
 
 positionLens :: Lens' (Cursor m text) CursorPosition
 positionLens = lens position \x y -> x{ position = y }
 
-bufferLens :: Lens' (Cursor m text) (Buffer text)
-bufferLens = lens buffer \x y -> x{ buffer = y }
-
-pendingLens :: Lens
-  (Cursor m1 text)
-  (Cursor m2 text)
-  (Maybe (ListT m1 (Nontrivial text)))
-  (Maybe (ListT m2 (Nontrivial text)))
-pendingLens = lens pending \x y -> x{ pending = y }
-
 bufferIsEmpty :: Cursor m text -> Bool
-bufferIsEmpty = Buffer.isEmpty . buffer
+bufferIsEmpty = BufferedStream.bufferIsEmpty . bufferedStream
 
 isAllBuffered :: Cursor m text -> Bool
-isAllBuffered = isNothing . pending
+isAllBuffered = BufferedStream.isAllBuffered . bufferedStream
 
 bufferAll :: Monad m => ListLike text char => Cursor m text -> m (Cursor m text)
 bufferAll = while (not . isAllBuffered) bufferMore
 
 bufferedStreamLens :: Lens' (Cursor m text) (BufferedStream m text)
-bufferedStreamLens = lens
-    (\x -> BufferedStream{ BufferedStream.buffer = buffer x, BufferedStream.pending = pending x })
-    (\x bs -> x{ buffer = BufferedStream.buffer bs, pending = BufferedStream.pending bs })
+bufferedStreamLens = lens bufferedStream \x y -> x{ bufferedStream = y }
 
 bufferUnconsChar :: ListLike text char => Cursor m text -> Maybe (char, Cursor m text)
-bufferUnconsChar cbs = case Buffer.unconsChar (buffer cbs) of
-    Nothing -> Nothing
-    Just (c, b') -> Just (c, cbs{ buffer = b', position = position cbs + 1 })
+bufferUnconsChar cbs = do
+    (c, b') <- BufferedStream.bufferUnconsChar (bufferedStream cbs)
+    Just (c, Cursor{ bufferedStream = b', position = position cbs + 1 })
 
 bufferHeadChar :: Monad m => ListLike text char => Cursor m text -> Maybe char
-bufferHeadChar = Buffer.headChar . buffer
+bufferHeadChar = BufferedStream.bufferedHeadChar . bufferedStream
 
 unconsChar :: Monad m => ListLike text char => Cursor m text -> m (Cursor m text, Maybe char)
 unconsChar cbs = do
@@ -84,8 +70,7 @@ unconsCharTentative cbs = do
             (Just x)
 
 fromListT :: Monad m => ListLike text char => ListT m text -> Cursor m text
-fromListT xs =
-    Cursor 0 Buffer.empty (Just (Nontrivial.ListT.filter xs))
+fromListT xs = Cursor 0 (BufferedStream.fromListT xs)
 
 toListT :: Monad m => Cursor m text -> ListT m (Nontrivial text)
 toListT = BufferedStream.toListT . view bufferedStreamLens

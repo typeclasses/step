@@ -4,8 +4,8 @@ module Step.BufferedStream.Base
     {- * Optics -} bufferLens, pendingLens,
     {- * Constants -} empty,
     {- * Conversion with ListT -} toListT, fromListT,
-    {- * Buffer querying -} bufferSize, bufferIsEmpty,
-    {- * Buffer manipulation -} bufferUnconsChunk, putChunk, putNontrivialChunk,
+    {- * Buffer querying -} bufferSize, bufferIsEmpty, isAllBuffered, bufferedHeadChar,
+    {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar, putChunk, putNontrivialChunk,
     {- * Buffering -} fillBuffer, bufferMore,
   )
   where
@@ -41,6 +41,9 @@ pendingLens = lens pending \x y -> x{ pending = y }
 empty :: BufferedStream m text
 empty = BufferedStream Buffer.empty Nothing
 
+isAllBuffered :: BufferedStream m text -> Bool
+isAllBuffered = isNothing . pending
+
 toListT :: Monad m => BufferedStream m text -> ListT m (Nontrivial text)
 toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
 
@@ -57,6 +60,14 @@ bufferUnconsChunk :: ListLike text char => BufferedStream m text -> Maybe (Nontr
 bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, s{ buffer = b' })
+
+bufferUnconsChar :: ListLike text char => BufferedStream m text -> Maybe (char, BufferedStream m text)
+bufferUnconsChar s = do
+    (c, b') <- Buffer.unconsChar (buffer s)
+    Just (c, s{ buffer = b' })
+
+bufferedHeadChar :: ListLike text char => BufferedStream m text -> Maybe char
+bufferedHeadChar = Buffer.headChar . buffer
 
 -- | Adds a chunk back to the left side of the buffer if the argument is non-empty
 putChunk :: ListLike text char => text -> BufferedStream m text -> BufferedStream m text

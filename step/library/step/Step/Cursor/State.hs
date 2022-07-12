@@ -56,21 +56,14 @@ bufferAll = modifyM Cursor.bufferAll
 takeAll :: (Monad m, ListLike text char) => StateT (Cursor m text) m text
 takeAll = bufferAll *> takeBuffer
 
-takeBuffer :: Monoid text => Monad m => StateT (Cursor m text) m text
+takeBuffer :: ListLike text char => Monoid text => Monad m => StateT (Cursor m text) m text
 takeBuffer = do
-    b <- use Cursor.bufferLens
-    assign Cursor.bufferLens Buffer.empty
-    modifying Cursor.positionLens (+ fromIntegral (Buffer.size b))
-    return (Buffer.fold b)
+    x <- zoom Cursor.bufferedStreamLens BufferedStream.State.takeBuffer
+    modifying Cursor.positionLens (+ fromIntegral (ListLike.length x))
+    return x
 
 atEnd :: ListLike text char => Monad m => StateT (Cursor m text) m Bool
 atEnd = fillBuffer 1 *> (get <&> Cursor.bufferIsEmpty)
 
 isAllBuffered :: Monad m => StateT (Cursor m text) m Bool
 isAllBuffered = get <&> Cursor.isAllBuffered
-
---     zoom ParseState.futureLens Stream.State.bufferAll
---     xs <- Buffer.chunks <$> use (ParseState.futureLens % Stream.bufferLens)
---     assign ParseState.futureLens Stream.empty
---     zoom ParseState.pastLens $ traverse_ (modify' . Past.record) xs
---     return (Right (ListLike.fold xs))
