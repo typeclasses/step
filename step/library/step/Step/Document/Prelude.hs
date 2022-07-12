@@ -25,6 +25,7 @@ import qualified Step.Document.Parser as Parser
 import qualified Loc
 import Loc (Loc, SpanOrLoc)
 
+import Step.DocumentMemory.Base (DocumentMemory)
 import qualified Step.DocumentMemory.State as DocumentMemory.State
 
 import qualified Step.Document.Config as Config
@@ -36,6 +37,8 @@ import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Types
 
 import qualified Step.ActionTypes.Unsafe as Action.Unsafe
+
+import Step.Extent.BufferedStream (Extent (Extent))
 
 char :: Monad m => ListLike text char => Parser text m AtomicMove char
 char = Parser $ Action.ActionReader \c -> Action.Unsafe.AtomicMove $
@@ -144,10 +147,16 @@ failure :: Monad m => Parser text m Fail a
 failure = Parser $ Action.ActionReader \c ->
     Action.Unsafe.Fail (Parser.makeError c)
 
--- -- | Consume the rest of the input. This is mostly useful in conjunction with 'under'.
+-- -- | Consume the rest of the input. This is mostly useful in conjunction with 'within'.
 all :: Monad m => ListLike text char => Parser text m Sure text
 all = Parser $ Action.ActionReader \_ ->
     Action.Unsafe.Sure DocumentMemory.State.takeAll
+
+within :: Monad m => ListLike text char =>
+    Extent (StateT (DocumentMemory text m) m) text
+    -> Parser text m k a
+    -> Parser text m k a
+within (Extent xs) = _
 
 -- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do
