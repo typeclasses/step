@@ -67,10 +67,12 @@ satisfyJust ok = Parser $ Action.ActionReader \c ->
             Nothing -> Left (Parser.makeError c)
             Just x -> Right x
 
+-- todo: add an atomic version of 'text'
+
 text :: Monad m => ListLike text char => Eq text => Eq char => text -> Parser text m Any ()
 text x = Parser $ Action.ActionReader \c ->
     Action.Unsafe.Any $
-        DocumentMemory.State.takeText x <&> \case
+        DocumentMemory.State.takeTextNotAtomic x <&> \case
             True -> Right ()
             False -> Left (Parser.makeError c)
 

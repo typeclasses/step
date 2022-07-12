@@ -110,7 +110,8 @@ library
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
 
-        Step.Extent.Base
+        Step.Extent.BufferedStream
+        Step.Extent.ListT
 
         Step.Nontrivial.Base
         Step.Nontrivial.Constructor

@@ -5,7 +5,7 @@ module Step.BufferedStream.Base
     {- * Constants -} empty,
     {- * Conversion with ListT -} toListT, fromListT,
     {- * Buffer querying -} bufferSize, bufferIsEmpty,
-    {- * Buffer manipulation -} bufferUnconsChunk, putChunk,
+    {- * Buffer manipulation -} bufferUnconsChunk, putChunk, putNontrivialChunk,
     {- * Buffering -} fillBuffer, bufferMore,
   )
   where
@@ -58,13 +58,15 @@ bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, s{ buffer = b' })
 
+-- | Adds a chunk back to the left side of the buffer if the argument is non-empty
 putChunk :: ListLike text char => text -> BufferedStream m text -> BufferedStream m text
 putChunk x s = case Nontrivial.refine x of Nothing -> s; Just y -> putNontrivialChunk y s
 
+-- | Adds a chunk back to the left side of the buffer
 putNontrivialChunk :: ListLike text char => Nontrivial text -> BufferedStream m text -> BufferedStream m text
 putNontrivialChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
 
--- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
+-- | Force the input until at least @n@ characters of input are buffered or the end of input is reached
 fillBuffer :: (Monad m, ListLike text char) =>
     Natural -> BufferedStream m text -> m (BufferedStream m text)
 fillBuffer n = while continue bufferMore
@@ -73,7 +75,7 @@ fillBuffer n = while continue bufferMore
         isJust (pending s)
         && Buffer.size (buffer s) < n
 
--- | Read one chunk of input. Does nothing if the end of the stream has been reached.
+-- | Read one chunk of input; does nothing if the end of the stream has been reached
 bufferMore :: (Monad m, ListLike text char) =>
     BufferedStream m text -> m (BufferedStream m text)
 bufferMore s = case pending s of

@@ -33,9 +33,7 @@ takeBufferedChar = do
     s <- get
     case Cursor.bufferUnconsChar s of
         Nothing -> return Nothing
-        Just (c, s') -> do
-            put s'
-            return (Just c)
+        Just (c, s') -> put s' $> Just c
 
 peekBufferedChar :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
 peekBufferedChar = get <&> Cursor.bufferHeadChar
@@ -46,9 +44,9 @@ takeCharIf f = Tentative.State.ifJust (\case Just x | f x -> Just x; _ -> Nothin
 takeCharJust :: Monad m => ListLike text char => (char -> Maybe r) -> StateT (Cursor m text) m (Maybe r)
 takeCharJust f = Tentative.State.ifJust (>>= f) Cursor.Tentative.takeChar
 
-takeText :: (Monad m, ListLike text char, Eq text, Eq char) => text -> StateT (Cursor m text) m Bool
-takeText x = do
-    y <- zoom Cursor.bufferedStreamLens (BufferedStream.State.takeText x)
+takeTextNotAtomic :: (Monad m, ListLike text char, Eq text, Eq char) => text -> StateT (Cursor m text) m Bool
+takeTextNotAtomic x = do
+    y <- zoom Cursor.bufferedStreamLens (BufferedStream.State.takeTextNotAtomic x)
     modifying Cursor.positionLens (+ fromIntegral (ListLike.length x))
     return y
 
@@ -56,9 +54,7 @@ bufferAll :: (Monad m, ListLike text char) => StateT (Cursor m text) m ()
 bufferAll = modifyM Cursor.bufferAll
 
 takeAll :: (Monad m, ListLike text char) => StateT (Cursor m text) m text
-takeAll = do
-    bufferAll
-    takeBuffer
+takeAll = bufferAll *> takeBuffer
 
 takeBuffer :: Monoid text => Monad m => StateT (Cursor m text) m text
 takeBuffer = do
@@ -68,9 +64,7 @@ takeBuffer = do
     return (Buffer.fold b)
 
 atEnd :: ListLike text char => Monad m => StateT (Cursor m text) m Bool
-atEnd = do
-    fillBuffer 1
-    get <&> Cursor.bufferIsEmpty
+atEnd = fillBuffer 1 *> (get <&> Cursor.bufferIsEmpty)
 
 isAllBuffered :: Monad m => StateT (Cursor m text) m Bool
 isAllBuffered = get <&> Cursor.isAllBuffered
