@@ -9,7 +9,8 @@ module Step.Document.Prelude
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} failure, try,
-    -- {- * Transformation -} under, while,
+    {- * Transformation -} within,
+    {- * Extent -} -- while,
   )
   where
 
@@ -32,7 +33,7 @@ import qualified Step.Document.Config as Config
 
 import qualified Step.Document.Do as P
 
-import Step.ActionTypes (Atomic, Loop0, Loop1)
+import Step.ActionTypes (Atomic, Loop0, Loop1, ActionReader (..))
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Types
 
@@ -152,11 +153,17 @@ all :: Monad m => ListLike text char => Parser text m Sure text
 all = Parser $ Action.ActionReader \_ ->
     Action.Unsafe.Sure DocumentMemory.State.takeAll
 
-within :: Monad m => ListLike text char =>
+within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny k =>
     Extent (StateT (DocumentMemory text m) m) text
     -> Parser text m k a
     -> Parser text m k a
-within (Extent xs) = _
+within (Extent xs) = over o _
+  where
+    o =
+        iso (\(Parser p) -> p) Parser
+        % iso (\(ActionReader f) -> f) ActionReader
+        % mapped
+        % Action.Unsafe.anyIsoUnsafe
 
 -- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do
