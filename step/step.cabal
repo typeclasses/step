@@ -147,6 +147,7 @@ library step-action-types
         Step.ActionTypes.Atomic
         Step.ActionTypes.Returnable
         Step.ActionTypes.Coerce
+        Step.ActionTypes.CoerceAny
         Step.ActionTypes.CoercedJoin
         Step.ActionTypes.Constructors
         Step.ActionTypes.Functorial
