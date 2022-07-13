@@ -30,20 +30,19 @@ type ParserKind =
     -> Type           -- ^ @value@  - produced upon success
     -> Type
 
-type Parser :: ParserKind
-
-type Parser (text :: Type) (base :: Type -> Type) (kind :: ActionKind) (value :: Type) =
-    kind Error (ReaderT Config (StateT (DocumentMemory text base) base)) value
-
-parse :: Monad m => Action.Is k Any =>
-    Config -> Parser text m k a -> StateT (DocumentMemory text m) m (Either Error a)
+parse :: Monad base => Action.Is kind Any =>
+    Config
+    -> kind Error (ReaderT Config (StateT (DocumentMemory text base) base)) value
+    -> StateT (DocumentMemory text base) base (Either Error value)
 parse config p =
     p & Action.cast @Any & \(Any p') -> runReaderT p' config >>= \case
         Left errorMaker -> Left <$> runReaderT errorMaker config
         Right x -> return (Right x)
 
-parseOnly :: Action.Is k Any => Monad m => Char char => ListLike text char =>
-    Config -> Parser text m k a -> ListT m text -> m (Either Error a)
+parseOnly :: Action.Is kind Any => Monad base => Char char => ListLike text char =>
+    Config
+    -> kind Error (ReaderT Config (StateT (DocumentMemory text base) base)) value
+    -> ListT base text -> base (Either Error value)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
 
 makeError :: Monad m => Config -> m Error

@@ -13,12 +13,16 @@ import qualified Step.Document.Prelude as P
 import qualified Step.Document.Parser as P
 import qualified Step.ActionTypes as P
 
+import Step.Document.Config (Config)
+import Step.Document.Error (Error)
+import Step.DocumentMemory.Base (DocumentMemory)
+
 import Char (Char)
 import qualified Char
 
 import qualified Text
 
-type Parser base kind value = P.Parser Text base kind value
+type Parser base kind value = kind Error (ReaderT Config (StateT (DocumentMemory Text base) base)) value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)
