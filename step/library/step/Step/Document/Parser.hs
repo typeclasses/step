@@ -32,23 +32,12 @@ type ParserKind =
 
 type Parser :: ParserKind
 
-newtype Parser (text :: Type) (base :: Type -> Type) (kind :: ActionKind) (value :: Type) =
-    Parser { action :: ActionReader Config Error (StateT (DocumentMemory text base) base) kind value }
-    deriving newtype (Functor, Applicative, Monad)
-
-instance Monad base => ActionT (Parser text base)
-  where
-    joinT = Parser . Action.joinT . fmap action . action
-    castT = Parser . Action.castT . action
-
--- | Convert a parser's 'ActionKind' to something more general; see "Step.ActionTypes"
-cast :: forall k2 k1 text m a. Monad m => Action.Is k1 k2 =>
-    Parser text m k1 a -> Parser text m k2 a
-cast = Action.castT
+type Parser (text :: Type) (base :: Type -> Type) (kind :: ActionKind) (value :: Type) =
+    ActionReader Config Error (StateT (DocumentMemory text base) base) kind value
 
 parse :: Monad m => Action.Is k Any =>
     Config -> Parser text m k a -> StateT (DocumentMemory text m) m (Either Error a)
-parse config (Parser p) =
+parse config p =
     Action.cast @Any (Action.runActionReader p config) & \(Any p') -> p' >>= \case
         Left errorMaker -> Left <$> errorMaker
         Right x -> return (Right x)

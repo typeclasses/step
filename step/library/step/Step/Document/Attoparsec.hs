@@ -19,7 +19,7 @@ import qualified Char
 
 import qualified Text
 
-type Parser = P.Parser Text
+type Parser base kind value = P.Parser Text base kind value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)

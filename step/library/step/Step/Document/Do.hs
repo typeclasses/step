@@ -13,7 +13,7 @@ import qualified BasePrelude
 import BasePrelude (fmap, (<$>), Monad, (.))
 import Function ((&))
 
-import Step.Document.Parser (Parser (Parser))
+import Step.Document.Parser (Parser)
 
 import Step.ActionTypes (Join, type (>>), SureQuery)
 import qualified Step.ActionTypes as Action
