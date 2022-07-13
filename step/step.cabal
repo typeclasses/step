@@ -94,13 +94,14 @@ library
         Step.BufferedStream.Base
         Step.BufferedStream.State
 
+        Step.Competitors.Attoparsec.Text
+
         Step.Cursor.Base
         Step.Cursor.State
         Step.Cursor.Tentative
 
         Step.CursorPosition.Base
 
-        Step.Document.Attoparsec
         Step.Document.Config
         Step.Document.Error
         Step.Document.Parser

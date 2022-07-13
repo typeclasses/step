@@ -2,7 +2,7 @@
 
 -- | This module is just here to demonstrate that we can do everything that "Data.Attoparsec.Text" does.
 
-module Step.Document.Attoparsec where
+module Step.Competitors.Attoparsec.Text where
 
 import Step.Internal.Prelude
 
