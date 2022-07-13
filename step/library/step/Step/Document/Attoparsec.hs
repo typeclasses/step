@@ -6,11 +6,9 @@ module Step.Document.Attoparsec where
 
 import Step.Internal.Prelude
 
--- import Step.Document.Parser
-
 import Step.ActionTypes
 
-import qualified Step.Document.Do as P
+import qualified Step.ActionTypes.Do as P
 import qualified Step.Document.Prelude as P
 import qualified Step.Document.Parser as P
 

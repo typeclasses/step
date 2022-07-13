@@ -102,7 +102,6 @@ library
 
         Step.Document.Attoparsec
         Step.Document.Config
-        Step.Document.Do
         Step.Document.Error
         Step.Document.Parser
         Step.Document.Prelude
@@ -141,6 +140,7 @@ library step-action-types
     build-depends: step-internal
     exposed-modules:
         Step.ActionTypes
+        Step.ActionTypes.Do
         Step.ActionTypes.Types
         Step.ActionTypes.Unsafe
     other-modules:
@@ -176,7 +176,7 @@ test-suite test-step
     type: exitcode-stdio-1.0
     hs-source-dirs: test/test-step
     main-is: Main.hs
-    build-depends: step, step-internal, hspec, hspec-hedgehog, text
+    build-depends: step, step-internal, step-action-types, hspec, hspec-hedgehog, text
     mixins:
         step-internal (Step.Internal.Prelude)
       , text (Data.Text as Text)

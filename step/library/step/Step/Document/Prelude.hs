@@ -31,7 +31,7 @@ import qualified Step.DocumentMemory.State as DocumentMemory.State
 
 import qualified Step.Document.Config as Config
 
-import qualified Step.Document.Do as P
+import qualified Step.ActionTypes.Do as P
 
 import Step.ActionTypes (Atomic, Loop0, Loop1)
 import qualified Step.ActionTypes as Action

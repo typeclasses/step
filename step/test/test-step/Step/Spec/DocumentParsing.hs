@@ -29,7 +29,7 @@ import Char (Char)
 import qualified Step.Document.Parser as P
 import qualified Step.Document.Prelude as P
 import qualified Step.Document.Error as P
-import qualified Step.Document.Do as P
+import qualified Step.ActionTypes.Do as P
 
 spec :: SpecWith ()
 spec = describe "Document parsing" do
