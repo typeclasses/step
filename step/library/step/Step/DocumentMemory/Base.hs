@@ -1,3 +1,5 @@
+{-# language FlexibleInstances, MultiParamTypeClasses #-}
+
 module Step.DocumentMemory.Base where
 
 import Step.Internal.Prelude
@@ -12,7 +14,11 @@ import qualified Step.Cursor.Base as Cursor
 
 import Step.CursorPosition.Base (CursorPosition)
 
+import qualified Step.Cursor.State as Cursor.State
+
 import Loc (Loc)
+
+import Step.LookAhead.Class (LookAhead (..))
 
 data DocumentMemory text m =
   DocumentMemory
@@ -59,3 +65,18 @@ position x = case LineHistory.locateCursorInDocument (cursorPosition x) (content
 
 isAllBuffered :: DocumentMemory text m -> Bool
 isAllBuffered = Cursor.isAllBuffered . cursor
+
+runCursorState :: Monad m =>
+    StateT (DocumentCursor text m) (StateT LineHistory m) a ->
+    StateT (DocumentMemory text m) m a
+runCursorState go = do
+    dm <- get
+    let co = content dm
+    let cu = cursor dm
+    ((x, cu'), co') <- lift $ runStateT (runStateT go cu) co
+    put DocumentMemory{ cursor = cu', content = co' }
+    return x
+
+instance Monad m => LookAhead (StateT (DocumentMemory text m) m) text where
+    peekCharMaybe = runCursorState Cursor.State.peekCharMaybe
+    atEnd = runCursorState Cursor.State.atEnd

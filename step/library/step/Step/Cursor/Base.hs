@@ -3,7 +3,7 @@ module Step.Cursor.Base
     {- * The type -} Cursor (..),
     {- * Optics -} positionLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
-    {- * Buffer actions -} fillBuffer, bufferMore, bufferAll,
+    {- * Buffer actions -} fillBuffer, fillBuffer1, bufferMore, bufferAll,
     {- * Buffer inspection -} isAllBuffered, bufferIsEmpty, bufferHeadChar,
     {- * Taking from the stream -} unconsChar, bufferUnconsChar, unconsCharTentative,
   )
@@ -79,6 +79,10 @@ toListT = BufferedStream.toListT . view bufferedStreamLens
 fillBuffer :: (Monad m, ListLike text char) =>
     Natural -> Cursor m text -> m (Cursor m text)
 fillBuffer n = traverseOf bufferedStreamLens (BufferedStream.fillBuffer n)
+
+fillBuffer1 :: Monad m => ListLike text char =>
+    Cursor m text -> m (Cursor m text)
+fillBuffer1 = traverseOf bufferedStreamLens BufferedStream.fillBuffer1
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
 bufferMore :: (Monad m, ListLike text char) =>

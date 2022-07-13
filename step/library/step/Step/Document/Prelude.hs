@@ -43,6 +43,9 @@ import Step.Document.Error (Error)
 
 import Step.Document.Config (Config)
 
+import Step.LookAhead.Class (LookAhead)
+import qualified Step.LookAhead.Class as LookAhead
+
 char :: Monad base => ListLike text char =>
     AtomicMove Error (ReaderT Config (StateT (DocumentMemory text base) base)) char
 char = Action.Unsafe.AtomicMove $ ReaderT \c ->
@@ -50,16 +53,16 @@ char = Action.Unsafe.AtomicMove $ ReaderT \c ->
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
-peekChar :: Monad base => ListLike text char =>
-    Query Error (ReaderT Config (StateT (DocumentMemory text base) base)) char
+peekChar :: LookAhead base text => ListLike text char =>
+    Query Error (ReaderT Config base) char
 peekChar = Action.Unsafe.Query $ ReaderT \c ->
-    DocumentMemory.State.peekCharMaybe <&> \case
+    LookAhead.peekCharMaybe <&> \case
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
-peekCharMaybe :: Monad base => ListLike text char =>
-    SureQuery Error (ReaderT Config (StateT (DocumentMemory text base) base)) (Maybe char)
-peekCharMaybe = Action.Unsafe.SureQuery $ ReaderT \_ -> DocumentMemory.State.peekCharMaybe
+peekCharMaybe :: LookAhead base text => ListLike text char =>
+    SureQuery Error (ReaderT Config base) (Maybe char)
+peekCharMaybe = Action.Unsafe.SureQuery $ ReaderT \_ -> LookAhead.peekCharMaybe
 
 satisfy :: Monad base => ListLike text char => (char -> Bool)
     -> AtomicMove Error (ReaderT Config (StateT (DocumentMemory text base) base)) char

@@ -6,7 +6,7 @@ module Step.BufferedStream.Base
     {- * Conversion with ListT -} toListT, fromListT,
     {- * Buffer querying -} bufferSize, bufferIsEmpty, isAllBuffered, bufferedHeadChar,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar, putChunk, putNontrivialChunk,
-    {- * Buffering -} fillBuffer, bufferMore,
+    {- * Buffering -} fillBuffer, fillBuffer1, bufferMore,
   )
   where
 
@@ -86,8 +86,11 @@ fillBuffer n = while continue bufferMore
         isJust (pending s)
         && Buffer.size (buffer s) < n
 
+fillBuffer1 :: Monad m => ListLike text char => BufferedStream m text -> m (BufferedStream m text)
+fillBuffer1 b = if Buffer.isEmpty (buffer b) then bufferMore b else return b
+
 -- | Read one chunk of input; does nothing if the end of the stream has been reached
-bufferMore :: (Monad m, ListLike text char) =>
+bufferMore :: Monad m => ListLike text char =>
     BufferedStream m text -> m (BufferedStream m text)
 bufferMore s = case pending s of
     Nothing -> return s -- If the end of the stream has been reached, do nothing

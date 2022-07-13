@@ -96,6 +96,10 @@ library
 
         Step.Competitors.Attoparsec.Text
 
+        Step.CursorMovement.Class
+
+        Step.LookAhead.Class
+
         Step.Cursor.Base
         Step.Cursor.State
         Step.Cursor.Tentative

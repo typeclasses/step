@@ -18,6 +18,9 @@ import qualified ListLike
 fillBuffer :: (Monad m, ListLike text char) => Natural -> StateT (Cursor m text) m ()
 fillBuffer n = modifyM (Cursor.fillBuffer n)
 
+fillBuffer1 :: Monad m => ListLike text char => StateT (Cursor m text) m ()
+fillBuffer1 = modifyM Cursor.fillBuffer1
+
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
 bufferMore :: (Monad m, ListLike text char) => StateT (Cursor m text) m ()
 bufferMore = modifyM Cursor.bufferMore
@@ -62,8 +65,8 @@ takeBuffer = do
     modifying Cursor.positionLens (+ fromIntegral (ListLike.length x))
     return x
 
-atEnd :: ListLike text char => Monad m => StateT (Cursor m text) m Bool
-atEnd = fillBuffer 1 *> (get <&> Cursor.bufferIsEmpty)
+atEnd :: Monad m => ListLike text char => StateT (Cursor m text) m Bool
+atEnd = fillBuffer1 *> (get <&> Cursor.bufferIsEmpty)
 
 isAllBuffered :: Monad m => StateT (Cursor m text) m Bool
 isAllBuffered = get <&> Cursor.isAllBuffered
