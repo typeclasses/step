@@ -10,8 +10,7 @@ import Step.Internal.Prelude
 
 -- | The kind of all the action types in "Step.Action.Types"
 type ActionKind =
-       Type           -- ^ @cursor@ - mutable state
-    -> Type           -- ^ @error@  - produced upon failure
+       Type           -- ^ @error@  - produced upon failure
     -> (Type -> Type) -- ^ @base@   - monadic context
     -> Type           -- ^ @value@  - produced upon success
     -> Type
@@ -27,59 +26,58 @@ type SureQuery  :: ActionKind
 
 -- | No known properties
 --
-newtype Any cursor error base value =
-    Any (StateT cursor base (Either (StateT cursor base error) value))
+newtype Any error base value =
+    Any (base (Either (base error) value))
     deriving (Functor, Applicative, Monad)
-        via (ExceptT (StateT cursor base error) (StateT cursor base))
+        via (ExceptT (base error) base)
 
 -- | Does not move the cursor
 --
-newtype Query cursor error base value =
-    Query (StateT cursor base (Either (StateT cursor base error) value))
+newtype Query error base value =
+    Query (base (Either (base error) value))
     deriving (Functor, Applicative, Monad)
-        via (ExceptT (StateT cursor base error) (StateT cursor base))
+        via (ExceptT (base error) base)
 
 -- | Always moves the cursor
 --
 -- No 'Applicative' or 'Monad' instance here because 'pure' and 'return' don't move the cursor
 --
-newtype Move cursor error base value =
-    Move (StateT cursor base (Either (StateT cursor base error) value))
-    deriving Functor
-        via (ExceptT (StateT cursor base error) (StateT cursor base))
+newtype Move error base value =
+    Move (base (Either (base error) value))
+    deriving stock Functor
 
 -- | Fails noncommittally
 --
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity
 --
-newtype Atom cursor error base value =
-    Atom (StateT cursor base (Either (StateT cursor base error) value))
+newtype Atom error base value =
+    Atom (base (Either (base error) value))
     deriving stock Functor
 
 -- | Always moves the cursor, is atomic
 --
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity, and because 'pure' and 'return' don't move the cursor
 --
-newtype AtomicMove cursor error base value =
-    AtomicMove (StateT cursor base (Either (StateT cursor base error) value))
+newtype AtomicMove error base value =
+    AtomicMove (base (Either (base error) value))
     deriving stock Functor
 
 -- | Always succeeds
 --
-newtype Sure cursor error base value =
-    Sure (StateT cursor base value)
+newtype Sure error base value =
+    Sure (base value)
     deriving (Functor, Applicative, Monad)
-        via (StateT cursor base)
+        via base
 
 -- | Always succeeds, does not move the cursor
 --
-newtype SureQuery cursor error base value =
-    SureQuery (StateT cursor base value)
+newtype SureQuery error base value =
+    SureQuery (base value)
     deriving (Functor, Applicative, Monad)
-        via (StateT cursor base)
+        via base
 
 -- | Never succeeds and never moves the cursor
 --
-newtype Fail cursor error base value =
-    Fail (StateT cursor base error)
+newtype Fail error base value =
+    Fail (base error)
     deriving stock Functor

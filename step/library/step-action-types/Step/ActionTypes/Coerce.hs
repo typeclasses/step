@@ -10,17 +10,17 @@ import Step.ActionTypes.Constructors
 class Coerce (k1 :: ActionKind) (k2 :: ActionKind) | k2 -> k1
   where
     coerced :: Iso
-        (k1 cursor1 error1 m1 a1)
-        (k1 cursor2 error2 m2 a2)
-        (k2 cursor1 error1 m1 a1)
-        (k2 cursor2 error2 m2 a2)
+        (k1 error1 m1 a1)
+        (k1 error2 m2 a2)
+        (k2 error1 m1 a1)
+        (k2 error2 m2 a2)
 
-to :: forall k2 k1 cursor error m a. Coerce k2 k1 =>
-    k1 cursor error m a -> k2 cursor error m a
+to :: forall k2 k1 error m a. Coerce k2 k1 =>
+    k1 error m a -> k2 error m a
 to = review coerced
 
-from :: forall k1 k2 cursor error m a. Coerce k1 k2 =>
-    k1 cursor error m a -> k2 cursor error m a
+from :: forall k1 k2 error m a. Coerce k1 k2 =>
+    k1 error m a -> k2 error m a
 from = view coerced
 
 instance Coerce Any Any where coerced = Optics.coerced

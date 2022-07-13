@@ -10,8 +10,8 @@ import Step.ActionTypes.Functorial
 
 import Step.ActionTypes.Returnable
 
-class (FunctorialAction action, Returnable action, forall cursor error m. Monad m =>
-      Monad (action cursor error m)) => MonadicAction (action :: ActionKind)
+class (FunctorialAction action, Returnable action, forall error m. Monad m =>
+      Monad (action error m)) => MonadicAction (action :: ActionKind)
 
 instance MonadicAction Any
 instance MonadicAction Query

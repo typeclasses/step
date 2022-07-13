@@ -33,7 +33,7 @@ type ParserKind =
 type Parser :: ParserKind
 
 newtype Parser (text :: Type) (base :: Type -> Type) (kind :: ActionKind) (value :: Type) =
-    Parser { action :: ActionReader Config (DocumentMemory text base) Error base kind value }
+    Parser { action :: ActionReader Config Error (StateT (DocumentMemory text base) base) kind value }
     deriving newtype (Functor, Applicative, Monad)
 
 instance Monad base => ActionT (Parser text base)

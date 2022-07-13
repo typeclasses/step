@@ -14,43 +14,43 @@ import Step.ActionTypes.Subtyping
 
 ---
 
-newtype ActionIdentity cursor error (base :: Type -> Type) (kind :: ActionKind) value =
-    ActionIdentity{ runActionIdentity :: kind cursor error base value }
+newtype ActionIdentity error (base :: Type -> Type) (kind :: ActionKind) value =
+    ActionIdentity{ runActionIdentity :: kind error base value }
 
 deriving
-    via ((kind :: ActionKind) cursor error (base :: Type -> Type))
+    via ((kind :: ActionKind) error (base :: Type -> Type))
     instance (Functor base, FunctorialAction kind) =>
-        Functor (ActionIdentity cursor error base kind)
+        Functor (ActionIdentity error base kind)
 
 deriving
-    via ((kind :: ActionKind) cursor error (base :: Type -> Type))
+    via ((kind :: ActionKind) error (base :: Type -> Type))
     instance (Monad base, MonadicAction kind) =>
-        Applicative (ActionIdentity cursor error base kind)
+        Applicative (ActionIdentity error base kind)
 
 deriving
-    via ((kind :: ActionKind) cursor error (base :: Type -> Type))
+    via ((kind :: ActionKind) error (base :: Type -> Type))
     instance (Monad base, MonadicAction kind) =>
-        Monad (ActionIdentity cursor error base kind)
+        Monad (ActionIdentity error base kind)
 
 ---
 
-newtype ActionReader context cursor error (base :: Type -> Type) (kind :: ActionKind) value =
-    ActionReader{ runActionReader :: context -> kind cursor error base value }
+newtype ActionReader context error (base :: Type -> Type) (kind :: ActionKind) value =
+    ActionReader{ runActionReader :: context -> kind error base value }
 
 deriving
-    via (ReaderT context ((kind :: ActionKind) cursor error (base :: Type -> Type)))
+    via (ReaderT context ((kind :: ActionKind) error (base :: Type -> Type)))
     instance (Functor base, FunctorialAction kind) =>
-        Functor (ActionReader context cursor error base kind)
+        Functor (ActionReader context error base kind)
 
 deriving
-    via (ReaderT context ((kind :: ActionKind) cursor error (base :: Type -> Type)))
+    via (ReaderT context ((kind :: ActionKind) error (base :: Type -> Type)))
     instance (Monad base, MonadicAction kind) =>
-        Applicative (ActionReader context cursor error base kind)
+        Applicative (ActionReader context error base kind)
 
 deriving
-    via (ReaderT context ((kind :: ActionKind) cursor error (base :: Type -> Type)))
+    via (ReaderT context ((kind :: ActionKind) error (base :: Type -> Type)))
     instance (Monad base, MonadicAction kind) =>
-        Monad (ActionReader context cursor error base kind)
+        Monad (ActionReader context error base kind)
 
 ---
 
@@ -62,12 +62,12 @@ class ActionT (m :: ActionKind -> Type -> Type)
     castT :: Is k1 k2 =>
         m k1 a -> m k2 a
 
-instance Monad base => ActionT (ActionIdentity cursor error base)
+instance Monad base => ActionT (ActionIdentity error base)
   where
     joinT = ActionIdentity . join . fmap runActionIdentity . runActionIdentity
     castT = ActionIdentity . cast . runActionIdentity
 
-instance Monad base => ActionT (ActionReader context cursor error base)
+instance Monad base => ActionT (ActionReader context error base)
   where
     joinT a = ActionReader \c -> join $ fmap (\b -> runActionReader b c) $ runActionReader a c
     castT a = ActionReader \c -> cast $ runActionReader a c
