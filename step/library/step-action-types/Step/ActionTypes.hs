@@ -20,7 +20,7 @@ module Step.ActionTypes
     -- ** Returnable
     Returnable (trivial),
     -- ** Loop
-    Loop0, Loop1,
+    Loop0, Loop1, count0, count1, repetition0, repetition1,
   )
   where
 

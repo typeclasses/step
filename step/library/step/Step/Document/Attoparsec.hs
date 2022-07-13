@@ -11,6 +11,7 @@ import Step.ActionTypes
 import qualified Step.ActionTypes.Do as P
 import qualified Step.Document.Prelude as P
 import qualified Step.Document.Parser as P
+import qualified Step.ActionTypes as P
 
 import Char (Char)
 import qualified Char

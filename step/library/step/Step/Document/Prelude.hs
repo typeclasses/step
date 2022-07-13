@@ -5,10 +5,9 @@ module Step.Document.Prelude
     {- * Single character result -} char, satisfy, satisfyJust, peekChar, peekCharMaybe,
     {- * Text result -} text, all,
     {- * Inspecting the position -} position, withLocation,
-    {- * Repetition -} repetition0, repetition1, count0, count1,
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
-    {- * Failure -} failure, try,
+    {- * Failure -} failure,
     {- * Transformation -} -- within,
     {- * Extent -} -- while,
   )
@@ -104,38 +103,6 @@ withLocation ::
     Parser text m k a -> Parser text m k (SpanOrLoc, a)
 withLocation p =
     (\a x b -> (Loc.spanOrLocFromTo a b, x)) P.<$> position P.<*> p P.<*> position
-
-try :: Monad m => Atomic k1 k2 => Parser text m k1 a -> Parser text m k2 (Maybe a)
-try = Action.try
-
-repetition0 :: Monad m => Parser text m AtomicMove a -> Parser text m Sure [a]
-repetition0 p = fix \r -> P.do
-    xm <- try p
-    case xm of
-        Nothing -> return []
-        Just x -> (x :) <$> r
-
-repetition1 :: Monad m => Parser text m AtomicMove a -> Parser text m AtomicMove (NonEmpty a)
-repetition1 p = P.do
-    x <- p
-    xs <- repetition0 p
-    P.return (x :| xs)
-
-count0 :: Monad m => Loop0 k k' => Natural -> Parser text m k a -> Parser text m k' [a]
-count0 = \n a -> go a n
-  where
-    go a = fix \r -> \case
-        0 -> Action.trivial []
-        n -> Action.cast ((:) P.<$> a P.<*> (r (n - 1)))
-
-count1 :: Monad m => Loop1 k k' =>
-    Positive Natural -> Parser text m k a -> Parser text m k' (NonEmpty a)
-count1 = \n a -> go a n
-  where
-    go a = fix \r -> \p ->
-        case preview positive (review positive p - 1) of
-            Nothing -> (:| []) <$> Action.cast a
-            Just p' -> Action.cast (NonEmpty.cons P.<$> a P.<*> r p')
 
 failure :: Monad m => Parser text m Fail a
 failure = Action.Unsafe.Fail $ ReaderT Parser.makeError

@@ -15,8 +15,10 @@ import qualified BasePrelude
 import BasePrelude (fmap, (<$>), Monad, (.))
 import Function ((&))
 
-import Step.ActionTypes (Join, type (>>), SureQuery)
-import qualified Step.ActionTypes as Action
+import Step.ActionTypes.Join (Join)
+import Step.ActionTypes.KindJoin (type (>>))
+import Step.ActionTypes.Types (SureQuery)
+import qualified Step.ActionTypes.Join as Action
 
 join :: (Join k1 k2, Monad m) => k1 e m (k2 e m a) -> (k1 >> k2) e m a
 join = Action.join
