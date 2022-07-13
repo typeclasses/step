@@ -66,20 +66,20 @@ takeAll = runCursorState Cursor.State.takeAll
 atEnd :: Monad m => ListLike text char => StateT (DocumentMemory text m) m Bool
 atEnd = runCursorState Cursor.State.atEnd
 
-within :: Monad m => ListLike text char =>
-    Extent (StateT (DocumentMemory text m) m) text
-    -> StateT (DocumentMemory text m) m a
-    -> StateT (DocumentMemory text m) m a
-within (Extent
-    (e ::
-      ListT
-        (StateT
-          (BufferedStream (StateT (DocumentMemory text m) m) text)
-          (StateT (DocumentMemory text m) m)
-        )
-        (Nontrivial text)
-    )) s =
-  do
-    dm <- get
-    x <- lift $ runStateT s dm
-    _
+-- within :: Monad m => ListLike text char =>
+--     Extent (StateT (DocumentMemory text m) m) text
+--     -> StateT (DocumentMemory text m) m a
+--     -> StateT (DocumentMemory text m) m a
+-- within (Extent
+--     (e ::
+--       ListT
+--         (StateT
+--           (BufferedStream (StateT (DocumentMemory text m) m) text)
+--           (StateT (DocumentMemory text m) m)
+--         )
+--         (Nontrivial text)
+--     )) s =
+--   do
+--     dm <- get
+--     x <- lift $ runStateT s dm
+--     _

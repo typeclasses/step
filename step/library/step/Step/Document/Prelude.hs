@@ -9,7 +9,7 @@ module Step.Document.Prelude
     {- * The end -} atEnd, end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} failure, try,
-    {- * Transformation -} within,
+    {- * Transformation -} -- within,
     {- * Extent -} -- while,
   )
   where
@@ -155,18 +155,18 @@ all :: Monad m => ListLike text char => Parser text m Sure text
 all = Parser $ Action.ActionReader \_ ->
     Action.Unsafe.Sure DocumentMemory.State.takeAll
 
-within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny k =>
-    Extent (StateT (DocumentMemory text m) m) text
-    -> Parser text m k a
-    -> Parser text m k a
-within e = over o (DocumentMemory.State.within e)
-  where
-    o =
-        iso (\(Parser p) -> p) Parser
-        % iso (\(ActionReader f) -> f) ActionReader
-        % mapped
-        % Action.Unsafe.anyIsoUnsafe
-        % iso (\(Action.Unsafe.Any s) -> s) Action.Unsafe.Any
+-- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny k =>
+--     Extent (StateT (DocumentMemory text m) m) text
+--     -> Parser text m k a
+--     -> Parser text m k a
+-- within e = over o (DocumentMemory.State.within e)
+--   where
+--     o =
+--         iso (\(Parser p) -> p) Parser
+--         % iso (\(ActionReader f) -> f) ActionReader
+--         % mapped
+--         % Action.Unsafe.anyIsoUnsafe
+--         % iso (\(Action.Unsafe.Any s) -> s) Action.Unsafe.Any
 
 -- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do
