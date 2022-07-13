@@ -41,6 +41,8 @@ import qualified Step.ActionTypes.Unsafe as Action.Unsafe
 
 import Step.Extent.BufferedStream (Extent (Extent))
 
+import Step.Document.Error (Error)
+
 char :: Monad m => ListLike text char => Parser text m AtomicMove char
 char = Parser $ Action.ActionReader \c -> Action.Unsafe.AtomicMove $
     DocumentMemory.State.takeChar <&> \case
@@ -157,13 +159,14 @@ within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny k =>
     Extent (StateT (DocumentMemory text m) m) text
     -> Parser text m k a
     -> Parser text m k a
-within (Extent xs) = over o _
+within e = over o (DocumentMemory.State.within e)
   where
     o =
         iso (\(Parser p) -> p) Parser
         % iso (\(ActionReader f) -> f) ActionReader
         % mapped
         % Action.Unsafe.anyIsoUnsafe
+        % iso (\(Action.Unsafe.Any s) -> s) Action.Unsafe.Any
 
 -- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
 -- under (Transform t) (Parser p) = Parser \eo -> do

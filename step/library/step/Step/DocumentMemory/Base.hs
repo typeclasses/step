@@ -17,7 +17,7 @@ import Loc (Loc)
 data DocumentMemory text m =
   DocumentMemory
     { content :: LineHistory
-    , cursor :: Cursor (StateT (LineHistory) m) text
+    , cursor :: Cursor (StateT LineHistory m) text
     }
 
 data CursorLocation =
