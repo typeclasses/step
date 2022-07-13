@@ -33,7 +33,7 @@ import qualified Step.Document.Config as Config
 
 import qualified Step.Document.Do as P
 
-import Step.ActionTypes (Atomic, Loop0, Loop1, ActionReader (..))
+import Step.ActionTypes (Atomic, Loop0, Loop1)
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Types
 
@@ -44,66 +44,58 @@ import Step.Extent.BufferedStream (Extent (Extent))
 import Step.Document.Error (Error)
 
 char :: Monad m => ListLike text char => Parser text m AtomicMove char
-char = Action.ActionReader \c -> Action.Unsafe.AtomicMove $
+char = Action.Unsafe.AtomicMove $ ReaderT \c ->
     DocumentMemory.State.takeChar <&> \case
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
 peekChar :: Monad m => ListLike text char => Parser text m Query char
-peekChar = Action.ActionReader \c -> Action.Unsafe.Query $
+peekChar = Action.Unsafe.Query $ ReaderT \c ->
     DocumentMemory.State.peekCharMaybe <&> \case
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
 peekCharMaybe :: Monad m => ListLike text char => Parser text m SureQuery (Maybe char)
-peekCharMaybe = Action.ActionReader \_ ->
-    Action.Unsafe.SureQuery DocumentMemory.State.peekCharMaybe
+peekCharMaybe = Action.Unsafe.SureQuery $ ReaderT \_ -> DocumentMemory.State.peekCharMaybe
 
 satisfy :: Monad m => ListLike text char => (char -> Bool) -> Parser text m AtomicMove char
-satisfy ok = Action.ActionReader \c ->
-    Action.Unsafe.AtomicMove $
-        DocumentMemory.State.takeCharIf ok <&> \case
-            Nothing -> Left (Parser.makeError c)
-            Just x -> Right x
+satisfy ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
+    DocumentMemory.State.takeCharIf ok <&> \case
+        Nothing -> Left (Parser.makeError c)
+        Just x -> Right x
 
 satisfyJust :: Monad m => ListLike text char => (char -> Maybe a) -> Parser text m AtomicMove a
-satisfyJust ok = Action.ActionReader \c ->
-    Action.Unsafe.AtomicMove $
-        DocumentMemory.State.takeCharJust ok <&> \case
-            Nothing -> Left (Parser.makeError c)
-            Just x -> Right x
+satisfyJust ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
+    DocumentMemory.State.takeCharJust ok <&> \case
+        Nothing -> Left (Parser.makeError c)
+        Just x -> Right x
 
 -- todo: add an atomic version of 'text'
 
 text :: Monad m => ListLike text char => Eq text => Eq char => text -> Parser text m Any ()
-text x = Action.ActionReader \c ->
-    Action.Unsafe.Any $
-        DocumentMemory.State.takeTextNotAtomic x <&> \case
-            True -> Right ()
-            False -> Left (Parser.makeError c)
+text x = Action.Unsafe.Any $ ReaderT \c ->
+    DocumentMemory.State.takeTextNotAtomic x <&> \case
+        True -> Right ()
+        False -> Left (Parser.makeError c)
 
 atEnd :: Monad m => ListLike text char => Parser text m SureQuery Bool
-atEnd = Action.ActionReader \_ ->
-    Action.Unsafe.SureQuery DocumentMemory.State.atEnd
+atEnd = Action.Unsafe.SureQuery $ ReaderT \_ -> DocumentMemory.State.atEnd
 
 end :: Monad m => ListLike text char => Parser text m Query ()
-end = Action.ActionReader \c ->
-    Action.Unsafe.Query $
-        DocumentMemory.State.atEnd <&> \case
-            True -> Right ()
-            False -> Left (Parser.makeError c)
+end = Action.Unsafe.Query $ ReaderT \c ->
+    DocumentMemory.State.atEnd <&> \case
+        True -> Right ()
+        False -> Left (Parser.makeError c)
 
-contextualize :: Monad m => Text -> Parser text m k a -> Parser text m k a
-contextualize n p = Action.ActionReader \c ->
-    Action.runActionReader p (over Config.contextLens (n :) c)
+contextualize :: Monad m => Action.Unsafe.ChangeBase k => Text -> Parser text m k a -> Parser text m k a
+contextualize n = Action.Unsafe.changeBase (withReaderT (over Config.contextLens (n :)))
 
 infix 0 <?>
-(<?>) :: Monad m => Parser text m k a -> Text -> Parser text m k a
+(<?>) :: Monad m => Action.Unsafe.ChangeBase k => Parser text m k a -> Text -> Parser text m k a
 p <?> c = contextualize c p
 
 position :: Monad m => ListLike text char => Parser text m SureQuery Loc
-position = Action.ActionReader $ \_ ->
-    Action.Unsafe.SureQuery DocumentMemory.State.getPosition
+position = Action.Unsafe.SureQuery $ ReaderT \_ -> DocumentMemory.State.getPosition
 
 withLocation ::
     ListLike text char => Monad m =>
@@ -114,8 +106,7 @@ withLocation p =
     (\a x b -> (Loc.spanOrLocFromTo a b, x)) P.<$> position P.<*> p P.<*> position
 
 try :: Monad m => Atomic k1 k2 => Parser text m k1 a -> Parser text m k2 (Maybe a)
-try p = Action.ActionReader \c ->
-    Action.try (Action.runActionReader p c)
+try = Action.try
 
 repetition0 :: Monad m => Parser text m AtomicMove a -> Parser text m Sure [a]
 repetition0 p = fix \r -> P.do
@@ -134,8 +125,8 @@ count0 :: Monad m => Loop0 k k' => Natural -> Parser text m k a -> Parser text m
 count0 = \n a -> go a n
   where
     go a = fix \r -> \case
-        0 -> Action.ActionReader \_ -> Action.trivial []
-        n -> Action.castT ((:) P.<$> a P.<*> (r (n - 1)))
+        0 -> Action.trivial []
+        n -> Action.cast ((:) P.<$> a P.<*> (r (n - 1)))
 
 count1 :: Monad m => Loop1 k k' =>
     Positive Natural -> Parser text m k a -> Parser text m k' (NonEmpty a)
@@ -143,17 +134,15 @@ count1 = \n a -> go a n
   where
     go a = fix \r -> \p ->
         case preview positive (review positive p - 1) of
-            Nothing -> (:| []) <$> Action.castT a
-            Just p' -> Action.castT (NonEmpty.cons P.<$> a P.<*> r p')
+            Nothing -> (:| []) <$> Action.cast a
+            Just p' -> Action.cast (NonEmpty.cons P.<$> a P.<*> r p')
 
 failure :: Monad m => Parser text m Fail a
-failure = Action.ActionReader \c ->
-    Action.Unsafe.Fail (Parser.makeError c)
+failure = Action.Unsafe.Fail $ ReaderT Parser.makeError
 
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'within'.
 all :: Monad m => ListLike text char => Parser text m Sure text
-all = Action.ActionReader \_ ->
-    Action.Unsafe.Sure DocumentMemory.State.takeAll
+all = Action.Unsafe.Sure $ ReaderT \_ -> DocumentMemory.State.takeAll
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny k =>
 --     Extent (StateT (DocumentMemory text m) m) text

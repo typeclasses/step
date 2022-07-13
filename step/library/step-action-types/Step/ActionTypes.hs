@@ -12,8 +12,6 @@ module Step.ActionTypes
     Is, cast,
     -- * Monadic-style join
     Join, join, type (>>),
-    -- * Transformers
-    ActionT (..), ActionIdentity (..), ActionReader (..),
     -- * Miscellaneous classes
     -- ** Functorial, Monadic
     FunctorialAction, MonadicAction,
@@ -34,7 +32,6 @@ import Step.ActionTypes.KindJoin
 import Step.ActionTypes.Loop
 import Step.ActionTypes.Monadic
 import Step.ActionTypes.Subtyping
-import Step.ActionTypes.Transformers
 import Step.ActionTypes.Types
 
 {- $types

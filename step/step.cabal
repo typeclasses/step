@@ -146,6 +146,7 @@ library step-action-types
     other-modules:
         Step.ActionTypes.Atomic
         Step.ActionTypes.Returnable
+        Step.ActionTypes.ChangeBase
         Step.ActionTypes.Coerce
         Step.ActionTypes.CoerceAny
         Step.ActionTypes.CoercedJoin
@@ -156,7 +157,6 @@ library step-action-types
         Step.ActionTypes.Loop
         Step.ActionTypes.Monadic
         Step.ActionTypes.Subtyping
-        Step.ActionTypes.Transformers
 
 library step-internal
     import: base

@@ -21,7 +21,7 @@ import qualified Step.ActionTypes as Action
 join :: (Join k1 k2, Monad m) =>
     Parser text m k1 (Parser text m k2 a)
     -> Parser text m (k1 >> k2) a
-join = Action.joinT
+join = Action.join
 
 infixl 1 >>=
 (>>=) ::
