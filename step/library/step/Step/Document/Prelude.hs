@@ -6,7 +6,6 @@ module Step.Document.Prelude
     {- * Text result -} text, all,
     {- * The end -} end,
     {- * Contextualizing errors -} contextualize, (<?>),
-    {- * Failure -} failure,
     {- * Transformation -} -- within,
     {- * Extent -} -- while,
   )
@@ -19,6 +18,7 @@ import Optics
 import qualified NonEmpty
 
 import qualified Step.Document.Parser as Parser
+import Step.Document.Parser (DocumentParsing (DocumentParsing))
 
 import qualified Loc
 import Loc (Loc, SpanOrLoc)
@@ -47,69 +47,58 @@ import qualified Step.Actions as Action
 
 import Step.TakeOrLeave (TakeOrLeave (..))
 
-char :: Monad base => ListLike text char =>
-    AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error char
-char = Action.Unsafe.AtomicMove $ ReaderT \c ->
-    DocumentMemory.State.takeChar <&> \case
-        Nothing -> Left (Parser.makeError c)
-        Just x -> Right x
+char :: Monad base => ListLike text char => AtomicMove (DocumentParsing text base) Error char
+char = Action.Unsafe.AtomicMove $ Class.takeCharMaybe <&> maybe (Left Class.failure) Right
 
-peekChar :: Class.Peek1 base => Class.PeekChar base char =>
-    Query (ReaderT Config base) Error char
-peekChar = Action.Unsafe.Query $ ReaderT \c ->
-    Class.next <&> \case
-        Nothing -> Left (Parser.makeError c)
-        Just x -> Right x
+peekChar :: Monad base => ListLike text char => Query (DocumentParsing text base) Error char
+peekChar = Action.Unsafe.Query $ Class.peekCharMaybe <&> maybe (Left Class.failure) Right
 
 satisfy :: Monad base => ListLike text char => (char -> Bool)
-    -> AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error char
-satisfy ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
+    -> AtomicMove (DocumentParsing text base) Error char
+satisfy ok = Action.Unsafe.AtomicMove $
     Class.considerChar (\x -> if ok x then Take x else Leave ()) <&> \case
         Just (Take x) -> Right x
-        _ -> Left (Parser.makeError c)
+        _ -> Left Class.failure
 
 satisfyJust :: Monad base => ListLike text char => (char -> Maybe a)
-    -> AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
-satisfyJust ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
+    -> AtomicMove (DocumentParsing text base) Error a
+satisfyJust ok = Action.Unsafe.AtomicMove $
     Class.considerChar (\x -> case ok x of Just y -> Take y; Nothing -> Leave ()) <&> \case
         Just (Take x) -> Right x
-        _ -> Left (Parser.makeError c)
+        _ -> Left Class.failure
 
 -- todo: add an atomic version of 'text'
 
 text :: Monad base => ListLike text char => Eq text => Eq char => text
-    -> Any (ReaderT Config (StateT (DocumentMemory text base) base)) Error ()
-text x = Action.Unsafe.Any $ ReaderT \c ->
-    DocumentMemory.State.takeTextNotAtomic x <&> \case
+    -> Any (DocumentParsing text base) Error ()
+text x = Action.Unsafe.Any $
+    DocumentParsing (lift $ DocumentMemory.State.takeTextNotAtomic x) <&> \case
         True -> Right ()
-        False -> Left (Parser.makeError c)
+        False -> Left Class.failure
 
 end :: Monad base => ListLike text char =>
-    Query (ReaderT Config (StateT (DocumentMemory text base) base)) Error ()
-end = Action.atEnd P.>>= \case
-    True -> Action.cast (P.return ())
-    False -> Action.cast failure
+    Query (DocumentParsing text base) Error ()
+end =
+    Action.atEnd P.>>= \case
+        True -> Action.cast (P.return ())
+        False -> Action.cast Action.failure
 
 contextualize :: Monad base => Action.Unsafe.ChangeBase act => Text
-    -> act (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
-    -> act (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
-contextualize n = Action.Unsafe.changeBase (withReaderT (over Config.contextLens (n :)))
+    -> act (DocumentParsing text base) Error a
+    -> act (DocumentParsing text base) Error a
+contextualize n =
+    Action.Unsafe.changeBase \(DocumentParsing a) ->
+        DocumentParsing (a & withReaderT (over Config.contextLens (n :)))
 
 infix 0 <?>
 (<?>) :: Monad base => Action.Unsafe.ChangeBase act =>
-    act (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
-    -> Text
-    -> act (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
+    act (DocumentParsing text base) Error a
+    -> Text -> act (DocumentParsing text base) Error a
 p <?> c = contextualize c p
 
-failure :: Monad base =>
-    Fail (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
-failure = Action.Unsafe.Fail $ ReaderT Parser.makeError
-
 -- -- | Consume the rest of the input. This is mostly useful in conjunction with 'within'.
-all :: Monad base => ListLike text char =>
-    Sure (ReaderT Config (StateT (DocumentMemory text base) base)) Error text
-all = Action.Unsafe.Sure $ ReaderT \_ -> DocumentMemory.State.takeAll
+all :: Monad base => ListLike text char => Sure (DocumentParsing text base) Error text
+all =  Action.Unsafe.Sure $ DocumentParsing $ lift DocumentMemory.State.takeAll
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>
 --     Extent (StateT (DocumentMemory text m) m) text

@@ -7,6 +7,9 @@ import Step.Internal.Prelude hiding (Text)
 import Loc (Loc)
 
 import Step.TakeOrLeave (TakeOrLeave (..))
+import qualified Step.TakeOrLeave as TakeOrLeave
+
+import qualified Monad
 
 class Monad m => Peek1 m where
 
@@ -17,6 +20,8 @@ class Monad m => Peek1 m where
     atEnd :: PeekChar m char => m Bool
     atEnd = isNothing <$> next
 
+    {-# minimal next #-}
+
 class Peek1 m => Take1 m where
     considerChar :: PeekChar m char =>
         (char -> TakeOrLeave b a)
@@ -26,8 +31,22 @@ class Peek1 m => Take1 m where
         -> m (Maybe (TakeOrLeave b a))
             -- ^ The result of the selection function, or Nothing if end of input
 
+    peekCharMaybe :: PeekChar m char => m (Maybe char)
+    peekCharMaybe = considerChar (Leave . Just) <&> Monad.join . fmap TakeOrLeave.collapse
+
+    takeCharMaybe :: PeekChar m char => m (Maybe char)
+    takeCharMaybe = considerChar (Take . Just) <&> Monad.join . fmap TakeOrLeave.collapse
+
+    {-# minimal considerChar #-}
+
 class Monad m => Locating m where
     position :: m Loc
+
+class Monad m => Fallible m where
+
+    type Error m :: Type
+
+    failure :: m (Error m)
 
 
 -- Aliases
@@ -49,3 +68,7 @@ instance Take1 m => Take1 (ReaderT r m) where
 
 instance Locating m => Locating (ReaderT r m) where
     position = ReaderT \_ -> position
+
+instance Fallible m => Fallible (ReaderT r m) where
+    type Error (ReaderT r m) = Error m
+    failure = ReaderT \_ -> failure

@@ -1,4 +1,4 @@
-{-# language DataKinds, FlexibleContexts, KindSignatures, StandaloneKindSignatures #-}
+{-# language DataKinds, FlexibleContexts, FlexibleInstances, KindSignatures, StandaloneKindSignatures, TypeFamilies #-}
 {-# language DerivingVia, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 
 module Step.Document.Parser where
@@ -22,28 +22,36 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import qualified Monad
 
--- | The kind of 'Parser'
-type ParserKind =
-    Type              -- ^ @text@   - what type of input chunks the parser cursors through
-    -> (Type -> Type) -- ^ @base@   - monadic context
-    -> Action         -- ^ @kind@   - what properties the parser guarantees; see "Step.ActionTypes"
-    -> Type           -- ^ @value@  - produced upon success
-    -> Type
+import qualified Step.Classes as Class
 
-parse :: Monad base => Action.Is kind Any =>
-    Config
-    -> kind (ReaderT Config (StateT (DocumentMemory text base) base)) Error value
-    -> StateT (DocumentMemory text base) base (Either Error value)
+parse :: Monad m => Action.Is kind Any =>
+    Config -> kind (DocumentParsing text m) Error value
+    -> StateT (DocumentMemory text m) m (Either Error value)
 parse config p =
-    p & Action.cast @Any & \(Any p') -> runReaderT p' config >>= \case
-        Left errorMaker -> Left <$> runReaderT errorMaker config
+    p & Action.cast @Any & \(Any (DocumentParsing p')) -> runReaderT p' config >>= \case
+        Left (DocumentParsing errorMaker) -> Left <$> runReaderT errorMaker config
         Right x -> return (Right x)
 
-parseOnly :: Action.Is kind Any => Monad base => Char char => ListLike text char =>
-    Config
-    -> kind (ReaderT Config (StateT (DocumentMemory text base) base)) Error value
-    -> ListT base text -> base (Either Error value)
-parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
+parseOnly :: Action.Is kind Any => Monad m => Char char => ListLike text char =>
+    Config -> kind (DocumentParsing text m) Error value -> ListT m text -> m (Either Error value)
+parseOnly config p xs =
+    evalStateT (parse config p) (DocumentMemory.fromListT xs)
 
-makeError :: Monad m => Config -> m Error
-makeError c = return Error{ Error.context = Config.context c }
+newtype DocumentParsing text m a =
+    DocumentParsing (ReaderT Config (StateT (DocumentMemory text m) m) a)
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT Config (StateT (DocumentMemory text m) m))
+
+instance Monad m => Class.Peek1 (DocumentParsing text m) where
+    type Text (DocumentParsing text m) = text
+    next = DocumentParsing Class.next
+
+instance Monad m => Class.Take1 (DocumentParsing text m) where
+    considerChar f = DocumentParsing (Class.considerChar f)
+
+instance Monad m => Class.Locating (DocumentParsing text m) where
+    position = DocumentParsing Class.position
+
+instance Monad m => Class.Fallible (DocumentParsing text m) where
+    type Error (DocumentParsing text m) = Error
+    failure = DocumentParsing $ ReaderT \c -> return Error{ Error.context = Config.context c }

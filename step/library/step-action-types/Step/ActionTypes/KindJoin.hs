@@ -28,6 +28,7 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
 
     -- When an atomic step is preceded by a query, atomicity is preserved.
     Query >> Atom = Atom
+    Query >> Sure = Atom
     Query >> AtomicMove = AtomicMove
     Query >> Fail = Fail
     -- (SureQuery >>) has already been covered above.

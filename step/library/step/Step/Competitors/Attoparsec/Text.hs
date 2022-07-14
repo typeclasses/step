@@ -25,7 +25,7 @@ import qualified Text
 import qualified Step.Actions as Action
 
 type Parser base action value =
-    action (ReaderT Config (StateT (DocumentMemory Text base) base)) Error value
+    action (P.DocumentParsing Text base) Error value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)
