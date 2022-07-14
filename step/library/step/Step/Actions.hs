@@ -40,6 +40,11 @@ takeCharMaybe =
 peekCharMaybe :: PeekChar m char => SureQuery m e (Maybe char)
 peekCharMaybe = Action.Unsafe.SureQuery C.peekCharMaybe
 
+satisfy :: TakeChar m char => Fallible m => (char -> Bool) -> AtomicMove m (Error m) char
+satisfy ok = Action.Unsafe.AtomicMove $
+    C.considerChar (\x -> if ok x then Take x else Leave ())
+    <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
+
 atEnd :: PeekChar m char => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery C.atEnd
 

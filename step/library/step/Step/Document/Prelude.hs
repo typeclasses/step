@@ -2,7 +2,7 @@
 
 module Step.Document.Prelude
   (
-    {- * Single character result -} satisfy, satisfyJust,
+    {- * Single character result -} satisfyJust,
     {- * Text result -} text, all,
     {- * The end -} end,
     {- * Contextualizing errors -} contextualize, (<?>),
@@ -46,13 +46,6 @@ import qualified Step.Classes as Class
 import qualified Step.Actions as Action
 
 import Step.TakeOrLeave (TakeOrLeave (..))
-
-satisfy :: Monad base => ListLike text char => (char -> Bool)
-    -> AtomicMove (DocumentParsing text base) Error char
-satisfy ok = Action.Unsafe.AtomicMove $
-    Class.considerChar (\x -> if ok x then Take x else Leave ()) <&> \case
-        Just (Take x) -> Right x
-        _ -> Left Class.failure
 
 satisfyJust :: Monad base => ListLike text char => (char -> Maybe a)
     -> AtomicMove (DocumentParsing text base) Error a
