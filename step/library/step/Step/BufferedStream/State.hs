@@ -16,27 +16,23 @@ import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.List as Nontrivial
 
 -- | Determines whether there are any more
-isEmpty :: (Monad m, ListLike text char) => StateT (BufferedStream m text) m Bool
+isEmpty :: Monad m => StateT (BufferedStream m text) m Bool
 isEmpty = do
-    modifyM (BufferedStream.fillBuffer 1)
+    modifyM BufferedStream.fillBuffer1
     get <&> BufferedStream.bufferIsEmpty
 
--- | Force the input until at least @n@ characters of input are buffered or the end of input is reached
-fillBuffer :: (Monad m, ListLike text char) => Natural -> StateT (BufferedStream m text) m ()
-fillBuffer n = modifyM (BufferedStream.fillBuffer n)
-
 -- | Read one chunk of input; does nothing if the end of the stream has been reached
-bufferMore :: (Monad m, ListLike text char) => StateT (BufferedStream m text) m ()
+bufferMore :: Monad m => StateT (BufferedStream m text) m ()
 bufferMore = modifyM BufferedStream.bufferMore
 
 -- | Force the entirety of the pending stream into the buffer
-bufferAll :: (Monad m, ListLike text char) => StateT (BufferedStream m text) m ()
+bufferAll :: Monad m => StateT (BufferedStream m text) m ()
 bufferAll = isEmpty >>= \case True -> return (); False -> bufferMore *> bufferAll
 
 -- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
-takeChunk :: (Monad m, ListLike text char) => StateT (BufferedStream m text) m (Maybe (Nontrivial text))
+takeChunk :: Monad m => StateT (BufferedStream m text) m (Maybe (Nontrivial text))
 takeChunk = do
-    modifyM (BufferedStream.fillBuffer 1)
+    modifyM BufferedStream.fillBuffer1
     zoom BufferedStream.bufferLens Buffer.State.takeChunk
 
 -- | Remove some text where all characters satisfy the predicate, buffering more first if necessary, returning 'Nothing' if the stream does not begin with a character that satisfies the predicate
@@ -52,7 +48,7 @@ takeChunkWhile ok =
 -- | Remove one character from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
 takeChar :: (Monad m, ListLike text char) => StateT (BufferedStream m text) m (Maybe char)
 takeChar = do
-    modifyM (BufferedStream.fillBuffer 1)
+    modifyM BufferedStream.fillBuffer1
     zoom BufferedStream.bufferLens Buffer.State.takeChar
 
 -- todo: add an atomic version of takeTextNotAtomic
@@ -78,7 +74,7 @@ takeNontrivialTextNotAtomic c =
 putChunk :: (Monad m, ListLike text char) => text -> StateT (BufferedStream m text) m ()
 putChunk x = modify' (BufferedStream.putChunk x)
 
-putNontrivialChunk :: (Monad m, ListLike text char) => Nontrivial text -> StateT (BufferedStream m text) m ()
+putNontrivialChunk :: Monad m => Nontrivial text -> StateT (BufferedStream m text) m ()
 putNontrivialChunk x = modify' (BufferedStream.putNontrivialChunk x)
 
 takeBuffer :: (Monad m, Monoid text) => StateT (BufferedStream m text) m text

@@ -14,22 +14,18 @@ import qualified Step.Buffer.Base as Buffer
 
 import qualified ListLike
 
--- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
-fillBuffer :: (Monad m, ListLike text char) => Natural -> StateT (Cursor m text) m ()
-fillBuffer n = modifyM (Cursor.fillBuffer n)
-
-fillBuffer1 :: Monad m => ListLike text char => StateT (Cursor m text) m ()
+fillBuffer1 :: Monad m => StateT (Cursor m text) m ()
 fillBuffer1 = modifyM Cursor.fillBuffer1
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-bufferMore :: (Monad m, ListLike text char) => StateT (Cursor m text) m ()
+bufferMore :: Monad m => StateT (Cursor m text) m ()
 bufferMore = modifyM Cursor.bufferMore
 
 takeChar :: (Monad m, ListLike text char) => StateT (Cursor m text) m (Maybe char)
-takeChar = fillBuffer 1 *> takeBufferedChar
+takeChar = fillBuffer1 *> takeBufferedChar
 
 peekCharMaybe :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
-peekCharMaybe = fillBuffer 1 *> peekBufferedChar
+peekCharMaybe = fillBuffer1 *> peekBufferedChar
 
 takeBufferedChar :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
 takeBufferedChar = do
@@ -53,7 +49,7 @@ takeTextNotAtomic x = do
     modifying Cursor.positionLens (+ fromIntegral (ListLike.length x))
     return y
 
-bufferAll :: (Monad m, ListLike text char) => StateT (Cursor m text) m ()
+bufferAll :: Monad m => StateT (Cursor m text) m ()
 bufferAll = modifyM Cursor.bufferAll
 
 takeAll :: (Monad m, ListLike text char) => StateT (Cursor m text) m text

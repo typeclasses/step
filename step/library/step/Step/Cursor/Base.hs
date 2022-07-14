@@ -3,7 +3,7 @@ module Step.Cursor.Base
     {- * The type -} Cursor (..),
     {- * Optics -} positionLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
-    {- * Buffer actions -} fillBuffer, fillBuffer1, bufferMore, bufferAll,
+    {- * Buffer actions -} fillBuffer1, bufferMore, bufferAll,
     {- * Buffer inspection -} isAllBuffered, bufferIsEmpty, bufferHeadChar,
     {- * Taking from the stream -} unconsChar, bufferUnconsChar, unconsCharTentative,
   )
@@ -39,7 +39,7 @@ bufferIsEmpty = BufferedStream.bufferIsEmpty . bufferedStream
 isAllBuffered :: Cursor m text -> Bool
 isAllBuffered = BufferedStream.isAllBuffered . bufferedStream
 
-bufferAll :: Monad m => ListLike text char => Cursor m text -> m (Cursor m text)
+bufferAll :: Monad m => Cursor m text -> m (Cursor m text)
 bufferAll = while (not . isAllBuffered) bufferMore
 
 bufferedStreamLens :: Lens' (Cursor m text) (BufferedStream m text)
@@ -55,14 +55,14 @@ bufferHeadChar = BufferedStream.bufferedHeadChar . bufferedStream
 
 unconsChar :: Monad m => ListLike text char => Cursor m text -> m (Cursor m text, Maybe char)
 unconsChar cbs = do
-    cbs' <- fillBuffer 1 cbs
+    cbs' <- fillBuffer1 cbs
     return case bufferUnconsChar cbs' of
         Nothing -> (cbs', Nothing)
         Just (x, cbs'') -> (cbs'', Just x)
 
 unconsCharTentative :: Monad m => ListLike text char => Cursor m text -> m (Tentative.Step (Cursor m text) (Maybe char))
 unconsCharTentative cbs = do
-    cbs' <- fillBuffer 1 cbs
+    cbs' <- fillBuffer1 cbs
     return  case bufferUnconsChar cbs' of
         Nothing -> Tentative.noChoiceStep cbs' Nothing
         Just (x, cbs'') -> Tentative.choiceStep
@@ -75,16 +75,9 @@ fromListT xs = Cursor 0 (BufferedStream.fromListT xs)
 toListT :: Monad m => Cursor m text -> ListT m (Nontrivial text)
 toListT = BufferedStream.toListT . view bufferedStreamLens
 
--- | Force the input until at least @n@ characters of input are buffered or the end of input is reached.
-fillBuffer :: (Monad m, ListLike text char) =>
-    Natural -> Cursor m text -> m (Cursor m text)
-fillBuffer n = traverseOf bufferedStreamLens (BufferedStream.fillBuffer n)
-
-fillBuffer1 :: Monad m => ListLike text char =>
-    Cursor m text -> m (Cursor m text)
+fillBuffer1 :: Monad m => Cursor m text -> m (Cursor m text)
 fillBuffer1 = traverseOf bufferedStreamLens BufferedStream.fillBuffer1
 
 -- | Read one chunk of input. Does nothing if the end of the stream has been reached.
-bufferMore :: (Monad m, ListLike text char) =>
-    Cursor m text -> m (Cursor m text)
+bufferMore :: Monad m => Cursor m text -> m (Cursor m text)
 bufferMore = traverseOf bufferedStreamLens (BufferedStream.bufferMore)

@@ -4,9 +4,9 @@ module Step.BufferedStream.Base
     {- * Optics -} bufferLens, pendingLens,
     {- * Constants -} empty,
     {- * Conversion with ListT -} toListT, fromListT,
-    {- * Buffer querying -} bufferSize, bufferIsEmpty, isAllBuffered, bufferedHeadChar,
+    {- * Buffer querying -} bufferIsEmpty, isAllBuffered, bufferedHeadChar,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar, putChunk, putNontrivialChunk,
-    {- * Buffering -} fillBuffer, fillBuffer1, bufferMore,
+    {- * Buffering -} fillBuffer1, bufferMore,
   )
   where
 
@@ -50,13 +50,10 @@ toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
 fromListT :: ListLike text char => Monad m => ListT m text -> BufferedStream m text
 fromListT x = BufferedStream{ buffer = Buffer.empty, pending = Just (Nontrivial.ListT.filter x) }
 
-bufferSize :: BufferedStream m text -> Natural
-bufferSize = Buffer.size . buffer
-
 bufferIsEmpty :: BufferedStream m text -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer
 
-bufferUnconsChunk :: ListLike text char => BufferedStream m text -> Maybe (Nontrivial text, BufferedStream m text)
+bufferUnconsChunk :: BufferedStream m text -> Maybe (Nontrivial text, BufferedStream m text)
 bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, s{ buffer = b' })
@@ -74,23 +71,14 @@ putChunk :: ListLike text char => text -> BufferedStream m text -> BufferedStrea
 putChunk x s = case Nontrivial.refine x of Nothing -> s; Just y -> putNontrivialChunk y s
 
 -- | Adds a chunk back to the left side of the buffer
-putNontrivialChunk :: ListLike text char => Nontrivial text -> BufferedStream m text -> BufferedStream m text
+putNontrivialChunk :: Nontrivial text -> BufferedStream m text -> BufferedStream m text
 putNontrivialChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
 
--- | Force the input until at least @n@ characters of input are buffered or the end of input is reached
-fillBuffer :: (Monad m, ListLike text char) =>
-    Natural -> BufferedStream m text -> m (BufferedStream m text)
-fillBuffer n = while continue bufferMore
-  where
-    continue s =
-        isJust (pending s)
-        && Buffer.size (buffer s) < n
-
-fillBuffer1 :: Monad m => ListLike text char => BufferedStream m text -> m (BufferedStream m text)
+fillBuffer1 :: Monad m => BufferedStream m text -> m (BufferedStream m text)
 fillBuffer1 b = if Buffer.isEmpty (buffer b) then bufferMore b else return b
 
 -- | Read one chunk of input; does nothing if the end of the stream has been reached
-bufferMore :: Monad m => ListLike text char =>
+bufferMore :: Monad m =>
     BufferedStream m text -> m (BufferedStream m text)
 bufferMore s = case pending s of
     Nothing -> return s -- If the end of the stream has been reached, do nothing

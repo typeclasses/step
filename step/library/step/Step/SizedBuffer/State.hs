@@ -1,9 +1,9 @@
-module Step.Buffer.State where
+module Step.SizedBuffer.State where
 
 import Step.Internal.Prelude
 
-import Step.Buffer.Base (Buffer)
-import qualified Step.Buffer.Base as Buffer
+import Step.SizedBuffer.Base (Buffer)
+import qualified Step.SizedBuffer.Base as Buffer
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
@@ -17,7 +17,7 @@ takeChar = do
             put b'
             return (Just c)
 
-takeChunk :: Monad m => StateT (Buffer text) m (Maybe (Nontrivial text))
+takeChunk :: (Monad m, ListLike text char) => StateT (Buffer text) m (Maybe (Nontrivial text))
 takeChunk = do
     b <- get
     case Buffer.unconsChunk b of

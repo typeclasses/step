@@ -1,6 +1,6 @@
 {-# language Safe #-}
 
-module Step.Buffer.Base where
+module Step.SizedBuffer.Base where
 
 import Step.Internal.Prelude
 import qualified Step.Internal.Prelude as Prelude
@@ -11,19 +11,25 @@ import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.List as Nontrivial.List
 
-data Buffer text = Buffer { chunks :: Seq (Nontrivial text) }
+data Buffer text =
+  Buffer
+    { chunks :: Seq (Nontrivial text)
+    , size :: Natural
+    }
 
 instance Semigroup (Buffer text) where
-    a <> b = Buffer{ chunks = chunks a <> chunks b }
+    a <> b = Buffer{ chunks = chunks a <> chunks b,
+                     size = size a + size b }
 
-singleton :: Nontrivial text -> Buffer text
-singleton x = Buffer{ chunks = Seq.singleton x }
+singleton :: ListLike text char => Nontrivial text -> Buffer text
+singleton x =
+    Buffer{ chunks = Seq.singleton x, size = Nontrivial.length x }
 
 isEmpty :: Buffer text -> Bool
-isEmpty = Seq.null . chunks
+isEmpty = (== 0) . size
 
 empty :: Buffer text
-empty = Buffer{ chunks = Seq.empty }
+empty = Buffer{ chunks = Seq.empty, size = 0 }
 
 toListT :: Monad m => Buffer a -> ListT m (Nontrivial a)
 toListT = select . chunks
@@ -42,12 +48,15 @@ unconsChar b =
     case chunks b of
         Seq.Empty -> Nothing
         (Seq.:<|) x xs -> let (c, x') = Nontrivial.uncons x in
-            Just (c, Buffer{ chunks = Nontrivial.List.cons x' xs })
+            Just (c, Buffer{
+                chunks = Nontrivial.List.cons x' xs,
+                size = size b - 1
+            })
 
-unconsChunk :: Buffer text -> Maybe (Nontrivial text, Buffer text)
+unconsChunk :: ListLike text char => Buffer text -> Maybe (Nontrivial text, Buffer text)
 unconsChunk b = case uncons (chunks b) of
     Nothing -> Nothing
-    Just (c, cs) -> Just (c, Buffer{ chunks = cs } )
+    Just (c, cs) -> Just (c, Buffer{ chunks = cs, size = size b - Nontrivial.length c } )
 
 data StripPrefixResult text =
     StripPrefixFail
@@ -64,12 +73,12 @@ stripNontrivialPrefix c b = case chunks b of
     Seq.Empty -> StripPrefixPartial c
     (Seq.:<|) x xs -> case compare (Nontrivial.length x) (Nontrivial.length c) of
         EQ -> if x /= c then StripPrefixFail else
-            StripPrefixSuccess Buffer{ chunks = xs }
+            StripPrefixSuccess Buffer{ chunks = xs, size = size b - Nontrivial.length x }
         LT -> case Nontrivial.stripPrefix x c of
             Nothing -> StripPrefixFail
-            Just c' -> stripPrefix c' Buffer{ chunks = xs }
+            Just c' -> stripPrefix c' Buffer{ chunks = xs, size = size b - Nontrivial.length x }
         GT -> case Nontrivial.stripPrefix c x of
             Nothing -> StripPrefixFail
             Just x' -> case Nontrivial.refine x' of
                 Nothing -> error "stripNontrivialPrefix: failure"
-                Just x'' -> StripPrefixSuccess Buffer{ chunks = (Seq.<|) x'' xs }
+                Just x'' -> StripPrefixSuccess Buffer{ chunks = (Seq.<|) x'' xs, size = size b - Nontrivial.length c }
