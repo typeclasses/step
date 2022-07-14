@@ -42,12 +42,9 @@ import Step.Document.Error (Error)
 
 import Step.Document.Config (Config)
 
-import Step.LookAhead.Class (LookAhead)
-import qualified Step.LookAhead.Class as LookAhead
+import qualified Step.Classes as Class
 
-import qualified Step.LookAhead.Action as LookAhead.Action
-
-import Step.TakeCharacter.Class (takeCharMaybe)
+import qualified Step.Actions as Action
 
 char :: Monad base => ListLike text char =>
     AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error char
@@ -56,10 +53,10 @@ char = Action.Unsafe.AtomicMove $ ReaderT \c ->
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
-peekChar :: LookAhead base => LookAhead.Char base char =>
+peekChar :: Class.Peek1 base => Class.PeekChar base char =>
     Query (ReaderT Config base) Error char
 peekChar = Action.Unsafe.Query $ ReaderT \c ->
-    LookAhead.next <&> \case
+    Class.next <&> \case
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
@@ -73,7 +70,7 @@ satisfy ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
 satisfyJust :: Monad base => ListLike text char => (char -> Maybe a)
     -> AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
 satisfyJust ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
-    takeCharMaybe ok <&> \case
+    Class.takeCharMaybe ok <&> \case
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
@@ -88,7 +85,7 @@ text x = Action.Unsafe.Any $ ReaderT \c ->
 
 end :: Monad base => ListLike text char =>
     Query (ReaderT Config (StateT (DocumentMemory text base) base)) Error ()
-end = LookAhead.Action.atEnd P.>>= \case
+end = Action.atEnd P.>>= \case
     True -> Action.cast (P.return ())
     False -> Action.cast failure
 

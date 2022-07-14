@@ -88,6 +88,9 @@ library
     build-depends: step-internal, step-action-types
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
+        Step.Actions
+        Step.Classes
+
         Step.Buffer.Base
         Step.Buffer.State
 
@@ -98,14 +101,6 @@ library
         Step.BufferedStream.State
 
         Step.Competitors.Attoparsec.Text
-
-        Step.CursorMovement.Class
-
-        Step.LookAhead.Action
-        Step.LookAhead.Class
-
-        Step.TakeCharacter.Action
-        Step.TakeCharacter.Class
 
         Step.Cursor.Base
         Step.Cursor.State
@@ -134,8 +129,6 @@ library
         Step.LineHistory.Char
         Step.LineHistory.State
 
-        Step.Location.Action
-        Step.Location.Class
         Step.Location.Optics
 
         Step.Tentative.Base

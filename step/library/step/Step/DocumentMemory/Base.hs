@@ -18,14 +18,7 @@ import qualified Step.Cursor.State as Cursor.State
 
 import Loc (Loc)
 
-import Step.LookAhead.Class (LookAhead (..))
-
-import Step.Location.Class (Locating)
-import qualified Step.Location.Class as Locating
-
-import qualified Step.Cursor.State as Cursor.State
-
-import Step.TakeCharacter.Class (TakeCharacter (takeCharMaybe))
+import qualified Step.Classes as Class
 
 data DocumentMemory text m =
   DocumentMemory
@@ -84,12 +77,12 @@ runCursorState go = do
     put DocumentMemory{ cursor = cu', content = co' }
     return x
 
-instance Monad m => LookAhead (StateT (DocumentMemory text m) m) where
+instance Monad m => Class.Peek1 (StateT (DocumentMemory text m) m) where
     type Text (StateT (DocumentMemory text m) m) = text
     next = runCursorState Cursor.State.peekCharMaybe
     atEnd = runCursorState Cursor.State.atEnd
 
-instance Monad m => Locating (StateT (DocumentMemory text m) m) where
+instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
     position = attempt1
       where
         attempt1 = use (to position) >>= \case
@@ -99,5 +92,5 @@ instance Monad m => Locating (StateT (DocumentMemory text m) m) where
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
 
-instance Monad m => TakeCharacter (StateT (DocumentMemory text m) m) where
+instance Monad m => Class.Take1 (StateT (DocumentMemory text m) m) where
     takeCharMaybe f = runCursorState (Cursor.State.takeCharJust f)
