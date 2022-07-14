@@ -4,8 +4,8 @@ module Step.Actions where
 
 import Step.Internal.Prelude
 
-import Step.Classes (Peek1, Take1, Locating, Error, Fallible, Configure, Config)
-import qualified Step.Classes as C
+import Step.Classes.Abstract
+import qualified Step.Classes.Base as C
 
 import Step.ActionTypes.Types
 
@@ -91,7 +91,7 @@ contextualize n = configure (over C.contextStackLens (n :))
 
 infix 0 <?>
 (<?>) :: Configure m => C.HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
-    act m e a -> Text -> act m e a
+    act m e a -> T.Text -> act m e a
 p <?> c = contextualize c p
 
 -- todo: add an atomic version of 'text'
@@ -100,3 +100,54 @@ text :: C.SkipTextNonAtomic m => Fallible m => ListLike (C.Text m) char => Eq ch
     C.Text m -> Any m (Error m) ()
 text x = Action.Unsafe.Any $
     C.skipTextNonAtomic x <&> \case{ True -> Right (); False -> Left C.failure }
+
+-- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>
+--     Extent (StateT (DocumentMemory text m) m) text
+--     -> Parser text m act a
+--     -> Parser text m act a
+-- within e = over o (DocumentMemory.State.within e)
+--   where
+--     o =
+--         iso (\(Parser p) -> p) Parser
+--         % iso (\(ActionReader f) -> f) ActionReader
+--         % mapped
+--         % Action.Unsafe.anyIsoUnsafe
+--         % iso (\(Action.Unsafe.Any s) -> s) Action.Unsafe.Any
+
+-- under :: Monad m => ListLike text char => Transform text m text -> Parser text m a -> Parser text m a
+-- under (Transform t) (Parser p) = Parser \eo -> do
+--     s <- get
+--     (s', x) <- zoom ParseState.futureLens $ lift $ runStateT (p eo) _
+--     _
+
+-- match :: ListLike text char => Monad m => Extent text m -> Parser text m text
+-- match (Extent e) = Parser \_eo -> do
+--     s <- get
+--     (s', t) <- lift $ execStateT (match' e) (s, ListLike.empty)
+--     put s'
+--     return (Right (ListLike.fold t))
+
+-- match' :: Monad m => ListLike text char =>
+--     ListT (StateT (Stream m text) m) text
+--     -> StateT (ParseState text m, Seq text) m ()
+-- match' e = do
+--     step <- zoom (_1 % ParseState.futureLens) (ListT.next e)
+--     case step of
+--         ListT.Nil -> return ()
+--         ListT.Cons x e' -> do
+--             zoom _1 (ParseState.record x)
+--             modifying _2 (`ListLike.snoc` x)
+--             match' e'
+
+-- while :: ListLike text char => Monad m => (Char -> Bool) -> Transform text m text
+-- while f = Transform while'
+--   where
+--     while' = ListT do
+--         cm <- Stream.State.takeChunk
+--         case cm of
+--             Nothing -> return ListT.Nil
+--             Just c | ListLike.null c -> return (ListT.Cons c while')
+--             Just c -> do
+--                 let (a, b) = ListLike.span f c
+--                 Stream.State.putChunk b
+--                 return if ListLike.null a then ListT.Nil else ListT.Cons a while'

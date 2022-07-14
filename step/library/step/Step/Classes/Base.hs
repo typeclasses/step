@@ -1,6 +1,6 @@
 {-# language FlexibleContexts, FlexibleInstances, TypeFamilies, ConstraintKinds, KindSignatures #-}
 
-module Step.Classes where
+module Step.Classes.Base where
 
 import Step.Internal.Prelude hiding (Text)
 

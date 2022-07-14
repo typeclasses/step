@@ -13,9 +13,6 @@ import qualified ListT
 import qualified ListLike
 import qualified Char
 
-import qualified Step.Document.Parser as Doc
-import qualified Step.Document.Prelude as Doc
-
 import Step.Test.InputChunking (genChunks)
 
 import Test.Hspec

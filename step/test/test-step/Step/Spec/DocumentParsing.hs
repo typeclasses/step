@@ -25,13 +25,8 @@ import qualified SpanOrLoc
 import qualified Char
 import Char (Char)
 
--- The modules under test
-import qualified Step.Actions as P
-import qualified Step.ActionTypes as P
-import qualified Step.ActionTypes.Do as P
-import qualified Step.Document.Error as P
-import qualified Step.Document.Parser as P
-import qualified Step.Document.Prelude as P
+-- The module under test
+import qualified Step.Document as P
 
 spec :: SpecWith ()
 spec = describe "Document parsing" do

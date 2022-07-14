@@ -8,25 +8,15 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes
 
-import qualified Step.ActionTypes.Do as P
-import qualified Step.Document.Prelude as P
-import qualified Step.Document.Parser as P
-import qualified Step.ActionTypes as P
-import qualified Step.Actions as P
-
-import Step.Document.Config (Config)
-import Step.Document.Error (Error)
-import Step.DocumentMemory.Base (DocumentMemory)
+import qualified Step.Document as P
 
 import Char (Char)
 import qualified Char
 
 import qualified Text
 
-import qualified Step.Actions as Action
-
 type Parser base action value =
-    action (P.DocumentParsing Text base) Error value
+    action (P.DocumentParsing Text base) P.Error value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)
@@ -47,7 +37,7 @@ skip :: Monad m => (Char -> Bool) -> Parser m AtomicMove ()
 skip f = void (P.satisfy f) P.<?> "skip"
 
 peekChar :: Monad m => Parser m SureQuery (Maybe Char)
-peekChar = Action.peekCharMaybe
+peekChar = P.peekCharMaybe
 
 peekChar' :: Monad m => Parser m Query Char
 peekChar' = P.peekChar P.<?> "peekChar'"
@@ -177,4 +167,4 @@ endOfInput :: Monad m => Parser m Query ()
 endOfInput = P.end P.<?> "endOfInput"
 
 atEnd :: Monad m => Parser m SureQuery Bool
-atEnd = Action.atEnd
+atEnd = P.atEnd

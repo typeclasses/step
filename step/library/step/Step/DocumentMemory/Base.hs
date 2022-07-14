@@ -18,7 +18,7 @@ import qualified Step.Cursor.State as Cursor.State
 
 import Loc (Loc)
 
-import qualified Step.Classes as Class
+import qualified Step.Classes.Base as Class
 
 data DocumentMemory text m =
   DocumentMemory

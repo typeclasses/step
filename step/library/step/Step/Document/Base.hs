@@ -1,18 +1,12 @@
 {-# language DataKinds, FlexibleContexts, FlexibleInstances, KindSignatures, StandaloneKindSignatures, TypeFamilies #-}
 {-# language DerivingVia, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 
-module Step.Document.Parser where
+module Step.Document.Base where
 
 import Step.Internal.Prelude
 
 import Step.DocumentMemory.Base (DocumentMemory)
 import qualified Step.DocumentMemory.Base as DocumentMemory
-
-import Step.Document.Config (Config)
-import qualified Step.Document.Config as Config
-
-import Step.Document.Error (Error (Error))
-import qualified Step.Document.Error as Error
 
 import Step.LineHistory.Char (Char)
 
@@ -22,20 +16,26 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import qualified Monad
 
-import qualified Step.Classes as Class
+import qualified Step.Classes.Base as Class
 
-parse :: Monad m => Action.Is kind Any =>
-    Config -> kind (DocumentParsing text m) Error value
-    -> StateT (DocumentMemory text m) m (Either Error value)
-parse config p =
-    p & Action.cast @Any & \(Any (DocumentParsing p')) -> runReaderT p' config >>= \case
-        Left (DocumentParsing errorMaker) -> Left <$> runReaderT errorMaker config
-        Right x -> return (Right x)
+---
 
-parseOnly :: Action.Is kind Any => Monad m => Char char => ListLike text char =>
-    Config -> kind (DocumentParsing text m) Error value -> ListT m text -> m (Either Error value)
-parseOnly config p xs =
-    evalStateT (parse config p) (DocumentMemory.fromListT xs)
+data Config = Config{ configContext :: [Text] }
+    deriving stock (Eq, Show)
+
+instance Default Config
+  where
+    def = Config{ configContext = [] }
+
+instance Class.HasContextStack Config where
+    contextStackLens = lens configContext \x y -> x{ configContext = y }
+
+---
+
+data Error = Error{ errorContext :: [Text] }
+    deriving stock (Eq, Show)
+
+---
 
 newtype DocumentParsing text m a =
     DocumentParsing (ReaderT Config (StateT (DocumentMemory text m) m) a)
@@ -60,8 +60,23 @@ instance Monad m => Class.Locating (DocumentParsing text m) where
 
 instance Monad m => Class.Fallible (DocumentParsing text m) where
     type Error (DocumentParsing text m) = Error
-    failure = DocumentParsing $ ReaderT \c -> return Error{ Error.context = Config.context c }
+    failure = DocumentParsing $ ReaderT \c -> return Error{ errorContext = configContext c }
 
 instance Monad m => Class.Configure (DocumentParsing text m) where
     type Config (DocumentParsing text m) = Config
     configure f (DocumentParsing a) = DocumentParsing (Class.configure f a)
+
+---
+
+parse :: Monad m => Action.Is kind Any =>
+    Config -> kind (DocumentParsing text m) Error value
+    -> StateT (DocumentMemory text m) m (Either Error value)
+parse config p =
+    p & Action.cast @Any & \(Any (DocumentParsing p')) -> runReaderT p' config >>= \case
+        Left (DocumentParsing errorMaker) -> Left <$> runReaderT errorMaker config
+        Right x -> return (Right x)
+
+parseOnly :: Action.Is kind Any => Monad m => Char char => ListLike text char =>
+    Config -> kind (DocumentParsing text m) Error value -> ListT m text -> m (Either Error value)
+parseOnly config p xs =
+    evalStateT (parse config p) (DocumentMemory.fromListT xs)

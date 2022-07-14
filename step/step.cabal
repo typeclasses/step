@@ -89,7 +89,9 @@ library
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Actions
-        Step.Classes
+
+        Step.Classes.Abstract
+        Step.Classes.Base
 
         Step.Buffer.Base
         Step.Buffer.State
@@ -107,10 +109,8 @@ library
 
         Step.CursorPosition.Base
 
-        Step.Document.Config
-        Step.Document.Error
-        Step.Document.Parser
-        Step.Document.Prelude
+        Step.Document
+        Step.Document.Base
 
         Step.DocumentMemory.Base
         Step.DocumentMemory.State
