@@ -11,6 +11,8 @@ import qualified Step.TakeOrLeave as TakeOrLeave
 
 import qualified Monad
 
+import qualified Text as T
+
 class Monad m => Peek1 m where
 
     type Text m :: Type
@@ -52,6 +54,9 @@ class Peek1 m => TakeAll m where
 class Monad m => Configure m where
     type Config m :: Type
     configure :: (Config m -> Config m) -> m a -> m a
+
+class HasContextStack config where
+    contextStackLens :: Lens' config [T.Text]
 
 
 -- ReaderT instances

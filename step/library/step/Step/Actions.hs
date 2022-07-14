@@ -25,6 +25,8 @@ import qualified Step.TakeOrLeave as TakeOrLeave
 
 import qualified Monad
 
+import qualified Text as T
+
 char :: (ListLike (C.Text m) char, Take1 m) => Fallible m => AtomicMove m (Error m) char
 char = Action.Unsafe.AtomicMove $ C.takeCharMaybe <&> maybe (Left C.failure) Right
 
@@ -79,5 +81,15 @@ failure = Action.Unsafe.Fail C.failure
 all :: C.TakeAll m => ListLike (C.Text m) char => Sure m (Error m) (C.Text m)
 all = Action.Unsafe.Sure C.takeAll
 
-configure :: Configure m => Action.Unsafe.ChangeBase act => (Config m -> Config m) -> act m e a -> act m e a
+configure :: Configure m => Action.Unsafe.ChangeBase act =>
+    (Config m -> Config m) -> act m e a -> act m e a
 configure f = Action.Unsafe.changeBase (C.configure f)
+
+contextualize :: Configure m => C.HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
+    T.Text -> act m e a -> act m e a
+contextualize n = configure (over C.contextStackLens (n :))
+
+infix 0 <?>
+(<?>) :: Configure m => C.HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
+    act m e a -> Text -> act m e a
+p <?> c = contextualize c p
