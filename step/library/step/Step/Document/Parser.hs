@@ -49,6 +49,9 @@ instance Monad m => Class.Peek1 (DocumentParsing text m) where
 instance Monad m => Class.Take1 (DocumentParsing text m) where
     considerChar f = DocumentParsing (Class.considerChar f)
 
+instance Monad m => Class.TakeAll (DocumentParsing text m) where
+    takeAll = DocumentParsing Class.takeAll
+
 instance Monad m => Class.Locating (DocumentParsing text m) where
     position = DocumentParsing Class.position
 

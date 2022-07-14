@@ -94,3 +94,6 @@ instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
 
 instance Monad m => Class.Take1 (StateT (DocumentMemory text m) m) where
     considerChar f = runCursorState (Cursor.State.considerChar f)
+
+instance Monad m => Class.TakeAll (StateT (DocumentMemory text m) m) where
+    takeAll = runCursorState Cursor.State.takeAll

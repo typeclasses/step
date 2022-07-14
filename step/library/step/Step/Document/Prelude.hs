@@ -2,7 +2,7 @@
 
 module Step.Document.Prelude
   (
-    {- * Text result -} text, all,
+    {- * Text result -} text,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Transformation -} -- within,
     {- * Extent -} -- while,
@@ -66,10 +66,6 @@ infix 0 <?>
     act (DocumentParsing text base) Error a
     -> Text -> act (DocumentParsing text base) Error a
 p <?> c = contextualize c p
-
--- -- | Consume the rest of the input. This is mostly useful in conjunction with 'within'.
-all :: Monad base => ListLike text char => Sure (DocumentParsing text base) Error text
-all =  Action.Unsafe.Sure $ DocumentParsing $ lift DocumentMemory.State.takeAll
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>
 --     Extent (StateT (DocumentMemory text m) m) text

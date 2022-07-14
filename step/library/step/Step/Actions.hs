@@ -75,3 +75,6 @@ withLocation act =
 
 failure :: Fallible m => Fail m (Error m) a
 failure = Action.Unsafe.Fail C.failure
+
+all :: C.TakeAll m => ListLike (C.Text m) char => Sure m (Error m) (C.Text m)
+all = Action.Unsafe.Sure C.takeAll

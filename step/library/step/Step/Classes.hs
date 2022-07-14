@@ -45,6 +45,10 @@ class Monad m => Fallible m where
 
     failure :: m (Error m)
 
+class Peek1 m => TakeAll m where
+    -- | Consume the rest of the input
+    takeAll :: ListLike (Text m) char => m (Text m)
+
 
 -- Aliases
 
@@ -62,6 +66,9 @@ instance Peek1 m => Peek1 (ReaderT r m) where
 
 instance Take1 m => Take1 (ReaderT r m) where
     considerChar f = ReaderT \_ -> considerChar f
+
+instance TakeAll m => TakeAll (ReaderT r m) where
+    takeAll = ReaderT \_ -> takeAll
 
 instance Locating m => Locating (ReaderT r m) where
     position = ReaderT \_ -> position
