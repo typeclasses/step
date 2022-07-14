@@ -98,6 +98,7 @@ library
 
         Step.CursorMovement.Class
 
+        Step.LookAhead.Action
         Step.LookAhead.Class
 
         Step.Cursor.Base

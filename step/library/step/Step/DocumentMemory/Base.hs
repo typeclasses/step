@@ -1,8 +1,8 @@
-{-# language FlexibleInstances, MultiParamTypeClasses #-}
+{-# language FlexibleInstances, TypeFamilies #-}
 
 module Step.DocumentMemory.Base where
 
-import Step.Internal.Prelude
+import Step.Internal.Prelude hiding (Text)
 
 import Step.LineHistory.Char (Char)
 import Step.LineHistory.Base (LineHistory)
@@ -77,6 +77,7 @@ runCursorState go = do
     put DocumentMemory{ cursor = cu', content = co' }
     return x
 
-instance Monad m => LookAhead (StateT (DocumentMemory text m) m) text where
-    peekCharMaybe = runCursorState Cursor.State.peekCharMaybe
+instance Monad m => LookAhead (StateT (DocumentMemory text m) m) where
+    type Text (StateT (DocumentMemory text m) m) = text
+    next = runCursorState Cursor.State.peekCharMaybe
     atEnd = runCursorState Cursor.State.atEnd

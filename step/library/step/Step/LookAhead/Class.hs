@@ -1,16 +1,23 @@
-{-# language FlexibleInstances, FunctionalDependencies #-}
+{-# language FlexibleContexts, FlexibleInstances, TypeFamilies, ConstraintKinds, KindSignatures #-}
 
 module Step.LookAhead.Class where
 
-import Step.Internal.Prelude
+import Step.Internal.Prelude hiding (Text)
 
 import Step.ActionTypes
 
-class Monad m => LookAhead m text | m -> text where
+class Monad m => LookAhead m where
 
-    peekCharMaybe :: ListLike text char => m (Maybe char)
+    type Text m :: Type
 
-    atEnd :: ListLike text char => m Bool
-    atEnd = isNothing <$> peekCharMaybe
+    next :: ListLike (Text m) char => m (Maybe char)
 
--- instance LookAhead m text => LookAhead (SureQuery e m) text
+    atEnd :: ListLike (Text m) char => m Bool
+    atEnd = isNothing <$> next
+
+type Char base char = (ListLike (Text base) char) :: Constraint
+
+instance LookAhead m => LookAhead (ReaderT r m) where
+    type Text (ReaderT r m) = Text m
+    next = ReaderT \_ -> next
+    atEnd = ReaderT \_ -> atEnd

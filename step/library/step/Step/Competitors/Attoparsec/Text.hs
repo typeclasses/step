@@ -22,6 +22,8 @@ import qualified Char
 
 import qualified Text
 
+import qualified Step.LookAhead.Action as LookAhead.Action
+
 type Parser base kind value = kind Error (ReaderT Config (StateT (DocumentMemory Text base) base)) value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
@@ -43,7 +45,7 @@ skip :: Monad m => (Char -> Bool) -> Parser m AtomicMove ()
 skip f = void (P.satisfy f) P.<?> "skip"
 
 peekChar :: Monad m => Parser m SureQuery (Maybe Char)
-peekChar = P.peekCharMaybe
+peekChar = LookAhead.Action.next
 
 peekChar' :: Monad m => Parser m Query Char
 peekChar' = P.peekChar P.<?> "peekChar'"
@@ -173,4 +175,4 @@ endOfInput :: Monad m => Parser m Query ()
 endOfInput = P.end P.<?> "endOfInput"
 
 atEnd :: Monad m => Parser m SureQuery Bool
-atEnd = P.atEnd
+atEnd = LookAhead.Action.atEnd
