@@ -12,6 +12,7 @@ import qualified Step.ActionTypes.Do as P
 import qualified Step.Document.Prelude as P
 import qualified Step.Document.Parser as P
 import qualified Step.ActionTypes as P
+import qualified Step.Actions as P
 
 import Step.Document.Config (Config)
 import Step.Document.Error (Error)

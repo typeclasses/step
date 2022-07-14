@@ -23,6 +23,9 @@ import qualified Step.TakeOrLeave as TakeOrLeave
 
 import qualified Monad
 
+char :: TakeChar m char => Fallible m => AtomicMove m (Error m) char
+char = Action.Unsafe.AtomicMove $ C.takeCharMaybe <&> maybe (Left C.failure) Right
+
 considerChar :: TakeChar m char =>
     (char -> TakeOrLeave b a) -> Sure m e (Maybe (TakeOrLeave b a))
 considerChar f = Action.Unsafe.Sure $ C.considerChar f

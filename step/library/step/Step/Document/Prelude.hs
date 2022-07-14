@@ -2,7 +2,7 @@
 
 module Step.Document.Prelude
   (
-    {- * Single character result -} char, satisfy, satisfyJust, peekChar,
+    {- * Single character result -} satisfy, satisfyJust, peekChar,
     {- * Text result -} text, all,
     {- * The end -} end,
     {- * Contextualizing errors -} contextualize, (<?>),
@@ -46,9 +46,6 @@ import qualified Step.Classes as Class
 import qualified Step.Actions as Action
 
 import Step.TakeOrLeave (TakeOrLeave (..))
-
-char :: Monad base => ListLike text char => AtomicMove (DocumentParsing text base) Error char
-char = Action.Unsafe.AtomicMove $ Class.takeCharMaybe <&> maybe (Left Class.failure) Right
 
 peekChar :: Monad base => ListLike text char => Query (DocumentParsing text base) Error char
 peekChar = Action.Unsafe.Query $ Class.peekCharMaybe <&> maybe (Left Class.failure) Right
