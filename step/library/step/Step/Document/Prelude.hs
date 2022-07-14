@@ -3,7 +3,6 @@
 module Step.Document.Prelude
   (
     {- * Text result -} text, all,
-    {- * The end -} end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Transformation -} -- within,
     {- * Extent -} -- while,
@@ -54,13 +53,6 @@ text x = Action.Unsafe.Any $
     DocumentParsing (lift $ DocumentMemory.State.takeTextNotAtomic x) <&> \case
         True -> Right ()
         False -> Left Class.failure
-
-end :: Monad base => ListLike text char =>
-    Query (DocumentParsing text base) Error ()
-end =
-    Action.atEnd P.>>= \case
-        True -> Action.cast (P.return ())
-        False -> Action.cast Action.failure
 
 contextualize :: Monad base => Action.Unsafe.ChangeBase act => Text
     -> act (DocumentParsing text base) Error a

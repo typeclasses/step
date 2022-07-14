@@ -1,4 +1,4 @@
-{-# language FlexibleContexts #-}
+{-# language FlexibleContexts, TypeOperators #-}
 
 module Step.Actions where
 
@@ -8,6 +8,8 @@ import Step.Classes (Peek1, PeekChar, Take1, Locating, TakeChar, Error, Fallible
 import qualified Step.Classes as C
 
 import Step.ActionTypes.Types
+
+import Step.ActionTypes (cast, Is)
 
 import qualified Step.ActionTypes.Unsafe as Action.Unsafe
 
@@ -52,6 +54,12 @@ satisfyJust ok = Action.Unsafe.AtomicMove $
 
 atEnd :: PeekChar m char => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery C.atEnd
+
+end :: PeekChar m char => Fallible m => Query m (Error m) ()
+end = atEnd A.>>= guard
+
+guard :: Fallible m => Bool -> Query m (Error m) ()
+guard = \case{ True -> cast (A.return ()); False -> cast failure }
 
 position :: Locating m => SureQuery m e Loc
 position = Action.Unsafe.SureQuery C.position
