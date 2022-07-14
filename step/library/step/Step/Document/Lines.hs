@@ -1,13 +1,15 @@
 {-# language DerivingStrategies #-}
 
-module Step.LineHistory.Base
+module Step.Document.Lines
   (
     {- * The type -} LineHistory (..),
     {- * Optics -} cursorPositionLens, lineStartPositionLens, lineTrackerLens, afterCRLens,
     empty,
     {- * Finding location at a cursor -} CursorLocation (..), locateCursorInDocument,
-  )
-  where
+    {- * Construction -} build,
+    {- * Char class -} Char (..),
+    {- * Feeding input -} record,
+  ) where
 
 import Step.Internal.Prelude
 
@@ -17,6 +19,18 @@ import qualified Map
 
 import Step.CursorPosition.Base (CursorPosition)
 import qualified Step.CursorPosition.Base as CursorPosition
+
+import Step.Internal.Prelude
+
+import qualified Char
+
+import qualified ListLike
+
+import qualified Map
+
+import qualified Step.CursorPosition.Base as CursorPosition
+
+import qualified Loc
 
 data LineHistory =
   LineHistory
@@ -67,3 +81,59 @@ empty =
     , cursorPosition = CursorPosition.origin
     , afterCR = False
     }
+
+build :: Char char => ListLike text char => [text] -> LineHistory
+build xs = execState (traverse_ record xs) empty
+
+class Eq a => Char a
+  where
+    carriageReturn :: a
+    lineFeed :: a
+
+instance Char Char.Char
+  where
+    carriageReturn = '\r'
+    lineFeed = '\n'
+
+record :: Monad m => Char char => ListLike text char => text -> StateT LineHistory m ()
+record x =
+    case ListLike.uncons x of
+        Nothing -> return ()
+        Just (c, x') | c == carriageReturn -> do
+            recordCR
+            record x'
+        Just (c, x') | c == lineFeed -> do
+            recordLF
+            record x'
+        Just _ -> do
+            let (a, b) = ListLike.break (`elem` [carriageReturn, lineFeed]) x
+            recordOther a
+            record b
+
+startNewLine :: Monad m => StateT LineHistory m ()
+startNewLine = do
+    l <- use lineTrackerLens
+    let l' = l + 1
+    cp <- use cursorPositionLens
+    modifying lineStartPositionLens (Map.insert cp (fromIntegral (Loc.toNat l')))
+    assign lineTrackerLens l'
+
+recordCR :: Monad m => StateT LineHistory m ()
+recordCR = do
+    acr <- use afterCRLens
+    when acr startNewLine
+    modifying cursorPositionLens (CursorPosition.increase 1)
+    assign afterCRLens True
+
+recordLF :: Monad m => StateT LineHistory m ()
+recordLF = do
+    modifying cursorPositionLens (CursorPosition.increase 1)
+    startNewLine
+    assign afterCRLens False
+
+recordOther :: Monad m => ListLike text char => text -> StateT LineHistory m ()
+recordOther x = do
+    acr <- use afterCRLens
+    when acr startNewLine
+    modifying cursorPositionLens (CursorPosition.increase (fromIntegral (ListLike.length x)))
+    assign afterCRLens False

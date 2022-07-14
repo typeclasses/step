@@ -11,10 +11,8 @@ module Step.Document.Memory
 
 import Step.Internal.Prelude hiding (Text)
 
-import Step.LineHistory.Char (Char)
-import Step.LineHistory.Base (LineHistory)
-import qualified Step.LineHistory.Base as LineHistory
-import qualified Step.LineHistory.State as LineHistory.State
+import Step.Document.Lines (Char, LineHistory)
+import qualified Step.Document.Lines as Lines
 
 import Step.Cursor.Base (Cursor)
 import qualified Step.Cursor.Base as Cursor
@@ -96,8 +94,8 @@ cursorPositionLens = cursorLens % Cursor.positionLens
 fromListT :: Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text m
 fromListT xs =
   DocumentMemory
-    { content = LineHistory.empty
-    , cursor = Cursor.fromListT $ recordStream (execState . LineHistory.State.record) xs
+    { content = Lines.empty
+    , cursor = Cursor.fromListT $ recordStream (execState . Lines.record) xs
     }
 
 
@@ -108,9 +106,9 @@ data CursorLocation =
   | CursorLocationNeedsMoreInput
 
 position :: DocumentMemory text m -> CursorLocation
-position x = case LineHistory.locateCursorInDocument (Cursor.position (cursor x)) (content x) of
+position x = case Lines.locateCursorInDocument (Cursor.position (cursor x)) (content x) of
     Just l -> case l of
-        LineHistory.CursorLocationNeedsMoreInput{ LineHistory.ifEndOfInput = i } ->
+        Lines.CursorLocationNeedsMoreInput{ Lines.ifEndOfInput = i } ->
             if Cursor.isAllBuffered (cursor x) then CursorAt i else CursorLocationNeedsMoreInput
-        LineHistory.CursorAt l' -> CursorAt l'
+        Lines.CursorAt l' -> CursorAt l'
     Nothing -> error "invalid DocumentMemory"

@@ -111,6 +111,7 @@ library
 
         Step.Document
         Step.Document.Base
+        Step.Document.Lines
         Step.Document.Memory
 
         Step.Extent.BufferedStream
@@ -120,11 +121,6 @@ library
         Step.Nontrivial.Constructor
         Step.Nontrivial.List
         Step.Nontrivial.ListT
-
-        Step.LineHistory.Base
-        Step.LineHistory.Build
-        Step.LineHistory.Char
-        Step.LineHistory.State
 
         Step.Location.Optics
 

@@ -8,7 +8,7 @@ import Step.Internal.Prelude
 import Step.Document.Memory (DocumentMemory)
 import qualified Step.Document.Memory as DocumentMemory
 
-import Step.LineHistory.Char (Char)
+import Step.Document.Lines (Char)
 
 import Step.ActionTypes (Action, FunctorialAction, MonadicAction)
 import qualified Step.ActionTypes as Action
