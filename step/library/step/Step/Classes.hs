@@ -49,6 +49,10 @@ class Peek1 m => TakeAll m where
     -- | Consume the rest of the input
     takeAll :: ListLike (Text m) char => m (Text m)
 
+class Monad m => Configure m where
+    type Config m :: Type
+    configure :: (Config m -> Config m) -> m a -> m a
+
 
 -- ReaderT instances
 
@@ -69,3 +73,7 @@ instance Locating m => Locating (ReaderT r m) where
 instance Fallible m => Fallible (ReaderT r m) where
     type Error (ReaderT r m) = Error m
     failure = ReaderT \_ -> failure
+
+instance Monad m => Configure (ReaderT r m) where
+    type Config (ReaderT r m) = r
+    configure = withReaderT

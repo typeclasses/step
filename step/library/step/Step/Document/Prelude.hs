@@ -54,17 +54,13 @@ text x = Action.Unsafe.Any $
         True -> Right ()
         False -> Left Class.failure
 
-contextualize :: Monad base => Action.Unsafe.ChangeBase act => Text
-    -> act (DocumentParsing text base) Error a
-    -> act (DocumentParsing text base) Error a
-contextualize n =
-    Action.Unsafe.changeBase \(DocumentParsing a) ->
-        DocumentParsing (a & withReaderT (over Config.contextLens (n :)))
+contextualize :: Monad m => Action.Unsafe.ChangeBase act =>
+    Text -> act (DocumentParsing text m) Error a -> act (DocumentParsing text m) Error a
+contextualize n = Action.configure (over Config.contextLens (n :))
 
 infix 0 <?>
-(<?>) :: Monad base => Action.Unsafe.ChangeBase act =>
-    act (DocumentParsing text base) Error a
-    -> Text -> act (DocumentParsing text base) Error a
+(<?>) :: Monad m => Action.Unsafe.ChangeBase act =>
+    act (DocumentParsing text m) Error a -> Text -> act (DocumentParsing text m) Error a
 p <?> c = contextualize c p
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>

@@ -58,3 +58,7 @@ instance Monad m => Class.Locating (DocumentParsing text m) where
 instance Monad m => Class.Fallible (DocumentParsing text m) where
     type Error (DocumentParsing text m) = Error
     failure = DocumentParsing $ ReaderT \c -> return Error{ Error.context = Config.context c }
+
+instance Monad m => Class.Configure (DocumentParsing text m) where
+    type Config (DocumentParsing text m) = Config
+    configure f (DocumentParsing a) = DocumentParsing (Class.configure f a)

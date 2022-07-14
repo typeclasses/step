@@ -4,7 +4,7 @@ module Step.Actions where
 
 import Step.Internal.Prelude
 
-import Step.Classes (Peek1, Take1, Locating, Error, Fallible)
+import Step.Classes (Peek1, Take1, Locating, Error, Fallible, Configure, Config)
 import qualified Step.Classes as C
 
 import Step.ActionTypes.Types
@@ -78,3 +78,6 @@ failure = Action.Unsafe.Fail C.failure
 
 all :: C.TakeAll m => ListLike (C.Text m) char => Sure m (Error m) (C.Text m)
 all = Action.Unsafe.Sure C.takeAll
+
+configure :: Configure m => Action.Unsafe.ChangeBase act => (Config m -> Config m) -> act m e a -> act m e a
+configure f = Action.Unsafe.changeBase (C.configure f)
