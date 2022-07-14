@@ -79,7 +79,7 @@ runCursorState go = do
 
 instance Monad m => Class.Peek1 (StateT (DocumentMemory text m) m) where
     type Text (StateT (DocumentMemory text m) m) = text
-    next = runCursorState Cursor.State.peekCharMaybe
+    peekCharMaybe = runCursorState Cursor.State.peekCharMaybe
     atEnd = runCursorState Cursor.State.atEnd
 
 instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where

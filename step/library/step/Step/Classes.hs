@@ -15,12 +15,12 @@ class Monad m => Peek1 m where
 
     type Text m :: Type
 
-    next :: PeekChar m char => m (Maybe char)
+    peekCharMaybe :: PeekChar m char => m (Maybe char)
 
     atEnd :: PeekChar m char => m Bool
-    atEnd = isNothing <$> next
+    atEnd = isNothing <$> peekCharMaybe
 
-    {-# minimal next #-}
+    {-# minimal peekCharMaybe #-}
 
 class Peek1 m => Take1 m where
     considerChar :: PeekChar m char =>
@@ -30,9 +30,6 @@ class Peek1 m => Take1 m where
             --   if 'Leave', the cursor will remain unmoved
         -> m (Maybe (TakeOrLeave b a))
             -- ^ The result of the selection function, or Nothing if end of input
-
-    peekCharMaybe :: PeekChar m char => m (Maybe char)
-    peekCharMaybe = considerChar (Leave . Just) <&> Monad.join . fmap TakeOrLeave.collapse
 
     takeCharMaybe :: PeekChar m char => m (Maybe char)
     takeCharMaybe = considerChar (Take . Just) <&> Monad.join . fmap TakeOrLeave.collapse
@@ -60,7 +57,7 @@ type TakeChar m char = (Take1 m, ListLike (Text m) char) :: Constraint
 
 instance Peek1 m => Peek1 (ReaderT r m) where
     type Text (ReaderT r m) = Text m
-    next = ReaderT \_ -> next
+    peekCharMaybe = ReaderT \_ -> peekCharMaybe
     atEnd = ReaderT \_ -> atEnd
 
 instance Take1 m => Take1 (ReaderT r m) where

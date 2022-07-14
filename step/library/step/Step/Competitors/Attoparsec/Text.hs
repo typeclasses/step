@@ -47,7 +47,7 @@ skip :: Monad m => (Char -> Bool) -> Parser m AtomicMove ()
 skip f = void (P.satisfy f) P.<?> "skip"
 
 peekChar :: Monad m => Parser m SureQuery (Maybe Char)
-peekChar = Action.next
+peekChar = Action.peekCharMaybe
 
 peekChar' :: Monad m => Parser m Query Char
 peekChar' = P.peekChar P.<?> "peekChar'"

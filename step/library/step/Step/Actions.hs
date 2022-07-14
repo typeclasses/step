@@ -26,6 +26,9 @@ import qualified Monad
 char :: TakeChar m char => Fallible m => AtomicMove m (Error m) char
 char = Action.Unsafe.AtomicMove $ C.takeCharMaybe <&> maybe (Left C.failure) Right
 
+peekChar :: PeekChar m char => Fallible m => Query m (Error m) char
+peekChar = Action.Unsafe.Query $ C.peekCharMaybe <&> maybe (Left C.failure) Right
+
 considerChar :: TakeChar m char =>
     (char -> TakeOrLeave b a) -> Sure m e (Maybe (TakeOrLeave b a))
 considerChar f = Action.Unsafe.Sure $ C.considerChar f
@@ -34,8 +37,8 @@ takeCharMaybe :: TakeChar m char => Sure m e (Maybe char)
 takeCharMaybe =
     considerChar (Take . Just) <&> Monad.join . fmap TakeOrLeave.collapse
 
-next :: PeekChar m char => SureQuery m e (Maybe char)
-next = Action.Unsafe.SureQuery C.next
+peekCharMaybe :: PeekChar m char => SureQuery m e (Maybe char)
+peekCharMaybe = Action.Unsafe.SureQuery C.peekCharMaybe
 
 atEnd :: PeekChar m char => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery C.atEnd

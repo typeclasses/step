@@ -44,7 +44,7 @@ newtype DocumentParsing text m a =
 
 instance Monad m => Class.Peek1 (DocumentParsing text m) where
     type Text (DocumentParsing text m) = text
-    next = DocumentParsing Class.next
+    peekCharMaybe = DocumentParsing Class.peekCharMaybe
 
 instance Monad m => Class.Take1 (DocumentParsing text m) where
     considerChar f = DocumentParsing (Class.considerChar f)
