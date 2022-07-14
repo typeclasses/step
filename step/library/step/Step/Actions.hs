@@ -45,6 +45,11 @@ satisfy ok = Action.Unsafe.AtomicMove $
     C.considerChar (\x -> if ok x then Take x else Leave ())
     <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
 
+satisfyJust :: TakeChar m char => Fallible m => (char -> Maybe a) -> AtomicMove m (Error m) a
+satisfyJust ok = Action.Unsafe.AtomicMove $
+    C.considerChar (\x -> case ok x of Just y -> Take y; Nothing -> Leave ())
+    <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
+
 atEnd :: PeekChar m char => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery C.atEnd
 

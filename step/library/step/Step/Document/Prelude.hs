@@ -2,7 +2,6 @@
 
 module Step.Document.Prelude
   (
-    {- * Single character result -} satisfyJust,
     {- * Text result -} text, all,
     {- * The end -} end,
     {- * Contextualizing errors -} contextualize, (<?>),
@@ -46,13 +45,6 @@ import qualified Step.Classes as Class
 import qualified Step.Actions as Action
 
 import Step.TakeOrLeave (TakeOrLeave (..))
-
-satisfyJust :: Monad base => ListLike text char => (char -> Maybe a)
-    -> AtomicMove (DocumentParsing text base) Error a
-satisfyJust ok = Action.Unsafe.AtomicMove $
-    Class.considerChar (\x -> case ok x of Just y -> Take y; Nothing -> Leave ()) <&> \case
-        Just (Take x) -> Right x
-        _ -> Left Class.failure
 
 -- todo: add an atomic version of 'text'
 
