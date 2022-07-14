@@ -5,8 +5,8 @@ module Step.Document.Base where
 
 import Step.Internal.Prelude
 
-import Step.DocumentMemory.Base (DocumentMemory)
-import qualified Step.DocumentMemory.Base as DocumentMemory
+import Step.Document.Memory (DocumentMemory)
+import qualified Step.Document.Memory as DocumentMemory
 
 import Step.LineHistory.Char (Char)
 

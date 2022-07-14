@@ -111,9 +111,7 @@ library
 
         Step.Document
         Step.Document.Base
-
-        Step.DocumentMemory.Base
-        Step.DocumentMemory.State
+        Step.Document.Memory
 
         Step.Extent.BufferedStream
         Step.Extent.ListT
