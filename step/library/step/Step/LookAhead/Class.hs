@@ -10,12 +10,12 @@ class Monad m => LookAhead m where
 
     type Text m :: Type
 
-    next :: ListLike (Text m) char => m (Maybe char)
+    next :: Char m char => m (Maybe char)
 
-    atEnd :: ListLike (Text m) char => m Bool
+    atEnd :: Char m char => m Bool
     atEnd = isNothing <$> next
 
-type Char base char = (ListLike (Text base) char) :: Constraint
+type Char m char = (LookAhead m, ListLike (Text m) char) :: Constraint
 
 instance LookAhead m => LookAhead (ReaderT r m) where
     type Text (ReaderT r m) = Text m

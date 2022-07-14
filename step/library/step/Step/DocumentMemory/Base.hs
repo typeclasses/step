@@ -25,6 +25,8 @@ import qualified Step.Location.Class as Locating
 
 import qualified Step.Cursor.State as Cursor.State
 
+import Step.TakeCharacter.Class (TakeCharacter (takeCharMaybe))
+
 data DocumentMemory text m =
   DocumentMemory
     { content :: LineHistory
@@ -96,3 +98,6 @@ instance Monad m => Locating (StateT (DocumentMemory text m) m) where
         attempt2 = use (to position) <&> \case
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
+
+instance Monad m => TakeCharacter (StateT (DocumentMemory text m) m) where
+    takeCharMaybe f = runCursorState (Cursor.State.takeCharJust f)

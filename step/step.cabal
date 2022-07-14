@@ -104,6 +104,9 @@ library
         Step.LookAhead.Action
         Step.LookAhead.Class
 
+        Step.TakeCharacter.Action
+        Step.TakeCharacter.Class
+
         Step.Cursor.Base
         Step.Cursor.State
         Step.Cursor.Tentative

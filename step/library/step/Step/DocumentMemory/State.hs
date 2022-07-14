@@ -29,9 +29,6 @@ takeChar = runCursorState Cursor.State.takeChar
 takeCharIf :: Monad m => ListLike text char => (char -> Bool) -> StateT (DocumentMemory text m) m (Maybe char)
 takeCharIf ok = runCursorState (Cursor.State.takeCharIf ok)
 
-takeCharJust :: Monad m => ListLike text char => (char -> Maybe r) -> StateT (DocumentMemory text m) m (Maybe r)
-takeCharJust ok = runCursorState (Cursor.State.takeCharJust ok)
-
 takeTextNotAtomic :: Monad m => Eq text => Eq char => ListLike text char => text -> StateT (DocumentMemory text m) m Bool
 takeTextNotAtomic x = runCursorState (Cursor.State.takeTextNotAtomic x)
 

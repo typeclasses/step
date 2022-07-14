@@ -47,6 +47,8 @@ import qualified Step.LookAhead.Class as LookAhead
 
 import qualified Step.LookAhead.Action as LookAhead.Action
 
+import Step.TakeCharacter.Class (takeCharMaybe)
+
 char :: Monad base => ListLike text char =>
     AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error char
 char = Action.Unsafe.AtomicMove $ ReaderT \c ->
@@ -71,7 +73,7 @@ satisfy ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
 satisfyJust :: Monad base => ListLike text char => (char -> Maybe a)
     -> AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
 satisfyJust ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
-    DocumentMemory.State.takeCharJust ok <&> \case
+    takeCharMaybe ok <&> \case
         Nothing -> Left (Parser.makeError c)
         Just x -> Right x
 
