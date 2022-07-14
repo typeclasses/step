@@ -7,20 +7,13 @@ import qualified Optics
 
 import Step.ActionTypes.Constructors
 
-class Coerce (k1 :: ActionKind) (k2 :: ActionKind) | k2 -> k1
-  where
-    coerced :: Iso
-        (k1 error1 m1 a1)
-        (k1 error2 m2 a2)
-        (k2 error1 m1 a1)
-        (k2 error2 m2 a2)
+class Coerce (act1 :: Action) (act2 :: Action) | act2 -> act1 where
+    coerced :: Iso (act1 m1 e1 a1) (act1 m2 e2 a2) (act2 m1 e1 a1) (act2 m2 e2 a2)
 
-to :: forall k2 k1 error m a. Coerce k2 k1 =>
-    k1 error m a -> k2 error m a
+to :: forall act2 act1 m e a. Coerce act2 act1 => act1 m e a -> act2 m e a
 to = review coerced
 
-from :: forall k1 k2 error m a. Coerce k1 k2 =>
-    k1 error m a -> k2 error m a
+from :: forall act1 act2 m e a. Coerce act1 act2 => act1 m e a -> act2 m e a
 from = view coerced
 
 instance Coerce Any Any where coerced = Optics.coerced

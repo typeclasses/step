@@ -20,29 +20,29 @@ import Step.ActionTypes.KindJoin (type (>>))
 import Step.ActionTypes.Types (SureQuery)
 import qualified Step.ActionTypes.Join as Action
 
-join :: (Join k1 k2, Monad m) => k1 e m (k2 e m a) -> (k1 >> k2) e m a
+join :: (Join act1 act2, Monad m) => act1 m e (act2 m e a) -> (act1 >> act2) m e a
 join = Action.join
 
 infixl 1 >>=
-(>>=) :: Monad m => Join k1 k2 => k1 >> k2 ~ k3 => k1 e m a -> (a -> k2 e m b) -> k3 e m b
+(>>=) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 m e a -> (a -> act2 m e b) -> act3 m e b
 x >>= f = join (fmap f x)
 
 infixl 4 <*
-(<*) :: Monad m => Join k1 k2 => k1 >> k2 ~ k3 => k1 e m a -> k2 e m b -> k3 e m a
+(<*) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 m e a -> act2 m e b -> act3 m e a
 a <* b = join (fmap (\x -> fmap (\_ -> x) b) a)
 
 infixl 4 *>
-(*>) :: Monad m => Join k1 k2 => k1 >> k2 ~ k3 => k1 e m a -> k2 e m b -> k3 e m b
+(*>) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 m e a -> act2 m e b -> act3 m e b
 a *> b = join (fmap (\_ -> b) a)
 
 infixl 1 >>
 (>>) = (*>)
 
 infixl 4 <*>
-(<*>) :: Monad m => Join k1 k2 => k1 >> k2 ~ k3 => k1 e m (a -> b) -> k2 e m a -> k3 e m b
+(<*>) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 m e (a -> b) -> act2 m e a -> act3 m e b
 f <*> x = join (fmap (\f' -> fmap f' x) f)
 
-return :: Monad m => a -> SureQuery e m a
+return :: Monad m => a -> SureQuery m e a
 return = BasePrelude.return
 
 pure = return

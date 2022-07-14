@@ -12,9 +12,10 @@ import qualified Step.ActionTypes.Coerce as Coerce
 
 import Step.ActionTypes.Functorial
 
-class (FunctorialAction k, FunctorialAction try) => Atomic (k :: ActionKind) (try :: ActionKind) | k -> try
+class (FunctorialAction act, FunctorialAction try) =>
+    Atomic (act :: Action) (try :: Action) | act -> try
   where
-    try :: Functor m => k error m a -> try error m (Maybe a)
+    try :: Functor m => act m e a -> try m e (Maybe a)
 
 instance Atomic Atom Sure
   where
@@ -28,7 +29,7 @@ instance Atomic Query SureQuery
   where
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
-tryAnySure :: Functor m => Any error m a -> Sure error m (Maybe a)
+tryAnySure :: Functor m => Any m e a -> Sure m e (Maybe a)
 tryAnySure (Any p) = Sure $ p <&> \case
     Left _ -> Nothing
     Right x -> Just x

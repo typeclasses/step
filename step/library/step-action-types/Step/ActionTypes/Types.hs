@@ -4,7 +4,7 @@
 
 module Step.ActionTypes.Types
   (
-    ActionKind,
+    Action,
     -- * The types
     Any,
     Query,

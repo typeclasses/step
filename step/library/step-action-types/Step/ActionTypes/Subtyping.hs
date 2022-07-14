@@ -20,21 +20,20 @@ import qualified Step.ActionTypes.Coerce as Coerce
 import Coerce (coerce)
 
 
-class Is (k1 :: ActionKind) (k2 :: ActionKind)
-  where
-    cast' :: Monad m => k1 error m a -> k2 error m a
+class Is (act1 :: Action) (act2 :: Action) where
+    cast' :: Monad m => act1 m e a -> act2 m e a
 
 
-cast :: forall k2 k1 error m a. (Monad m, Is k1 k2) => k1 error m a -> k2 error m a
-cast = cast' @k1 @k2
+cast :: forall act2 act1 m e a. (Monad m, Is act1 act2) => act1 m e a -> act2 m e a
+cast = cast' @act1 @act2
 
 
 -- Functions used for defining instances below
 
-sureToAny :: Functor m => Sure error m a -> Any error m a
+sureToAny :: Functor m => Sure m e a -> Any m e a
 sureToAny (Sure p) = Any $ p <&> Right
 
-failureAny :: Monad m => Fail error m a -> Any error m a
+failureAny :: Monad m => Fail m e a -> Any m e a
 failureAny (Fail f) = Any $ return (Left f)
 
 

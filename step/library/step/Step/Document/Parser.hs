@@ -16,7 +16,7 @@ import qualified Step.Document.Error as Error
 
 import Step.LineHistory.Char (Char)
 
-import Step.ActionTypes (ActionKind, FunctorialAction, MonadicAction)
+import Step.ActionTypes (Action, FunctorialAction, MonadicAction)
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
 
@@ -26,13 +26,13 @@ import qualified Monad
 type ParserKind =
     Type              -- ^ @text@   - what type of input chunks the parser cursors through
     -> (Type -> Type) -- ^ @base@   - monadic context
-    -> ActionKind     -- ^ @kind@   - what properties the parser guarantees; see "Step.ActionTypes"
+    -> Action         -- ^ @kind@   - what properties the parser guarantees; see "Step.ActionTypes"
     -> Type           -- ^ @value@  - produced upon success
     -> Type
 
 parse :: Monad base => Action.Is kind Any =>
     Config
-    -> kind Error (ReaderT Config (StateT (DocumentMemory text base) base)) value
+    -> kind (ReaderT Config (StateT (DocumentMemory text base) base)) Error value
     -> StateT (DocumentMemory text base) base (Either Error value)
 parse config p =
     p & Action.cast @Any & \(Any p') -> runReaderT p' config >>= \case
@@ -41,7 +41,7 @@ parse config p =
 
 parseOnly :: Action.Is kind Any => Monad base => Char char => ListLike text char =>
     Config
-    -> kind Error (ReaderT Config (StateT (DocumentMemory text base) base)) value
+    -> kind (ReaderT Config (StateT (DocumentMemory text base) base)) Error value
     -> ListT base text -> base (Either Error value)
 parseOnly config p xs = evalStateT (parse config p) (DocumentMemory.fromListT xs)
 

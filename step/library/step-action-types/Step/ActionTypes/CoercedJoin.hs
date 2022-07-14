@@ -17,12 +17,11 @@ import qualified Monad
 
 import Step.ActionTypes.KindJoin
 
-class CoercedJoin k1 k2 k3
+class CoercedJoin act1 act2 act3
   where
-    join :: forall z1 z2 error m a. Monad m =>
-        Coerce k1 z1 => Coerce k2 z2 => Coerce k3 (z1 >> z2) =>
-        z1 error m (z2 error m a)
-        -> (z1 >> z2) error m a
+    join :: forall z1 z2 m e a. Monad m =>
+        Coerce act1 z1 => Coerce act2 z2 => Coerce act3 (z1 >> z2) =>
+        z1 m e (z2 m e a) -> (z1 >> z2) m e a
 
 instance CoercedJoin Any Any Any
   where

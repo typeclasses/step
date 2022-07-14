@@ -12,10 +12,10 @@ import Step.ActionTypes.KindJoin
 
 import Step.ActionTypes.Functorial
 
-class (FunctorialAction k1, FunctorialAction k2, FunctorialAction (k1 >> k2)) =>
-    Join (k1 :: ActionKind) (k2 :: ActionKind)
+class (FunctorialAction act1, FunctorialAction act2, FunctorialAction (act1 >> act2)) =>
+    Join (act1 :: Action) (act2 :: Action)
   where
-    join :: Monad m => k1 error m (k2 error m a) -> (k1 >> k2) error m a
+    join :: Monad m => act1 m e (act2 m e a) -> (act1 >> act2) m e a
 
 instance Join Any        Any        where join = Coerced.join
 instance Join Any        Atom       where join = Coerced.join

@@ -11,18 +11,14 @@ import Step.ActionTypes.Constructors
 
 import qualified Step.ActionTypes.Coerce as Action
 
-class CoerceAny (k :: ActionKind)
-  where
-    anyIsoUnsafe :: (Monad m1, Monad m2) => Iso
-        (k error1 m1 a1)
-        (k error2 m2 a2)
-        (Any error1 m1 a1)
-        (Any error2 m2 a2)
+class CoerceAny (act :: Action) where
+    anyIsoUnsafe :: (Monad m1, Monad m2) =>
+        Iso (act m1 e1 a1) (act m2 e2 a2) (Any m1 e1 a1) (Any m2 e2 a2)
 
-toAny :: forall k error m a. CoerceAny k => Monad m => k error m a -> Any error m a
+toAny :: forall act m e a. CoerceAny act => Monad m => act m e a -> Any m e a
 toAny = view anyIsoUnsafe
 
-fromAnyUnsafe :: forall k error m a. CoerceAny k => Monad m => Any error m a -> k error m a
+fromAnyUnsafe :: forall act m e a. CoerceAny act => Monad m => Any m e a -> act m e a
 fromAnyUnsafe = review anyIsoUnsafe
 
 instance CoerceAny Any where anyIsoUnsafe = Optics.coerced

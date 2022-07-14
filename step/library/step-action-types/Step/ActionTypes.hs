@@ -3,7 +3,7 @@
 module Step.ActionTypes
   (
     -- * The types
-    ActionKind,
+    Action,
     -- $types
     Any, Query, Move, Atom, AtomicMove,
     Sure, SureQuery, Fail,

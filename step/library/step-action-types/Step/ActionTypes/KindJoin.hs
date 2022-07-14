@@ -8,7 +8,7 @@ import Step.ActionTypes.Types
 --
 -- This function is mostly not commutative (@a >> b@ is not the same as @b >> a@) because whether an atomic action's atomicity is preserved depends on the order of the composition in some cases.
 
-type family (k1 :: ActionKind) >> (k2 :: ActionKind) :: ActionKind
+type family (act1 :: Action) >> (act2 :: Action) :: Action
   where
 
     -- Joining with SureQuery has no effect on the type

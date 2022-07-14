@@ -6,8 +6,7 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Types
 
-class (forall error m. Functor m =>
-      Functor (k error m)) => FunctorialAction (k :: ActionKind)
+class (forall m e. Functor m => Functor (act m e)) => FunctorialAction (act :: Action)
 
 instance FunctorialAction Any
 instance FunctorialAction Atom

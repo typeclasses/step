@@ -9,75 +9,64 @@ module Step.ActionTypes.Constructors where
 import Step.Internal.Prelude
 
 -- | The kind of all the action types in "Step.Action.Types"
-type ActionKind =
-       Type           -- ^ @error@  - produced upon failure
-    -> (Type -> Type) -- ^ @base@   - monadic context
-    -> Type           -- ^ @value@  - produced upon success
+type Action =
+    (Type -> Type)    -- ^ @m@ - monadic context
+    -> Type           -- ^ @e@ - produced upon failure
+    -> Type           -- ^ @a@ - produced upon success
     -> Type
 
-type Any        :: ActionKind
-type Atom       :: ActionKind
-type AtomicMove :: ActionKind
-type Fail       :: ActionKind
-type Move       :: ActionKind
-type Query      :: ActionKind
-type Sure       :: ActionKind
-type SureQuery  :: ActionKind
+type Any        :: Action
+type Atom       :: Action
+type AtomicMove :: Action
+type Fail       :: Action
+type Move       :: Action
+type Query      :: Action
+type Sure       :: Action
+type SureQuery  :: Action
 
 -- | No known properties
---
-newtype Any error base value =
-    Any (base (Either (base error) value))
-    deriving (Functor, Applicative, Monad)
-        via (ExceptT (base error) base)
+
+newtype Any m e a = Any (m (Either (m e) a))
+    deriving (Functor, Applicative, Monad) via (ExceptT (m e) m)
 
 -- | Does not move the cursor
---
-newtype Query error base value =
-    Query (base (Either (base error) value))
-    deriving (Functor, Applicative, Monad)
-        via (ExceptT (base error) base)
+
+newtype Query m e a = Query (m (Either (m e) a))
+    deriving (Functor, Applicative, Monad) via (ExceptT (m e) m)
 
 -- | Always moves the cursor
 --
 -- No 'Applicative' or 'Monad' instance here because 'pure' and 'return' don't move the cursor
---
-newtype Move error base value =
-    Move (base (Either (base error) value))
+
+newtype Move m e a = Move (m (Either (m e) a))
     deriving stock Functor
 
 -- | Fails noncommittally
 --
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity
---
-newtype Atom error base value =
-    Atom (base (Either (base error) value))
+
+newtype Atom m e a =
+    Atom (m (Either (m e) a))
     deriving stock Functor
 
 -- | Always moves the cursor, is atomic
 --
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity, and because 'pure' and 'return' don't move the cursor
---
-newtype AtomicMove error base value =
-    AtomicMove (base (Either (base error) value))
+
+newtype AtomicMove m e a = AtomicMove (m (Either (m e) a))
     deriving stock Functor
 
 -- | Always succeeds
---
-newtype Sure error base value =
-    Sure (base value)
-    deriving (Functor, Applicative, Monad)
-        via base
+
+newtype Sure m e a = Sure (m a)
+    deriving (Functor, Applicative, Monad) via m
 
 -- | Always succeeds, does not move the cursor
---
-newtype SureQuery error base value =
-    SureQuery (base value)
-    deriving (Functor, Applicative, Monad)
-        via base
+
+newtype SureQuery m e a = SureQuery (m a)
+    deriving (Functor, Applicative, Monad) via m
 
 -- | Never succeeds and never moves the cursor
---
-newtype Fail error base value =
-    Fail (base error)
+
+newtype Fail m e a = Fail (m e)
     deriving stock Functor

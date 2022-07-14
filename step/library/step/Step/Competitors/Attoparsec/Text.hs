@@ -24,7 +24,7 @@ import qualified Text
 
 import qualified Step.LookAhead.Action as LookAhead.Action
 
-type Parser base kind value = kind Error (ReaderT Config (StateT (DocumentMemory Text base) base)) value
+type Parser base kind value = kind (ReaderT Config (StateT (DocumentMemory Text base) base)) Error value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)

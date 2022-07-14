@@ -6,8 +6,8 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 
-class Returnable (k :: ActionKind) where
-    trivial :: Monad m => a -> k error m a
+class Returnable (act :: Action) where
+    trivial :: Monad m => a -> act m e a
 
 instance Returnable Any where trivial = Any . return . Right
 instance Returnable Query where trivial = Query . return . Right

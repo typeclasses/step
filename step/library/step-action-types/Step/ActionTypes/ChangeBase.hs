@@ -6,8 +6,8 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 
-class ChangeBase (k :: ActionKind) where
-    changeBase :: Functor base2 => (forall a. base1 a -> base2 a) -> k e base1 value -> k e base2 value
+class ChangeBase (act :: Action) where
+    changeBase :: Functor m2 => (forall x. m1 x -> m2 x) -> act m1 e a -> act m2 e a
 
 instance ChangeBase Any where
     changeBase f (Any a) = Any $ f a <&> \case Left e -> Left (f e); Right x -> Right x
