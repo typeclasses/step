@@ -2,9 +2,6 @@
 
 module Step.Document.Prelude
   (
-    {- * Text result -} text,
-    {- * Transformation -} -- within,
-    {- * Extent -} -- while,
   )
   where
 
@@ -43,15 +40,6 @@ import qualified Step.Classes as Class
 import qualified Step.Actions as Action
 
 import Step.TakeOrLeave (TakeOrLeave (..))
-
--- todo: add an atomic version of 'text'
-
-text :: Monad base => ListLike text char => Eq text => Eq char => text
-    -> Any (DocumentParsing text base) Error ()
-text x = Action.Unsafe.Any $
-    DocumentParsing (lift $ DocumentMemory.State.takeTextNotAtomic x) <&> \case
-        True -> Right ()
-        False -> Left Class.failure
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>
 --     Extent (StateT (DocumentMemory text m) m) text

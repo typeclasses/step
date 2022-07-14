@@ -26,9 +26,6 @@ isAllBuffered = get <&> DocumentMemory.isAllBuffered
 takeChar :: Monad m => ListLike text char => StateT (DocumentMemory text m) m (Maybe char)
 takeChar = runCursorState Cursor.State.takeChar
 
-takeTextNotAtomic :: Monad m => Eq text => Eq char => ListLike text char => text -> StateT (DocumentMemory text m) m Bool
-takeTextNotAtomic x = runCursorState (Cursor.State.takeTextNotAtomic x)
-
 atEnd :: Monad m => ListLike text char => StateT (DocumentMemory text m) m Bool
 atEnd = runCursorState Cursor.State.atEnd
 

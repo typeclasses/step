@@ -93,3 +93,10 @@ infix 0 <?>
 (<?>) :: Configure m => C.HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
     act m e a -> Text -> act m e a
 p <?> c = contextualize c p
+
+-- todo: add an atomic version of 'text'
+
+text :: C.SkipTextNonAtomic m => Fallible m => ListLike (C.Text m) char => Eq char =>
+    C.Text m -> Any m (Error m) ()
+text x = Action.Unsafe.Any $
+    C.skipTextNonAtomic x <&> \case{ True -> Right (); False -> Left C.failure }

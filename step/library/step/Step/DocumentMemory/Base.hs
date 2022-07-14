@@ -97,3 +97,6 @@ instance Monad m => Class.Take1 (StateT (DocumentMemory text m) m) where
 
 instance Monad m => Class.TakeAll (StateT (DocumentMemory text m) m) where
     takeAll = runCursorState Cursor.State.takeAll
+
+instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (DocumentMemory text m) m) where
+    skipTextNonAtomic x = runCursorState (Cursor.State.takeTextNotAtomic x)

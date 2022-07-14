@@ -51,6 +51,10 @@ class Peek1 m => TakeAll m where
     -- | Consume the rest of the input
     takeAll :: ListLike (Text m) char => m (Text m)
 
+class Peek1 m => SkipTextNonAtomic m where
+    skipTextNonAtomic :: ListLike (Text m) char => Eq char => Text m -> m Bool
+        -- ^ Return value indicates whether operation succeeded
+
 class Monad m => Configure m where
     type Config m :: Type
     configure :: (Config m -> Config m) -> m a -> m a
@@ -71,6 +75,9 @@ instance Take1 m => Take1 (ReaderT r m) where
 
 instance TakeAll m => TakeAll (ReaderT r m) where
     takeAll = ReaderT \_ -> takeAll
+
+instance SkipTextNonAtomic m => SkipTextNonAtomic (ReaderT r m) where
+    skipTextNonAtomic x = ReaderT \_ -> skipTextNonAtomic x
 
 instance Locating m => Locating (ReaderT r m) where
     position = ReaderT \_ -> position

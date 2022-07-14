@@ -52,6 +52,9 @@ instance Monad m => Class.Take1 (DocumentParsing text m) where
 instance Monad m => Class.TakeAll (DocumentParsing text m) where
     takeAll = DocumentParsing Class.takeAll
 
+instance (Monad m, Eq text) => Class.SkipTextNonAtomic (DocumentParsing text m) where
+    skipTextNonAtomic x = DocumentParsing (Class.skipTextNonAtomic x)
+
 instance Monad m => Class.Locating (DocumentParsing text m) where
     position = DocumentParsing Class.position
 
