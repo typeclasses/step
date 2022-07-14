@@ -4,7 +4,6 @@ module Step.Document.Prelude
   (
     {- * Single character result -} char, satisfy, satisfyJust, peekChar,
     {- * Text result -} text, all,
-    {- * Inspecting the position -} position, withLocation,
     {- * The end -} end,
     {- * Contextualizing errors -} contextualize, (<?>),
     {- * Failure -} failure,
@@ -102,19 +101,6 @@ infix 0 <?>
     -> Text
     -> act (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
 p <?> c = contextualize c p
-
-position :: Monad base => ListLike text char =>
-    SureQuery (ReaderT Config (StateT (DocumentMemory text base) base)) Error Loc
-position = Action.Unsafe.SureQuery $ ReaderT \_ -> DocumentMemory.State.getPosition
-
-withLocation ::
-    ListLike text char => Monad base =>
-    Action.Join SureQuery act =>
-    Action.Join act SureQuery =>
-    act (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
-    -> act (ReaderT Config (StateT (DocumentMemory text base) base)) Error (SpanOrLoc, a)
-withLocation p =
-    (\a x b -> (Loc.spanOrLocFromTo a b, x)) P.<$> position P.<*> p P.<*> position
 
 failure :: Monad base =>
     Fail (ReaderT Config (StateT (DocumentMemory text base) base)) Error a

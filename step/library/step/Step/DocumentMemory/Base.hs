@@ -1,4 +1,4 @@
-{-# language FlexibleInstances, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
 module Step.DocumentMemory.Base where
 
@@ -19,6 +19,11 @@ import qualified Step.Cursor.State as Cursor.State
 import Loc (Loc)
 
 import Step.LookAhead.Class (LookAhead (..))
+
+import Step.Location.Class (Locating)
+import qualified Step.Location.Class as Locating
+
+import qualified Step.Cursor.State as Cursor.State
 
 data DocumentMemory text m =
   DocumentMemory
@@ -81,3 +86,13 @@ instance Monad m => LookAhead (StateT (DocumentMemory text m) m) where
     type Text (StateT (DocumentMemory text m) m) = text
     next = runCursorState Cursor.State.peekCharMaybe
     atEnd = runCursorState Cursor.State.atEnd
+
+instance Monad m => Locating (StateT (DocumentMemory text m) m) where
+    position = attempt1
+      where
+        attempt1 = use (to position) >>= \case
+            CursorAt x -> return x
+            CursorLocationNeedsMoreInput -> runCursorState Cursor.State.bufferMore *> attempt2
+        attempt2 = use (to position) <&> \case
+            CursorAt x -> x
+            CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position

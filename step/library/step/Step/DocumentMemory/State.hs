@@ -17,17 +17,6 @@ import Step.Nontrivial.Base (Nontrivial)
 
 import Step.BufferedStream.Base (BufferedStream)
 
-getPosition :: ListLike text char => Monad m => StateT (DocumentMemory text m) m Loc
-getPosition =
-    use (to DocumentMemory.position) >>= \case
-        DocumentMemory.CursorAt x -> return x
-        DocumentMemory.CursorLocationNeedsMoreInput -> do
-            bufferMore
-            use (to DocumentMemory.position) >>= \case
-                DocumentMemory.CursorAt x -> return x
-                DocumentMemory.CursorLocationNeedsMoreInput ->
-                    error "DocumentMemory.State.getPosition: after buffering more, should not need more input to determine position"
-
 bufferMore :: ListLike text char => Monad m => StateT (DocumentMemory text m) m ()
 bufferMore = runCursorState Cursor.State.bufferMore
 

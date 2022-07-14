@@ -2,35 +2,36 @@
 
 module Step.Spec.DocumentParsing where
 
-import Step.Internal.Prelude hiding (to)
-
-import Hedgehog
-
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-
-import qualified ListT
-import qualified ListLike
-import qualified Char
-
-import Step.Test.InputChunking (genChunks)
+import Step.Internal.Prelude
 
 import Test.Hspec
 import Test.Hspec.Hedgehog
+
+import Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+
+import Step.Test.InputChunking (genChunks)
+
+import qualified ListT
+
+import qualified ListLike
 
 import Text (Text)
 
 import Loc (loc)
 import qualified SpanOrLoc
 
+import qualified Char
 import Char (Char)
 
 -- The modules under test
+import qualified Step.ActionTypes as P
+import qualified Step.ActionTypes.Do as P
+import qualified Step.Document.Error as P
 import qualified Step.Document.Parser as P
 import qualified Step.Document.Prelude as P
-import qualified Step.Document.Error as P
-import qualified Step.ActionTypes.Do as P
-import qualified Step.ActionTypes as P
+import qualified Step.Location.Action as P
 
 spec :: SpecWith ()
 spec = describe "Document parsing" do

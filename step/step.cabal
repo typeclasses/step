@@ -131,7 +131,9 @@ library
         Step.LineHistory.Char
         Step.LineHistory.State
 
-        Step.Loc.Optics
+        Step.Location.Action
+        Step.Location.Class
+        Step.Location.Optics
 
         Step.Tentative.Base
         Step.Tentative.State
