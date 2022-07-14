@@ -43,8 +43,9 @@ import Step.Document.Error (Error)
 import Step.Document.Config (Config)
 
 import qualified Step.Classes as Class
-
 import qualified Step.Actions as Action
+
+import Step.TakeOrLeave (TakeOrLeave (..))
 
 char :: Monad base => ListLike text char =>
     AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error char
@@ -63,16 +64,16 @@ peekChar = Action.Unsafe.Query $ ReaderT \c ->
 satisfy :: Monad base => ListLike text char => (char -> Bool)
     -> AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error char
 satisfy ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
-    DocumentMemory.State.takeCharIf ok <&> \case
-        Nothing -> Left (Parser.makeError c)
-        Just x -> Right x
+    Class.considerChar (\x -> if ok x then Take x else Leave ()) <&> \case
+        Just (Take x) -> Right x
+        _ -> Left (Parser.makeError c)
 
 satisfyJust :: Monad base => ListLike text char => (char -> Maybe a)
     -> AtomicMove (ReaderT Config (StateT (DocumentMemory text base) base)) Error a
 satisfyJust ok = Action.Unsafe.AtomicMove $ ReaderT \c ->
-    Class.takeCharMaybe ok <&> \case
-        Nothing -> Left (Parser.makeError c)
-        Just x -> Right x
+    Class.considerChar (\x -> case ok x of Just y -> Take y; Nothing -> Leave ()) <&> \case
+        Just (Take x) -> Right x
+        _ -> Left (Parser.makeError c)
 
 -- todo: add an atomic version of 'text'
 

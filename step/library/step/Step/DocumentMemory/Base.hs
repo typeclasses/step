@@ -93,4 +93,4 @@ instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
 
 instance Monad m => Class.Take1 (StateT (DocumentMemory text m) m) where
-    takeCharMaybe f = runCursorState (Cursor.State.takeCharJust f)
+    considerChar f = runCursorState (Cursor.State.considerChar f)

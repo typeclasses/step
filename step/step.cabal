@@ -104,7 +104,6 @@ library
 
         Step.Cursor.Base
         Step.Cursor.State
-        Step.Cursor.Tentative
 
         Step.CursorPosition.Base
 
@@ -131,8 +130,7 @@ library
 
         Step.Location.Optics
 
-        Step.Tentative.Base
-        Step.Tentative.State
+        Step.TakeOrLeave
 
         Step.Test.InputChunking
 

@@ -4,15 +4,14 @@ import Step.Internal.Prelude
 
 import Step.Cursor.Base (Cursor)
 import qualified Step.Cursor.Base as Cursor
-import qualified Step.Cursor.Tentative as Cursor.Tentative
-
-import qualified Step.Tentative.State as Tentative.State
 
 import qualified Step.BufferedStream.State as BufferedStream.State
 
 import qualified Step.Buffer.Base as Buffer
 
 import qualified ListLike
+
+import Step.TakeOrLeave (TakeOrLeave)
 
 fillBuffer1 :: Monad m => StateT (Cursor m text) m ()
 fillBuffer1 = modifyM Cursor.fillBuffer1
@@ -37,11 +36,8 @@ takeBufferedChar = do
 peekBufferedChar :: Monad m => ListLike text char => StateT (Cursor m text) m (Maybe char)
 peekBufferedChar = get <&> Cursor.bufferHeadChar
 
-takeCharIf :: Monad m => ListLike text char => (char -> Bool) -> StateT (Cursor m text) m (Maybe char)
-takeCharIf f = Tentative.State.ifJust (\case Just x | f x -> Just x; _ -> Nothing) Cursor.Tentative.takeChar
-
-takeCharJust :: Monad m => ListLike text char => (char -> Maybe r) -> StateT (Cursor m text) m (Maybe r)
-takeCharJust f = Tentative.State.ifJust (>>= f) Cursor.Tentative.takeChar
+considerChar :: Monad m => ListLike text char => (char -> TakeOrLeave b a) -> StateT (Cursor m text) m (Maybe (TakeOrLeave b a))
+considerChar f = StateT (Cursor.considerUnconsChar f)
 
 takeTextNotAtomic :: (Monad m, ListLike text char, Eq text, Eq char) => text -> StateT (Cursor m text) m Bool
 takeTextNotAtomic x = do

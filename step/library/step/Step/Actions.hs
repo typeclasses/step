@@ -4,7 +4,7 @@ module Step.Actions where
 
 import Step.Internal.Prelude
 
-import Step.Classes (Peek1, PeekChar, Take1, Locating)
+import Step.Classes (Peek1, PeekChar, Take1, Locating, TakeChar)
 import qualified Step.Classes as C
 
 import Step.ActionTypes.Types
@@ -18,8 +18,17 @@ import Step.ActionTypes (Join)
 
 import qualified Step.ActionTypes.Do as A
 
-takeCharMaybe :: PeekChar m char => Take1 m => (char -> Maybe a) -> SureQuery m e (Maybe a)
-takeCharMaybe f = Action.Unsafe.SureQuery $ C.takeCharMaybe f
+import Step.TakeOrLeave (TakeOrLeave (..))
+
+considerChar :: TakeChar m char =>
+    (char -> TakeOrLeave b a) -> Sure m e (Maybe (TakeOrLeave b a))
+considerChar f = Action.Unsafe.Sure $ C.considerChar f
+
+takeCharMaybe :: TakeChar m char =>
+    (char -> Maybe a) -> Sure m e (Maybe a)
+takeCharMaybe f =
+    considerChar (\case{ Nothing -> Leave (); Just a -> Take a } . f)
+    <&> \case{ Just (Take a) -> Just a; _ -> Nothing }
 
 next :: PeekChar m char => SureQuery m e (Maybe char)
 next = Action.Unsafe.SureQuery C.next

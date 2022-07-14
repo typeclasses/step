@@ -5,7 +5,7 @@ module Step.Cursor.Base
     {- * Conversion with ListT -} fromListT, toListT,
     {- * Buffer actions -} fillBuffer1, bufferMore, bufferAll,
     {- * Buffer inspection -} isAllBuffered, bufferIsEmpty, bufferHeadChar,
-    {- * Taking from the stream -} unconsChar, bufferUnconsChar, unconsCharTentative,
+    {- * Taking from the stream -} unconsChar, bufferUnconsChar, considerUnconsChar,
   )
   where
 
@@ -17,12 +17,12 @@ import qualified Step.Buffer.Base as Buffer
 import Step.BufferedStream.Base (BufferedStream (BufferedStream))
 import qualified Step.BufferedStream.Base as BufferedStream
 
-import qualified Step.Tentative.Base as Tentative
-
 import Step.CursorPosition.Base (CursorPosition)
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.ListT as Nontrivial.ListT
+
+import Step.TakeOrLeave (TakeOrLeave (..))
 
 data Cursor m text =
   Cursor
@@ -60,14 +60,16 @@ unconsChar cbs = do
         Nothing -> (cbs', Nothing)
         Just (x, cbs'') -> (cbs'', Just x)
 
-unconsCharTentative :: Monad m => ListLike text char => Cursor m text -> m (Tentative.Step (Cursor m text) (Maybe char))
-unconsCharTentative cbs = do
+considerUnconsChar :: Monad m => ListLike text char =>
+     (char -> TakeOrLeave b a)
+     -> Cursor m text
+    -> m (Maybe (TakeOrLeave b a), Cursor m text)
+considerUnconsChar f cbs = do
     cbs' <- fillBuffer1 cbs
-    return  case bufferUnconsChar cbs' of
-        Nothing -> Tentative.noChoiceStep cbs' Nothing
-        Just (x, cbs'') -> Tentative.choiceStep
-            Tentative.Choice{ Tentative.ifNotTaken = cbs', Tentative.ifActionTaken = cbs'' }
-            (Just x)
+    return case bufferUnconsChar cbs' of
+        Nothing -> (Nothing, cbs')
+        Just (x, cbs'') -> let r = f x in
+            (Just r, case r of { Leave _ -> cbs'; Take _ -> cbs'' })
 
 fromListT :: Monad m => ListLike text char => ListT m text -> Cursor m text
 fromListT xs = Cursor 0 (BufferedStream.fromListT xs)
