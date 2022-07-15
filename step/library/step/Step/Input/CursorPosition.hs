@@ -1,6 +1,6 @@
 {-# language DerivingStrategies, GeneralizedNewtypeDeriving #-}
 
-module Step.CursorPosition.Base where
+module Step.Input.CursorPosition where
 
 import Step.Internal.Prelude
 

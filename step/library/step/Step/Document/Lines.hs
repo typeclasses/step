@@ -17,8 +17,8 @@ import Loc (Line, Loc, loc)
 
 import qualified Map
 
-import Step.CursorPosition.Base (CursorPosition)
-import qualified Step.CursorPosition.Base as CursorPosition
+import Step.Input.CursorPosition (CursorPosition)
+import qualified Step.Input.CursorPosition as CursorPosition
 
 import qualified Char
 

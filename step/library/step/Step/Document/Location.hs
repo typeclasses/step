@@ -1,4 +1,4 @@
-module Step.Location.Optics where
+module Step.Document.Location where
 
 import Step.Internal.Prelude
 

@@ -93,19 +93,17 @@ library
         Step.Classes.Abstract
         Step.Classes.Base
 
-        Step.Buffer.Base
-
-        Step.BufferedStream.Base
-
         Step.Competitors.Attoparsec.Text
 
-        Step.Cursor.Base
-
-        Step.CursorPosition.Base
+        Step.Input.Buffer
+        Step.Input.BufferedStream
+        Step.Input.Cursor
+        Step.Input.CursorPosition
 
         Step.Document
         Step.Document.Base
         Step.Document.Lines
+        Step.Document.Location
         Step.Document.Memory
 
         Step.Extent.BufferedStream
@@ -115,8 +113,6 @@ library
         Step.Nontrivial.Constructor
         Step.Nontrivial.List
         Step.Nontrivial.ListT
-
-        Step.Location.Optics
 
         Step.TakeOrLeave
 

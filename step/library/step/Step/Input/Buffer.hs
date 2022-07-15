@@ -1,6 +1,6 @@
 {-# language Safe #-}
 
-module Step.Buffer.Base
+module Step.Input.Buffer
   (
     Buffer, singleton, isEmpty, empty, toListT, fold, headChar, unconsChar, unconsChunk,
 

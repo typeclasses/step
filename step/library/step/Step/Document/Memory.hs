@@ -13,12 +13,12 @@ import Step.Internal.Prelude hiding (Text)
 import Step.Document.Lines (Char, LineHistory)
 import qualified Step.Document.Lines as Lines
 
-import Step.Cursor.Base (Cursor)
-import qualified Step.Cursor.Base as Cursor
+import Step.Input.Cursor (Cursor)
+import qualified Step.Input.Cursor as Cursor
 
-import qualified Step.BufferedStream.Base as BufferedStream
+import qualified Step.Input.BufferedStream as BufferedStream
 
-import Step.CursorPosition.Base (CursorPosition)
+import Step.Input.CursorPosition (CursorPosition)
 
 import Loc (Loc)
 

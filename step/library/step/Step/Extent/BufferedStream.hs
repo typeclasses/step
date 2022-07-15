@@ -2,8 +2,8 @@ module Step.Extent.BufferedStream where
 
 import Step.Internal.Prelude
 
-import Step.BufferedStream.Base (BufferedStream)
-import qualified Step.BufferedStream.Base as BufferedStream
+import Step.Input.BufferedStream (BufferedStream)
+import qualified Step.Input.BufferedStream as BufferedStream
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.List as Nontrivial

@@ -1,6 +1,6 @@
 {-# language FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
-module Step.Cursor.Base
+module Step.Input.Cursor
   (
     {- * The type -} Cursor (..),
     {- * Conversion with ListT -} fromListT, toListT,
@@ -9,10 +9,10 @@ module Step.Cursor.Base
 
 import Step.Internal.Prelude
 
-import Step.BufferedStream.Base (BufferedStream)
-import qualified Step.BufferedStream.Base as BufferedStream
+import Step.Input.BufferedStream (BufferedStream)
+import qualified Step.Input.BufferedStream as BufferedStream
 
-import Step.CursorPosition.Base (CursorPosition)
+import Step.Input.CursorPosition (CursorPosition)
 
 import Step.Nontrivial.Base (Nontrivial)
 

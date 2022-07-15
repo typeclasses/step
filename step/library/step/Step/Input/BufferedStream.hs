@@ -1,6 +1,6 @@
 {-# language FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
-module Step.BufferedStream.Base
+module Step.Input.BufferedStream
   (
     {- * The type -} BufferedStream (..),
     {- * Constants -} empty,
@@ -15,8 +15,8 @@ import Step.Internal.Prelude
 
 import qualified ListT
 
-import Step.Buffer.Base (Buffer)
-import qualified Step.Buffer.Base as Buffer
+import Step.Input.Buffer (Buffer)
+import qualified Step.Input.Buffer as Buffer
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
