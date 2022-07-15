@@ -2,17 +2,11 @@ module Step.Extent.ListT where
 
 import Step.Internal.Prelude
 
-import Step.BufferedStream.Base (BufferedStream)
-import qualified Step.BufferedStream.State as BufferedStream.State
-
 import Step.Nontrivial.Base (Nontrivial)
-import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified Step.Nontrivial.List as Nontrivial
 
 import qualified ListT
-
-import qualified ListLike
 
 newtype Extent m a =
     Extent (ListT (StateT (ListT m a) m) a)

@@ -10,11 +10,8 @@ import qualified Step.Document.Memory as DocumentMemory
 
 import Step.Document.Lines (Char)
 
-import Step.ActionTypes (Action, FunctorialAction, MonadicAction)
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
-
-import qualified Monad
 
 import qualified Step.Classes.Base as Class
 

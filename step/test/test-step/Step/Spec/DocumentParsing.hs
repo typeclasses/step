@@ -7,7 +7,6 @@ import Step.Internal.Prelude
 import Test.Hspec
 import Test.Hspec.Hedgehog
 
-import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
@@ -16,8 +15,6 @@ import Step.Test.InputChunking (genChunks)
 import qualified ListT
 
 import qualified ListLike
-
-import Text (Text)
 
 import Loc (loc)
 import qualified SpanOrLoc

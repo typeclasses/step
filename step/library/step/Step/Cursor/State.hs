@@ -7,8 +7,6 @@ import qualified Step.Cursor.Base as Cursor
 
 import qualified Step.BufferedStream.State as BufferedStream.State
 
-import qualified Step.Buffer.Base as Buffer
-
 import qualified ListLike
 
 import Step.TakeOrLeave (TakeOrLeave)

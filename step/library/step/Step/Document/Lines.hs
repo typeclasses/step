@@ -20,15 +20,9 @@ import qualified Map
 import Step.CursorPosition.Base (CursorPosition)
 import qualified Step.CursorPosition.Base as CursorPosition
 
-import Step.Internal.Prelude
-
 import qualified Char
 
 import qualified ListLike
-
-import qualified Map
-
-import qualified Step.CursorPosition.Base as CursorPosition
 
 import qualified Loc
 

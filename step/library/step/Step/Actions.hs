@@ -9,7 +9,7 @@ import qualified Step.Classes.Base as C
 
 import Step.ActionTypes.Types
 
-import Step.ActionTypes (cast, Is)
+import Step.ActionTypes (cast)
 
 import qualified Step.ActionTypes.Unsafe as Action.Unsafe
 

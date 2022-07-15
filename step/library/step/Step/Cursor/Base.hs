@@ -11,16 +11,12 @@ module Step.Cursor.Base
 
 import Step.Internal.Prelude
 
-import Step.Buffer.Base (Buffer)
-import qualified Step.Buffer.Base as Buffer
-
-import Step.BufferedStream.Base (BufferedStream (BufferedStream))
+import Step.BufferedStream.Base (BufferedStream)
 import qualified Step.BufferedStream.Base as BufferedStream
 
 import Step.CursorPosition.Base (CursorPosition)
 
 import Step.Nontrivial.Base (Nontrivial)
-import qualified Step.Nontrivial.ListT as Nontrivial.ListT
 
 import Step.TakeOrLeave (TakeOrLeave (..))
 
