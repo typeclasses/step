@@ -3,12 +3,10 @@
 module Step.BufferedStream.Base
   (
     {- * The type -} BufferedStream (..),
-    {- * Optics -} bufferLens, pendingLens,
     {- * Constants -} empty,
     {- * Conversion with ListT -} toListT, fromListT,
     {- * Buffer querying -} bufferIsEmpty, isAllBuffered, bufferedHeadChar,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar, putChunk, putNontrivialChunk,
-    {- * Buffering -} bufferMore,
     {- * Taking by chunk -} takeChunk, takeChunkWhile,
   )
   where
@@ -59,7 +57,7 @@ instance Monad m => Class.TakeAll (StateT (BufferedStream m text) m) where
       where
         bufferAll = isEmpty >>= \case
             True -> return ()
-            False -> modifyM bufferMore *> bufferAll
+            False -> Class.bufferMore *> bufferAll
         takeBuffer = do
             s <- get
             put s{ buffer = Buffer.empty }
@@ -81,10 +79,33 @@ instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (BufferedStream m
 
 instance Monad m => Class.FillBuffer1 (StateT (BufferedStream m text) m) where
     fillBuffer1 = do
-        b <- get
-        case Buffer.isEmpty (buffer b) of
-            True -> put =<< lift (bufferMore b)
-            False -> return ()
+        ie <- get <&> Buffer.isEmpty . buffer
+        when ie Class.bufferMore
+
+instance Monad m => Class.BufferMore (StateT (BufferedStream m text) m) where
+    bufferMore = (get <&> pending) >>= \case
+
+        -- If the end of the stream has been reached, do nothing
+        Nothing -> return ()
+
+        Just p ->
+
+            -- Perform the next step in the pending input stream
+            lift (ListT.next p)
+
+            >>= \case
+
+                -- If the stream is now empty, change its value to 'Nothing' to remember that we have reached the end
+                ListT.Nil -> assign pendingLens Nothing
+
+                -- We got a new chunk of input.
+                ListT.Cons x xs -> do
+
+                    -- Add the chunk to the buffer
+                    modifying bufferLens (<> Buffer.singleton x)
+
+                    -- Remove the chunk from the pending input stream
+                    assign pendingLens (Just xs)
 
 ---
 
@@ -154,19 +175,3 @@ putChunk x s = case Nontrivial.refine x of Nothing -> s; Just y -> putNontrivial
 -- | Adds a chunk back to the left side of the buffer
 putNontrivialChunk :: Nontrivial text -> BufferedStream m text -> BufferedStream m text
 putNontrivialChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
-
--- | Read one chunk of input; does nothing if the end of the stream has been reached
-bufferMore :: Monad m =>
-    BufferedStream m text -> m (BufferedStream m text)
-bufferMore s = case pending s of
-    Nothing -> return s -- If the end of the stream has been reached, do nothing
-    Just p ->
-        ListT.next p -- Perform the next step in the pending input stream
-        >>= \case
-            ListT.Nil -> -- If the stream is now empty, change its value to 'Nothing' to remember that we have reached the end
-                return s{ pending = Nothing }
-            ListT.Cons x xs -> -- We got a new chunk of input.
-                return BufferedStream{
-                    buffer = buffer s <> Buffer.singleton x, -- Add the chunk to the buffer
-                    pending = Just xs -- Remove the chunk from the pending input stream
-                }

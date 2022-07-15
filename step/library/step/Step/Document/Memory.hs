@@ -3,7 +3,6 @@
 module Step.Document.Memory
   (
     {- * The type -} DocumentMemory,
-    {- * Optics -} contentLens, cursorLens, cursorPositionLens,
     {- * Construction -} fromListT,
     {- * Cursor location -} position, CursorLocation,
   )
@@ -44,9 +43,7 @@ instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
       where
         attempt1 = use (to position) >>= \case
             CursorAt x -> return x
-            CursorLocationNeedsMoreInput -> do
-                runCursorState (modifyM (traverseOf Cursor.bufferedStreamLens (BufferedStream.bufferMore)))
-                attempt2
+            CursorLocationNeedsMoreInput -> Class.bufferMore *> attempt2
         attempt2 = use (to position) <&> \case
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
@@ -59,6 +56,12 @@ instance Monad m => Class.TakeAll (StateT (DocumentMemory text m) m) where
 
 instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (DocumentMemory text m) m) where
     skipTextNonAtomic x = runCursorState (Class.skipTextNonAtomic x)
+
+instance Monad m => Class.FillBuffer1 (StateT (DocumentMemory text m) m) where
+    fillBuffer1 = runCursorState Class.fillBuffer1
+
+instance Monad m => Class.BufferMore (StateT (DocumentMemory text m) m) where
+    bufferMore = runCursorState Class.bufferMore
 
 
 -- Internal
@@ -73,22 +76,6 @@ runCursorState go = do
     ((x, cu'), co') <- lift $ runStateT (runStateT go cu) co
     put DocumentMemory{ cursor = cu', content = co' }
     return x
-
-
--- Optics
-
-contentLens :: Lens' (DocumentMemory text m) LineHistory
-contentLens = lens content \x y -> x{ content = y }
-
-cursorLens :: Lens
-    (DocumentMemory text1 m1)
-    (DocumentMemory text2 m2)
-    (Cursor (StateT LineHistory m1) text1)
-    (Cursor (StateT LineHistory m2) text2)
-cursorLens = lens cursor \x y -> x{ cursor = y }
-
-cursorPositionLens :: Lens' (DocumentMemory text m) (CursorPosition)
-cursorPositionLens = cursorLens % Cursor.positionLens
 
 
 -- Construction

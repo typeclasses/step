@@ -3,7 +3,6 @@
 module Step.Cursor.Base
   (
     {- * The type -} Cursor (..),
-    {- * Optics -} positionLens, bufferedStreamLens,
     {- * Conversion with ListT -} fromListT, toListT,
   )
   where
@@ -67,6 +66,9 @@ instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (Cursor m text) m
 
 instance Monad m => Class.FillBuffer1 (StateT (Cursor m text) m) where
     fillBuffer1 = zoom bufferedStreamLens Class.fillBuffer1
+
+instance Monad m => Class.BufferMore (StateT (Cursor m text) m) where
+    bufferMore = zoom bufferedStreamLens Class.bufferMore
 
 ---
 
