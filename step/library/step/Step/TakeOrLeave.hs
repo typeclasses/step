@@ -1,6 +1,10 @@
 module Step.TakeOrLeave where
 
+import Either (Either (..))
+
 import Maybe (Maybe (..))
+
+import Optics
 
 data TakeOrLeave b a = Leave b | Take a
 
@@ -13,3 +17,6 @@ fromTake :: TakeOrLeave b a -> Maybe a
 fromTake = \case
     Leave _ -> Nothing
     Take x -> Just x
+
+leavePrism :: Prism (TakeOrLeave b1 a1) (TakeOrLeave b2 a1) b1 b2
+leavePrism = prism Leave (\case Leave x -> Right x; Take x -> Left (Take x))
