@@ -1,8 +1,15 @@
 {-# language Safe #-}
 
-module Step.Buffer.Base where
+module Step.Buffer.Base
+  (
+    Buffer, singleton, isEmpty, empty, toListT, fold, headChar, unconsChar, unconsChunk,
 
-import Step.Internal.Prelude
+    -- * State operations
+    considerChunk, takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..),
+  )
+  where
+
+import Step.Internal.Prelude hiding (fold)
 import qualified Step.Internal.Prelude as Prelude
 
 import qualified Seq
@@ -73,3 +80,57 @@ stripNontrivialPrefix c b = case chunks b of
             Just x' -> case Nontrivial.refine x' of
                 Nothing -> error "stripNontrivialPrefix: failure"
                 Just x'' -> StripPrefixSuccess Buffer{ chunks = (Seq.<|) x'' xs }
+
+takeChar :: (Monad m, ListLike text char) => StateT (Buffer text) m (Maybe char)
+takeChar = do
+    b <- get
+    case unconsChar b of
+        Nothing -> return Nothing
+        Just (c, b') -> do
+            put b'
+            return (Just c)
+
+data TakeStringResult text =
+    TakeStringFail
+  | TakeStringPartial (Nontrivial text) -- ^ What further needed text remains
+  | TakeStringSuccess
+
+takeString :: (Monad m, ListLike text char, Eq text, Eq char) =>
+    text -> StateT (Buffer text) m (TakeStringResult text)
+takeString x = case Nontrivial.refine x of Nothing -> return TakeStringSuccess; Just y -> takeNontrivialString y
+
+takeNontrivialString :: (Monad m, ListLike text char, Eq text, Eq char) =>
+    Nontrivial text -> StateT (Buffer text) m (TakeStringResult text)
+takeNontrivialString c = do
+    b <- get
+    case stripNontrivialPrefix c b of
+        StripPrefixFail -> return TakeStringFail
+        StripPrefixPartial c' -> do
+            put empty
+            return (TakeStringPartial c')
+        StripPrefixSuccess b' -> do
+            put b'
+            return TakeStringSuccess
+
+takeChunk :: Monad m => StateT (Buffer text) m (Maybe (Nontrivial text))
+takeChunk = do
+    b <- get
+    case unconsChunk b of
+        Nothing -> return Nothing
+        Just (c, b') -> do
+            put b'
+            return (Just c)
+
+considerChunk :: Monad m => ListLike text char =>
+    (Nontrivial text -> (Natural, a)) -> StateT (Buffer text) m (Maybe a)
+considerChunk f = takeChunk >>= \case
+    Nothing -> return Nothing
+    Just x -> let (n, r) = f x in putChunk (Nontrivial.drop n x) $> Just r
+
+-- | Adds a chunk back to the left side of the buffer if the argument is non-empty
+putChunk :: Monad m => ListLike text char => text -> StateT (Buffer text) m ()
+putChunk = traverse_ putNontrivialChunk . Nontrivial.refine
+
+-- | Adds a chunk back to the left side of the buffer
+putNontrivialChunk :: Monad m => Nontrivial text -> StateT (Buffer text) m ()
+putNontrivialChunk x = modify' (singleton x <>)

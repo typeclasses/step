@@ -4,7 +4,7 @@ module Step.Nontrivial.Base
   (
     {- * The type -} Nontrivial,
     {- * Construct and deconstruct -} refine, generalize,
-    {- * List operations -} stripPrefix, length, uncons,
+    {- * List operations -} stripPrefix, length, uncons, drop,
   )
   where
 
@@ -30,3 +30,6 @@ uncons :: ListLike text a => Nontrivial text -> (a, text)
 uncons x = case ListLike.uncons (generalize x) of
     Nothing -> error "trivial Nontrivial"
     Just y -> y
+
+drop :: ListLike text a => Natural -> Nontrivial text -> text
+drop n = ListLike.drop (fromIntegral n) . generalize

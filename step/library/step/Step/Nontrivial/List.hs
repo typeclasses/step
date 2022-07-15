@@ -21,3 +21,9 @@ span f whole =
     if ListLike.null b then All else
     if ListLike.null a then None else
     Split (NontrivialUnsafe a) (NontrivialUnsafe b)
+
+length :: ListLike text char => Nontrivial text -> Natural
+length = fromIntegral . ListLike.length . Nontrivial.generalize
+
+takeWhile :: ListLike text char => (char -> Bool) -> Nontrivial text -> Maybe (Nontrivial text)
+takeWhile f = Nontrivial.refine . ListLike.takeWhile f . Nontrivial.generalize

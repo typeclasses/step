@@ -94,7 +94,6 @@ library
         Step.Classes.Base
 
         Step.Buffer.Base
-        Step.Buffer.State
 
         Step.SizedBuffer.Base
         Step.SizedBuffer.State
