@@ -8,7 +8,7 @@ module Step.BufferedStream.Base
     {- * Conversion with ListT -} toListT, fromListT,
     {- * Buffer querying -} bufferIsEmpty, isAllBuffered, bufferedHeadChar,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar, putChunk, putNontrivialChunk,
-    {- * Buffering -} fillBuffer1, bufferMore,
+    {- * Buffering -} bufferMore,
     {- * Taking by chunk -} takeChunk, takeChunkWhile,
   )
   where
@@ -41,12 +41,12 @@ data BufferedStream m text =
 
 instance Monad m => Class.Peek1 (StateT (BufferedStream m text) m) where
     type Text (StateT (BufferedStream m text) m) = text
-    peekCharMaybe = modifyM fillBuffer1 *> (get <&> bufferedHeadChar)
-    atEnd = modifyM fillBuffer1 *> (get <&> bufferIsEmpty)
+    peekCharMaybe = Class.fillBuffer1 *> (get <&> bufferedHeadChar)
+    atEnd = Class.fillBuffer1 *> (get <&> bufferIsEmpty)
 
 instance Monad m => Class.Take1 (StateT (BufferedStream m text) m) where
     considerChar f = do
-        modifyM fillBuffer1
+        Class.fillBuffer1
         bs <- get
         case bufferUnconsChar bs of
             Nothing -> return Nothing
@@ -79,6 +79,13 @@ instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (BufferedStream m
                     Buffer.State.TakeStringSuccess -> return True
                     Buffer.State.TakeStringPartial c' -> skipNontrivialTextNonAtomic c'
 
+instance Monad m => Class.FillBuffer1 (StateT (BufferedStream m text) m) where
+    fillBuffer1 = do
+        b <- get
+        case Buffer.isEmpty (buffer b) of
+            True -> put =<< lift (bufferMore b)
+            False -> return ()
+
 ---
 
 bufferLens :: Lens' (BufferedStream m text) (Buffer text)
@@ -96,7 +103,7 @@ empty = BufferedStream Buffer.empty Nothing
 
 isEmpty :: Monad m => StateT (BufferedStream m text) m Bool
 isEmpty = do
-    modifyM fillBuffer1
+    Class.fillBuffer1
     get <&> bufferIsEmpty
 
 isAllBuffered :: BufferedStream m text -> Bool
@@ -127,7 +134,7 @@ bufferedHeadChar = Buffer.headChar . buffer
 -- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
 takeChunk :: Monad m => StateT (BufferedStream m text) m (Maybe (Nontrivial text))
 takeChunk = do
-    modifyM fillBuffer1
+    Class.fillBuffer1
     zoom bufferLens Buffer.State.takeChunk
 
 -- | Remove some text where all characters satisfy the predicate, buffering more first if necessary, returning 'Nothing' if the stream does not begin with a character that satisfies the predicate
@@ -148,9 +155,6 @@ putChunk x s = case Nontrivial.refine x of Nothing -> s; Just y -> putNontrivial
 putNontrivialChunk :: Nontrivial text -> BufferedStream m text -> BufferedStream m text
 putNontrivialChunk x s = s{ buffer = Buffer.singleton x <> buffer s }
 
-fillBuffer1 :: Monad m => BufferedStream m text -> m (BufferedStream m text)
-fillBuffer1 b = if Buffer.isEmpty (buffer b) then bufferMore b else return b
-
 -- | Read one chunk of input; does nothing if the end of the stream has been reached
 bufferMore :: Monad m =>
     BufferedStream m text -> m (BufferedStream m text)
@@ -163,6 +167,6 @@ bufferMore s = case pending s of
                 return s{ pending = Nothing }
             ListT.Cons x xs -> -- We got a new chunk of input.
                 return BufferedStream{
-                    buffer = buffer s <> Buffer.singleton x, -- Add the chunk to the buffer if it is non-empty.
-                    pending = Just xs -- Remove the chunk from the pending input stream.
+                    buffer = buffer s <> Buffer.singleton x, -- Add the chunk to the buffer
+                    pending = Just xs -- Remove the chunk from the pending input stream
                 }

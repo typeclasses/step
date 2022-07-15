@@ -62,6 +62,9 @@ class Monad m => Configure m where
 class HasContextStack config where
     contextStackLens :: Lens' config [T.Text]
 
+class Monad m => FillBuffer1 m where
+    fillBuffer1 :: m ()
+
 
 -- ReaderT instances
 

@@ -34,19 +34,20 @@ data Cursor m text =
 instance Monad m => Class.Peek1 (StateT (Cursor m text) m) where
     type Text (StateT (Cursor m text) m) = text
     peekCharMaybe = do
-        modifyM fillBuffer1
+        Class.fillBuffer1
         get <&> BufferedStream.bufferedHeadChar . bufferedStream
     atEnd = do
-        modifyM fillBuffer1
+        Class.fillBuffer1
         get <&> BufferedStream.bufferIsEmpty . bufferedStream
 
 instance Monad m => Class.Take1 (StateT (Cursor m text) m) where
-    considerChar f = StateT \cbs -> do
-        cbs' <- fillBuffer1 cbs
-        return case bufferUnconsChar cbs' of
-            Nothing -> (Nothing, cbs')
-            Just (x, cbs'') -> let r = f x in
-                (Just r, case r of { Leave _ -> cbs'; Take _ -> cbs'' })
+    considerChar f = do
+        Class.fillBuffer1
+        StateT \cbs -> do
+            return case bufferUnconsChar cbs of
+                Nothing -> (Nothing, cbs)
+                Just (x, cbs') -> let r = f x in
+                    (Just r, case r of { Leave _ -> cbs; Take _ -> cbs' })
       where
         bufferUnconsChar cbs = do
             (c, b') <- BufferedStream.bufferUnconsChar (bufferedStream cbs)
@@ -64,6 +65,9 @@ instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (Cursor m text) m
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return y
 
+instance Monad m => Class.FillBuffer1 (StateT (Cursor m text) m) where
+    fillBuffer1 = zoom bufferedStreamLens Class.fillBuffer1
+
 ---
 
 positionLens :: Lens' (Cursor m text) CursorPosition
@@ -79,8 +83,3 @@ fromListT xs = Cursor 0 (BufferedStream.fromListT xs)
 
 toListT :: Monad m => Cursor m text -> ListT m (Nontrivial text)
 toListT = BufferedStream.toListT . view bufferedStreamLens
-
----
-
-fillBuffer1 :: Monad m => Cursor m text -> m (Cursor m text)
-fillBuffer1 = traverseOf bufferedStreamLens BufferedStream.fillBuffer1
