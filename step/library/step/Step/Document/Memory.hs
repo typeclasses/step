@@ -17,6 +17,8 @@ import qualified Step.Document.Lines as Lines
 import Step.Cursor.Base (Cursor)
 import qualified Step.Cursor.Base as Cursor
 
+import qualified Step.BufferedStream.Base as BufferedStream
+
 import Step.CursorPosition.Base (CursorPosition)
 
 import Loc (Loc)
@@ -42,7 +44,9 @@ instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
       where
         attempt1 = use (to position) >>= \case
             CursorAt x -> return x
-            CursorLocationNeedsMoreInput -> runCursorState (modifyM Cursor.bufferMore) *> attempt2
+            CursorLocationNeedsMoreInput -> do
+                runCursorState (modifyM (traverseOf Cursor.bufferedStreamLens (BufferedStream.bufferMore)))
+                attempt2
         attempt2 = use (to position) <&> \case
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
@@ -107,6 +111,6 @@ position :: DocumentMemory text m -> CursorLocation
 position x = case Lines.locateCursorInDocument (Cursor.position (cursor x)) (content x) of
     Just l -> case l of
         Lines.CursorLocationNeedsMoreInput{ Lines.ifEndOfInput = i } ->
-            if Cursor.isAllBuffered (cursor x) then CursorAt i else CursorLocationNeedsMoreInput
+            if BufferedStream.isAllBuffered (Cursor.bufferedStream (cursor x)) then CursorAt i else CursorLocationNeedsMoreInput
         Lines.CursorAt l' -> CursorAt l'
     Nothing -> error "invalid DocumentMemory"
