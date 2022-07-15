@@ -1,3 +1,5 @@
+{-# language FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+
 module Step.BufferedStream.Base
   (
     {- * The type -} BufferedStream (..),
@@ -7,6 +9,7 @@ module Step.BufferedStream.Base
     {- * Buffer querying -} bufferIsEmpty, isAllBuffered, bufferedHeadChar,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar, putChunk, putNontrivialChunk,
     {- * Buffering -} fillBuffer1, bufferMore,
+    {- * Taking by chunk -} takeChunk, takeChunkWhile,
   )
   where
 
@@ -16,10 +19,18 @@ import qualified ListT
 
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
+import qualified Step.Buffer.State as Buffer.State
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.ListT as Nontrivial.ListT
+import qualified Step.Nontrivial.List as Nontrivial
+
+import qualified Step.Classes.Base as Class
+
+import Step.TakeOrLeave (TakeOrLeave (..))
+
+---
 
 data BufferedStream m text =
   BufferedStream
@@ -27,6 +38,48 @@ data BufferedStream m text =
     , pending :: Maybe (ListT m (Nontrivial text))
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
+
+instance Monad m => Class.Peek1 (StateT (BufferedStream m text) m) where
+    type Text (StateT (BufferedStream m text) m) = text
+    peekCharMaybe = modifyM fillBuffer1 *> (get <&> bufferedHeadChar)
+    atEnd = modifyM fillBuffer1 *> (get <&> bufferIsEmpty)
+
+instance Monad m => Class.Take1 (StateT (BufferedStream m text) m) where
+    considerChar f = do
+        modifyM fillBuffer1
+        bs <- get
+        case bufferUnconsChar bs of
+            Nothing -> return Nothing
+            Just (c, bs') -> Just <$> case f c of
+                Leave r -> return (Leave r)
+                Take r -> put bs' $> Take r
+
+instance Monad m => Class.TakeAll (StateT (BufferedStream m text) m) where
+    takeAll = bufferAll *> takeBuffer
+      where
+        bufferAll = isEmpty >>= \case
+            True -> return ()
+            False -> modifyM bufferMore *> bufferAll
+        takeBuffer = do
+            s <- get
+            put s{ buffer = Buffer.empty }
+            return (Buffer.fold (buffer s))
+
+instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (BufferedStream m text) m) where
+    skipTextNonAtomic x =
+        case Nontrivial.refine x of
+            Nothing -> return True
+            Just y -> skipNontrivialTextNonAtomic y
+      where
+        skipNontrivialTextNonAtomic c =
+            isEmpty >>= \case
+                True -> return False
+                False -> zoom bufferLens (Buffer.State.takeNontrivialString c) >>= \case
+                    Buffer.State.TakeStringFail -> return False
+                    Buffer.State.TakeStringSuccess -> return True
+                    Buffer.State.TakeStringPartial c' -> skipNontrivialTextNonAtomic c'
+
+---
 
 bufferLens :: Lens' (BufferedStream m text) (Buffer text)
 bufferLens = lens buffer \x y -> x{ buffer = y }
@@ -40,6 +93,11 @@ pendingLens = lens pending \x y -> x{ pending = y }
 
 empty :: BufferedStream m text
 empty = BufferedStream Buffer.empty Nothing
+
+isEmpty :: Monad m => StateT (BufferedStream m text) m Bool
+isEmpty = do
+    modifyM fillBuffer1
+    get <&> bufferIsEmpty
 
 isAllBuffered :: BufferedStream m text -> Bool
 isAllBuffered = isNothing . pending
@@ -65,6 +123,22 @@ bufferUnconsChar s = do
 
 bufferedHeadChar :: ListLike text char => BufferedStream m text -> Maybe char
 bufferedHeadChar = Buffer.headChar . buffer
+
+-- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
+takeChunk :: Monad m => StateT (BufferedStream m text) m (Maybe (Nontrivial text))
+takeChunk = do
+    modifyM fillBuffer1
+    zoom bufferLens Buffer.State.takeChunk
+
+-- | Remove some text where all characters satisfy the predicate, buffering more first if necessary, returning 'Nothing' if the stream does not begin with a character that satisfies the predicate
+takeChunkWhile :: (Monad m, ListLike text char) => (char -> Bool) -> StateT (BufferedStream m text) m (Maybe (Nontrivial text))
+takeChunkWhile ok =
+    takeChunk >>= \case
+        Nothing -> return Nothing
+        Just x -> case Nontrivial.span ok x of
+            Nontrivial.All -> return (Just x)
+            Nontrivial.None -> modify' (putNontrivialChunk x) $> Nothing
+            Nontrivial.Split a b -> modify' (putNontrivialChunk b) $> Just a
 
 -- | Adds a chunk back to the left side of the buffer if the argument is non-empty
 putChunk :: ListLike text char => text -> BufferedStream m text -> BufferedStream m text

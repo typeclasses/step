@@ -3,7 +3,7 @@ module Step.Extent.BufferedStream where
 import Step.Internal.Prelude
 
 import Step.BufferedStream.Base (BufferedStream)
-import qualified Step.BufferedStream.State as BufferedStream.State
+import qualified Step.BufferedStream.Base as BufferedStream
 
 import Step.Nontrivial.Base (Nontrivial)
 
@@ -14,6 +14,6 @@ newtype Extent m a =
 
 while :: (Monad m, ListLike text char) => (char -> Bool) -> Extent m text
 while ok = Extent $ fix \r ->
-    ListT $ BufferedStream.State.takeChunkWhile ok <&> \case
+    ListT $ BufferedStream.takeChunkWhile ok <&> \case
         Nothing -> ListT.Nil
         Just x -> ListT.Cons x r

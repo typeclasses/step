@@ -100,7 +100,6 @@ library
         Step.SizedBuffer.State
 
         Step.BufferedStream.Base
-        Step.BufferedStream.State
 
         Step.Competitors.Attoparsec.Text
 

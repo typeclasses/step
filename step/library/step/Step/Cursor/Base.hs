@@ -15,7 +15,6 @@ import Step.Internal.Prelude
 
 import Step.BufferedStream.Base (BufferedStream)
 import qualified Step.BufferedStream.Base as BufferedStream
-import qualified Step.BufferedStream.State as BufferedStream.State
 
 import Step.CursorPosition.Base (CursorPosition)
 
@@ -45,14 +44,13 @@ instance Monad m => Class.Take1 (StateT (Cursor m text) m) where
 
 instance Monad m => Class.TakeAll (StateT (Cursor m text) m) where
     takeAll = do
-        modifyM bufferAll
-        x <- zoom bufferedStreamLens BufferedStream.State.takeBuffer
+        x <- zoom bufferedStreamLens Class.takeAll
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return x
 
 instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (Cursor m text) m) where
     skipTextNonAtomic x = do
-        y <- zoom bufferedStreamLens (BufferedStream.State.takeTextNotAtomic x)
+        y <- zoom bufferedStreamLens (Class.skipTextNonAtomic x)
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return y
 
