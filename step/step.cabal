@@ -95,9 +95,6 @@ library
 
         Step.Buffer.Base
 
-        Step.SizedBuffer.Base
-        Step.SizedBuffer.State
-
         Step.BufferedStream.Base
 
         Step.Competitors.Attoparsec.Text
