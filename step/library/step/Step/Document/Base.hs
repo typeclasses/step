@@ -15,6 +15,8 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import qualified Step.Classes.Base as Class
 
+import Text (Text)
+
 ---
 
 data Config = Config{ configContext :: [Text] }

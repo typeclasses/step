@@ -8,7 +8,7 @@ module Step.Document.Memory
   )
   where
 
-import Step.Internal.Prelude hiding (Text)
+import Step.Internal.Prelude
 
 import Step.Document.Lines (Char, LineHistory)
 import qualified Step.Document.Lines as Lines

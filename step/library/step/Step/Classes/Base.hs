@@ -2,7 +2,7 @@
 
 module Step.Classes.Base where
 
-import Step.Internal.Prelude hiding (Text)
+import Step.Internal.Prelude
 
 import Loc (Loc)
 

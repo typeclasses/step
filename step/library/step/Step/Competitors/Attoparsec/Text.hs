@@ -14,6 +14,7 @@ import Char (Char)
 import qualified Char
 
 import qualified Text
+import Text (Text)
 
 type Parser base action value =
     action (P.DocumentParsing Text base) P.Error value

@@ -22,6 +22,8 @@ import qualified SpanOrLoc
 import qualified Char
 import Char (Char)
 
+import Text (Text)
+
 -- The module under test
 import qualified Step.Document as P
 
