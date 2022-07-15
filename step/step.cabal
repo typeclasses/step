@@ -105,7 +105,6 @@ library
         Step.Competitors.Attoparsec.Text
 
         Step.Cursor.Base
-        Step.Cursor.State
 
         Step.CursorPosition.Base
 

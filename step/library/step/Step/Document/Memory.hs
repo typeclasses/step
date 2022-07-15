@@ -19,8 +19,6 @@ import qualified Step.Cursor.Base as Cursor
 
 import Step.CursorPosition.Base (CursorPosition)
 
-import qualified Step.Cursor.State as Cursor.State
-
 import Loc (Loc)
 
 import qualified Step.Classes.Base as Class
@@ -36,27 +34,27 @@ data DocumentMemory text m =
 
 instance Monad m => Class.Peek1 (StateT (DocumentMemory text m) m) where
     type Text (StateT (DocumentMemory text m) m) = text
-    peekCharMaybe = runCursorState Cursor.State.peekCharMaybe
-    atEnd = runCursorState Cursor.State.atEnd
+    peekCharMaybe = runCursorState Class.peekCharMaybe
+    atEnd = runCursorState Class.atEnd
 
 instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
     position = attempt1
       where
         attempt1 = use (to position) >>= \case
             CursorAt x -> return x
-            CursorLocationNeedsMoreInput -> runCursorState Cursor.State.bufferMore *> attempt2
+            CursorLocationNeedsMoreInput -> runCursorState (modifyM Cursor.bufferMore) *> attempt2
         attempt2 = use (to position) <&> \case
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
 
 instance Monad m => Class.Take1 (StateT (DocumentMemory text m) m) where
-    considerChar f = runCursorState (Cursor.State.considerChar f)
+    considerChar f = runCursorState (Class.considerChar f)
 
 instance Monad m => Class.TakeAll (StateT (DocumentMemory text m) m) where
-    takeAll = runCursorState Cursor.State.takeAll
+    takeAll = runCursorState Class.takeAll
 
 instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (DocumentMemory text m) m) where
-    skipTextNonAtomic x = runCursorState (Cursor.State.takeTextNotAtomic x)
+    skipTextNonAtomic x = runCursorState (Class.skipTextNonAtomic x)
 
 
 -- Internal

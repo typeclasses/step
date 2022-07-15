@@ -1,3 +1,5 @@
+{-# language FlexibleInstances, TypeFamilies #-}
+
 module Step.Cursor.Base
   (
     {- * The type -} Cursor (..),
@@ -13,6 +15,7 @@ import Step.Internal.Prelude
 
 import Step.BufferedStream.Base (BufferedStream)
 import qualified Step.BufferedStream.Base as BufferedStream
+import qualified Step.BufferedStream.State as BufferedStream.State
 
 import Step.CursorPosition.Base (CursorPosition)
 
@@ -20,11 +23,40 @@ import Step.Nontrivial.Base (Nontrivial)
 
 import Step.TakeOrLeave (TakeOrLeave (..))
 
+import qualified Step.Classes.Base as Class
+
+import qualified ListLike
+
+---
+
 data Cursor m text =
   Cursor
     { position :: CursorPosition
     , bufferedStream :: BufferedStream m text
     }
+
+instance Monad m => Class.Peek1 (StateT (Cursor m text) m) where
+    type Text (StateT (Cursor m text) m) = text
+    peekCharMaybe = modifyM fillBuffer1 *> (get <&> bufferHeadChar)
+    atEnd = modifyM fillBuffer1 *> (get <&> bufferIsEmpty)
+
+instance Monad m => Class.Take1 (StateT (Cursor m text) m) where
+    considerChar f = StateT (considerUnconsChar f)
+
+instance Monad m => Class.TakeAll (StateT (Cursor m text) m) where
+    takeAll = do
+        modifyM bufferAll
+        x <- zoom bufferedStreamLens BufferedStream.State.takeBuffer
+        modifying positionLens (+ fromIntegral (ListLike.length x))
+        return x
+
+instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (Cursor m text) m) where
+    skipTextNonAtomic x = do
+        y <- zoom bufferedStreamLens (BufferedStream.State.takeTextNotAtomic x)
+        modifying positionLens (+ fromIntegral (ListLike.length x))
+        return y
+
+---
 
 positionLens :: Lens' (Cursor m text) CursorPosition
 positionLens = lens position \x y -> x{ position = y }
