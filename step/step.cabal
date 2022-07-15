@@ -106,9 +106,6 @@ library
         Step.Document.Location
         Step.Document.Memory
 
-        Step.Extent.BufferedStream
-        Step.Extent.ListT
-
         Step.Nontrivial.Base
         Step.Nontrivial.Constructor
         Step.Nontrivial.List
