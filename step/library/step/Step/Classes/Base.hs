@@ -17,11 +17,6 @@ class Monad m => Char1 m where
 
     type Text m :: Type
 
-    peekCharMaybe :: ListLike (Text m) char => m (Maybe char)
-
-    atEnd :: ListLike (Text m) char => m Bool
-    atEnd = isNothing <$> peekCharMaybe
-
     considerChar :: ListLike (Text m) char =>
         (char -> TakeOrLeave b a)
             -- ^ Selection function, given the next a character as its argument;
@@ -30,10 +25,16 @@ class Monad m => Char1 m where
         -> m (Maybe (TakeOrLeave b a))
             -- ^ The result of the selection function, or Nothing if end of input
 
+    peekCharMaybe :: ListLike (Text m) char => m (Maybe char)
+    peekCharMaybe = considerChar Leave <&> fmap TakeOrLeave.collapse
+
     takeCharMaybe :: ListLike (Text m) char => m (Maybe char)
     takeCharMaybe = considerChar (Take . Just) <&> Monad.join . fmap TakeOrLeave.collapse
 
-    {-# minimal peekCharMaybe, considerChar #-}
+    atEnd :: ListLike (Text m) char => m Bool
+    atEnd = isNothing <$> peekCharMaybe
+
+    {-# minimal considerChar #-}
 
 class Monad m => Locating m where
     position :: m Loc
