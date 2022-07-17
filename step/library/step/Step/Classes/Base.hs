@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, TypeFamilies, ConstraintKinds, KindSignatures #-}
+{-# language ExistentialQuantification, FlexibleContexts, FlexibleInstances, TypeFamilies, ConstraintKinds, KindSignatures #-}
 
 module Step.Classes.Base where
 
@@ -13,12 +13,16 @@ import qualified Monad
 
 import qualified Text as T
 
+data Consideration1 text b a =
+    forall char. ListLike text char =>
+        Consideration1 (char -> TakeOrLeave b a)
+
 class Monad m => Char1 m where
 
     type Text m :: Type
 
-    considerChar :: ListLike (Text m) char =>
-        (char -> TakeOrLeave b a)
+    considerChar ::
+        Consideration1 (Text m) b a
             -- ^ Selection function, given the next a character as its argument;
             --   if 'Take', the cursor advances by 1;
             --   if 'Leave', the cursor will remain unmoved
@@ -26,10 +30,10 @@ class Monad m => Char1 m where
             -- ^ The result of the selection function, or Nothing if end of input
 
     peekCharMaybe :: ListLike (Text m) char => m (Maybe char)
-    peekCharMaybe = considerChar Leave <&> fmap TakeOrLeave.collapse
+    peekCharMaybe = considerChar (Consideration1 Leave) <&> fmap TakeOrLeave.collapse
 
     takeCharMaybe :: ListLike (Text m) char => m (Maybe char)
-    takeCharMaybe = considerChar (Take . Just) <&> Monad.join . fmap TakeOrLeave.collapse
+    takeCharMaybe = considerChar (Consideration1 (Take . Just)) <&> Monad.join . fmap TakeOrLeave.collapse
 
     atEnd :: ListLike (Text m) char => m Bool
     atEnd = isNothing <$> peekCharMaybe

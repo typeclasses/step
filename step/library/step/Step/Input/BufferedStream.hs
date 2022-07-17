@@ -40,7 +40,7 @@ instance Monad m => Class.Char1 (StateT (BufferedStream m text) m) where
     type Text (StateT (BufferedStream m text) m) = text
     peekCharMaybe = Class.fillBuffer1 *> (get <&> bufferedHeadChar)
     atEnd = Class.fillBuffer1 *> (get <&> bufferIsEmpty)
-    considerChar f = do
+    considerChar (Class.Consideration1 f) = do
         Class.fillBuffer1
         bs <- get
         case bufferUnconsChar bs of

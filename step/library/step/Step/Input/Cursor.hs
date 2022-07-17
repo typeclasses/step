@@ -38,7 +38,7 @@ instance Monad m => Class.Char1 (StateT (Cursor m text) m) where
     atEnd = do
         Class.fillBuffer1
         get <&> BufferedStream.bufferIsEmpty . bufferedStream
-    considerChar f = do
+    considerChar (Class.Consideration1 f) = do
         Class.fillBuffer1
         StateT \cbs -> do
             return case bufferUnconsChar cbs of
