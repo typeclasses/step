@@ -27,8 +27,6 @@ import qualified Monad
 
 import qualified Text as T
 
-import Step.Transform.While
-
 char :: (ListLike (C.Text m) char, Take1 m) => Fallible m => AtomicMove m (Error m) char
 char = Action.Unsafe.AtomicMove $ C.takeCharMaybe <&> maybe (Left C.failure) Right
 
@@ -102,9 +100,6 @@ text :: C.SkipTextNonAtomic m => Fallible m => ListLike (C.Text m) char => Eq ch
     C.Text m -> Any m (Error m) ()
 text x = Action.Unsafe.Any $
     C.skipTextNonAtomic x <&> \case{ True -> Right (); False -> Left C.failure }
-
-while :: ListLike (C.Text m) char => (char -> Bool) -> act m e a -> act m e a
-while = _
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>
 --     Extent (StateT (DocumentMemory text m) m) text

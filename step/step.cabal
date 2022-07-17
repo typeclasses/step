@@ -40,7 +40,6 @@ common base
           ( Data.Bool as Bool
           , Data.Char as Char
           , Data.Coerce as Coerce
-          , Data.Either as Either
           , Data.Kind as Kind
           , Data.Word as Word
           , Text.Show as Show
@@ -58,7 +57,6 @@ common base
           , Data.Monoid as Monoid
           , Data.Void as Void
           , Data.List.NonEmpty as NonEmpty
-          , GHC.Exts
           )
       , bytestring
           ( Data.ByteString as ByteString
@@ -116,8 +114,6 @@ library
         Step.TakeOrLeave
 
         Step.Test.InputChunking
-
-        Step.Transform.While
 
     reexported-modules:
         Step.ActionTypes

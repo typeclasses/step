@@ -1,4 +1,4 @@
-{-# language ConstrainedClassMethods, FlexibleContexts, FlexibleInstances, TypeFamilies, ConstraintKinds, KindSignatures #-}
+{-# language FlexibleContexts, FlexibleInstances, TypeFamilies, ConstraintKinds, KindSignatures #-}
 
 module Step.Classes.Base where
 
@@ -13,15 +13,13 @@ import qualified Monad
 
 import qualified Text as T
 
-import GHC.Exts (Item)
-
 class Monad m => Peek1 m where
 
     type Text m :: Type
 
     peekCharMaybe :: ListLike (Text m) char => m (Maybe char)
 
-    atEnd :: ListLike (Text m) (Item (Text m)) => m Bool
+    atEnd :: ListLike (Text m) char => m Bool
     atEnd = isNothing <$> peekCharMaybe
 
     {-# minimal peekCharMaybe #-}
@@ -49,7 +47,6 @@ class Monad m => Fallible m where
 
     failure :: m (Error m)
 
--- todo: Replace this with a class with a considerChunk method, then redefine takeAll in terms of that; this will make the stream limitable by a transformation
 class Peek1 m => TakeAll m where
     -- | Consume the rest of the input
     takeAll :: ListLike (Text m) char => m (Text m)
