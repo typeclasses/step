@@ -30,7 +30,7 @@ data Cursor m text =
     , bufferedStream :: BufferedStream m text
     }
 
-instance Monad m => Class.Peek1 (StateT (Cursor m text) m) where
+instance Monad m => Class.Char1 (StateT (Cursor m text) m) where
     type Text (StateT (Cursor m text) m) = text
     peekCharMaybe = do
         Class.fillBuffer1
@@ -38,8 +38,6 @@ instance Monad m => Class.Peek1 (StateT (Cursor m text) m) where
     atEnd = do
         Class.fillBuffer1
         get <&> BufferedStream.bufferIsEmpty . bufferedStream
-
-instance Monad m => Class.Take1 (StateT (Cursor m text) m) where
     considerChar f = do
         Class.fillBuffer1
         StateT \cbs -> do

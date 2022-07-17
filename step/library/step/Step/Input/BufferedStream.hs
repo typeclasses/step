@@ -36,12 +36,10 @@ data BufferedStream m text =
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
-instance Monad m => Class.Peek1 (StateT (BufferedStream m text) m) where
+instance Monad m => Class.Char1 (StateT (BufferedStream m text) m) where
     type Text (StateT (BufferedStream m text) m) = text
     peekCharMaybe = Class.fillBuffer1 *> (get <&> bufferedHeadChar)
     atEnd = Class.fillBuffer1 *> (get <&> bufferIsEmpty)
-
-instance Monad m => Class.Take1 (StateT (BufferedStream m text) m) where
     considerChar f = do
         Class.fillBuffer1
         bs <- get

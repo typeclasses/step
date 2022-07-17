@@ -27,37 +27,37 @@ import qualified Monad
 
 import qualified Text as T
 
-char :: (ListLike (C.Text m) char, Take1 m) => Fallible m => AtomicMove m (Error m) char
+char :: (ListLike (C.Text m) char, Char1 m) => Fallible m => AtomicMove m (Error m) char
 char = Action.Unsafe.AtomicMove $ C.takeCharMaybe <&> maybe (Left C.failure) Right
 
-peekChar :: (ListLike (C.Text m) char, Peek1 m) => Fallible m => Query m (Error m) char
+peekChar :: (ListLike (C.Text m) char, Char1 m) => Fallible m => Query m (Error m) char
 peekChar = Action.Unsafe.Query $ C.peekCharMaybe <&> maybe (Left C.failure) Right
 
-considerChar :: (ListLike (C.Text m) char, Take1 m) =>
+considerChar :: (ListLike (C.Text m) char, Char1 m) =>
     (char -> TakeOrLeave b a) -> Sure m e (Maybe (TakeOrLeave b a))
 considerChar f = Action.Unsafe.Sure $ C.considerChar f
 
-takeCharMaybe :: (ListLike (C.Text m) char, Take1 m) => Sure m e (Maybe char)
+takeCharMaybe :: (ListLike (C.Text m) char, Char1 m) => Sure m e (Maybe char)
 takeCharMaybe =
     considerChar (Take . Just) <&> Monad.join . fmap TakeOrLeave.collapse
 
-peekCharMaybe :: (ListLike (C.Text m) char, Peek1 m) => SureQuery m e (Maybe char)
+peekCharMaybe :: (ListLike (C.Text m) char, Char1 m) => SureQuery m e (Maybe char)
 peekCharMaybe = Action.Unsafe.SureQuery C.peekCharMaybe
 
-satisfy :: (ListLike (C.Text m) char, Take1 m) => Fallible m => (char -> Bool) -> AtomicMove m (Error m) char
+satisfy :: (ListLike (C.Text m) char, Char1 m) => Fallible m => (char -> Bool) -> AtomicMove m (Error m) char
 satisfy ok = Action.Unsafe.AtomicMove $
     C.considerChar (\x -> if ok x then Take x else Leave ())
     <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
 
-satisfyJust :: (ListLike (C.Text m) char, Take1 m) => Fallible m => (char -> Maybe a) -> AtomicMove m (Error m) a
+satisfyJust :: (ListLike (C.Text m) char, Char1 m) => Fallible m => (char -> Maybe a) -> AtomicMove m (Error m) a
 satisfyJust ok = Action.Unsafe.AtomicMove $
     C.considerChar (\x -> case ok x of Just y -> Take y; Nothing -> Leave ())
     <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
 
-atEnd :: (ListLike (C.Text m) char, Peek1 m) => SureQuery m e Bool
+atEnd :: (ListLike (C.Text m) char, Char1 m) => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery C.atEnd
 
-end :: (ListLike (C.Text m) char, Peek1 m) => Fallible m => Query m (Error m) ()
+end :: (ListLike (C.Text m) char, Char1 m) => Fallible m => Query m (Error m) ()
 end = atEnd A.>>= guard
 
 guard :: Fallible m => Bool -> Query m (Error m) ()

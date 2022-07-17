@@ -41,11 +41,9 @@ newtype DocumentParsing text m a =
     deriving (Functor, Applicative, Monad)
         via (ReaderT Config (StateT (DocumentMemory text m) m))
 
-instance Monad m => Class.Peek1 (DocumentParsing text m) where
+instance Monad m => Class.Char1 (DocumentParsing text m) where
     type Text (DocumentParsing text m) = text
     peekCharMaybe = DocumentParsing Class.peekCharMaybe
-
-instance Monad m => Class.Take1 (DocumentParsing text m) where
     considerChar f = DocumentParsing (Class.considerChar f)
 
 instance Monad m => Class.TakeAll (DocumentParsing text m) where

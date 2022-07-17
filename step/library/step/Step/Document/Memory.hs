@@ -33,10 +33,11 @@ data DocumentMemory text m =
     , cursor :: Cursor (StateT LineHistory m) text
     }
 
-instance Monad m => Class.Peek1 (StateT (DocumentMemory text m) m) where
+instance Monad m => Class.Char1 (StateT (DocumentMemory text m) m) where
     type Text (StateT (DocumentMemory text m) m) = text
     peekCharMaybe = runCursorState Class.peekCharMaybe
     atEnd = runCursorState Class.atEnd
+    considerChar f = runCursorState (Class.considerChar f)
 
 instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
     position = attempt1
@@ -47,9 +48,6 @@ instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
         attempt2 = use (to position) <&> \case
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
-
-instance Monad m => Class.Take1 (StateT (DocumentMemory text m) m) where
-    considerChar f = runCursorState (Class.considerChar f)
 
 instance Monad m => Class.TakeAll (StateT (DocumentMemory text m) m) where
     takeAll = runCursorState Class.takeAll

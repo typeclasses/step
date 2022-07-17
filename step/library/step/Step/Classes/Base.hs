@@ -13,7 +13,7 @@ import qualified Monad
 
 import qualified Text as T
 
-class Monad m => Peek1 m where
+class Monad m => Char1 m where
 
     type Text m :: Type
 
@@ -22,9 +22,6 @@ class Monad m => Peek1 m where
     atEnd :: ListLike (Text m) char => m Bool
     atEnd = isNothing <$> peekCharMaybe
 
-    {-# minimal peekCharMaybe #-}
-
-class Peek1 m => Take1 m where
     considerChar :: ListLike (Text m) char =>
         (char -> TakeOrLeave b a)
             -- ^ Selection function, given the next a character as its argument;
@@ -36,7 +33,7 @@ class Peek1 m => Take1 m where
     takeCharMaybe :: ListLike (Text m) char => m (Maybe char)
     takeCharMaybe = considerChar (Take . Just) <&> Monad.join . fmap TakeOrLeave.collapse
 
-    {-# minimal considerChar #-}
+    {-# minimal peekCharMaybe, considerChar #-}
 
 class Monad m => Locating m where
     position :: m Loc
@@ -47,11 +44,11 @@ class Monad m => Fallible m where
 
     failure :: m (Error m)
 
-class Peek1 m => TakeAll m where
+class Char1 m => TakeAll m where
     -- | Consume the rest of the input
     takeAll :: ListLike (Text m) char => m (Text m)
 
-class Peek1 m => SkipTextNonAtomic m where
+class Char1 m => SkipTextNonAtomic m where
     skipTextNonAtomic :: ListLike (Text m) char => Eq char => Text m -> m Bool
         -- ^ Return value indicates whether operation succeeded
 
@@ -73,12 +70,10 @@ class Monad m => BufferMore m where
 
 -- ReaderT instances
 
-instance Peek1 m => Peek1 (ReaderT r m) where
+instance Char1 m => Char1 (ReaderT r m) where
     type Text (ReaderT r m) = Text m
     peekCharMaybe = ReaderT \_ -> peekCharMaybe
     atEnd = ReaderT \_ -> atEnd
-
-instance Take1 m => Take1 (ReaderT r m) where
     considerChar f = ReaderT \_ -> considerChar f
 
 instance TakeAll m => TakeAll (ReaderT r m) where
