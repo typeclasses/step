@@ -4,13 +4,10 @@ module Step.Input.Cursor
   (
     Cursor (..),
     start,
-    -- {- * Conversion with ListT -} fromListT, toListT,
   )
   where
 
 import Step.Internal.Prelude
-
-import Step.Input.BufferedStream (BufferedStream)
 
 import Step.Input.CursorPosition (CursorPosition)
 import qualified Step.Input.CursorPosition as CursorPosition
@@ -25,17 +22,20 @@ import qualified ListLike
 
 ---
 
-data Cursor m text char =
+data Cursor input =
   Cursor
     { position :: CursorPosition
-    , pending :: BufferedStream m text char
+    , pending :: input
     }
 
-instance (ListLike text char, Monad m) =>
-    Class.Char1 (StateT (Cursor m text char) m)
+instance
+    ( Monad m
+    , Class.Char1 (StateT input m)
+    ) =>
+    Class.Char1 (StateT (Cursor input) m)
   where
-    type Text (StateT (Cursor m text char) m) = text
-    type Char (StateT (Cursor m text char) m) = char
+    type Text (StateT (Cursor input) m) = Class.Text (StateT input m)
+    type Char (StateT (Cursor input) m) = Class.Char (StateT input m)
     peekCharMaybe = zoom pendingLens Class.peekCharMaybe
     atEnd = zoom pendingLens Class.atEnd
     considerChar c = do
@@ -43,41 +43,53 @@ instance (ListLike text char, Monad m) =>
         case r of{ Just (Take _) -> modifying positionLens (CursorPosition.increase 1); _ -> return () }
         return r
 
-instance (ListLike text char, Monad m) =>
-    Class.TakeAll (StateT (Cursor m text char) m)
+instance
+    ( Monad m
+    , Class.TakeAll (StateT input m)
+    ) =>
+    Class.TakeAll (StateT (Cursor input) m)
   where
     takeAll = do
         x <- zoom pendingLens Class.takeAll
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return x
 
-instance (ListLike text char, Monad m, Eq text, Eq char) =>
-    Class.SkipTextNonAtomic (StateT (Cursor m text char) m)
+instance
+    ( Monad m
+    , Class.SkipTextNonAtomic (StateT input m)
+    ) =>
+    Class.SkipTextNonAtomic (StateT (Cursor input) m)
   where
     skipTextNonAtomic x = do
         y <- zoom pendingLens (Class.skipTextNonAtomic x)
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return y
 
-instance (ListLike text char, Monad m) =>
-    Class.FillBuffer1 (StateT (Cursor m text char) m)
+instance
+    ( Monad m
+    , Class.FillBuffer1 (StateT input m)
+    ) =>
+    Class.FillBuffer1 (StateT (Cursor input) m)
   where
     fillBuffer1 = zoom pendingLens Class.fillBuffer1
 
-instance (ListLike text char, Monad m) =>
-    Class.BufferMore (StateT (Cursor m text char) m)
+instance
+    ( Monad m
+    , Class.BufferMore (StateT input m)
+    ) =>
+    Class.BufferMore (StateT (Cursor input) m)
   where
     bufferMore = zoom pendingLens Class.bufferMore
 
 ---
 
-positionLens :: Lens' (Cursor m text char) CursorPosition
+positionLens :: Lens' (Cursor input) CursorPosition
 positionLens = lens position \x y -> x{ position = y }
 
-pendingLens :: Lens' (Cursor m text char) (BufferedStream m text char)
+pendingLens :: Lens' (Cursor input) input
 pendingLens = lens pending \x y -> x{ pending = y }
 
 ---
 
-start :: Monad m => ListLike text char => BufferedStream m text char -> Cursor m text char
+start :: input -> Cursor input
 start = Cursor 0

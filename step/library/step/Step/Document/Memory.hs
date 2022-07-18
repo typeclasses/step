@@ -16,6 +16,7 @@ import qualified Step.Document.Lines as Lines
 import Step.Input.Cursor (Cursor)
 import qualified Step.Input.Cursor as Cursor
 
+import Step.Input.BufferedStream (BufferedStream)
 import qualified Step.Input.BufferedStream as BufferedStream
 
 import Step.Input.CursorPosition (CursorPosition)
@@ -30,7 +31,7 @@ import qualified Step.Classes.Base as Class
 data DocumentMemory text char m =
   DocumentMemory
     { content :: LineHistory
-    , cursor :: Cursor (StateT LineHistory m) text char
+    , cursor :: Cursor (BufferedStream (StateT LineHistory m) text char)
     }
 
 instance (ListLike text char, Monad m) =>
@@ -68,7 +69,7 @@ instance (ListLike text char, Monad m) => Class.BufferMore (StateT (DocumentMemo
 -- Internal
 
 runCursorState :: Monad m =>
-    StateT (Cursor (StateT LineHistory m) text char) (StateT LineHistory m) a ->
+    StateT (Cursor (BufferedStream (StateT LineHistory m) text char)) (StateT LineHistory m) a ->
     StateT (DocumentMemory text char m) m a
 runCursorState go = do
     dm <- get
