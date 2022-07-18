@@ -1,7 +1,14 @@
 {-# language DataKinds, FlexibleContexts, FlexibleInstances, KindSignatures, StandaloneKindSignatures, TypeFamilies #-}
 {-# language DerivingVia, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 
-module Step.Document.Base where
+module Step.Document.Base
+  (
+    -- * Types
+    DocumentParsing, Config (..), Error (..),
+    -- * Running parsers
+    parse, parseOnly,
+  )
+  where
 
 import Step.Internal.Prelude
 
