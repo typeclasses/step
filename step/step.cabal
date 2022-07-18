@@ -40,6 +40,7 @@ common base
           ( Data.Bool as Bool
           , Data.Char as Char
           , Data.Coerce as Coerce
+          , Data.Either as Either
           , Data.Kind as Kind
           , Data.Word as Word
           , Text.Show as Show
