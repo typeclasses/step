@@ -57,6 +57,7 @@ common base
           , Data.Monoid as Monoid
           , Data.Void as Void
           , Data.List.NonEmpty as NonEmpty
+          , GHC.Exts
           )
       , bytestring
           ( Data.ByteString as ByteString
