@@ -17,7 +17,7 @@ import qualified Text
 import Text (Text)
 
 type Parser base action value =
-    action (P.DocumentParsing Text base) P.Error value
+    action (P.DocumentParsing Text Char base) P.Error value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)

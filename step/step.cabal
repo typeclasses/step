@@ -117,6 +117,8 @@ library
 
         Step.Test.InputChunking
 
+        Step.Transform.While
+
     reexported-modules:
         Step.ActionTypes
       , Step.ActionTypes.Types

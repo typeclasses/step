@@ -27,19 +27,22 @@ import qualified Step.Classes.Base as Class
 
 -- The type
 
-data DocumentMemory text m =
+data DocumentMemory text char m =
   DocumentMemory
     { content :: LineHistory
-    , cursor :: Cursor (StateT LineHistory m) text
+    , cursor :: Cursor (StateT LineHistory m) text char
     }
 
-instance Monad m => Class.Char1 (StateT (DocumentMemory text m) m) where
-    type Text (StateT (DocumentMemory text m) m) = text
+instance (ListLike text char, Monad m) =>
+    Class.Char1 (StateT (DocumentMemory text char m) m)
+  where
+    type Text (StateT (DocumentMemory text char m) m) = text
+    type Char (StateT (DocumentMemory text char m) m) = char
     peekCharMaybe = runCursorState Class.peekCharMaybe
     atEnd = runCursorState Class.atEnd
     considerChar f = runCursorState (Class.considerChar f)
 
-instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
+instance (ListLike text char, Monad m) => Class.Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1
       where
         attempt1 = use (to position) >>= \case
@@ -49,24 +52,24 @@ instance Monad m => Class.Locating (StateT (DocumentMemory text m) m) where
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
 
-instance Monad m => Class.TakeAll (StateT (DocumentMemory text m) m) where
+instance (ListLike text char, Monad m) => Class.TakeAll (StateT (DocumentMemory text char m) m) where
     takeAll = runCursorState Class.takeAll
 
-instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (DocumentMemory text m) m) where
+instance (ListLike text char, Monad m, Eq text, Eq char) => Class.SkipTextNonAtomic (StateT (DocumentMemory text char m) m) where
     skipTextNonAtomic x = runCursorState (Class.skipTextNonAtomic x)
 
-instance Monad m => Class.FillBuffer1 (StateT (DocumentMemory text m) m) where
+instance (ListLike text char, Monad m) => Class.FillBuffer1 (StateT (DocumentMemory text char m) m) where
     fillBuffer1 = runCursorState Class.fillBuffer1
 
-instance Monad m => Class.BufferMore (StateT (DocumentMemory text m) m) where
+instance (ListLike text char, Monad m) => Class.BufferMore (StateT (DocumentMemory text char m) m) where
     bufferMore = runCursorState Class.bufferMore
 
 
 -- Internal
 
 runCursorState :: Monad m =>
-    StateT (Cursor (StateT LineHistory m) text) (StateT LineHistory m) a ->
-    StateT (DocumentMemory text m) m a
+    StateT (Cursor (StateT LineHistory m) text char) (StateT LineHistory m) a ->
+    StateT (DocumentMemory text char m) m a
 runCursorState go = do
     dm <- get
     let co = content dm
@@ -78,7 +81,7 @@ runCursorState go = do
 
 -- Construction
 
-fromListT :: Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text m
+fromListT :: Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text char m
 fromListT xs =
   DocumentMemory
     { content = Lines.empty
@@ -92,7 +95,7 @@ data CursorLocation =
     CursorAt Loc
   | CursorLocationNeedsMoreInput
 
-position :: DocumentMemory text m -> CursorLocation
+position :: DocumentMemory text char m -> CursorLocation
 position x = case Lines.locateCursorInDocument (Cursor.position (cursor x)) (content x) of
     Just l -> case l of
         Lines.CursorLocationNeedsMoreInput{ Lines.ifEndOfInput = i } ->

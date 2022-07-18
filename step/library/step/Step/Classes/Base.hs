@@ -17,9 +17,10 @@ data Consideration1 text b a =
     forall char. ListLike text char =>
         Consideration1 (char -> TakeOrLeave b a)
 
-class Monad m => Char1 m where
+class (ListLike (Text m) (Char m), Monad m) => Char1 m where
 
     type Text m :: Type
+    type Char m :: Type
 
     considerChar ::
         Consideration1 (Text m) b a
@@ -29,24 +30,24 @@ class Monad m => Char1 m where
         -> m (Maybe (TakeOrLeave b a))
             -- ^ The result of the selection function, or Nothing if end of input
 
-    peekCharMaybe :: ListLike (Text m) char => m (Maybe char)
+    peekCharMaybe :: m (Maybe (Char m))
     peekCharMaybe = considerChar (Consideration1 Leave) <&> fmap TakeOrLeave.collapse
 
-    takeCharMaybe :: ListLike (Text m) char => m (Maybe char)
+    takeCharMaybe :: m (Maybe (Char m))
     takeCharMaybe = considerChar (Consideration1 (Take . Just)) <&> Monad.join . fmap TakeOrLeave.collapse
 
-    atEnd :: ListLike (Text m) char => m Bool
+    atEnd :: m Bool
     atEnd = isNothing <$> peekCharMaybe
 
     {-# minimal considerChar #-}
 
-class Monad m => While m where
-    while :: ListLike (Text m) char => (char -> Bool) -> m a -> m a
+class Char1 m => While m where
+    while :: (Char m -> Bool) -> m a -> m a
 
-class Monad m => Locating m where
+class Char1 m => Locating m where
     position :: m Loc
 
-class Monad m => Fallible m where
+class Char1 m => Fallible m where
 
     type Error m :: Type
 
@@ -54,24 +55,24 @@ class Monad m => Fallible m where
 
 class Char1 m => TakeAll m where
     -- | Consume the rest of the input
-    takeAll :: ListLike (Text m) char => m (Text m)
+    takeAll :: m (Text m)
 
 class Char1 m => SkipTextNonAtomic m where
-    skipTextNonAtomic :: ListLike (Text m) char => Eq char => Text m -> m Bool
+    skipTextNonAtomic :: Text m -> m Bool
         -- ^ Return value indicates whether operation succeeded
 
-class Monad m => Configure m where
+class Char1 m => Configure m where
     type Config m :: Type
     configure :: (Config m -> Config m) -> m a -> m a
 
 class HasContextStack config where
     contextStackLens :: Lens' config [T.Text]
 
-class Monad m => FillBuffer1 m where
+class Char1 m => FillBuffer1 m where
     -- | Fill the buffer to at least one character, if possible
     fillBuffer1 :: m ()
 
-class Monad m => BufferMore m where
+class Char1 m => BufferMore m where
     -- | Read one chunk of input, if possible
     bufferMore :: m ()
 
@@ -80,6 +81,7 @@ class Monad m => BufferMore m where
 
 instance Char1 m => Char1 (ReaderT r m) where
     type Text (ReaderT r m) = Text m
+    type Char (ReaderT r m) = Char m
     peekCharMaybe = ReaderT \_ -> peekCharMaybe
     atEnd = ReaderT \_ -> atEnd
     considerChar f = ReaderT \_ -> considerChar f
@@ -100,6 +102,6 @@ instance Fallible m => Fallible (ReaderT r m) where
     type Error (ReaderT r m) = Error m
     failure = ReaderT \_ -> failure
 
-instance Monad m => Configure (ReaderT r m) where
+instance Char1 m => Configure (ReaderT r m) where
     type Config (ReaderT r m) = r
     configure = withReaderT

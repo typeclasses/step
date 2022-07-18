@@ -29,15 +29,16 @@ import Step.TakeOrLeave (TakeOrLeave (..))
 
 ---
 
-data BufferedStream m text =
+data BufferedStream m text char =
   BufferedStream
-    { buffer :: Buffer text
-    , pending :: Maybe (ListT m (Nontrivial text))
+    { buffer :: Buffer text char
+    , pending :: Maybe (ListT m (Nontrivial text char))
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
-instance Monad m => Class.Char1 (StateT (BufferedStream m text) m) where
-    type Text (StateT (BufferedStream m text) m) = text
+instance (Monad m, ListLike text char) => Class.Char1 (StateT (BufferedStream m text char) m) where
+    type Text (StateT (BufferedStream m text char) m) = text
+    type Char (StateT (BufferedStream m text char) m) = char
     peekCharMaybe = Class.fillBuffer1 *> (get <&> bufferedHeadChar)
     atEnd = Class.fillBuffer1 *> (get <&> bufferIsEmpty)
     considerChar (Class.Consideration1 f) = do
@@ -49,7 +50,7 @@ instance Monad m => Class.Char1 (StateT (BufferedStream m text) m) where
                 Leave r -> return (Leave r)
                 Take r -> put bs' $> Take r
 
-instance Monad m => Class.TakeAll (StateT (BufferedStream m text) m) where
+instance (Monad m, ListLike text char) => Class.TakeAll (StateT (BufferedStream m text char) m) where
     takeAll = bufferAll *> takeBuffer
       where
         bufferAll = isEmpty >>= \case
@@ -60,7 +61,7 @@ instance Monad m => Class.TakeAll (StateT (BufferedStream m text) m) where
             put s{ buffer = Buffer.empty }
             return (Buffer.fold (buffer s))
 
-instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (BufferedStream m text) m) where
+instance (Monad m, Eq text, Eq char, ListLike text char) => Class.SkipTextNonAtomic (StateT (BufferedStream m text char) m) where
     skipTextNonAtomic x =
         case Nontrivial.refine x of
             Nothing -> return True
@@ -74,12 +75,12 @@ instance (Monad m, Eq text) => Class.SkipTextNonAtomic (StateT (BufferedStream m
                     Buffer.TakeStringSuccess -> return True
                     Buffer.TakeStringPartial c' -> skipNontrivialTextNonAtomic c'
 
-instance Monad m => Class.FillBuffer1 (StateT (BufferedStream m text) m) where
+instance (Monad m, ListLike text char) => Class.FillBuffer1 (StateT (BufferedStream m text char) m) where
     fillBuffer1 = do
         ie <- get <&> Buffer.isEmpty . buffer
         when ie Class.bufferMore
 
-instance Monad m => Class.BufferMore (StateT (BufferedStream m text) m) where
+instance (Monad m, ListLike text char) => Class.BufferMore (StateT (BufferedStream m text char) m) where
     bufferMore = (get <&> pending) >>= \case
 
         -- If the end of the stream has been reached, do nothing
@@ -106,54 +107,54 @@ instance Monad m => Class.BufferMore (StateT (BufferedStream m text) m) where
 
 ---
 
-bufferLens :: Lens' (BufferedStream m text) (Buffer text)
+bufferLens :: Lens' (BufferedStream m text char) (Buffer text char)
 bufferLens = lens buffer \x y -> x{ buffer = y }
 
 pendingLens :: Lens
-    (BufferedStream m1 text)
-    (BufferedStream m2 text)
-    (Maybe (ListT m1 (Nontrivial text)))
-    (Maybe (ListT m2 (Nontrivial text)))
+    (BufferedStream m1 text char)
+    (BufferedStream m2 text char)
+    (Maybe (ListT m1 (Nontrivial text char)))
+    (Maybe (ListT m2 (Nontrivial text char)))
 pendingLens = lens pending \x y -> x{ pending = y }
 
-empty :: BufferedStream m text
+empty :: BufferedStream m text char
 empty = BufferedStream Buffer.empty Nothing
 
-isEmpty :: Monad m => StateT (BufferedStream m text) m Bool
+isEmpty :: (Monad m, ListLike text char) => StateT (BufferedStream m text char) m Bool
 isEmpty = do
     Class.fillBuffer1
     get <&> bufferIsEmpty
 
-isAllBuffered :: BufferedStream m text -> Bool
+isAllBuffered :: BufferedStream m text char -> Bool
 isAllBuffered = isNothing . pending
 
-toListT :: Monad m => BufferedStream m text -> ListT m (Nontrivial text)
+toListT :: Monad m => BufferedStream m text char -> ListT m (Nontrivial text char)
 toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
 
-fromListT :: ListLike text char => Monad m => ListT m text -> BufferedStream m text
+fromListT :: ListLike text char => Monad m => ListT m text -> BufferedStream m text char
 fromListT x = BufferedStream{ buffer = Buffer.empty, pending = Just (Nontrivial.ListT.filter x) }
 
-bufferIsEmpty :: BufferedStream m text -> Bool
+bufferIsEmpty :: BufferedStream m text char -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer
 
-bufferUnconsChunk :: BufferedStream m text -> Maybe (Nontrivial text, BufferedStream m text)
+bufferUnconsChunk :: BufferedStream m text char -> Maybe (Nontrivial text char, BufferedStream m text char)
 bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
     Nothing -> Nothing
     Just (c, b') -> Just (c, s{ buffer = b' })
 
-bufferUnconsChar :: ListLike text char => BufferedStream m text -> Maybe (char, BufferedStream m text)
+bufferUnconsChar :: ListLike text char => BufferedStream m text char -> Maybe (char, BufferedStream m text char)
 bufferUnconsChar s = do
     (c, b') <- Buffer.unconsChar (buffer s)
     Just (c, s{ buffer = b' })
 
-bufferedHeadChar :: ListLike text char => BufferedStream m text -> Maybe char
+bufferedHeadChar :: ListLike text char => BufferedStream m text char -> Maybe char
 bufferedHeadChar = Buffer.headChar . buffer
 
 -- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
-takeChunk :: Monad m => StateT (BufferedStream m text) m (Maybe (Nontrivial text))
+takeChunk :: (ListLike text char, Monad m) => StateT (BufferedStream m text char) m (Maybe (Nontrivial text char))
 takeChunk = do
     Class.fillBuffer1
     zoom bufferLens Buffer.takeChunk
 
-considerChunk :: Monad m => ListLike text char => (Nontrivial text -> (Natural, a)) -> StateT (BufferedStream m text) m (Maybe a)
+considerChunk :: Monad m => ListLike text char => (Nontrivial text char -> (Natural, a)) -> StateT (BufferedStream m text char) m (Maybe a)
 considerChunk f = zoom bufferLens (Buffer.considerChunk f)
