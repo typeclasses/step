@@ -13,6 +13,8 @@ import qualified Monad
 
 import qualified Text as T
 
+import Step.Input.CursorPosition (CursorPosition)
+
 data Consideration1 text b a =
     forall char. ListLike text char =>
         Consideration1 (char -> TakeOrLeave b a)
@@ -43,6 +45,9 @@ class (ListLike (Text m) (Char m), Monad m) => Char1 m where
 
 class Char1 m => While m where
     while :: (Char m -> Bool) -> m a -> m a
+
+class Monad m => Counting m where
+    cursorPosition :: m CursorPosition
 
 class Char1 m => Locating m where
     position :: m Loc
@@ -90,18 +95,21 @@ instance While m => While (ReaderT r m) where
     while f (ReaderT a) = ReaderT \c -> while f (a c)
 
 instance TakeAll m => TakeAll (ReaderT r m) where
-    takeAll = ReaderT \_ -> takeAll
+    takeAll = lift takeAll
 
 instance SkipTextNonAtomic m => SkipTextNonAtomic (ReaderT r m) where
-    skipTextNonAtomic x = ReaderT \_ -> skipTextNonAtomic x
+    skipTextNonAtomic x = lift (skipTextNonAtomic x)
 
 instance Locating m => Locating (ReaderT r m) where
-    position = ReaderT \_ -> position
+    position = lift position
 
 instance Fallible m => Fallible (ReaderT r m) where
     type Error (ReaderT r m) = Error m
-    failure = ReaderT \_ -> failure
+    failure = lift failure
 
 instance Char1 m => Configure (ReaderT r m) where
     type Config (ReaderT r m) = r
     configure = withReaderT
+
+instance (Monad m, Counting m) => Counting (ReaderT r m) where
+    cursorPosition = lift cursorPosition

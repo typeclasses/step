@@ -65,6 +65,19 @@ instance (ListLike text char, Monad m) => Class.FillBuffer1 (StateT (DocumentMem
 instance (ListLike text char, Monad m) => Class.BufferMore (StateT (DocumentMemory text char m) m) where
     bufferMore = runCursorState Class.bufferMore
 
+instance Monad m => Class.Counting (StateT (DocumentMemory text char m) m) where
+    cursorPosition = zoom cursorLens Class.cursorPosition
+
+
+-- Optics
+
+cursorLens :: Lens
+    (DocumentMemory text1 char1 m1)
+    (DocumentMemory text2 char2 m2)
+    (Cursor (BufferedStream (StateT LineHistory m1) text1 char1))
+    (Cursor (BufferedStream (StateT LineHistory m2) text2 char2))
+cursorLens = lens cursor \x y -> x{ cursor = y }
+
 
 -- Internal
 

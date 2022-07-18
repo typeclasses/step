@@ -28,10 +28,12 @@ data Cursor input =
     , pending :: input
     }
 
-instance
-    ( Monad m
-    , Class.Char1 (StateT input m)
-    ) =>
+instance Monad m =>
+    Class.Counting (StateT (Cursor input) m)
+  where
+    cursorPosition = get <&> position
+
+instance (Monad m, Class.Char1 (StateT input m)) =>
     Class.Char1 (StateT (Cursor input) m)
   where
     type Text (StateT (Cursor input) m) = Class.Text (StateT input m)
@@ -43,10 +45,7 @@ instance
         case r of{ Just (Take _) -> modifying positionLens (CursorPosition.increase 1); _ -> return () }
         return r
 
-instance
-    ( Monad m
-    , Class.TakeAll (StateT input m)
-    ) =>
+instance (Monad m, Class.TakeAll (StateT input m)) =>
     Class.TakeAll (StateT (Cursor input) m)
   where
     takeAll = do
@@ -54,10 +53,7 @@ instance
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return x
 
-instance
-    ( Monad m
-    , Class.SkipTextNonAtomic (StateT input m)
-    ) =>
+instance (Monad m, Class.SkipTextNonAtomic (StateT input m)) =>
     Class.SkipTextNonAtomic (StateT (Cursor input) m)
   where
     skipTextNonAtomic x = do
@@ -65,18 +61,12 @@ instance
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return y
 
-instance
-    ( Monad m
-    , Class.FillBuffer1 (StateT input m)
-    ) =>
+instance (Monad m, Class.FillBuffer1 (StateT input m)) =>
     Class.FillBuffer1 (StateT (Cursor input) m)
   where
     fillBuffer1 = zoom pendingLens Class.fillBuffer1
 
-instance
-    ( Monad m
-    , Class.BufferMore (StateT input m)
-    ) =>
+instance (Monad m, Class.BufferMore (StateT input m)) =>
     Class.BufferMore (StateT (Cursor input) m)
   where
     bufferMore = zoom pendingLens Class.bufferMore
