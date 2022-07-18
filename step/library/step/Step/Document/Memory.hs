@@ -85,7 +85,7 @@ fromListT :: Char char => ListLike text char => Monad m => ListT m text -> Docum
 fromListT xs =
   DocumentMemory
     { content = Lines.empty
-    , cursor = Cursor.fromListT $ recordStream (execState . Lines.record) xs
+    , cursor = Cursor.start $ BufferedStream.fromListT $ recordStream (execState . Lines.record) xs
     }
 
 
@@ -99,6 +99,6 @@ position :: DocumentMemory text char m -> CursorLocation
 position x = case Lines.locateCursorInDocument (Cursor.position (cursor x)) (content x) of
     Just l -> case l of
         Lines.CursorLocationNeedsMoreInput{ Lines.ifEndOfInput = i } ->
-            if BufferedStream.isAllBuffered (Cursor.bufferedStream (cursor x)) then CursorAt i else CursorLocationNeedsMoreInput
+            if BufferedStream.isAllBuffered (Cursor.pending (cursor x)) then CursorAt i else CursorLocationNeedsMoreInput
         Lines.CursorAt l' -> CursorAt l'
     Nothing -> error "invalid DocumentMemory"
