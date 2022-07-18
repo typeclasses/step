@@ -2,7 +2,7 @@
 
 module Step.Classes.Base where
 
-import Step.Internal.Prelude
+import Step.Internal.Prelude hiding (while)
 
 import Loc (Loc)
 
@@ -39,6 +39,9 @@ class Monad m => Char1 m where
     atEnd = isNothing <$> peekCharMaybe
 
     {-# minimal considerChar #-}
+
+class Monad m => While m where
+    while :: ListLike (Text m) char => (char -> Bool) -> m a -> m a
 
 class Monad m => Locating m where
     position :: m Loc
@@ -80,6 +83,9 @@ instance Char1 m => Char1 (ReaderT r m) where
     peekCharMaybe = ReaderT \_ -> peekCharMaybe
     atEnd = ReaderT \_ -> atEnd
     considerChar f = ReaderT \_ -> considerChar f
+
+instance While m => While (ReaderT r m) where
+    while f (ReaderT a) = ReaderT \c -> while f (a c)
 
 instance TakeAll m => TakeAll (ReaderT r m) where
     takeAll = ReaderT \_ -> takeAll

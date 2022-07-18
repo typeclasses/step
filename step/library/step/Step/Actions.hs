@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, TypeOperators #-}
+{-# language FlexibleContexts, TypeFamilies, TypeOperators #-}
 
 module Step.Actions where
 
@@ -100,6 +100,15 @@ text :: C.SkipTextNonAtomic m => Fallible m => ListLike (C.Text m) char => Eq ch
     C.Text m -> Any m (Error m) ()
 text x = Action.Unsafe.Any $
     C.skipTextNonAtomic x <&> \case{ True -> Right (); False -> Left C.failure }
+
+while ::
+    Action.Unsafe.ChangeBase act =>
+    ListLike (C.Text m) char =>
+    C.While m =>
+    (char -> Bool)
+    -> act m (Error m) (C.Text m)
+    -> act m (Error m) (C.Text m)
+while ok = Action.Unsafe.changeBase (C.while ok)
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>
 --     Extent (StateT (DocumentMemory text m) m) text
