@@ -1,4 +1,4 @@
-{-# language FlexibleInstances, Trustworthy #-}
+{-# language FlexibleInstances, FunctionalDependencies, Trustworthy #-}
 
 module Step.Input.Buffer
   (
@@ -23,10 +23,17 @@ import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
 import Step.Advancement (AdvanceResult, Progressive (..))
 import qualified Step.Advancement as Advance
 
+import Step.LookingAhead (Prophetic (..))
+
+import qualified ListT
+
 data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 
 instance Semigroup (Buffer text char) where
     a <> b = Buffer{ chunks = chunks a <> chunks b }
+
+instance (Monad m, ListLike text char) => Prophetic (StateT (Buffer text char) m) text char where
+    forecast = lift get >>= ListT.select . chunks
 
 instance (Monad m, ListLike text char) => Progressive (StateT (Buffer text char) m) where
     advance n = get >>= \case

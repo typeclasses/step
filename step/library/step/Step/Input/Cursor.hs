@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, TypeFamilies #-}
 
 module Step.Input.Cursor
   (
@@ -23,6 +23,8 @@ import qualified ListLike
 import Step.Advancement (AdvanceResult, Progressive (..))
 import qualified Step.Advancement as Advance
 
+import Step.LookingAhead (Prophetic (..))
+
 import qualified Positive
 
 ---
@@ -32,6 +34,9 @@ data Cursor input =
     { position :: CursorPosition
     , pending :: input
     }
+
+instance (Monad m, Prophetic (StateT input m) text char) => Prophetic (StateT (Cursor input) m) text char where
+    forecast = changeBaseListT (zoom pendingLens) forecast
 
 instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Cursor input) m) where
     advance n = do

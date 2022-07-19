@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, TypeFamilies #-}
 
 module Step.Input.BufferedStream
   (
@@ -30,6 +30,8 @@ import Step.TakeOrLeave (TakeOrLeave (..))
 import Step.Advancement (AdvanceResult, Progressive (..))
 import qualified Step.Advancement as Advance
 
+import Step.LookingAhead (Prophetic (..))
+
 ---
 
 data BufferedStream m text char =
@@ -38,6 +40,27 @@ data BufferedStream m text char =
     , pending :: Maybe (ListT m (Nontrivial text char))
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
+
+instance (Monad m, ListLike text char) => Prophetic (StateT (BufferedStream m text char) m) text char where
+    forecast =
+        changeBaseListT (zoom bufferLens) forecast
+        <|>
+        ListT
+          (
+            use pendingLens
+            >>=
+            maybe
+                (return ListT.Nil)
+                (
+                  fix \r p ->
+                      lift (ListT.next p) >>= \case
+                          ListT.Nil -> assign pendingLens Nothing $> ListT.Nil
+                          ListT.Cons x xs -> do
+                              modifying bufferLens (<> Buffer.singleton x)
+                              assign pendingLens (Just xs)
+                              return (ListT.Cons x (ListT (r xs)))
+                )
+          )
 
 instance (Monad m, ListLike text char) => Progressive (StateT (BufferedStream m text char) m) where
     advance n =

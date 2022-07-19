@@ -97,6 +97,7 @@ library
         Step.Actions
 
         Step.Advancement
+        Step.LookingAhead
 
         Step.Classes.Abstract
         Step.Classes.Base
