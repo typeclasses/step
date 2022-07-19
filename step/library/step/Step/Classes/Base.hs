@@ -87,9 +87,9 @@ class Char1 m => BufferMore m where
 instance Char1 m => Char1 (ReaderT r m) where
     type Text (ReaderT r m) = Text m
     type Char (ReaderT r m) = Char m
-    peekCharMaybe = ReaderT \_ -> peekCharMaybe
-    atEnd = ReaderT \_ -> atEnd
-    considerChar f = ReaderT \_ -> considerChar f
+    peekCharMaybe = lift peekCharMaybe
+    atEnd = lift atEnd
+    considerChar f = lift (considerChar f)
 
 instance While m => While (ReaderT r m) where
     while f (ReaderT a) = ReaderT \c -> while f (a c)
