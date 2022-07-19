@@ -38,22 +38,23 @@ import qualified ListT
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
-char :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m) => Fallible m => AtomicMove m (Error m) (LA.Char m)
-char = Action.Unsafe.AtomicMove do
-    ListT.next forecast >>= \case
-        ListT.Nil -> return (Left C.failure)
-        ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
+char :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m, Fallible m) =>
+    AtomicMove m (Error m) (LA.Char m)
+char = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
+    ListT.Nil -> return (Left C.failure)
+    ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
 
-peekChar :: (ListLike (C.Text m) char, Char1 m) => Fallible m => Query m (Error m) char
-peekChar = Action.Unsafe.Query $ C.peekCharMaybe <&> maybe (Left C.failure) Right
+peekChar :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Fallible m) =>
+    Query m (Error m) (LA.Char m)
+peekChar = Action.Unsafe.Query $ ListT.next forecast <&> \case
+    ListT.Nil -> Left C.failure
+    ListT.Cons x _ -> Right (Nontrivial.head x)
 
-considerChar :: Char1 m =>
-    (C.Consideration1 (C.Text m) b a) -> Sure m e (Maybe (TakeOrLeave b a))
-considerChar f = Action.Unsafe.Sure $ C.considerChar f
-
-takeCharMaybe :: (ListLike (C.Text m) char, Char1 m) => Sure m e (Maybe char)
-takeCharMaybe =
-    considerChar (C.Consideration1 (Take . Just)) <&> Monad.join . fmap TakeOrLeave.collapse
+takeCharMaybe :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m, Fallible m) =>
+    Sure m e (Maybe (LA.Char m))
+takeCharMaybe = Action.Unsafe.Sure $ ListT.next forecast <&> \case
+    ListT.Nil -> Nothing
+    ListT.Cons x _ -> Just (Nontrivial.head x)
 
 peekCharMaybe :: (ListLike (C.Text m) char, Char1 m) => SureQuery m e (Maybe char)
 peekCharMaybe = Action.Unsafe.SureQuery C.peekCharMaybe
