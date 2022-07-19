@@ -25,6 +25,9 @@ import Loc (Loc)
 
 import qualified Step.Classes.Base as Class
 
+import Step.Advancement (AdvanceResult, Progressive (..))
+import qualified Step.Advancement as Advance
+
 
 -- The type
 
@@ -33,6 +36,9 @@ data DocumentMemory text char m =
     { content :: LineHistory
     , cursor :: Cursor (BufferedStream (StateT LineHistory m) text char)
     }
+
+instance (ListLike text char, Monad m) => Progressive (StateT (DocumentMemory text char m) m) where
+    advance n = runCursorState (advance n)
 
 instance (ListLike text char, Monad m) =>
     Class.Char1 (StateT (DocumentMemory text char m) m)

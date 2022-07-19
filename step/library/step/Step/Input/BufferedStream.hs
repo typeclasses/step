@@ -27,6 +27,9 @@ import qualified Step.Classes.Base as Class
 
 import Step.TakeOrLeave (TakeOrLeave (..))
 
+import Step.Advancement (AdvanceResult, Progressive (..))
+import qualified Step.Advancement as Advance
+
 ---
 
 data BufferedStream m text char =
@@ -35,6 +38,20 @@ data BufferedStream m text char =
     , pending :: Maybe (ListT m (Nontrivial text char))
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
+
+instance (Monad m, ListLike text char) => Progressive (StateT (BufferedStream m text char) m) where
+    advance n =
+        zoom bufferLens (advance n) >>= \case
+            Advance.Success -> return Advance.Success
+            Advance.InsufficientInput n' -> use pendingLens >>= \case
+                Nothing -> return (Advance.InsufficientInput n')
+                Just p -> do
+                    lift (ListT.next p) >>= \case
+                        ListT.Nil -> assign pendingLens Nothing $> Advance.InsufficientInput n'
+                        ListT.Cons x xs -> do
+                            modifying bufferLens (<> Buffer.singleton x)
+                            assign pendingLens (Just xs)
+                            advance n'
 
 instance (Monad m, ListLike text char) => Class.Char1 (StateT (BufferedStream m text char) m) where
     type Text (StateT (BufferedStream m text char) m) = text

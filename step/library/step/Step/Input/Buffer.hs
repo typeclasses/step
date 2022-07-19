@@ -1,11 +1,11 @@
-{-# language Safe #-}
+{-# language FlexibleInstances, Trustworthy #-}
 
 module Step.Input.Buffer
   (
     Buffer, singleton, isEmpty, empty, toListT, fold, headChar, unconsChar, unconsChunk,
 
     -- * State operations
-    considerChunk, takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..),
+    considerChunk, takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), advance,
   )
   where
 
@@ -17,11 +17,24 @@ import qualified Seq
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.List as Nontrivial.List
+import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
+import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
+
+import Step.Advancement (AdvanceResult, Progressive (..))
+import qualified Step.Advancement as Advance
 
 data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 
 instance Semigroup (Buffer text char) where
     a <> b = Buffer{ chunks = chunks a <> chunks b }
+
+instance (Monad m, ListLike text char) => Progressive (StateT (Buffer text char) m) where
+    advance n = get >>= \case
+        Buffer{ chunks = Seq.Empty } -> return Advance.InsufficientInput{ Advance.shortfall = n }
+        Buffer{ chunks = (Seq.:<|) x xs } -> case splitAtPositive n x of
+            SplitAtPositive.All -> put Buffer{ chunks = xs } $> Advance.Success
+            SplitAtPositive.Split _ b -> put Buffer{ chunks = (Seq.:<|) b xs } $> Advance.Success
+            SplitAtPositive.Insufficient n' -> advance n'
 
 singleton :: Nontrivial text char -> Buffer text char
 singleton x = Buffer{ chunks = Seq.singleton x }

@@ -20,6 +20,11 @@ import qualified Step.Classes.Base as Class
 
 import qualified ListLike
 
+import Step.Advancement (AdvanceResult, Progressive (..))
+import qualified Step.Advancement as Advance
+
+import qualified Positive
+
 ---
 
 data Cursor input =
@@ -27,6 +32,15 @@ data Cursor input =
     { position :: CursorPosition
     , pending :: input
     }
+
+instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Cursor input) m) where
+    advance n = do
+        r <- zoom pendingLens (advance n)
+        let delta = case r of
+                Advance.Success -> review Positive.refine n
+                Advance.InsufficientInput{ Advance.shortfall = s } -> review Positive.refine n - review Positive.refine s
+        modifying positionLens (CursorPosition.increase delta)
+        return r
 
 instance Monad m =>
     Class.Counting (StateT (Cursor input) m)
