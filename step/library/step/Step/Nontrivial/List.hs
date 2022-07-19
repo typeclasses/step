@@ -15,12 +15,17 @@ cons = maybe id Prelude.cons . Nontrivial.refine
 
 data Span text char = All | None | Split (Nontrivial text char) (Nontrivial text char)
 
-span :: ListLike text char => (char -> Bool) -> Nontrivial text char -> Span text char
-span f whole =
-    let (a, b) = ListLike.span f (Nontrivial.generalize whole) in
+tupleSpan :: ListLike text char => (text, text) -> Span text char
+tupleSpan (a, b) =
     if ListLike.null b then All else
     if ListLike.null a then None else
     Split (NontrivialUnsafe a) (NontrivialUnsafe b)
+
+span :: ListLike text char => (char -> Bool) -> Nontrivial text char -> Span text char
+span f whole = tupleSpan $ ListLike.span f (Nontrivial.generalize whole)
+
+splitAt :: ListLike text char => Natural -> Nontrivial text char -> Span text char
+splitAt n whole = tupleSpan $ ListLike.splitAt (fromIntegral n) (Nontrivial.generalize whole)
 
 length :: ListLike text char => Nontrivial text char -> Natural
 length = fromIntegral . ListLike.length . Nontrivial.generalize
