@@ -115,6 +115,7 @@ library
         Step.Nontrivial.List
         Step.Nontrivial.ListT
         Step.Nontrivial.Span
+        Step.Nontrivial.SplitAt
 
         Step.TakeOrLeave
 
