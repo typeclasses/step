@@ -92,6 +92,8 @@ library
     exposed-modules:
         Step.Actions
 
+        Step.Advancement
+
         Step.Classes.Abstract
         Step.Classes.Base
 
