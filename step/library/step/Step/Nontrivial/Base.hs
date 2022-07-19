@@ -4,7 +4,7 @@ module Step.Nontrivial.Base
   (
     {- * The type -} Nontrivial,
     {- * Construct and deconstruct -} refine, generalize,
-    {- * List operations -} stripPrefix, length, uncons, drop,
+    {- * List operations -} stripPrefix, uncons, drop,
   )
   where
 
@@ -22,9 +22,6 @@ generalize (NontrivialUnsafe x) = x
 
 stripPrefix :: Eq a => ListLike text a => Nontrivial text char -> Nontrivial text char -> Maybe text
 stripPrefix x y = ListLike.stripPrefix (generalize x) (generalize y)
-
-length :: ListLike text a => Nontrivial text char -> Natural
-length = fromIntegral . ListLike.length . generalize
 
 uncons :: ListLike text a => Nontrivial text char -> (a, text)
 uncons x = case ListLike.uncons (generalize x) of

@@ -32,7 +32,7 @@ common base
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , transformers
-      , nat-optics
+      , nat-optics ^>= 1.0.0.3
       , optics ^>= 0.4
       , text
     mixins:
@@ -73,7 +73,11 @@ common base
       , data-default-class (Data.Default.Class as Default)
       , list-transformer (List.Transformer as ListT)
       , ListLike (Data.ListLike as ListLike)
-      , nat-optics (NatOptics.Positive as Positive)
+      , nat-optics
+          ( NatOptics.Positive as Positive
+          , NatOptics.Positive.Math as Positive.Math
+          , NatOptics.Signed as Signed
+          )
       , transformers
           ( Control.Monad.Trans.State.Strict as State
           , Control.Monad.Trans.Class as MonadTrans

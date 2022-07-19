@@ -69,7 +69,7 @@ stripPrefix c b = case Nontrivial.refine c of
 stripNontrivialPrefix :: (ListLike text char, Eq text, Eq char) => Nontrivial text char -> Buffer text char -> StripPrefixResult text char
 stripNontrivialPrefix c b = case chunks b of
     Seq.Empty -> StripPrefixPartial c
-    (Seq.:<|) x xs -> case compare (Nontrivial.length x) (Nontrivial.length c) of
+    (Seq.:<|) x xs -> case compare (Nontrivial.List.length x) (Nontrivial.List.length c) of
         EQ -> if x /= c then StripPrefixFail else
             StripPrefixSuccess Buffer{ chunks = xs }
         LT -> case Nontrivial.stripPrefix x c of
