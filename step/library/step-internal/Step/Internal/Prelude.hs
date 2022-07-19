@@ -2,6 +2,7 @@
 
 module Step.Internal.Prelude (module X) where
 
+import Step.Internal.ChangeBaseListT as X
 import Step.Internal.Dependencies as X
 import Step.Internal.Modify as X
 import Step.Internal.RecordStream as X
