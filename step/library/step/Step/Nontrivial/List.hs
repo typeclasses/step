@@ -10,6 +10,10 @@ import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified ListLike
 
+import qualified Positive
+
+import qualified Maybe
+
 cons :: ListLike text char => ListLike list (Nontrivial text char) => text -> list -> list
 cons = maybe id Prelude.cons . Nontrivial.refine
 
@@ -27,8 +31,13 @@ span f whole = tupleSpan $ ListLike.span f (Nontrivial.generalize whole)
 splitAt :: ListLike text char => Natural -> Nontrivial text char -> Span text char
 splitAt n whole = tupleSpan $ ListLike.splitAt (fromIntegral n) (Nontrivial.generalize whole)
 
-length :: ListLike text char => Nontrivial text char -> Natural
-length = fromIntegral . ListLike.length . Nontrivial.generalize
+positiveSplitAt :: ListLike text char => Positive Natural -> Nontrivial text char -> (Nontrivial text char, Maybe (Nontrivial text char))
+positiveSplitAt n whole =
+    let (a, b) = ListLike.splitAt (fromIntegral $ review Positive.natPrism n) (Nontrivial.generalize whole) in
+    (NontrivialUnsafe a, Nontrivial.refine b)
+
+length :: ListLike text char => Nontrivial text char -> Positive Natural
+length = Maybe.fromJust . preview Positive.natPrism . fromIntegral . ListLike.length . Nontrivial.generalize
 
 takeWhile :: ListLike text char => (char -> Bool) -> Nontrivial text char -> Maybe (Nontrivial text char)
 takeWhile f = Nontrivial.refine . ListLike.takeWhile f . Nontrivial.generalize
