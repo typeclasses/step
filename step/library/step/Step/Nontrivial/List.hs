@@ -2,7 +2,7 @@
 
 module Step.Nontrivial.List
   (
-    cons, positiveSplitAt, length, takeWhile,
+    cons, length, takeWhile,
   )
   where
 
@@ -22,11 +22,6 @@ import Step.Nontrivial.Span
 
 cons :: ListLike text char => ListLike list (Nontrivial text char) => text -> list -> list
 cons = maybe id Prelude.cons . Nontrivial.refine
-
-positiveSplitAt :: ListLike text char => Positive Natural -> Nontrivial text char -> (Nontrivial text char, Maybe (Nontrivial text char))
-positiveSplitAt n whole =
-    let (a, b) = ListLike.splitAt (fromIntegral $ review Positive.natPrism n) (Nontrivial.generalize whole) in
-    (NontrivialUnsafe a, Nontrivial.refine b)
 
 length :: ListLike text char => Nontrivial text char -> Positive Natural
 length = Maybe.fromJust . preview Positive.natPrism . fromIntegral . ListLike.length . Nontrivial.generalize
