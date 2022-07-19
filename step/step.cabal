@@ -114,6 +114,7 @@ library
         Step.Nontrivial.Constructor
         Step.Nontrivial.List
         Step.Nontrivial.ListT
+        Step.Nontrivial.Span
 
         Step.TakeOrLeave
 
