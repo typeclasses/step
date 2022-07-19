@@ -41,7 +41,9 @@ data BufferedStream m text char =
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
-instance (Monad m, ListLike text char) => Prophetic (StateT (BufferedStream m text char) m) text char where
+instance (Monad m, ListLike text char) => Prophetic (StateT (BufferedStream m text char) m) where
+    type Text (StateT (BufferedStream m text char) m) = text
+    type Char (StateT (BufferedStream m text char) m) = char
     forecast =
         changeBaseListT (zoom bufferLens) forecast
         <|>

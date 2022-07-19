@@ -35,7 +35,9 @@ data Cursor input =
     , pending :: input
     }
 
-instance (Monad m, Prophetic (StateT input m) text char) => Prophetic (StateT (Cursor input) m) text char where
+instance (Monad m, Prophetic (StateT input m)) => Prophetic (StateT (Cursor input) m) where
+    type Text (StateT (Cursor input) m) = Text (StateT input m)
+    type Char (StateT (Cursor input) m) = Char (StateT input m)
     forecast = changeBaseListT (zoom pendingLens) forecast
 
 instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Cursor input) m) where

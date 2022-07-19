@@ -28,7 +28,8 @@ import qualified Step.Classes.Base as Class
 import Step.Advancement (AdvanceResult, Progressive (..))
 import qualified Step.Advancement as Advance
 
-import Step.LookingAhead (Prophetic (..))
+import Step.LookingAhead (Prophetic (forecast))
+import qualified Step.LookingAhead (Prophetic (..))
 
 
 -- The type
@@ -39,7 +40,9 @@ data DocumentMemory text char m =
     , cursor :: Cursor (BufferedStream (StateT LineHistory m) text char)
     }
 
-instance (ListLike text char, Monad m) => Prophetic (StateT (DocumentMemory text char m) m) text char where
+instance (ListLike text char, Monad m) => Prophetic (StateT (DocumentMemory text char m) m) where
+    type Text (StateT (DocumentMemory text char m) m) = text
+    type Char (StateT (DocumentMemory text char m) m) = char
     forecast = changeBaseListT runCursorState forecast
 
 instance (ListLike text char, Monad m) => Progressive (StateT (DocumentMemory text char m) m) where

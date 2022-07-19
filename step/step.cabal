@@ -76,6 +76,7 @@ common base
       , nat-optics
           ( NatOptics.Positive as Positive
           , NatOptics.Positive.Math as Positive.Math
+          , NatOptics.Positive.Unsafe as Positive.Unsafe
           , NatOptics.Signed as Signed
           )
       , transformers

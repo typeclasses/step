@@ -1,4 +1,4 @@
-{-# language FlexibleInstances, FunctionalDependencies, Trustworthy #-}
+{-# language FlexibleInstances, TypeFamilies, Trustworthy #-}
 
 module Step.Input.Buffer
   (
@@ -32,7 +32,9 @@ data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 instance Semigroup (Buffer text char) where
     a <> b = Buffer{ chunks = chunks a <> chunks b }
 
-instance (Monad m, ListLike text char) => Prophetic (StateT (Buffer text char) m) text char where
+instance (Monad m, ListLike text char) => Prophetic (StateT (Buffer text char) m) where
+    type Text (StateT (Buffer text char) m) = text
+    type Char (StateT (Buffer text char) m) = char
     forecast = lift get >>= ListT.select . chunks
 
 instance (Monad m, ListLike text char) => Progressive (StateT (Buffer text char) m) where

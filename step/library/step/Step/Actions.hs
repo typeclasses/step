@@ -27,8 +27,22 @@ import qualified Monad
 
 import qualified Text as T
 
-char :: (ListLike (C.Text m) char, Char1 m) => Fallible m => AtomicMove m (Error m) char
-char = Action.Unsafe.AtomicMove $ C.takeCharMaybe <&> maybe (Left C.failure) Right
+import qualified Step.Nontrivial.Base as Nontrivial
+
+import Step.LookingAhead (Prophetic, forecast)
+import qualified Step.LookingAhead as LA
+
+import Step.Advancement (Progressive, advance)
+
+import qualified ListT
+
+import Positive.Unsafe (Positive (PositiveUnsafe))
+
+char :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m) => Fallible m => AtomicMove m (Error m) (LA.Char m)
+char = Action.Unsafe.AtomicMove do
+    ListT.next forecast >>= \case
+        ListT.Nil -> return (Left C.failure)
+        ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
 
 peekChar :: (ListLike (C.Text m) char, Char1 m) => Fallible m => Query m (Error m) char
 peekChar = Action.Unsafe.Query $ C.peekCharMaybe <&> maybe (Left C.failure) Right
@@ -54,10 +68,10 @@ satisfyJust ok = Action.Unsafe.AtomicMove $
     C.considerChar (C.Consideration1 \x -> case ok x of Just y -> Take y; Nothing -> Leave ())
     <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
 
-atEnd :: (ListLike (C.Text m) char, Char1 m) => SureQuery m e Bool
-atEnd = Action.Unsafe.SureQuery C.atEnd
+atEnd :: Functor m => (ListLike (LA.Text m) (LA.Char m), Prophetic m) => SureQuery m e Bool
+atEnd = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case { ListT.Nil -> True; _ -> False }
 
-end :: (ListLike (C.Text m) char, Char1 m) => Fallible m => Query m (Error m) ()
+end :: (ListLike (LA.Text m) (LA.Char m), Prophetic m) => Fallible m => Query m (Error m) ()
 end = atEnd A.>>= guard
 
 guard :: Fallible m => Bool -> Query m (Error m) ()
