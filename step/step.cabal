@@ -124,8 +124,6 @@ library
         Step.Nontrivial.SplitAt
         Step.Nontrivial.SplitAtPositive
 
-        Step.TakeOrLeave
-
         Step.Test.InputChunking
 
     reexported-modules:

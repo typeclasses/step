@@ -6,9 +6,6 @@ import Step.Internal.Prelude hiding (while)
 
 import Loc (Loc)
 
-import Step.TakeOrLeave (TakeOrLeave (..))
-import qualified Step.TakeOrLeave as TakeOrLeave
-
 import qualified Monad
 
 import qualified Text as T

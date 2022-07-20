@@ -25,8 +25,6 @@ import qualified Step.Nontrivial.List as Nontrivial
 
 import qualified Step.Classes.Base as Class
 
-import Step.TakeOrLeave (TakeOrLeave (..))
-
 import Step.Advancement (AdvanceResult, Progressive (..))
 import qualified Step.Advancement as Advance
 

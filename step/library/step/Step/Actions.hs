@@ -20,9 +20,6 @@ import Step.ActionTypes (Join)
 
 import qualified Step.ActionTypes.Do as A
 
-import Step.TakeOrLeave (TakeOrLeave (..))
-import qualified Step.TakeOrLeave as TakeOrLeave
-
 import qualified Monad
 
 import qualified Text as T
