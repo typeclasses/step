@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, TypeFamilies, TypeOperators #-}
+{-# language ConstraintKinds, FlexibleContexts, TypeFamilies, TypeOperators #-}
 
 module Step.Actions where
 
@@ -38,20 +38,19 @@ import qualified ListT
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
-char :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m, Fallible m) =>
-    AtomicMove m (Error m) (LA.Char m)
+type Cursor m = (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m)
+
+char :: (Cursor m, Fallible m) => AtomicMove m (Error m) (LA.Char m)
 char = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Nil -> return (Left C.failure)
     ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
 
-peekChar :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Fallible m) =>
-    Query m (Error m) (LA.Char m)
+peekChar :: (Cursor m, Fallible m) => Query m (Error m) (LA.Char m)
 peekChar = Action.Unsafe.Query $ ListT.next forecast <&> \case
     ListT.Nil -> Left C.failure
     ListT.Cons x _ -> Right (Nontrivial.head x)
 
-takeCharMaybe :: (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m, Fallible m) =>
-    Sure m e (Maybe (LA.Char m))
+takeCharMaybe :: (Cursor m, Fallible m) => Sure m e (Maybe (LA.Char m))
 takeCharMaybe = Action.Unsafe.Sure $ ListT.next forecast <&> \case
     ListT.Nil -> Nothing
     ListT.Cons x _ -> Just (Nontrivial.head x)
@@ -69,10 +68,10 @@ satisfyJust ok = Action.Unsafe.AtomicMove $
     C.considerChar (C.Consideration1 \x -> case ok x of Just y -> Take y; Nothing -> Leave ())
     <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
 
-atEnd :: Functor m => (ListLike (LA.Text m) (LA.Char m), Prophetic m) => SureQuery m e Bool
+atEnd :: Cursor m => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case { ListT.Nil -> True; _ -> False }
 
-end :: (ListLike (LA.Text m) (LA.Char m), Prophetic m) => Fallible m => Query m (Error m) ()
+end :: Cursor m => Fallible m => Query m (Error m) ()
 end = atEnd A.>>= guard
 
 guard :: Fallible m => Bool -> Query m (Error m) ()
