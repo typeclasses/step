@@ -43,9 +43,6 @@ class (ListLike (Text m) (Char m), Monad m) => Char1 m where
 
     {-# minimal considerChar #-}
 
-class Char1 m => While m where
-    while :: (Char m -> Bool) -> m a -> m a
-
 class Monad m => Counting m where
     cursorPosition :: m CursorPosition
 
@@ -90,9 +87,6 @@ instance Char1 m => Char1 (ReaderT r m) where
     peekCharMaybe = lift peekCharMaybe
     atEnd = lift atEnd
     considerChar f = lift (considerChar f)
-
-instance While m => While (ReaderT r m) where
-    while f (ReaderT a) = ReaderT \c -> while f (a c)
 
 instance TakeAll m => TakeAll (ReaderT r m) where
     takeAll = lift takeAll

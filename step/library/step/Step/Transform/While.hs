@@ -49,8 +49,3 @@ instance (ListLike text char, C.SkipTextNonAtomic m, C.Text m ~ text, C.Char m ~
 
 instance (C.FillBuffer1 m, ListLike text char, C.Char m ~ char) => C.FillBuffer1 (While text char m) where
     fillBuffer1 = lift C.fillBuffer1
-
-instance (C.Char1 m, ListLike text char, Monad m, C.Char m ~ char, Eq char) =>
-    C.While (While text char m)
-  where
-    while ok = While . withReaderT (\r x -> r x && ok x) . (\(While x) -> x)
