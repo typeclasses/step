@@ -4,11 +4,11 @@ module Step.Nontrivial.Base
   (
     {- * The type -} Nontrivial,
     {- * Construct and deconstruct -} refine, generalize,
-    {- * List operations -} stripPrefix, uncons, drop, head,
+    {- * List operations -} stripPrefix, uncons, drop, head, fold, isPrefixOf,
   )
   where
 
-import Step.Internal.Prelude hiding (uncons)
+import Step.Internal.Prelude hiding (uncons, fold)
 
 import Step.Nontrivial.Constructor
 
@@ -33,3 +33,9 @@ drop n = ListLike.drop (fromIntegral n) . generalize
 
 head :: ListLike text a => Nontrivial text a -> a
 head = ListLike.head . generalize
+
+fold :: ListLike text a => [Nontrivial text a] -> text
+fold = ListLike.foldMap generalize
+
+isPrefixOf :: ListLike text char => Eq char => Nontrivial text char -> Nontrivial text char -> Bool
+a `isPrefixOf` b = generalize a `ListLike.isPrefixOf` generalize b

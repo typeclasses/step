@@ -1,4 +1,4 @@
-{-# language ConstraintKinds, FlexibleContexts, TypeFamilies, TypeOperators #-}
+{-# language ConstraintKinds, FlexibleContexts, TypeFamilies, TypeOperators, ViewPatterns #-}
 
 module Step.Actions where
 
@@ -38,43 +38,53 @@ import qualified ListT
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
-type Cursor m = (ListLike (LA.Text m) (LA.Char m), Prophetic m, Progressive m)
+import Step.Nontrivial.Base (Nontrivial)
+import qualified Step.Nontrivial.Base as Nontrivial
+import qualified Step.Nontrivial.List as Nontrivial
 
-char :: (Cursor m, Fallible m) => AtomicMove m (Error m) (LA.Char m)
+import Step.ActionTypes (repetition0)
+
+import qualified ListLike
+
+type Cursor m = (ListLike (LA.Text m) (LA.Char m), Eq (LA.Char m), Prophetic m, Progressive m, Fallible m)
+
+char :: Cursor m => AtomicMove m (Error m) (LA.Char m)
 char = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Nil -> return (Left C.failure)
     ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
 
-peekChar :: (Cursor m, Fallible m) => Query m (Error m) (LA.Char m)
+peekChar :: Cursor m => Query m (Error m) (LA.Char m)
 peekChar = Action.Unsafe.Query $ ListT.next forecast <&> \case
     ListT.Nil -> Left C.failure
     ListT.Cons x _ -> Right (Nontrivial.head x)
 
-takeCharMaybe :: (Cursor m, Fallible m) => Sure m e (Maybe (LA.Char m))
-takeCharMaybe = Action.Unsafe.Sure $ ListT.next forecast <&> \case
+takeCharMaybe :: Cursor m => Sure m e (Maybe (LA.Char m))
+takeCharMaybe = Action.Unsafe.Sure $ ListT.next forecast >>= \case
+    ListT.Nil -> return Nothing
+    ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Just (Nontrivial.head x)
+
+peekCharMaybe :: Cursor m => SureQuery m e (Maybe (LA.Char m))
+peekCharMaybe = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case
     ListT.Nil -> Nothing
     ListT.Cons x _ -> Just (Nontrivial.head x)
 
-peekCharMaybe :: (ListLike (C.Text m) char, Char1 m) => SureQuery m e (Maybe char)
-peekCharMaybe = Action.Unsafe.SureQuery C.peekCharMaybe
+satisfy :: Cursor m => (LA.Char m -> Bool) -> AtomicMove m (Error m) (LA.Char m)
+satisfy ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
+    ListT.Cons (Nontrivial.head -> x) _ | ok x -> advance (PositiveUnsafe 1) $> Right x
+    _ -> return (Left C.failure)
 
-satisfy :: (ListLike (C.Text m) char, Char1 m) => Fallible m => (char -> Bool) -> AtomicMove m (Error m) char
-satisfy ok = Action.Unsafe.AtomicMove $
-    C.considerChar (C.Consideration1 \x -> if ok x then Take x else Leave ())
-    <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
-
-satisfyJust :: (ListLike (C.Text m) char, Char1 m) => Fallible m => (char -> Maybe a) -> AtomicMove m (Error m) a
-satisfyJust ok = Action.Unsafe.AtomicMove $
-    C.considerChar (C.Consideration1 \x -> case ok x of Just y -> Take y; Nothing -> Leave ())
-    <&> maybe (Left C.failure) Right . Monad.join . fmap TakeOrLeave.fromTake
+satisfyJust :: Cursor m => (LA.Char m -> Maybe a) -> AtomicMove m (Error m) a
+satisfyJust ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
+    ListT.Cons (ok . Nontrivial.head -> Just x) _ -> advance (PositiveUnsafe 1) $> Right x
+    _ -> return (Left C.failure)
 
 atEnd :: Cursor m => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case { ListT.Nil -> True; _ -> False }
 
-end :: Cursor m => Fallible m => Query m (Error m) ()
+end :: Cursor m => Query m (Error m) ()
 end = atEnd A.>>= guard
 
-guard :: Fallible m => Bool -> Query m (Error m) ()
+guard :: Cursor m => Bool -> Query m (Error m) ()
 guard = \case{ True -> cast (A.return ()); False -> cast failure }
 
 position :: Locating m => SureQuery m e Loc
@@ -89,11 +99,16 @@ withLocation act =
     (\a x b -> (Loc.spanOrLocFromTo a b, x))
     A.<$> position A.<*> act A.<*> position
 
-failure :: Fallible m => Fail m (Error m) a
+failure :: Cursor m => Fail m (Error m) a
 failure = Action.Unsafe.Fail C.failure
 
-all :: C.TakeAll m => ListLike (C.Text m) char => Sure m (Error m) (C.Text m)
-all = Action.Unsafe.Sure C.takeAll
+some :: Cursor m => AtomicMove m (Error m) (Nontrivial (LA.Text m) (LA.Char m))
+some = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
+    ListT.Nil -> return (Left C.failure)
+    ListT.Cons x _ -> advance (Nontrivial.length x) $> Right x
+
+all :: Cursor m => Sure m (Error m) (LA.Text m)
+all = repetition0 some <&> Nontrivial.fold
 
 configure :: Configure m => Action.Unsafe.ChangeBase act =>
     (Config m -> Config m) -> act m e a -> act m e a
@@ -110,19 +125,41 @@ p <?> c = contextualize c p
 
 -- todo: add an atomic version of 'text'
 
-text :: C.SkipTextNonAtomic m => Fallible m => ListLike (C.Text m) char => Eq char =>
-    C.Text m -> Any m (Error m) ()
-text x = Action.Unsafe.Any $
-    C.skipTextNonAtomic x <&> \case{ True -> Right (); False -> Left C.failure }
+text :: Cursor m => LA.Text m -> Any m (Error m) ()
+text x = case Nontrivial.refine x of
+    Nothing -> return ()
+    Just y -> cast (nontrivialText y)
 
-while ::
-    Action.Unsafe.ChangeBase act =>
-    ListLike (C.Text m) char =>
-    C.While m =>
-    (char -> Bool)
-    -> act m (Error m) (C.Text m)
-    -> act m (Error m) (C.Text m)
-while ok = Action.Unsafe.changeBase (C.while ok)
+nontrivialText :: Cursor m => Nontrivial (LA.Text m) (LA.Char m) -> Move m (Error m) ()
+nontrivialText x = someOfNontrivialText x A.>>= text
+
+-- | Returns what remainder is needed
+someOfNontrivialText :: Cursor m =>
+    Nontrivial (LA.Text m) (LA.Char m) -> AtomicMove m (Error m) (LA.Text m)
+someOfNontrivialText x = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
+    ListT.Nil -> return (Left C.failure)
+    ListT.Cons y _ ->
+        if x `Nontrivial.isPrefixOf` y
+        then advance (Nontrivial.length x) $> Right ListLike.empty
+        else
+        if y `Nontrivial.isPrefixOf` x
+        then advance (Nontrivial.length y) $>
+              Right
+                (
+                  ListLike.drop
+                      (ListLike.length (Nontrivial.generalize y))
+                      (Nontrivial.generalize x)
+                )
+        else return (Left C.failure)
+
+-- while ::
+--     Action.Unsafe.ChangeBase act =>
+--     ListLike (C.Text m) char =>
+--     C.While m =>
+--     (char -> Bool)
+--     -> act m (Error m) (C.Text m)
+--     -> act m (Error m) (C.Text m)
+-- while ok = Action.Unsafe.changeBase (C.while ok)
 
 -- within :: Monad m => ListLike text char => Action.Unsafe.CoerceAny act =>
 --     Extent (StateT (DocumentMemory text m) m) text
