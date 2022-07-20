@@ -15,10 +15,6 @@ import qualified Text as T
 
 import Step.Input.CursorPosition (CursorPosition)
 
-data Consideration1 text b a =
-    forall char. ListLike text char =>
-        Consideration1 (char -> TakeOrLeave b a)
-
 class (ListLike (Text m) (Char m), Monad m) => Char1 m where
 
     type Text m :: Type
@@ -27,27 +23,27 @@ class (ListLike (Text m) (Char m), Monad m) => Char1 m where
 class Monad m => Counting m where
     cursorPosition :: m CursorPosition
 
-class Char1 m => Locating m where
+class Monad m => Locating m where
     position :: m Loc
 
-class Char1 m => Fallible m where
+class Monad m => Fallible m where
 
     type Error m :: Type
 
     failure :: m (Error m)
 
-class Char1 m => Configure m where
+class Monad m => Configure m where
     type Config m :: Type
     configure :: (Config m -> Config m) -> m a -> m a
 
 class HasContextStack config where
     contextStackLens :: Lens' config [T.Text]
 
-class Char1 m => FillBuffer1 m where
+class Monad m => FillBuffer1 m where
     -- | Fill the buffer to at least one character, if possible
     fillBuffer1 :: m ()
 
-class Char1 m => BufferMore m where
+class Monad m => BufferMore m where
     -- | Read one chunk of input, if possible
     bufferMore :: m ()
 
