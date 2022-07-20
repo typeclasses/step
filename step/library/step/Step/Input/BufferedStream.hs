@@ -92,17 +92,6 @@ instance (Monad m, ListLike text char) => Class.Char1 (StateT (BufferedStream m 
                 Leave r -> return (Leave r)
                 Take r -> put bs' $> Take r
 
-instance (Monad m, ListLike text char) => Class.TakeAll (StateT (BufferedStream m text char) m) where
-    takeAll = bufferAll *> takeBuffer
-      where
-        bufferAll = isEmpty >>= \case
-            True -> return ()
-            False -> Class.bufferMore *> bufferAll
-        takeBuffer = do
-            s <- get
-            put s{ buffer = Buffer.empty }
-            return (Buffer.fold (buffer s))
-
 instance (Monad m, ListLike text char) => Class.FillBuffer1 (StateT (BufferedStream m text char) m) where
     fillBuffer1 = do
         ie <- get <&> Buffer.isEmpty . buffer
@@ -147,11 +136,6 @@ pendingLens = lens pending \x y -> x{ pending = y }
 
 empty :: BufferedStream m text char
 empty = BufferedStream Buffer.empty Nothing
-
-isEmpty :: (Monad m, ListLike text char) => StateT (BufferedStream m text char) m Bool
-isEmpty = do
-    Class.fillBuffer1
-    get <&> bufferIsEmpty
 
 isAllBuffered :: BufferedStream m text char -> Bool
 isAllBuffered = isNothing . pending

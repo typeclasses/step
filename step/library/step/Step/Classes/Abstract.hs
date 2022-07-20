@@ -1,6 +1,6 @@
 module Step.Classes.Abstract
   (
-    Char1, Text, Locating, Fallible, Error, TakeAll, Configure, Config, HasContextStack,
+    Char1, Text, Locating, Fallible, Error, Configure, Config, HasContextStack,
   )
   where
 

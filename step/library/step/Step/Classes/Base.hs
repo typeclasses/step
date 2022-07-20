@@ -55,10 +55,6 @@ class Char1 m => Fallible m where
 
     failure :: m (Error m)
 
-class Char1 m => TakeAll m where
-    -- | Consume the rest of the input
-    takeAll :: m (Text m)
-
 class Char1 m => Configure m where
     type Config m :: Type
     configure :: (Config m -> Config m) -> m a -> m a
@@ -83,9 +79,6 @@ instance Char1 m => Char1 (ReaderT r m) where
     peekCharMaybe = lift peekCharMaybe
     atEnd = lift atEnd
     considerChar f = lift (considerChar f)
-
-instance TakeAll m => TakeAll (ReaderT r m) where
-    takeAll = lift takeAll
 
 instance Locating m => Locating (ReaderT r m) where
     position = lift position

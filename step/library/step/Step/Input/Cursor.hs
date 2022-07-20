@@ -66,14 +66,6 @@ instance (Monad m, Class.Char1 (StateT input m)) =>
         case r of{ Just (Take _) -> modifying positionLens (CursorPosition.increase 1); _ -> return () }
         return r
 
-instance (Monad m, Class.TakeAll (StateT input m)) =>
-    Class.TakeAll (StateT (Cursor input) m)
-  where
-    takeAll = do
-        x <- zoom pendingLens Class.takeAll
-        modifying positionLens (+ fromIntegral (ListLike.length x))
-        return x
-
 instance (Monad m, Class.FillBuffer1 (StateT input m)) =>
     Class.FillBuffer1 (StateT (Cursor input) m)
   where
