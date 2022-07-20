@@ -64,8 +64,6 @@ instance (Monad m, ListLike text char) => Prophetic (DocumentParsing text char m
 instance (Monad m, ListLike text char) => Class.Char1 (DocumentParsing text char m) where
     type Text (DocumentParsing text char m) = text
     type Char (DocumentParsing text char m) = char
-    peekCharMaybe = DocumentParsing Class.peekCharMaybe
-    considerChar f = DocumentParsing (Class.considerChar f)
 
 instance (ListLike text char, Monad m) => Class.Locating (DocumentParsing text char m) where
     position = DocumentParsing Class.position

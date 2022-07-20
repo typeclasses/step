@@ -59,12 +59,6 @@ instance (Monad m, Class.Char1 (StateT input m)) =>
   where
     type Text (StateT (Cursor input) m) = Class.Text (StateT input m)
     type Char (StateT (Cursor input) m) = Class.Char (StateT input m)
-    peekCharMaybe = zoom pendingLens Class.peekCharMaybe
-    atEnd = zoom pendingLens Class.atEnd
-    considerChar c = do
-        r <- zoom pendingLens (Class.considerChar c)
-        case r of{ Just (Take _) -> modifying positionLens (CursorPosition.increase 1); _ -> return () }
-        return r
 
 instance (Monad m, Class.FillBuffer1 (StateT input m)) =>
     Class.FillBuffer1 (StateT (Cursor input) m)

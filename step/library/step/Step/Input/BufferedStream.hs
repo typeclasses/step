@@ -81,16 +81,6 @@ instance (Monad m, ListLike text char) => Progressive (StateT (BufferedStream m 
 instance (Monad m, ListLike text char) => Class.Char1 (StateT (BufferedStream m text char) m) where
     type Text (StateT (BufferedStream m text char) m) = text
     type Char (StateT (BufferedStream m text char) m) = char
-    peekCharMaybe = Class.fillBuffer1 *> (get <&> bufferedHeadChar)
-    atEnd = Class.fillBuffer1 *> (get <&> bufferIsEmpty)
-    considerChar (Class.Consideration1 f) = do
-        Class.fillBuffer1
-        bs <- get
-        case bufferUnconsChar bs of
-            Nothing -> return Nothing
-            Just (c, bs') -> Just <$> case f c of
-                Leave r -> return (Leave r)
-                Take r -> put bs' $> Take r
 
 instance (Monad m, ListLike text char) => Class.FillBuffer1 (StateT (BufferedStream m text char) m) where
     fillBuffer1 = do

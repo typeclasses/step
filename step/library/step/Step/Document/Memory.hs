@@ -53,9 +53,6 @@ instance (ListLike text char, Monad m) =>
   where
     type Text (StateT (DocumentMemory text char m) m) = text
     type Char (StateT (DocumentMemory text char m) m) = char
-    peekCharMaybe = runCursorState Class.peekCharMaybe
-    atEnd = runCursorState Class.atEnd
-    considerChar f = runCursorState (Class.considerChar f)
 
 instance (ListLike text char, Monad m) => Class.Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1

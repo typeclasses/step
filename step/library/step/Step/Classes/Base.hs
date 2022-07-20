@@ -24,25 +24,6 @@ class (ListLike (Text m) (Char m), Monad m) => Char1 m where
     type Text m :: Type
     type Char m :: Type
 
-    considerChar ::
-        Consideration1 (Text m) b a
-            -- ^ Selection function, given the next a character as its argument;
-            --   if 'Take', the cursor advances by 1;
-            --   if 'Leave', the cursor will remain unmoved
-        -> m (Maybe (TakeOrLeave b a))
-            -- ^ The result of the selection function, or Nothing if end of input
-
-    peekCharMaybe :: m (Maybe (Char m))
-    peekCharMaybe = considerChar (Consideration1 Leave) <&> fmap TakeOrLeave.collapse
-
-    takeCharMaybe :: m (Maybe (Char m))
-    takeCharMaybe = considerChar (Consideration1 (Take . Just)) <&> Monad.join . fmap TakeOrLeave.collapse
-
-    atEnd :: m Bool
-    atEnd = isNothing <$> peekCharMaybe
-
-    {-# minimal considerChar #-}
-
 class Monad m => Counting m where
     cursorPosition :: m CursorPosition
 
@@ -76,9 +57,6 @@ class Char1 m => BufferMore m where
 instance Char1 m => Char1 (ReaderT r m) where
     type Text (ReaderT r m) = Text m
     type Char (ReaderT r m) = Char m
-    peekCharMaybe = lift peekCharMaybe
-    atEnd = lift atEnd
-    considerChar f = lift (considerChar f)
 
 instance Locating m => Locating (ReaderT r m) where
     position = lift position
