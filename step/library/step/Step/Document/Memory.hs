@@ -70,9 +70,6 @@ instance (ListLike text char, Monad m) => Class.Locating (StateT (DocumentMemory
 instance (ListLike text char, Monad m) => Class.TakeAll (StateT (DocumentMemory text char m) m) where
     takeAll = runCursorState Class.takeAll
 
-instance (ListLike text char, Monad m, Eq text, Eq char) => Class.SkipTextNonAtomic (StateT (DocumentMemory text char m) m) where
-    skipTextNonAtomic x = runCursorState (Class.skipTextNonAtomic x)
-
 instance (ListLike text char, Monad m) => Class.FillBuffer1 (StateT (DocumentMemory text char m) m) where
     fillBuffer1 = runCursorState Class.fillBuffer1
 

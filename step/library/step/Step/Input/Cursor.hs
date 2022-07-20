@@ -74,14 +74,6 @@ instance (Monad m, Class.TakeAll (StateT input m)) =>
         modifying positionLens (+ fromIntegral (ListLike.length x))
         return x
 
-instance (Monad m, Class.SkipTextNonAtomic (StateT input m)) =>
-    Class.SkipTextNonAtomic (StateT (Cursor input) m)
-  where
-    skipTextNonAtomic x = do
-        y <- zoom pendingLens (Class.skipTextNonAtomic x)
-        modifying positionLens (+ fromIntegral (ListLike.length x))
-        return y
-
 instance (Monad m, Class.FillBuffer1 (StateT input m)) =>
     Class.FillBuffer1 (StateT (Cursor input) m)
   where

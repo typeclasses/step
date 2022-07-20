@@ -59,10 +59,6 @@ class Char1 m => TakeAll m where
     -- | Consume the rest of the input
     takeAll :: m (Text m)
 
-class Char1 m => SkipTextNonAtomic m where
-    skipTextNonAtomic :: Text m -> m Bool
-        -- ^ Return value indicates whether operation succeeded
-
 class Char1 m => Configure m where
     type Config m :: Type
     configure :: (Config m -> Config m) -> m a -> m a
@@ -90,9 +86,6 @@ instance Char1 m => Char1 (ReaderT r m) where
 
 instance TakeAll m => TakeAll (ReaderT r m) where
     takeAll = lift takeAll
-
-instance SkipTextNonAtomic m => SkipTextNonAtomic (ReaderT r m) where
-    skipTextNonAtomic x = lift (skipTextNonAtomic x)
 
 instance Locating m => Locating (ReaderT r m) where
     position = lift position

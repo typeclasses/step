@@ -70,9 +70,6 @@ instance (Monad m, ListLike text char) => Class.Char1 (DocumentParsing text char
 instance (ListLike text char, Monad m) => Class.TakeAll (DocumentParsing text char m) where
     takeAll = DocumentParsing Class.takeAll
 
-instance (ListLike text char, Monad m, Eq text, Eq char) => Class.SkipTextNonAtomic (DocumentParsing text char m) where
-    skipTextNonAtomic x = DocumentParsing (Class.skipTextNonAtomic x)
-
 instance (ListLike text char, Monad m) => Class.Locating (DocumentParsing text char m) where
     position = DocumentParsing Class.position
 

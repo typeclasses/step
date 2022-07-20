@@ -103,20 +103,6 @@ instance (Monad m, ListLike text char) => Class.TakeAll (StateT (BufferedStream 
             put s{ buffer = Buffer.empty }
             return (Buffer.fold (buffer s))
 
-instance (Monad m, Eq text, Eq char, ListLike text char) => Class.SkipTextNonAtomic (StateT (BufferedStream m text char) m) where
-    skipTextNonAtomic x =
-        case Nontrivial.refine x of
-            Nothing -> return True
-            Just y -> skipNontrivialTextNonAtomic y
-      where
-        skipNontrivialTextNonAtomic c =
-            isEmpty >>= \case
-                True -> return False
-                False -> zoom bufferLens (Buffer.takeNontrivialString c) >>= \case
-                    Buffer.TakeStringFail -> return False
-                    Buffer.TakeStringSuccess -> return True
-                    Buffer.TakeStringPartial c' -> skipNontrivialTextNonAtomic c'
-
 instance (Monad m, ListLike text char) => Class.FillBuffer1 (StateT (BufferedStream m text char) m) where
     fillBuffer1 = do
         ie <- get <&> Buffer.isEmpty . buffer
