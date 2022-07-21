@@ -34,6 +34,9 @@ import qualified Step.Input.Counter
 
 import Step.Input.Buffering (Buffering (..))
 
+import Step.Document.Locating (Locating)
+import qualified Step.Document.Locating as Locating
+
 
 -- The type
 
@@ -49,7 +52,7 @@ instance (ListLike text char, Monad m) => Cursor (StateT (DocumentMemory text ch
     forecast = changeBaseListT runCursorState forecast
     advance n = runCursorState (advance n)
 
-instance (ListLike text char, Monad m) => Class.Locating (StateT (DocumentMemory text char m) m) where
+instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1
       where
         attempt1 = use (to position) >>= \case

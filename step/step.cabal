@@ -113,6 +113,7 @@ library
         Step.Document
         Step.Document.Base
         Step.Document.Lines
+        Step.Document.Locating
         Step.Document.Location
         Step.Document.Memory
 

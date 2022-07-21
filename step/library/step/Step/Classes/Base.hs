@@ -12,9 +12,6 @@ import qualified Text as T
 
 import Step.Input.CursorPosition (CursorPosition)
 
-class Monad m => Locating m where
-    position :: m Loc
-
 class Monad m => Fallible m where
 
     type Error m :: Type
@@ -30,9 +27,6 @@ class HasContextStack config where
 
 
 -- ReaderT instances
-
-instance Locating m => Locating (ReaderT r m) where
-    position = lift position
 
 instance Fallible m => Fallible (ReaderT r m) where
     type Error (ReaderT r m) = Error m

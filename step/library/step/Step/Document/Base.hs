@@ -27,6 +27,8 @@ import Text (Text)
 import Step.Input.Cursor (Cursor, advance, forecast)
 import qualified Step.Input.Cursor
 
+import Step.Document.Locating (Locating (..))
+
 ---
 
 data Config = Config{ configContext :: [Text] }
@@ -57,8 +59,8 @@ instance (Monad m, ListLike text char) => Cursor (DocumentParsing text char m) w
     advance n = DocumentParsing (advance n)
     forecast = changeBaseListT DocumentParsing forecast
 
-instance (ListLike text char, Monad m) => Class.Locating (DocumentParsing text char m) where
-    position = DocumentParsing Class.position
+instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
+    position = DocumentParsing position
 
 instance (ListLike text char, Monad m) => Class.Fallible (DocumentParsing text char m) where
     type Error (DocumentParsing text char m) = Error

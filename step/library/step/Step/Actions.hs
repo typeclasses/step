@@ -41,6 +41,9 @@ import Step.ActionTypes (repetition0)
 
 import qualified ListLike
 
+import Step.Document.Locating (Locating)
+import qualified Step.Document.Locating as Locating
+
 type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), C.Cursor m, Fallible m)
 
 char :: Cursor m => AtomicMove m (Error m) (Char m)
@@ -83,10 +86,10 @@ guard :: Cursor m => Bool -> Query m (Error m) ()
 guard = \case{ True -> cast (A.return ()); False -> cast failure }
 
 position :: Locating m => SureQuery m e Loc
-position = Action.Unsafe.SureQuery C.position
+position = Action.Unsafe.SureQuery Locating.position
 
 withLocation ::
-    Locating m =>
+    (Monad m, Locating m) =>
     Join SureQuery act =>
     Join act SureQuery =>
     act m e a -> act m e (SpanOrLoc, a)
