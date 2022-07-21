@@ -32,6 +32,8 @@ import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.Counter (Counting, cursorPosition)
 import qualified Step.Input.Counter
 
+import Step.Input.Buffering (Buffering (..))
+
 
 -- The type
 
@@ -52,16 +54,14 @@ instance (ListLike text char, Monad m) => Class.Locating (StateT (DocumentMemory
       where
         attempt1 = use (to position) >>= \case
             CursorAt x -> return x
-            CursorLocationNeedsMoreInput -> Class.bufferMore *> attempt2
+            CursorLocationNeedsMoreInput -> bufferMore *> attempt2
         attempt2 = use (to position) <&> \case
             CursorAt x -> x
             CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
 
-instance (ListLike text char, Monad m) => Class.FillBuffer1 (StateT (DocumentMemory text char m) m) where
-    fillBuffer1 = runCursorState Class.fillBuffer1
-
-instance (ListLike text char, Monad m) => Class.BufferMore (StateT (DocumentMemory text char m) m) where
-    bufferMore = runCursorState Class.bufferMore
+instance (ListLike text char, Monad m) => Buffering (StateT (DocumentMemory text char m) m) where
+    fillBuffer1 = runCursorState fillBuffer1
+    bufferMore = runCursorState bufferMore
 
 instance Monad m => Counting (StateT (DocumentMemory text char m) m) where
     cursorPosition = zoom cursorLens cursorPosition

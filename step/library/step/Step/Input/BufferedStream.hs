@@ -29,6 +29,8 @@ import Step.Input.Cursor (Cursor (..))
 
 import qualified Step.Input.AdvanceResult as Advance
 
+import Step.Input.Buffering (Buffering (..))
+
 ---
 
 data BufferedStream m text char =
@@ -73,12 +75,12 @@ instance (Monad m, ListLike text char) => Cursor (StateT (BufferedStream m text 
                             assign pendingLens (Just xs)
                             advance n'
 
-instance (Monad m, ListLike text char) => Class.FillBuffer1 (StateT (BufferedStream m text char) m) where
+instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m text char) m) where
+
     fillBuffer1 = do
         ie <- get <&> Buffer.isEmpty . buffer
-        when ie Class.bufferMore
+        when ie bufferMore
 
-instance (Monad m, ListLike text char) => Class.BufferMore (StateT (BufferedStream m text char) m) where
     bufferMore = (get <&> pending) >>= \case
 
         -- If the end of the stream has been reached, do nothing
@@ -146,7 +148,7 @@ bufferedHeadChar = Buffer.headChar . buffer
 -- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
 takeChunk :: (ListLike text char, Monad m) => StateT (BufferedStream m text char) m (Maybe (Nontrivial text char))
 takeChunk = do
-    Class.fillBuffer1
+    fillBuffer1
     zoom bufferLens Buffer.takeChunk
 
 considerChunk :: Monad m => ListLike text char => (Nontrivial text char -> (Natural, a)) -> StateT (BufferedStream m text char) m (Maybe a)

@@ -28,14 +28,6 @@ class Monad m => Configure m where
 class HasContextStack config where
     contextStackLens :: Lens' config [T.Text]
 
-class Monad m => FillBuffer1 m where
-    -- | Fill the buffer to at least one character, if possible
-    fillBuffer1 :: m ()
-
-class Monad m => BufferMore m where
-    -- | Read one chunk of input, if possible
-    bufferMore :: m ()
-
 
 -- ReaderT instances
 

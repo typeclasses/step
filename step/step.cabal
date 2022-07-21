@@ -104,6 +104,7 @@ library
 
         Step.Input.AdvanceResult
         Step.Input.Buffer
+        Step.Input.Buffering
         Step.Input.BufferedStream
         Step.Input.Counter
         Step.Input.Cursor
