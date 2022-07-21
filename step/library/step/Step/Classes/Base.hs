@@ -12,11 +12,6 @@ import qualified Text as T
 
 import Step.Input.CursorPosition (CursorPosition)
 
-class (ListLike (Text m) (Char m), Monad m) => Char1 m where
-
-    type Text m :: Type
-    type Char m :: Type
-
 class Monad m => Locating m where
     position :: m Loc
 
@@ -44,10 +39,6 @@ class Monad m => BufferMore m where
 
 -- ReaderT instances
 
-instance Char1 m => Char1 (ReaderT r m) where
-    type Text (ReaderT r m) = Text m
-    type Char (ReaderT r m) = Char m
-
 instance Locating m => Locating (ReaderT r m) where
     position = lift position
 
@@ -55,6 +46,6 @@ instance Fallible m => Fallible (ReaderT r m) where
     type Error (ReaderT r m) = Error m
     failure = lift failure
 
-instance Char1 m => Configure (ReaderT r m) where
+instance Monad m => Configure (ReaderT r m) where
     type Config (ReaderT r m) = r
     configure = withReaderT

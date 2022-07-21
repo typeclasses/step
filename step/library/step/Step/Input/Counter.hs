@@ -60,12 +60,6 @@ instance Monad m => Counting (StateT (Counter input) m)
   where
     cursorPosition = get <&> position
 
-instance (Monad m, Class.Char1 (StateT input m)) =>
-    Class.Char1 (StateT (Counter input) m)
-  where
-    type Text (StateT (Counter input) m) = Class.Text (StateT input m)
-    type Char (StateT (Counter input) m) = Class.Char (StateT input m)
-
 instance (Monad m, Class.FillBuffer1 (StateT input m)) =>
     Class.FillBuffer1 (StateT (Counter input) m)
   where

@@ -76,10 +76,6 @@ instance (Monad m, ListLike text char) => Progressive (StateT (BufferedStream m 
                             assign pendingLens (Just xs)
                             advance n'
 
-instance (Monad m, ListLike text char) => Class.Char1 (StateT (BufferedStream m text char) m) where
-    type Text (StateT (BufferedStream m text char) m) = text
-    type Char (StateT (BufferedStream m text char) m) = char
-
 instance (Monad m, ListLike text char) => Class.FillBuffer1 (StateT (BufferedStream m text char) m) where
     fillBuffer1 = do
         ie <- get <&> Buffer.isEmpty . buffer

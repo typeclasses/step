@@ -51,12 +51,6 @@ instance (ListLike text char, Monad m) => Prophetic (StateT (DocumentMemory text
 instance (ListLike text char, Monad m) => Progressive (StateT (DocumentMemory text char m) m) where
     advance n = runCursorState (advance n)
 
-instance (ListLike text char, Monad m) =>
-    Class.Char1 (StateT (DocumentMemory text char m) m)
-  where
-    type Text (StateT (DocumentMemory text char m) m) = text
-    type Char (StateT (DocumentMemory text char m) m) = char
-
 instance (ListLike text char, Monad m) => Class.Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1
       where
