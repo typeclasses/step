@@ -20,14 +20,18 @@ import Step.Document.Lines (Char)
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
 
-import qualified Step.Classes.Base as Class
-
 import Text (Text)
 
 import Step.Input.Cursor (Cursor, advance, forecast)
 import qualified Step.Input.Cursor
 
 import Step.Document.Locating (Locating (..))
+
+import Step.Configuration (HasContextStack, contextStackLens, Configure, configure)
+import qualified Step.Configuration as Config
+
+import Step.Failure (Fallible)
+import qualified Step.Failure as F
 
 ---
 
@@ -38,7 +42,7 @@ instance Default Config
   where
     def = Config{ configContext = [] }
 
-instance Class.HasContextStack Config where
+instance HasContextStack Config where
     contextStackLens = lens configContext \x y -> x{ configContext = y }
 
 ---
@@ -62,13 +66,13 @@ instance (Monad m, ListLike text char) => Cursor (DocumentParsing text char m) w
 instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
     position = DocumentParsing position
 
-instance (ListLike text char, Monad m) => Class.Fallible (DocumentParsing text char m) where
+instance (ListLike text char, Monad m) => Fallible (DocumentParsing text char m) where
     type Error (DocumentParsing text char m) = Error
     failure = DocumentParsing $ ReaderT \c -> return Error{ errorContext = configContext c }
 
-instance (ListLike text char, Monad m) => Class.Configure (DocumentParsing text char m) where
+instance (ListLike text char, Monad m) => Configure (DocumentParsing text char m) where
     type Config (DocumentParsing text char m) = Config
-    configure f (DocumentParsing a) = DocumentParsing (Class.configure f a)
+    configure f (DocumentParsing a) = DocumentParsing (configure f a)
 
 ---
 

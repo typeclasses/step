@@ -15,8 +15,6 @@ import qualified Step.Input.CursorPosition as CursorPosition
 
 import Step.Nontrivial.Base (Nontrivial)
 
-import qualified Step.Classes.Base as Class
-
 import qualified ListLike
 
 import Step.Input.Cursor (Cursor (..))

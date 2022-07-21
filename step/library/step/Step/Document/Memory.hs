@@ -23,8 +23,6 @@ import Step.Input.CursorPosition (CursorPosition)
 
 import Loc (Loc)
 
-import qualified Step.Classes.Base as Class
-
 import Step.Input.Cursor (Cursor (..))
 
 import qualified Step.Input.AdvanceResult as Advance

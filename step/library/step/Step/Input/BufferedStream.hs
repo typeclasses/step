@@ -23,8 +23,6 @@ import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.ListT as Nontrivial.ListT
 import qualified Step.Nontrivial.List as Nontrivial
 
-import qualified Step.Classes.Base as Class
-
 import Step.Input.Cursor (Cursor (..))
 
 import qualified Step.Input.AdvanceResult as Advance

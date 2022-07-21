@@ -4,9 +4,6 @@ module Step.Actions where
 
 import Step.Internal.Prelude
 
-import Step.Classes.Abstract
-import qualified Step.Classes.Base as C
-
 import Step.ActionTypes.Types
 
 import Step.ActionTypes (cast)
@@ -44,16 +41,22 @@ import qualified ListLike
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
 
+import Step.Failure (Fallible, Error)
+import qualified Step.Failure as F
+
+import Step.Configuration (Configure, HasContextStack, contextStackLens, Config)
+import qualified Step.Configuration as Config
+
 type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), C.Cursor m, Fallible m)
 
 char :: Cursor m => AtomicMove m (Error m) (Char m)
 char = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Nil -> return (Left C.failure)
+    ListT.Nil -> return (Left F.failure)
     ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
 
 peekChar :: Cursor m => Query m (Error m) (Char m)
 peekChar = Action.Unsafe.Query $ ListT.next forecast <&> \case
-    ListT.Nil -> Left C.failure
+    ListT.Nil -> Left F.failure
     ListT.Cons x _ -> Right (Nontrivial.head x)
 
 takeCharMaybe :: Cursor m => Sure m e (Maybe (Char m))
@@ -69,12 +72,12 @@ peekCharMaybe = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case
 satisfy :: Cursor m => (Char m -> Bool) -> AtomicMove m (Error m) (Char m)
 satisfy ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Cons (Nontrivial.head -> x) _ | ok x -> advance (PositiveUnsafe 1) $> Right x
-    _ -> return (Left C.failure)
+    _ -> return (Left F.failure)
 
 satisfyJust :: Cursor m => (Char m -> Maybe a) -> AtomicMove m (Error m) a
 satisfyJust ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Cons (ok . Nontrivial.head -> Just x) _ -> advance (PositiveUnsafe 1) $> Right x
-    _ -> return (Left C.failure)
+    _ -> return (Left F.failure)
 
 atEnd :: Cursor m => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case { ListT.Nil -> True; _ -> False }
@@ -98,11 +101,11 @@ withLocation act =
     A.<$> position A.<*> act A.<*> position
 
 failure :: Cursor m => Fail m (Error m) a
-failure = Action.Unsafe.Fail C.failure
+failure = Action.Unsafe.Fail F.failure
 
 some :: Cursor m => AtomicMove m (Error m) (Nontrivial (Text m) (Char m))
 some = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Nil -> return (Left C.failure)
+    ListT.Nil -> return (Left F.failure)
     ListT.Cons x _ -> advance (Nontrivial.length x) $> Right x
 
 all :: Cursor m => Sure m (Error m) (Text m)
@@ -110,14 +113,14 @@ all = repetition0 some <&> Nontrivial.fold
 
 configure :: Configure m => Action.Unsafe.ChangeBase act =>
     (Config m -> Config m) -> act m e a -> act m e a
-configure f = Action.Unsafe.changeBase (C.configure f)
+configure f = Action.Unsafe.changeBase (Config.configure f)
 
-contextualize :: Configure m => C.HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
+contextualize :: Configure m => HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
     T.Text -> act m e a -> act m e a
-contextualize n = configure (over C.contextStackLens (n :))
+contextualize n = configure (over contextStackLens (n :))
 
 infix 0 <?>
-(<?>) :: Configure m => C.HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
+(<?>) :: Configure m => HasContextStack (Config m) => Action.Unsafe.ChangeBase act =>
     act m e a -> T.Text -> act m e a
 p <?> c = contextualize c p
 
@@ -135,7 +138,7 @@ nontrivialText x = someOfNontrivialText x A.>>= text
 someOfNontrivialText :: Cursor m =>
     Nontrivial (Text m) (Char m) -> AtomicMove m (Error m) (Text m)
 someOfNontrivialText x = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Nil -> return (Left C.failure)
+    ListT.Nil -> return (Left F.failure)
     ListT.Cons y _ ->
         if x `Nontrivial.isPrefixOf` y
         then advance (Nontrivial.length x) $> Right ListLike.empty
@@ -148,7 +151,7 @@ someOfNontrivialText x = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \cas
                       (ListLike.length (Nontrivial.generalize y))
                       (Nontrivial.generalize x)
                 )
-        else return (Left C.failure)
+        else return (Left F.failure)
 
 -- while ::
 --     Action.Unsafe.ChangeBase act =>

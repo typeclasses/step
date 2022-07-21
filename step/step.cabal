@@ -97,8 +97,9 @@ library
     exposed-modules:
         Step.Actions
 
-        Step.Classes.Abstract
-        Step.Classes.Base
+        Step.Failure
+
+        Step.Configuration
 
         Step.Competitors.Attoparsec.Text
 
