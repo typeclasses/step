@@ -25,11 +25,9 @@ import Loc (Loc)
 
 import qualified Step.Classes.Base as Class
 
-import Step.Advancement (AdvanceResult, Progressive (..))
-import qualified Step.Advancement as Advance
+import Step.Input.Cursor (Cursor (..))
 
-import Step.LookingAhead (Prophetic (forecast))
-import qualified Step.LookingAhead (Prophetic (..))
+import qualified Step.Input.AdvanceResult as Advance
 
 import Step.Input.Counter (Counting, cursorPosition)
 import qualified Step.Input.Counter
@@ -43,12 +41,10 @@ data DocumentMemory text char m =
     , cursor :: Counter (BufferedStream (StateT LineHistory m) text char)
     }
 
-instance (ListLike text char, Monad m) => Prophetic (StateT (DocumentMemory text char m) m) where
+instance (ListLike text char, Monad m) => Cursor (StateT (DocumentMemory text char m) m) where
     type Text (StateT (DocumentMemory text char m) m) = text
     type Char (StateT (DocumentMemory text char m) m) = char
     forecast = changeBaseListT runCursorState forecast
-
-instance (ListLike text char, Monad m) => Progressive (StateT (DocumentMemory text char m) m) where
     advance n = runCursorState (advance n)
 
 instance (ListLike text char, Monad m) => Class.Locating (StateT (DocumentMemory text char m) m) where
@@ -97,7 +93,7 @@ runCursorState go = do
 
 -- Construction
 
-fromListT :: Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text char m
+fromListT :: Lines.Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text char m
 fromListT xs =
   DocumentMemory
     { content = Lines.empty

@@ -25,10 +25,9 @@ import qualified Step.Nontrivial.List as Nontrivial
 
 import qualified Step.Classes.Base as Class
 
-import Step.Advancement (AdvanceResult, Progressive (..))
-import qualified Step.Advancement as Advance
+import Step.Input.Cursor (Cursor (..))
 
-import Step.LookingAhead (Prophetic (..))
+import qualified Step.Input.AdvanceResult as Advance
 
 ---
 
@@ -39,7 +38,7 @@ data BufferedStream m text char =
         -- ^ 'Nothing' indicates that the end of the stream has been reached.
     }
 
-instance (Monad m, ListLike text char) => Prophetic (StateT (BufferedStream m text char) m) where
+instance (Monad m, ListLike text char) => Cursor (StateT (BufferedStream m text char) m) where
     type Text (StateT (BufferedStream m text char) m) = text
     type Char (StateT (BufferedStream m text char) m) = char
     forecast =
@@ -61,8 +60,6 @@ instance (Monad m, ListLike text char) => Prophetic (StateT (BufferedStream m te
                               return (ListT.Cons x (ListT (r xs)))
                 )
           )
-
-instance (Monad m, ListLike text char) => Progressive (StateT (BufferedStream m text char) m) where
     advance n =
         zoom bufferLens (advance n) >>= \case
             Advance.Success -> return Advance.Success

@@ -97,17 +97,16 @@ library
     exposed-modules:
         Step.Actions
 
-        Step.Advancement
-        Step.LookingAhead
-
         Step.Classes.Abstract
         Step.Classes.Base
 
         Step.Competitors.Attoparsec.Text
 
+        Step.Input.AdvanceResult
         Step.Input.Buffer
         Step.Input.BufferedStream
         Step.Input.Counter
+        Step.Input.Cursor
         Step.Input.CursorPosition
 
         Step.Document

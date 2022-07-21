@@ -20,10 +20,9 @@ import qualified Step.Nontrivial.List as Nontrivial.List
 import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
 import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
 
-import Step.Advancement (AdvanceResult, Progressive (..))
-import qualified Step.Advancement as Advance
+import Step.Input.Cursor (Cursor (..))
 
-import Step.LookingAhead (Prophetic (..))
+import qualified Step.Input.AdvanceResult as Advance
 
 import qualified ListT
 
@@ -32,12 +31,10 @@ data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 instance Semigroup (Buffer text char) where
     a <> b = Buffer{ chunks = chunks a <> chunks b }
 
-instance (Monad m, ListLike text char) => Prophetic (StateT (Buffer text char) m) where
+instance (Monad m, ListLike text char) => Cursor (StateT (Buffer text char) m) where
     type Text (StateT (Buffer text char) m) = text
     type Char (StateT (Buffer text char) m) = char
     forecast = lift get >>= ListT.select . chunks
-
-instance (Monad m, ListLike text char) => Progressive (StateT (Buffer text char) m) where
     advance n = get >>= \case
         Buffer{ chunks = Seq.Empty } -> return Advance.InsufficientInput{ Advance.shortfall = n }
         Buffer{ chunks = (Seq.:<|) x xs } -> case splitAtPositive n x of

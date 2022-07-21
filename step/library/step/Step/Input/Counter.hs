@@ -19,10 +19,9 @@ import qualified Step.Classes.Base as Class
 
 import qualified ListLike
 
-import Step.Advancement (AdvanceResult, Progressive (..))
-import qualified Step.Advancement as Advance
+import Step.Input.Cursor (Cursor (..))
 
-import Step.LookingAhead (Prophetic (..))
+import qualified Step.Input.AdvanceResult as Advance
 
 import qualified Positive
 
@@ -42,12 +41,10 @@ data Counter input =
     , pending :: input
     }
 
-instance (Monad m, Prophetic (StateT input m)) => Prophetic (StateT (Counter input) m) where
+instance (Monad m, Cursor (StateT input m)) => Cursor (StateT (Counter input) m) where
     type Text (StateT (Counter input) m) = Text (StateT input m)
     type Char (StateT (Counter input) m) = Char (StateT input m)
     forecast = changeBaseListT (zoom pendingLens) forecast
-
-instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Counter input) m) where
     advance n = do
         r <- zoom pendingLens (advance n)
         let delta = case r of

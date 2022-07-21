@@ -26,10 +26,8 @@ import qualified Text as T
 
 import qualified Step.Nontrivial.Base as Nontrivial
 
-import Step.LookingAhead (Prophetic, forecast)
-import qualified Step.LookingAhead as LA
-
-import Step.Advancement (Progressive, advance)
+import Step.Input.Cursor (Text, Char, forecast, advance)
+import qualified Step.Input.Cursor as C
 
 import qualified ListT
 
@@ -43,34 +41,34 @@ import Step.ActionTypes (repetition0)
 
 import qualified ListLike
 
-type Cursor m = (ListLike (LA.Text m) (LA.Char m), Eq (LA.Char m), Prophetic m, Progressive m, Fallible m)
+type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), C.Cursor m, Fallible m)
 
-char :: Cursor m => AtomicMove m (Error m) (LA.Char m)
+char :: Cursor m => AtomicMove m (Error m) (Char m)
 char = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Nil -> return (Left C.failure)
     ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
 
-peekChar :: Cursor m => Query m (Error m) (LA.Char m)
+peekChar :: Cursor m => Query m (Error m) (Char m)
 peekChar = Action.Unsafe.Query $ ListT.next forecast <&> \case
     ListT.Nil -> Left C.failure
     ListT.Cons x _ -> Right (Nontrivial.head x)
 
-takeCharMaybe :: Cursor m => Sure m e (Maybe (LA.Char m))
+takeCharMaybe :: Cursor m => Sure m e (Maybe (Char m))
 takeCharMaybe = Action.Unsafe.Sure $ ListT.next forecast >>= \case
     ListT.Nil -> return Nothing
     ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Just (Nontrivial.head x)
 
-peekCharMaybe :: Cursor m => SureQuery m e (Maybe (LA.Char m))
+peekCharMaybe :: Cursor m => SureQuery m e (Maybe (Char m))
 peekCharMaybe = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case
     ListT.Nil -> Nothing
     ListT.Cons x _ -> Just (Nontrivial.head x)
 
-satisfy :: Cursor m => (LA.Char m -> Bool) -> AtomicMove m (Error m) (LA.Char m)
+satisfy :: Cursor m => (Char m -> Bool) -> AtomicMove m (Error m) (Char m)
 satisfy ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Cons (Nontrivial.head -> x) _ | ok x -> advance (PositiveUnsafe 1) $> Right x
     _ -> return (Left C.failure)
 
-satisfyJust :: Cursor m => (LA.Char m -> Maybe a) -> AtomicMove m (Error m) a
+satisfyJust :: Cursor m => (Char m -> Maybe a) -> AtomicMove m (Error m) a
 satisfyJust ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Cons (ok . Nontrivial.head -> Just x) _ -> advance (PositiveUnsafe 1) $> Right x
     _ -> return (Left C.failure)
@@ -99,12 +97,12 @@ withLocation act =
 failure :: Cursor m => Fail m (Error m) a
 failure = Action.Unsafe.Fail C.failure
 
-some :: Cursor m => AtomicMove m (Error m) (Nontrivial (LA.Text m) (LA.Char m))
+some :: Cursor m => AtomicMove m (Error m) (Nontrivial (Text m) (Char m))
 some = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Nil -> return (Left C.failure)
     ListT.Cons x _ -> advance (Nontrivial.length x) $> Right x
 
-all :: Cursor m => Sure m (Error m) (LA.Text m)
+all :: Cursor m => Sure m (Error m) (Text m)
 all = repetition0 some <&> Nontrivial.fold
 
 configure :: Configure m => Action.Unsafe.ChangeBase act =>
@@ -122,17 +120,17 @@ p <?> c = contextualize c p
 
 -- todo: add an atomic version of 'text'
 
-text :: Cursor m => LA.Text m -> Any m (Error m) ()
+text :: Cursor m => Text m -> Any m (Error m) ()
 text x = case Nontrivial.refine x of
     Nothing -> return ()
     Just y -> cast (nontrivialText y)
 
-nontrivialText :: Cursor m => Nontrivial (LA.Text m) (LA.Char m) -> Move m (Error m) ()
+nontrivialText :: Cursor m => Nontrivial (Text m) (Char m) -> Move m (Error m) ()
 nontrivialText x = someOfNontrivialText x A.>>= text
 
 -- | Returns what remainder is needed
 someOfNontrivialText :: Cursor m =>
-    Nontrivial (LA.Text m) (LA.Char m) -> AtomicMove m (Error m) (LA.Text m)
+    Nontrivial (Text m) (Char m) -> AtomicMove m (Error m) (Text m)
 someOfNontrivialText x = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
     ListT.Nil -> return (Left C.failure)
     ListT.Cons y _ ->
