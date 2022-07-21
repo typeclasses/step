@@ -2,6 +2,7 @@
 
 module Step.Input.Counter
   (
+    Counting (..),
     Counter (..),
     start,
   )
@@ -27,6 +28,14 @@ import qualified Positive
 
 ---
 
+class Monad m => Counting m where
+    cursorPosition :: m CursorPosition
+
+instance (Monad m, Counting m) => Counting (ReaderT r m) where
+    cursorPosition = lift cursorPosition
+
+---
+
 data Counter input =
   Counter
     { position :: CursorPosition
@@ -47,8 +56,7 @@ instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Counter
         modifying positionLens (CursorPosition.increase delta)
         return r
 
-instance Monad m =>
-    Class.Counting (StateT (Counter input) m)
+instance Monad m => Counting (StateT (Counter input) m)
   where
     cursorPosition = get <&> position
 

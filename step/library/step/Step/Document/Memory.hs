@@ -31,6 +31,9 @@ import qualified Step.Advancement as Advance
 import Step.LookingAhead (Prophetic (forecast))
 import qualified Step.LookingAhead (Prophetic (..))
 
+import Step.Input.Counter (Counting, cursorPosition)
+import qualified Step.Input.Counter
+
 
 -- The type
 
@@ -70,8 +73,8 @@ instance (ListLike text char, Monad m) => Class.FillBuffer1 (StateT (DocumentMem
 instance (ListLike text char, Monad m) => Class.BufferMore (StateT (DocumentMemory text char m) m) where
     bufferMore = runCursorState Class.bufferMore
 
-instance Monad m => Class.Counting (StateT (DocumentMemory text char m) m) where
-    cursorPosition = zoom cursorLens Class.cursorPosition
+instance Monad m => Counting (StateT (DocumentMemory text char m) m) where
+    cursorPosition = zoom cursorLens cursorPosition
 
 
 -- Optics

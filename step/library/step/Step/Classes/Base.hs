@@ -17,9 +17,6 @@ class (ListLike (Text m) (Char m), Monad m) => Char1 m where
     type Text m :: Type
     type Char m :: Type
 
-class Monad m => Counting m where
-    cursorPosition :: m CursorPosition
-
 class Monad m => Locating m where
     position :: m Loc
 
@@ -61,6 +58,3 @@ instance Fallible m => Fallible (ReaderT r m) where
 instance Char1 m => Configure (ReaderT r m) where
     type Config (ReaderT r m) = r
     configure = withReaderT
-
-instance (Monad m, Counting m) => Counting (ReaderT r m) where
-    cursorPosition = lift cursorPosition
