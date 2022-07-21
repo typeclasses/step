@@ -1,8 +1,8 @@
 {-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, TypeFamilies #-}
 
-module Step.Input.Cursor
+module Step.Input.Counter
   (
-    Cursor (..),
+    Counter (..),
     start,
   )
   where
@@ -27,18 +27,18 @@ import qualified Positive
 
 ---
 
-data Cursor input =
-  Cursor
+data Counter input =
+  Counter
     { position :: CursorPosition
     , pending :: input
     }
 
-instance (Monad m, Prophetic (StateT input m)) => Prophetic (StateT (Cursor input) m) where
-    type Text (StateT (Cursor input) m) = Text (StateT input m)
-    type Char (StateT (Cursor input) m) = Char (StateT input m)
+instance (Monad m, Prophetic (StateT input m)) => Prophetic (StateT (Counter input) m) where
+    type Text (StateT (Counter input) m) = Text (StateT input m)
+    type Char (StateT (Counter input) m) = Char (StateT input m)
     forecast = changeBaseListT (zoom pendingLens) forecast
 
-instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Cursor input) m) where
+instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Counter input) m) where
     advance n = do
         r <- zoom pendingLens (advance n)
         let delta = case r of
@@ -48,35 +48,35 @@ instance (Monad m, Progressive (StateT input m)) => Progressive (StateT (Cursor 
         return r
 
 instance Monad m =>
-    Class.Counting (StateT (Cursor input) m)
+    Class.Counting (StateT (Counter input) m)
   where
     cursorPosition = get <&> position
 
 instance (Monad m, Class.Char1 (StateT input m)) =>
-    Class.Char1 (StateT (Cursor input) m)
+    Class.Char1 (StateT (Counter input) m)
   where
-    type Text (StateT (Cursor input) m) = Class.Text (StateT input m)
-    type Char (StateT (Cursor input) m) = Class.Char (StateT input m)
+    type Text (StateT (Counter input) m) = Class.Text (StateT input m)
+    type Char (StateT (Counter input) m) = Class.Char (StateT input m)
 
 instance (Monad m, Class.FillBuffer1 (StateT input m)) =>
-    Class.FillBuffer1 (StateT (Cursor input) m)
+    Class.FillBuffer1 (StateT (Counter input) m)
   where
     fillBuffer1 = zoom pendingLens Class.fillBuffer1
 
 instance (Monad m, Class.BufferMore (StateT input m)) =>
-    Class.BufferMore (StateT (Cursor input) m)
+    Class.BufferMore (StateT (Counter input) m)
   where
     bufferMore = zoom pendingLens Class.bufferMore
 
 ---
 
-positionLens :: Lens' (Cursor input) CursorPosition
+positionLens :: Lens' (Counter input) CursorPosition
 positionLens = lens position \x y -> x{ position = y }
 
-pendingLens :: Lens' (Cursor input) input
+pendingLens :: Lens' (Counter input) input
 pendingLens = lens pending \x y -> x{ pending = y }
 
 ---
 
-start :: input -> Cursor input
-start = Cursor 0
+start :: input -> Counter input
+start = Counter 0

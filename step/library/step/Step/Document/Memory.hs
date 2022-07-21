@@ -13,8 +13,8 @@ import Step.Internal.Prelude
 import Step.Document.Lines (Char, LineHistory)
 import qualified Step.Document.Lines as Lines
 
-import Step.Input.Cursor (Cursor)
-import qualified Step.Input.Cursor as Cursor
+import Step.Input.Counter (Counter)
+import qualified Step.Input.Counter as Counter
 
 import Step.Input.BufferedStream (BufferedStream)
 import qualified Step.Input.BufferedStream as BufferedStream
@@ -37,7 +37,7 @@ import qualified Step.LookingAhead (Prophetic (..))
 data DocumentMemory text char m =
   DocumentMemory
     { content :: LineHistory
-    , cursor :: Cursor (BufferedStream (StateT LineHistory m) text char)
+    , cursor :: Counter (BufferedStream (StateT LineHistory m) text char)
     }
 
 instance (ListLike text char, Monad m) => Prophetic (StateT (DocumentMemory text char m) m) where
@@ -79,15 +79,15 @@ instance Monad m => Class.Counting (StateT (DocumentMemory text char m) m) where
 cursorLens :: Lens
     (DocumentMemory text1 char1 m1)
     (DocumentMemory text2 char2 m2)
-    (Cursor (BufferedStream (StateT LineHistory m1) text1 char1))
-    (Cursor (BufferedStream (StateT LineHistory m2) text2 char2))
+    (Counter (BufferedStream (StateT LineHistory m1) text1 char1))
+    (Counter (BufferedStream (StateT LineHistory m2) text2 char2))
 cursorLens = lens cursor \x y -> x{ cursor = y }
 
 
 -- Internal
 
 runCursorState :: Monad m =>
-    StateT (Cursor (BufferedStream (StateT LineHistory m) text char)) (StateT LineHistory m) a ->
+    StateT (Counter (BufferedStream (StateT LineHistory m) text char)) (StateT LineHistory m) a ->
     StateT (DocumentMemory text char m) m a
 runCursorState go = do
     dm <- get
@@ -104,7 +104,7 @@ fromListT :: Char char => ListLike text char => Monad m => ListT m text -> Docum
 fromListT xs =
   DocumentMemory
     { content = Lines.empty
-    , cursor = Cursor.start $ BufferedStream.fromListT $ recordStream (execState . Lines.record) xs
+    , cursor = Counter.start $ BufferedStream.fromListT $ recordStream (execState . Lines.record) xs
     }
 
 
@@ -115,9 +115,9 @@ data CursorLocation =
   | CursorLocationNeedsMoreInput
 
 position :: DocumentMemory text char m -> CursorLocation
-position x = case Lines.locateCursorInDocument (Cursor.position (cursor x)) (content x) of
+position x = case Lines.locateCursorInDocument (Counter.position (cursor x)) (content x) of
     Just l -> case l of
         Lines.CursorLocationNeedsMoreInput{ Lines.ifEndOfInput = i } ->
-            if BufferedStream.isAllBuffered (Cursor.pending (cursor x)) then CursorAt i else CursorLocationNeedsMoreInput
+            if BufferedStream.isAllBuffered (Counter.pending (cursor x)) then CursorAt i else CursorLocationNeedsMoreInput
         Lines.CursorAt l' -> CursorAt l'
     Nothing -> error "invalid DocumentMemory"

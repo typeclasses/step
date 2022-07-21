@@ -107,7 +107,7 @@ library
 
         Step.Input.Buffer
         Step.Input.BufferedStream
-        Step.Input.Cursor
+        Step.Input.Counter
         Step.Input.CursorPosition
 
         Step.Document
