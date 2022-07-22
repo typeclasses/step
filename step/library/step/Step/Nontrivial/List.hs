@@ -2,7 +2,9 @@
 
 module Step.Nontrivial.List
   (
-    cons, length, takeWhile,
+    cons,
+    takeWhile,
+    length, lengthNat,
   )
   where
 
@@ -23,6 +25,9 @@ cons = maybe id Prelude.cons . Nontrivial.refine
 
 length :: ListLike text char => Nontrivial text char -> Positive Natural
 length = Maybe.fromJust . preview Positive.natPrism . fromIntegral . ListLike.length . Nontrivial.generalize
+
+lengthNat :: ListLike text char => Nontrivial text char -> Natural
+lengthNat = fromIntegral . ListLike.length . Nontrivial.generalize
 
 takeWhile :: ListLike text char => (char -> Bool) -> Nontrivial text char -> Maybe (Nontrivial text char)
 takeWhile f = Nontrivial.refine . ListLike.takeWhile f . Nontrivial.generalize
