@@ -5,7 +5,6 @@ module Step.ActionTypes.CoerceAny where
 import Step.Internal.Prelude
 
 import Optics
-import qualified Optics
 
 import Step.ActionTypes.Constructors
 

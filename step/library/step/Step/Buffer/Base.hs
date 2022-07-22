@@ -10,17 +10,12 @@ module Step.Buffer.Base
   where
 
 import Step.Internal.Prelude hiding (fold)
-import qualified Step.Internal.Prelude as Prelude
 
 import qualified Seq
 
 import Step.Nontrivial.Base (Nontrivial)
-import qualified Step.Nontrivial.Base as Nontrivial
-import qualified Step.Nontrivial.List as Nontrivial.List
 import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
 import Step.Nontrivial.SplitAtPositive (splitAtPositive)
-
-import Step.Input.Cursor (Session (..))
 
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult)

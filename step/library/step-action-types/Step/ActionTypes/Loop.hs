@@ -6,7 +6,6 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Returnable
 import Step.ActionTypes.Types
-import Step.ActionTypes.Functorial
 import Step.ActionTypes.Join
 import Step.ActionTypes.KindJoin
 import Step.ActionTypes.Subtyping

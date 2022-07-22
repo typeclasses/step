@@ -12,8 +12,7 @@ module Step.ActionTypes.Do
   where
 
 import qualified BasePrelude
-import BasePrelude (fmap, (<$>), Monad, (.))
-import Function ((&))
+import BasePrelude (fmap, (<$>), Monad)
 
 import Step.ActionTypes.Join (Join, join)
 import Step.ActionTypes.KindJoin (type (>>))

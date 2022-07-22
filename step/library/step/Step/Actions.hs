@@ -20,10 +20,7 @@ import Step.ActionTypes (cast)
 
 import qualified Step.ActionTypes.Unsafe as Action.Unsafe
 
-import qualified Loc
-import Loc (Loc, SpanOrLoc)
-
-import Step.ActionTypes (Join)
+import Loc (Loc)
 
 import qualified Step.ActionTypes.Do as A
 
@@ -38,8 +35,6 @@ import Positive.Unsafe (Positive (PositiveUnsafe))
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.List as Nontrivial
-
-import Step.ActionTypes (repetition0)
 
 import qualified ListLike
 
