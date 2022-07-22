@@ -14,7 +14,7 @@ import Step.Internal.Prelude
 import Step.Document.Lines (LineHistory)
 import qualified Step.Document.Lines as Lines
 
-import Step.Input.Counter (Counter)
+import Step.Input.Counter (Counter, Counting, cursorPosition)
 import qualified Step.Input.Counter as Counter
 
 import Step.Input.BufferedStream (BufferedStream)
@@ -22,10 +22,6 @@ import qualified Step.Input.BufferedStream as BufferedStream
 
 import Step.Input.Cursor (Session (..))
 import qualified Step.Input.Cursor as Cursor
-
-import Step.Input.Counter (Counting, cursorPosition)
-
-import Step.Input.Buffering (Buffering (..))
 
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
@@ -50,13 +46,12 @@ instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text 
       where
         attempt1 = use (to position) >>= \case
             Lines.CursorAt x -> return x
-            Lines.CursorLocationNeedsMoreInput -> bufferMore *> attempt2
+            Lines.CursorLocationNeedsMoreInput -> do
+                runCursorState (zoom Counter.pendingLens BufferedStream.bufferMore)
+                attempt2
         attempt2 = use (to position) <&> \case
             Lines.CursorAt x -> x
             Lines.CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
-
-instance (ListLike text char, Monad m) => Buffering (StateT (DocumentMemory text char m) m) where
-    bufferMore = runCursorState bufferMore
 
 instance Monad m => Counting (StateT (DocumentMemory text char m) m) where
     cursorPosition = zoom cursorLens cursorPosition

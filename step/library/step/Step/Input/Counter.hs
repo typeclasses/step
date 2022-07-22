@@ -4,8 +4,8 @@ module Step.Input.Counter
   (
     Counting (..),
     Counter (..),
-    start,
-    curse,
+    start, curse,
+    positionLens, pendingLens,
   )
   where
 
@@ -23,8 +23,6 @@ import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult)
 
 import qualified Positive
-
-import Step.Input.Buffering (Buffering (..))
 
 ---
 
@@ -69,11 +67,6 @@ curse Session{ run = (run' :: forall a. m' a -> StateT input m a), next = next',
 instance Monad m => Counting (StateT (Counter input) m)
   where
     cursorPosition = get <&> position
-
-instance (Monad m, Buffering (StateT input m)) =>
-    Buffering (StateT (Counter input) m)
-  where
-    bufferMore = zoom pendingLens bufferMore
 
 ---
 

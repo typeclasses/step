@@ -3,7 +3,7 @@
 module Step.Input.BufferedStream
   (
     BufferedStream (..), BufferResult (..),
-    curse, fromStream,
+    curse, fromStream, bufferMore,
   )
   where
 
@@ -22,8 +22,6 @@ import Step.Input.Cursor (Session (..))
 
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult, shortfall)
-
-import Step.Input.Buffering (Buffering (..))
 
 import Step.Input.Stream (Stream)
 import qualified Step.Input.Stream as Stream
@@ -92,11 +90,10 @@ curse = Session{ run, commit, next }
                 NothingToBuffer -> return Advance.InsufficientInput{ shortfall = n' }
                 BufferedMore -> zoom (bufferSessionLens % BufferSession.uncommittedLens) (Buffer.dropN n)
 
-instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m text char) m) where
-
-    bufferMore = use pendingLens >>= \p ->
-        lift (Stream.next p) >>= traverse_ \x ->
-            modifying bufferLens (Buffer.|> x)
+bufferMore :: Monad m => StateT (BufferedStream m text char) m ()
+bufferMore = use pendingLens >>= \p ->
+    lift (Stream.next p) >>= traverse_ \x ->
+        modifying bufferLens (Buffer.|> x)
 
 bufferLens :: Lens
   (BufferedStream m text char)

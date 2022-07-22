@@ -13,8 +13,8 @@ common base
     ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
 
     -- Temporary for early stage development
-    -- ghc-options: -fno-warn-unused-imports
-    -- ghc-options: -fno-warn-missing-signatures
+    ghc-options: -fno-warn-unused-imports
+    ghc-options: -fno-warn-missing-signatures
 
     default-extensions:
         BlockArguments
@@ -108,7 +108,6 @@ library
         Step.Buffer.Session
 
         Step.Input.AdvanceResult
-        Step.Input.Buffering
         Step.Input.BufferedStream
         Step.Input.Counter
         Step.Input.Cursor
