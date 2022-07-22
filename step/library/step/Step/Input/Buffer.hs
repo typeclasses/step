@@ -3,7 +3,7 @@
 module Step.Input.Buffer
   (
     Buffer, singleton, isEmpty, empty,
-    fold, headChar, unconsChar, unconsChunk, putChunk, putNontrivialChunk,
+    fold, headChar, unconsChar, unconsChunk,
 
     -- * Session
     curse, BufferSession (..), newBufferSession, uncommittedLens, unseenLens,
@@ -174,11 +174,3 @@ dropN = fix \r n -> get >>= \case
         SplitAtPositive.All -> put Buffer{ chunks = xs } $> Advance.Success
         SplitAtPositive.Split _ b -> put Buffer{ chunks = (Seq.:<|) b xs } $> Advance.Success
         SplitAtPositive.Insufficient n' -> r n'
-
--- | Adds a chunk back to the left side of the buffer if the argument is non-empty
-putChunk :: Monad m => ListLike text char => text -> StateT (Buffer text char) m ()
-putChunk = traverse_ putNontrivialChunk . Nontrivial.refine
-
--- | Adds a chunk back to the left side of the buffer
-putNontrivialChunk :: Monad m => Nontrivial text char -> StateT (Buffer text char) m ()
-putNontrivialChunk x = modify' (singleton x <>)
