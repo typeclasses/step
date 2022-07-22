@@ -1,12 +1,9 @@
 {-# language FlexibleInstances, FlexibleContexts, NamedFieldPuns, TypeFamilies, Trustworthy #-}
 
-module Step.Input.Buffer
+module Step.Buffer.Base
   (
     Buffer, singleton, isEmpty, empty,
     fold, headChar, unconsChar, unconsChunk,
-
-    -- * Session
-    curse, BufferSession (..), newBufferSession, uncommittedLens, unseenLens,
 
     -- * State operations
     takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
@@ -31,46 +28,8 @@ import Step.Input.AdvanceResult (AdvanceResult)
 
 data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 
-data BufferSession text char = BufferSession
-  { uncommitted :: Buffer text char
-  , unseen :: Buffer text char
-  }
-
-newBufferSession :: Buffer text char -> BufferSession text char
-newBufferSession b = BufferSession b b
-
-uncommittedLens :: Lens
-  (BufferSession text char)
-  (BufferSession text char)
-  (Buffer text char)
-  (Buffer text char)
-uncommittedLens = lens uncommitted \x y -> x{ uncommitted = y }
-
-unseenLens :: Lens
-  (BufferSession text char)
-  (BufferSession text char)
-  (Buffer text char)
-  (Buffer text char)
-unseenLens = lens unseen \x y -> x{ unseen = y }
-
 instance Semigroup (Buffer text char) where
     a <> b = Buffer{ chunks = chunks a <> chunks b }
-
-curse :: forall m text char. Monad m => ListLike text char => Session text char (StateT (Buffer text char) m)
-curse = Session{ run, commit, next }
-  where
-    run :: StateT (BufferSession text char) m a -> StateT (Buffer text char) m a
-    run a = do
-        b <- get
-        (x, bs) <- lift (runStateT a (BufferSession b b))
-        put (uncommitted bs)
-        return x
-
-    next :: StateT (BufferSession text char) m (Maybe (Nontrivial text char))
-    next = zoom unseenLens takeChunk
-
-    commit :: Positive Natural -> StateT (BufferSession text char) m AdvanceResult
-    commit n = zoom uncommittedLens (dropN n)
 
 singleton :: Nontrivial text char -> Buffer text char
 singleton x = Buffer{ chunks = Seq.singleton x }

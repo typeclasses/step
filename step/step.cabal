@@ -102,8 +102,10 @@ library
 
         Step.Competitors.Attoparsec.Text
 
+        Step.Buffer.Base
+        Step.Buffer.Session
+
         Step.Input.AdvanceResult
-        Step.Input.Buffer
         Step.Input.Buffering
         Step.Input.BufferedStream
         Step.Input.Counter
