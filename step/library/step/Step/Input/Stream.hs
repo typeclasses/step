@@ -26,5 +26,3 @@ mapMaybe ok xs = Stream $ fix \r ->
 
 list :: Monad m => Stream (StateT [a] m) a
 list = Stream{ next = StateT \case [] -> return (Nothing, []); (x : xs) -> return (Just x, xs) }
-
--- newtype ListStream m a b = ListStream{ runListStream :: [a] -> m b }

@@ -120,15 +120,6 @@ pendingLens :: Lens
   (Stream m2 (Nontrivial text char))
 pendingLens = lens pending \x y -> x{ pending = y }
 
--- empty :: BufferedStream m text char
--- empty = BufferedStream Buffer.empty Nothing
-
--- isAllBuffered :: BufferedStream m text char -> Bool
--- isAllBuffered = isNothing . pending
-
--- toListT :: Monad m => BufferedStream m text char -> ListT m (Nontrivial text char)
--- toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
-
 fromStream :: ListLike text char => Monad m => Stream m text -> BufferedStream m text char
 fromStream xs = BufferedStream{ buffer = Buffer.empty, pending = Stream.mapMaybe Nontrivial.refine xs }
 

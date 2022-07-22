@@ -83,9 +83,6 @@ isEmpty = Seq.null . chunks
 empty :: Buffer text char
 empty = Buffer{ chunks = Seq.empty }
 
--- toListT :: Monad m => Buffer text char -> ListT m (Nontrivial text char)
--- toListT = select . chunks
-
 fold :: Monoid text => Buffer text char -> text
 fold = Prelude.fold . fmap Nontrivial.generalize . chunks
 
