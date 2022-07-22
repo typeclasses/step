@@ -3,6 +3,7 @@
 
 module Step.Document.Base
   (
+    curse,
     -- * Types
     DocumentParsing, Config (..), Error (..),
     -- * Running parsers
@@ -67,7 +68,7 @@ newtype DocumentParsing text char m a =
 instance (Monad m, ListLike text char) => Cursor (DocumentParsing text char m) where
     type Text (DocumentParsing text char m) = text
     type Char (DocumentParsing text char m) = char
-    curse = Cursor.rebaseSession DocumentParsing curse
+    curse = Cursor.rebaseSession (DocumentParsing . lift) DocumentMemory.curse
 
 instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
     position = DocumentParsing position

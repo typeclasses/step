@@ -5,6 +5,7 @@ module Step.Input.Counter
     Counting (..),
     Counter (..),
     start,
+    curse,
   )
   where
 
@@ -15,7 +16,7 @@ import qualified Step.Input.CursorPosition as CursorPosition
 
 import Step.Nontrivial.Base (Nontrivial)
 
-import Step.Input.Cursor (Cursor (..), Session (..))
+import Step.Input.Cursor (Session (..))
 import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
@@ -41,30 +42,29 @@ data Counter input =
     , pending :: input
     }
 
-instance (Monad m, Cursor (StateT input m)) => Cursor (StateT (Counter input) m) where
-    type Text (StateT (Counter input) m) = Text (StateT input m)
-    type Char (StateT (Counter input) m) = Char (StateT input m)
-    curse = case curse @(StateT input m) of
-        Session{ run = (run' :: forall a. m' a -> StateT input m a), next = next', commit = commit' } ->
-            Cursor.Session{ run, next, commit }
-              where
-                run :: StateT CursorPosition m' a -> StateT (Counter input) m a
-                run a = do
-                    p <- get <&> position
-                    (x, p') <- zoom pendingLens (run' (runStateT a p))
-                    assign positionLens p'
-                    return x
+curse :: forall m input text char. Monad m =>
+    Session text char (StateT input m)
+    -> Session text char (StateT (Counter input) m)
+curse Session{ run = (run' :: forall a. m' a -> StateT input m a), next = next', commit = commit' } =
+    Cursor.Session{ run, next, commit }
+  where
+    run :: StateT CursorPosition m' a -> StateT (Counter input) m a
+    run a = do
+        p <- get <&> position
+        (x, p') <- zoom pendingLens (run' (runStateT a p))
+        assign positionLens p'
+        return x
 
-                next :: StateT CursorPosition m' (Maybe (Nontrivial (Text (StateT input m)) (Char (StateT input m))))
-                next = lift next'
+    next :: StateT CursorPosition m' (Maybe (Nontrivial text char))
+    next = lift next'
 
-                commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
-                commit n = do
-                    r <- lift (commit' n)
-                    modify' $ CursorPosition.increase $ case r of
-                        Advance.Success -> review Positive.refine n
-                        Advance.InsufficientInput{ Advance.shortfall = s } -> review Positive.refine n - review Positive.refine s
-                    return r
+    commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
+    commit n = do
+        r <- lift (commit' n)
+        modify' $ CursorPosition.increase $ case r of
+            Advance.Success -> review Positive.refine n
+            Advance.InsufficientInput{ Advance.shortfall = s } -> review Positive.refine n - review Positive.refine s
+        return r
 
 instance Monad m => Counting (StateT (Counter input) m)
   where

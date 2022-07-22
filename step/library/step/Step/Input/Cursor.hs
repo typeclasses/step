@@ -23,8 +23,3 @@ data Session text char m =
 rebaseSession :: (forall x. m1 x -> m2 x) -> Session text char m1 -> Session text char m2
 rebaseSession f Session{ run, commit, next } =
     Session{ commit = commit, next = next, run = f. run }
-
-instance (Monad m, Cursor m) => Cursor (ReaderT r m) where
-    type Text (ReaderT r m) = Text m
-    type Char (ReaderT r m) = Char m
-    curse = rebaseSession lift (curse @m)

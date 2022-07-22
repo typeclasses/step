@@ -6,7 +6,7 @@ module Step.Input.Buffer
     fold, headChar, unconsChar, unconsChunk, putChunk, putNontrivialChunk,
 
     -- * Session
-    BufferSession (..), newBufferSession, uncommittedLens, unseenLens,
+    curse, BufferSession (..), newBufferSession, uncommittedLens, unseenLens,
 
     -- * State operations
     considerChunk, takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
@@ -24,7 +24,7 @@ import qualified Step.Nontrivial.List as Nontrivial.List
 import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
 import Step.Nontrivial.SplitAtPositive (splitAtPositive)
 
-import Step.Input.Cursor (Cursor (..), Session (..))
+import Step.Input.Cursor (Session (..))
 
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult)
@@ -56,23 +56,21 @@ unseenLens = lens unseen \x y -> x{ unseen = y }
 instance Semigroup (Buffer text char) where
     a <> b = Buffer{ chunks = chunks a <> chunks b }
 
-instance (Monad m, ListLike text char) => Cursor (StateT (Buffer text char) m) where
-    type Text (StateT (Buffer text char) m) = text
-    type Char (StateT (Buffer text char) m) = char
-    curse = Session{ run, commit, next }
-      where
-        run :: StateT (BufferSession text char) m a -> StateT (Buffer text char) m a
-        run a = do
-            b <- get
-            (x, bs) <- lift (runStateT a (BufferSession b b))
-            put (uncommitted bs)
-            return x
+curse :: forall m text char. Monad m => ListLike text char => Session text char (StateT (Buffer text char) m)
+curse = Session{ run, commit, next }
+  where
+    run :: StateT (BufferSession text char) m a -> StateT (Buffer text char) m a
+    run a = do
+        b <- get
+        (x, bs) <- lift (runStateT a (BufferSession b b))
+        put (uncommitted bs)
+        return x
 
-        next :: StateT (BufferSession text char) m (Maybe (Nontrivial text char))
-        next = zoom unseenLens takeChunk
+    next :: StateT (BufferSession text char) m (Maybe (Nontrivial text char))
+    next = zoom unseenLens takeChunk
 
-        commit :: Positive Natural -> StateT (BufferSession text char) m AdvanceResult
-        commit n = zoom uncommittedLens (dropN n)
+    commit :: Positive Natural -> StateT (BufferSession text char) m AdvanceResult
+    commit n = zoom uncommittedLens (dropN n)
 
 singleton :: Nontrivial text char -> Buffer text char
 singleton x = Buffer{ chunks = Seq.singleton x }

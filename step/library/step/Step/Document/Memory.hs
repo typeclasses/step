@@ -2,6 +2,7 @@
 
 module Step.Document.Memory
   (
+    curse,
     {- * The type -} DocumentMemory,
     {- * Construction -} fromStream,
     {- * Cursor location -} position,
@@ -19,7 +20,7 @@ import qualified Step.Input.Counter as Counter
 import Step.Input.BufferedStream (BufferedStream)
 import qualified Step.Input.BufferedStream as BufferedStream
 
-import Step.Input.Cursor (Cursor (..))
+import Step.Input.Cursor (Session (..))
 import qualified Step.Input.Cursor as Cursor
 
 import Step.Input.Counter (Counting, cursorPosition)
@@ -41,10 +42,8 @@ data DocumentMemory text char m =
     , cursor :: Counter (BufferedStream (StateT LineHistory m) text char)
     }
 
-instance (ListLike text char, Monad m) => Cursor (StateT (DocumentMemory text char m) m) where
-    type Text (StateT (DocumentMemory text char m) m) = text
-    type Char (StateT (DocumentMemory text char m) m) = char
-    curse = Cursor.rebaseSession runCursorState curse
+curse :: Monad m => ListLike text char => Session text char (StateT (DocumentMemory text char m) m)
+curse = Cursor.rebaseSession runCursorState (Counter.curse BufferedStream.curse)
 
 instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1
