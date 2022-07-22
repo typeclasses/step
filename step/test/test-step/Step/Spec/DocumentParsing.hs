@@ -101,6 +101,14 @@ spec = describe "Document parsing" do
             let x = runIdentity $ P.parseOnly def p (ListT.select input)
             x === Right (P.CursorPosition n)
 
+        specify "increases twice" $ hedgehog do
+            input :: [Text] <- forAll (genChunks (ListLike.replicate 10 'a'))
+            n1 :: Natural <- forAll (Gen.integral (Range.linear 0 5))
+            n2 :: Natural <- forAll (Gen.integral (Range.linear 0 5))
+            let p = P.do{ _ <- P.count0 n1 P.char; _ <- P.count0 n2 P.char; P.cursorPosition }
+            let x = runIdentity $ P.parseOnly def p (ListT.select input)
+            x === Right (P.CursorPosition (n1 + n2))
+
     describe "position" do
 
         specify "starts at 1:1" $ hedgehog do
