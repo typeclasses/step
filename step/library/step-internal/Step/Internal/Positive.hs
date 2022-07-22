@@ -1,4 +1,4 @@
-{-# language Trustworthy #-}
+{-# language Safe #-}
 
 module Step.Internal.Positive where
 
