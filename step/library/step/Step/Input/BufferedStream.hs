@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, NamedFieldPuns, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, TypeFamilies #-}
 
 module Step.Input.BufferedStream
   (

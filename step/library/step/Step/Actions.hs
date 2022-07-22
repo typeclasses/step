@@ -1,4 +1,4 @@
-{-# language ConstraintKinds, FlexibleContexts, NamedFieldPuns, TypeFamilies, ViewPatterns #-}
+{-# language ConstraintKinds, FlexibleContexts, TypeFamilies, ViewPatterns #-}
 
 module Step.Actions
   (

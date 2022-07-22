@@ -1,5 +1,3 @@
-{-# language NamedFieldPuns #-}
-
 module Step.Buffer.Session
   (
     curse,

@@ -21,6 +21,7 @@ common base
         LambdaCase
         NoMonomorphismRestriction
         NoImplicitPrelude
+        NamedFieldPuns
         ScopedTypeVariables
         TypeApplications
     build-depends:

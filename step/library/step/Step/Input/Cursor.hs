@@ -1,4 +1,4 @@
-{-# language GADTs, RankNTypes, TypeFamilies, NamedFieldPuns #-}
+{-# language GADTs, RankNTypes, TypeFamilies #-}
 
 module Step.Input.Cursor where
 

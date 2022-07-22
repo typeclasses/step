@@ -1,4 +1,4 @@
-{-# language FlexibleInstances, FlexibleContexts, NamedFieldPuns, TypeFamilies, Trustworthy #-}
+{-# language FlexibleInstances, FlexibleContexts, TypeFamilies, Trustworthy #-}
 
 module Step.Buffer.Base
   (
