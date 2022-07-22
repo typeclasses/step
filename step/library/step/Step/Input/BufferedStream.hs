@@ -1,11 +1,9 @@
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies #-}
+{-# language FlexibleContexts, FlexibleInstances #-}
 
 module Step.Input.BufferedStream
   (
     {- * The type -} BufferedStream (..), BufferResult (..), curse,
     {- * Conversion with Stream -} fromStream,
-    {- * Buffer querying -} bufferIsEmpty,
-    {- * Taking by chunk -} takeChunk,
   )
   where
 
@@ -100,8 +98,6 @@ instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m te
         lift (Stream.next p) >>= traverse_ \x ->
             modifying bufferLens (Buffer.|> x)
 
----
-
 bufferLens :: Lens
   (BufferedStream m text char)
   (BufferedStream m text char)
@@ -118,13 +114,3 @@ pendingLens = lens pending \x y -> x{ pending = y }
 
 fromStream :: ListLike text char => Monad m => Stream m text -> BufferedStream m text char
 fromStream xs = BufferedStream{ buffer = Buffer.empty, pending = Stream.mapMaybe Nontrivial.refine xs }
-
-bufferIsEmpty :: BufferedStream m text char -> Bool
-bufferIsEmpty = Buffer.isEmpty . buffer
-
--- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
-takeChunk :: (ListLike text char, Monad m) => StateT (BufferedStream m text char) m (Maybe (Nontrivial text char))
-takeChunk = do
-    ie <- get <&> Buffer.isEmpty . buffer
-    when ie bufferMore
-    zoom bufferLens Buffer.takeChunk
