@@ -10,7 +10,7 @@ module Step.Document.Memory
 
 import Step.Internal.Prelude
 
-import Step.Document.Lines (Char, LineHistory)
+import Step.Document.Lines (LineHistory)
 import qualified Step.Document.Lines as Lines
 
 import Step.Input.Counter (Counter)
@@ -19,17 +19,10 @@ import qualified Step.Input.Counter as Counter
 import Step.Input.BufferedStream (BufferedStream)
 import qualified Step.Input.BufferedStream as BufferedStream
 
-import Step.Input.CursorPosition (CursorPosition)
-
-import Loc (Loc)
-
 import Step.Input.Cursor (Cursor (..))
 import qualified Step.Input.Cursor as Cursor
 
-import qualified Step.Input.AdvanceResult as Advance
-
 import Step.Input.Counter (Counting, cursorPosition)
-import qualified Step.Input.Counter
 
 import Step.Input.Buffering (Buffering (..))
 
@@ -38,8 +31,6 @@ import qualified Step.Document.Locating as Locating
 
 import Step.Input.Stream (Stream)
 import qualified Step.Input.Stream as Stream
-
-import qualified Maybe
 
 
 -- The type

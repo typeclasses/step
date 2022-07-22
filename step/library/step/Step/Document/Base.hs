@@ -36,35 +36,9 @@ import qualified Step.Failure as F
 import Step.Input.Counter (Counting)
 import qualified Step.Input.Counter as Counting
 
-import Step.Document.Lines (Char, LineHistory)
-import qualified Step.Document.Lines as Lines
-
-import Step.Input.Counter (Counter)
-import qualified Step.Input.Counter as Counter
-
-import Step.Input.BufferedStream (BufferedStream)
-import qualified Step.Input.BufferedStream as BufferedStream
-
-import Step.Input.CursorPosition (CursorPosition)
-import qualified Step.Input.CursorPosition as CursorPosition
-
-import Loc (Loc)
-
-import Step.Input.Cursor (Cursor, curse)
-import qualified Step.Input.Cursor as Cursor
-
-import qualified Step.Input.AdvanceResult as Advance
-
-import Step.Input.Counter (Counting, cursorPosition)
-import qualified Step.Input.Counter
-
-import Step.Input.Buffering (Buffering (..))
-
-import Step.Document.Locating (Locating)
-import qualified Step.Document.Locating as Locating
+import Step.Input.Counter (cursorPosition)
 
 import Step.Input.Stream (Stream)
-import qualified Step.Input.Stream as Stream
 
 ---
 

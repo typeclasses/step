@@ -4,7 +4,6 @@ module Step.Nontrivial.SplitAtPositive
   )
   where
 
-import qualified Step.Internal.Prelude as Prelude
 import Step.Internal.Prelude hiding (cons)
 
 import Step.Nontrivial.Constructor (Nontrivial (..))
@@ -16,10 +15,7 @@ import qualified ListLike
 import qualified Positive
 import qualified Positive.Math as Positive
 
-import Signed (Signed)
 import qualified Signed as Signed
-
-import qualified Maybe
 
 data SplitAtPositive text char = All | Insufficient (Positive Natural) | Split (Nontrivial text char) (Nontrivial text char)
 

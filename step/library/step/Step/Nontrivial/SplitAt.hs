@@ -4,20 +4,14 @@ module Step.Nontrivial.SplitAt
   )
   where
 
-import qualified Step.Internal.Prelude as Prelude
 import Step.Internal.Prelude hiding (cons)
 
 import Step.Nontrivial.Constructor (Nontrivial (..))
-import qualified Step.Nontrivial.Base as Nontrivial
-
-import qualified ListLike
 
 import qualified Positive
 
-import qualified Maybe
-
 import qualified Step.Nontrivial.SplitAtPositive as P
-import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
+import Step.Nontrivial.SplitAtPositive (SplitAtPositive)
 
 data SplitAt text char = None | All | Insufficient (Positive Natural) | Split (Nontrivial text char) (Nontrivial text char)
 

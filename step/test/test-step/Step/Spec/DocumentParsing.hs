@@ -22,7 +22,6 @@ import Char (Char)
 
 import Text (Text)
 
-import Step.Input.Stream (Stream)
 import qualified Step.Input.Stream as Stream
 
 -- The module under test

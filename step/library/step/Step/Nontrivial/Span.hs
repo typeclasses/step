@@ -1,16 +1,11 @@
 module Step.Nontrivial.Span where
 
-import qualified Step.Internal.Prelude as Prelude
 import Step.Internal.Prelude
 
 import Step.Nontrivial.Constructor (Nontrivial (..))
 import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified ListLike
-
-import qualified Positive
-
-import qualified Maybe
 
 data Span text char = All | None | Split (Nontrivial text char) (Nontrivial text char)
 

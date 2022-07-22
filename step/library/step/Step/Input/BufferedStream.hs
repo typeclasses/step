@@ -3,9 +3,8 @@
 module Step.Input.BufferedStream
   (
     {- * The type -} BufferedStream (..), BufferResult (..),
-    {- * Constants -} -- empty,
-    {- * Conversion with Stream -} fromStream, -- toListT, fromListT,
-    {- * Buffer querying -} bufferIsEmpty, bufferedHeadChar, -- isAllBuffered,
+    {- * Conversion with Stream -} fromStream,
+    {- * Buffer querying -} bufferIsEmpty, bufferedHeadChar,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar,
     {- * Taking by chunk -} takeChunk, considerChunk,
   )
@@ -18,20 +17,13 @@ import qualified Step.Input.Buffer as Buffer
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
-import qualified Step.Nontrivial.List as Nontrivial
 
 import Step.Input.Cursor (Cursor (..), Session (..))
-import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult, shortfall)
 
 import Step.Input.Buffering (Buffering (..))
-
-import qualified Positive
-
-import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
-import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
 
 import Step.Input.Stream (Stream)
 import qualified Step.Input.Stream as Stream
@@ -50,13 +42,24 @@ data BufferedStreamSession m text char =
     , bufferSession :: BufferSession text char
     }
 
+sessionPendingLens :: Lens
+  (BufferedStreamSession m1 text char)
+  (BufferedStreamSession m2 text char)
+  (Stream m1 (Nontrivial text char))
+  (Stream m2 (Nontrivial text char))
 sessionPendingLens = lens sessionPending \x y -> x{ sessionPending = y }
+
+bufferSessionLens :: Lens
+  (BufferedStreamSession m text char)
+  (BufferedStreamSession m text char)
+  (BufferSession text char)
+  (BufferSession text char)
 bufferSessionLens = lens bufferSession \x y -> x{ bufferSession = y }
 
 data BufferResult = BufferedMore | NothingToBuffer
 
 sessionBufferMore :: Monad m => StateT (BufferedStreamSession m text char) m BufferResult
-sessionBufferMore = (get <&> sessionPending) >>= \p -> lift (Stream.next p) >>= \case
+sessionBufferMore = use sessionPendingLens >>= \p -> lift (Stream.next p) >>= \case
     Nothing -> return NothingToBuffer
     Just x -> do
         modifying (bufferSessionLens % Buffer.uncommittedLens) (<> Buffer.singleton x)
@@ -97,13 +100,24 @@ instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m te
         ie <- get <&> Buffer.isEmpty . buffer
         when ie bufferMore
 
-    bufferMore = (get <&> pending) >>= \p ->
+    bufferMore = use pendingLens >>= \p ->
         lift (Stream.next p) >>= traverse_ \x ->
             modifying bufferLens (<> Buffer.singleton x)
 
 ---
 
+bufferLens :: Lens
+  (BufferedStream m text char)
+  (BufferedStream m text char)
+  (Buffer text char)
+  (Buffer text char)
 bufferLens = lens buffer \x y -> x{ buffer = y }
+
+pendingLens :: Lens
+  (BufferedStream m1 text char)
+  (BufferedStream m2 text char)
+  (Stream m1 (Nontrivial text char))
+  (Stream m2 (Nontrivial text char))
 pendingLens = lens pending \x y -> x{ pending = y }
 
 -- empty :: BufferedStream m text char
@@ -143,13 +157,3 @@ takeChunk = do
 considerChunk :: Monad m => ListLike text char =>
     (Nontrivial text char -> (Natural, a)) -> StateT (BufferedStream m text char) m (Maybe a)
 considerChunk f = zoom bufferLens (Buffer.considerChunk f)
-
-dropN :: (ListLike text char, Monad m) =>
-    Positive Natural -> StateT (BufferedStream m text char) m AdvanceResult
-dropN = fix \r n ->
-    takeChunk >>= \case
-        Nothing -> return Advance.InsufficientInput{ Advance.shortfall = n }
-        Just x -> case splitAtPositive n x of
-            SplitAtPositive.All -> return Advance.Success
-            SplitAtPositive.Split _ b -> zoom bufferLens (Buffer.putNontrivialChunk b) $> Advance.Success
-            SplitAtPositive.Insufficient n' -> r n'

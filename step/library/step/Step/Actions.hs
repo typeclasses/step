@@ -17,8 +17,6 @@ import Step.ActionTypes (Join)
 
 import qualified Step.ActionTypes.Do as A
 
-import qualified Monad
-
 import qualified Text as T
 
 import qualified Step.Nontrivial.Base as Nontrivial
@@ -29,7 +27,6 @@ import qualified Step.Input.Cursor as Cursor
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
 import Step.Nontrivial.Base (Nontrivial)
-import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.List as Nontrivial
 
 import Step.ActionTypes (repetition0)

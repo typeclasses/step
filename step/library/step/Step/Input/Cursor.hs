@@ -8,8 +8,6 @@ import Step.Nontrivial.Base
 
 import Step.Input.AdvanceResult
 
-import Optics (_1, _2, zoom, use, assign)
-
 class Cursor m where
     type Text m :: Type
     type Char m :: Type

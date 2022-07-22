@@ -18,8 +18,6 @@ import qualified Positive
 
 import qualified Maybe
 
-import Step.Nontrivial.Span
-
 cons :: ListLike text char => ListLike list (Nontrivial text char) => text -> list -> list
 cons = maybe id Prelude.cons . Nontrivial.refine
 

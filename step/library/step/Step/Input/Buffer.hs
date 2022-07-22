@@ -22,15 +22,12 @@ import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
 import qualified Step.Nontrivial.List as Nontrivial.List
 import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
-import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
+import Step.Nontrivial.SplitAtPositive (splitAtPositive)
 
 import Step.Input.Cursor (Cursor (..), Session (..))
-import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult)
-
-import Optics (zoom, _1, _2)
 
 data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 
@@ -42,7 +39,18 @@ data BufferSession text char = BufferSession
 newBufferSession :: Buffer text char -> BufferSession text char
 newBufferSession b = BufferSession b b
 
+uncommittedLens :: Lens
+  (BufferSession text char)
+  (BufferSession text char)
+  (Buffer text char)
+  (Buffer text char)
 uncommittedLens = lens uncommitted \x y -> x{ uncommitted = y }
+
+unseenLens :: Lens
+  (BufferSession text char)
+  (BufferSession text char)
+  (Buffer text char)
+  (Buffer text char)
 unseenLens = lens unseen \x y -> x{ unseen = y }
 
 instance Semigroup (Buffer text char) where
