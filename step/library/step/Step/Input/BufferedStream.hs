@@ -24,10 +24,17 @@ import qualified Step.Nontrivial.ListT as Nontrivial.ListT
 import qualified Step.Nontrivial.List as Nontrivial
 
 import Step.Input.Cursor (Cursor (..))
+import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
+import Step.Input.AdvanceResult (AdvanceResult)
 
 import Step.Input.Buffering (Buffering (..))
+
+import qualified Positive
+
+import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
+import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
 
 ---
 
@@ -41,37 +48,39 @@ data BufferedStream m text char =
 instance (Monad m, ListLike text char) => Cursor (StateT (BufferedStream m text char) m) where
     type Text (StateT (BufferedStream m text char) m) = text
     type Char (StateT (BufferedStream m text char) m) = char
-    forecast =
-        changeBaseListT (zoom bufferLens) forecast
-        <|>
-        ListT
-          (
-            use pendingLens
-            >>=
-            maybe
-                (return ListT.Nil)
-                (
-                  fix \r p ->
-                      lift (ListT.next p) >>= \case
-                          ListT.Nil -> assign pendingLens Nothing $> ListT.Nil
-                          ListT.Cons x xs -> do
-                              modifying bufferLens (<> Buffer.singleton x)
-                              assign pendingLens (Just xs)
-                              return (ListT.Cons x (ListT (r xs)))
-                )
-          )
-    advance n =
-        zoom bufferLens (advance n) >>= \case
-            Advance.Success -> return Advance.Success
-            Advance.InsufficientInput n' -> use pendingLens >>= \case
-                Nothing -> return (Advance.InsufficientInput n')
-                Just p -> do
-                    lift (ListT.next p) >>= \case
-                        ListT.Nil -> assign pendingLens Nothing $> Advance.InsufficientInput n'
-                        ListT.Cons x xs -> do
-                            modifying bufferLens (<> Buffer.singleton x)
-                            assign pendingLens (Just xs)
-                            advance n'
+    curse = Cursor.stateSession takeChunk dropN
+
+    -- forecast =
+    --     changeBaseListT (zoom bufferLens) forecast
+    --     <|>
+    --     ListT
+    --       (
+    --         use pendingLens
+    --         >>=
+    --         maybe
+    --             (return ListT.Nil)
+    --             (
+    --               fix \r p ->
+    --                   lift (ListT.next p) >>= \case
+    --                       ListT.Nil -> assign pendingLens Nothing $> ListT.Nil
+    --                       ListT.Cons x xs -> do
+    --                           modifying bufferLens (<> Buffer.singleton x)
+    --                           assign pendingLens (Just xs)
+    --                           return (ListT.Cons x (ListT (r xs)))
+    --             )
+    --       )
+    -- advance n =
+    --     zoom bufferLens (advance n) >>= \case
+    --         Advance.Success -> return Advance.Success
+    --         Advance.InsufficientInput n' -> use pendingLens >>= \case
+    --             Nothing -> return (Advance.InsufficientInput n')
+    --             Just p -> do
+    --                 lift (ListT.next p) >>= \case
+    --                     ListT.Nil -> assign pendingLens Nothing $> Advance.InsufficientInput n'
+    --                     ListT.Cons x xs -> do
+    --                         modifying bufferLens (<> Buffer.singleton x)
+    --                         assign pendingLens (Just xs)
+    --                         advance n'
 
 instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m text char) m) where
 
@@ -149,5 +158,16 @@ takeChunk = do
     fillBuffer1
     zoom bufferLens Buffer.takeChunk
 
-considerChunk :: Monad m => ListLike text char => (Nontrivial text char -> (Natural, a)) -> StateT (BufferedStream m text char) m (Maybe a)
+considerChunk :: Monad m => ListLike text char =>
+    (Nontrivial text char -> (Natural, a)) -> StateT (BufferedStream m text char) m (Maybe a)
 considerChunk f = zoom bufferLens (Buffer.considerChunk f)
+
+dropN :: (ListLike text char, Monad m) =>
+    Positive Natural -> StateT (BufferedStream m text char) m AdvanceResult
+dropN = fix \r n ->
+    takeChunk >>= \case
+        Nothing -> return Advance.InsufficientInput{ Advance.shortfall = n }
+        Just x -> case splitAtPositive n x of
+            SplitAtPositive.All -> return Advance.Success
+            SplitAtPositive.Split _ b -> zoom bufferLens (Buffer.putNontrivialChunk b) $> Advance.Success
+            SplitAtPositive.Insufficient n' -> r n'

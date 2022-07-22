@@ -1,4 +1,4 @@
-{-# language ConstraintKinds, FlexibleContexts, TypeFamilies, TypeOperators, ViewPatterns #-}
+{-# language ConstraintKinds, FlexibleContexts, NamedFieldPuns, TypeFamilies, TypeOperators, ViewPatterns #-}
 
 module Step.Actions where
 
@@ -23,8 +23,8 @@ import qualified Text as T
 
 import qualified Step.Nontrivial.Base as Nontrivial
 
-import Step.Input.Cursor (Text, Char, forecast, advance)
-import qualified Step.Input.Cursor as C
+import Step.Input.Cursor (Text, Char, curse, Session (..))
+import qualified Step.Input.Cursor as Cursor
 
 import qualified ListT
 
@@ -47,46 +47,61 @@ import qualified Step.Failure as F
 import Step.Configuration (Configure, HasContextStack, contextStackLens, Config)
 import qualified Step.Configuration as Config
 
-type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), C.Cursor m, Fallible m)
+import Step.Input.Counter (Counting)
+import qualified Step.Input.Counter as Counting
+
+import Step.Input.CursorPosition (CursorPosition)
+
+type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), Cursor.Cursor m, Fallible m)
 
 char :: Cursor m => AtomicMove m (Error m) (Char m)
-char = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Nil -> return (Left F.failure)
-    ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Right (Nontrivial.head x)
+char = Action.Unsafe.AtomicMove $ case curse of
+    Session{ run, next, commit } -> run $ next >>= \case
+        Nothing -> return (Left F.failure)
+        Just x -> commit (PositiveUnsafe 1) $> Right (Nontrivial.head x)
 
 peekChar :: Cursor m => Query m (Error m) (Char m)
-peekChar = Action.Unsafe.Query $ ListT.next forecast <&> \case
-    ListT.Nil -> Left F.failure
-    ListT.Cons x _ -> Right (Nontrivial.head x)
+peekChar = Action.Unsafe.Query $ case curse of
+    Session{ run, next } -> run $ next <&> \case
+        Nothing -> Left F.failure
+        Just x -> Right (Nontrivial.head x)
 
 takeCharMaybe :: Cursor m => Sure m e (Maybe (Char m))
-takeCharMaybe = Action.Unsafe.Sure $ ListT.next forecast >>= \case
-    ListT.Nil -> return Nothing
-    ListT.Cons x _ -> advance (PositiveUnsafe 1) $> Just (Nontrivial.head x)
+takeCharMaybe = Action.Unsafe.Sure $ case curse of
+    Session{ run, next, commit } -> run $ next >>= \case
+        Nothing -> return Nothing
+        Just x -> commit (PositiveUnsafe 1) $> Just (Nontrivial.head x)
 
 peekCharMaybe :: Cursor m => SureQuery m e (Maybe (Char m))
-peekCharMaybe = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case
-    ListT.Nil -> Nothing
-    ListT.Cons x _ -> Just (Nontrivial.head x)
+peekCharMaybe = Action.Unsafe.SureQuery $ case curse of
+    Session{ run, next } -> run $ next <&> \case
+        Nothing -> Nothing
+        Just x -> Just (Nontrivial.head x)
 
 satisfy :: Cursor m => (Char m -> Bool) -> AtomicMove m (Error m) (Char m)
-satisfy ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Cons (Nontrivial.head -> x) _ | ok x -> advance (PositiveUnsafe 1) $> Right x
-    _ -> return (Left F.failure)
+satisfy ok = Action.Unsafe.AtomicMove $ case curse of
+    Session{ run, next, commit } -> run $ next >>= \case
+        Just (Nontrivial.head -> x) | ok x -> commit (PositiveUnsafe 1) $> Right x
+        _ -> return (Left F.failure)
 
 satisfyJust :: Cursor m => (Char m -> Maybe a) -> AtomicMove m (Error m) a
-satisfyJust ok = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Cons (ok . Nontrivial.head -> Just x) _ -> advance (PositiveUnsafe 1) $> Right x
-    _ -> return (Left F.failure)
+satisfyJust ok = Action.Unsafe.AtomicMove $ case curse of
+    Session{ run, next, commit } -> run $ next >>= \case
+        Just (ok . Nontrivial.head -> Just x) -> commit (PositiveUnsafe 1) $> Right x
+        _ -> return (Left F.failure)
 
 atEnd :: Cursor m => SureQuery m e Bool
-atEnd = Action.Unsafe.SureQuery $ ListT.next forecast <&> \case { ListT.Nil -> True; _ -> False }
+atEnd = Action.Unsafe.SureQuery $ case curse of
+    Session{ run, next } -> run $ next <&> isNothing
 
 end :: Cursor m => Query m (Error m) ()
 end = atEnd A.>>= guard
 
 guard :: Cursor m => Bool -> Query m (Error m) ()
 guard = \case{ True -> cast (A.return ()); False -> cast failure }
+
+cursorPosition :: Counting m => SureQuery m e CursorPosition
+cursorPosition = Action.Unsafe.SureQuery Counting.cursorPosition
 
 position :: Locating m => SureQuery m e Loc
 position = Action.Unsafe.SureQuery Locating.position
@@ -104,9 +119,10 @@ failure :: Cursor m => Fail m (Error m) a
 failure = Action.Unsafe.Fail F.failure
 
 some :: Cursor m => AtomicMove m (Error m) (Nontrivial (Text m) (Char m))
-some = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Nil -> return (Left F.failure)
-    ListT.Cons x _ -> advance (Nontrivial.length x) $> Right x
+some = Action.Unsafe.AtomicMove $ case curse of
+    Session{ run, next, commit } -> run $ next >>= \case
+        Nothing -> return (Left F.failure)
+        Just x -> commit (Nontrivial.length x) $> Right x
 
 all :: Cursor m => Sure m (Error m) (Text m)
 all = repetition0 some <&> Nontrivial.fold
@@ -137,21 +153,22 @@ nontrivialText x = someOfNontrivialText x A.>>= text
 -- | Returns what remainder is needed
 someOfNontrivialText :: Cursor m =>
     Nontrivial (Text m) (Char m) -> AtomicMove m (Error m) (Text m)
-someOfNontrivialText x = Action.Unsafe.AtomicMove $ ListT.next forecast >>= \case
-    ListT.Nil -> return (Left F.failure)
-    ListT.Cons y _ ->
-        if x `Nontrivial.isPrefixOf` y
-        then advance (Nontrivial.length x) $> Right ListLike.empty
-        else
-        if y `Nontrivial.isPrefixOf` x
-        then advance (Nontrivial.length y) $>
-              Right
-                (
-                  ListLike.drop
-                      (ListLike.length (Nontrivial.generalize y))
-                      (Nontrivial.generalize x)
-                )
-        else return (Left F.failure)
+someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
+    Session{ run, next, commit } -> run $ next >>= \case
+        Nothing -> return (Left F.failure)
+        Just y ->
+            if x `Nontrivial.isPrefixOf` y
+            then commit (Nontrivial.length x) $> Right ListLike.empty
+            else
+            if y `Nontrivial.isPrefixOf` x
+            then commit (Nontrivial.length y) $>
+                  Right
+                    (
+                      ListLike.drop
+                          (ListLike.length (Nontrivial.generalize y))
+                          (Nontrivial.generalize x)
+                    )
+            else return (Left F.failure)
 
 -- while ::
 --     Action.Unsafe.ChangeBase act =>

@@ -1,11 +1,11 @@
-{-# language FlexibleInstances, TypeFamilies, Trustworthy #-}
+{-# language FlexibleInstances, FlexibleContexts, NamedFieldPuns, TypeFamilies, Trustworthy #-}
 
 module Step.Input.Buffer
   (
-    Buffer, singleton, isEmpty, empty, toListT, fold, headChar, unconsChar, unconsChunk,
+    Buffer, singleton, isEmpty, empty, toListT, fold, headChar, unconsChar, unconsChunk, putChunk, putNontrivialChunk,
 
     -- * State operations
-    considerChunk, takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), advance,
+    considerChunk, takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..),
   )
   where
 
@@ -20,11 +20,15 @@ import qualified Step.Nontrivial.List as Nontrivial.List
 import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
 import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
 
-import Step.Input.Cursor (Cursor (..))
+import Step.Input.Cursor (Cursor (..), Session (..))
+import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
+import Step.Input.AdvanceResult (AdvanceResult)
 
 import qualified ListT
+
+import Optics (zoom, _1, _2)
 
 data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 
@@ -34,13 +38,7 @@ instance Semigroup (Buffer text char) where
 instance (Monad m, ListLike text char) => Cursor (StateT (Buffer text char) m) where
     type Text (StateT (Buffer text char) m) = text
     type Char (StateT (Buffer text char) m) = char
-    forecast = lift get >>= ListT.select . chunks
-    advance n = get >>= \case
-        Buffer{ chunks = Seq.Empty } -> return Advance.InsufficientInput{ Advance.shortfall = n }
-        Buffer{ chunks = (Seq.:<|) x xs } -> case splitAtPositive n x of
-            SplitAtPositive.All -> put Buffer{ chunks = xs } $> Advance.Success
-            SplitAtPositive.Split _ b -> put Buffer{ chunks = (Seq.:<|) b xs } $> Advance.Success
-            SplitAtPositive.Insufficient n' -> advance n'
+    curse = Cursor.stateSession takeChunk dropN
 
 singleton :: Nontrivial text char -> Buffer text char
 singleton x = Buffer{ chunks = Seq.singleton x }
@@ -139,6 +137,14 @@ takeChunk = do
         Just (c, b') -> do
             put b'
             return (Just c)
+
+dropN :: (Monad m, ListLike text char) => Positive Natural -> StateT (Buffer text char) m AdvanceResult
+dropN = fix \r n -> get >>= \case
+    Buffer{ chunks = Seq.Empty } -> return Advance.InsufficientInput{ Advance.shortfall = n }
+    Buffer{ chunks = (Seq.:<|) x xs } -> case splitAtPositive n x of
+        SplitAtPositive.All -> put Buffer{ chunks = xs } $> Advance.Success
+        SplitAtPositive.Split _ b -> put Buffer{ chunks = (Seq.:<|) b xs } $> Advance.Success
+        SplitAtPositive.Insufficient n' -> r n'
 
 considerChunk :: Monad m => ListLike text char =>
     (Nontrivial text char -> (Natural, a)) -> StateT (Buffer text char) m (Maybe a)

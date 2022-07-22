@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, NamedFieldPuns, RankNTypes,TypeFamilies #-}
 
 module Step.Input.Counter
   (
@@ -17,9 +17,11 @@ import Step.Nontrivial.Base (Nontrivial)
 
 import qualified ListLike
 
-import Step.Input.Cursor (Cursor (..))
+import Step.Input.Cursor (Cursor (..), Session (..))
+import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
+import Step.Input.AdvanceResult (AdvanceResult)
 
 import qualified Positive
 
@@ -44,14 +46,27 @@ data Counter input =
 instance (Monad m, Cursor (StateT input m)) => Cursor (StateT (Counter input) m) where
     type Text (StateT (Counter input) m) = Text (StateT input m)
     type Char (StateT (Counter input) m) = Char (StateT input m)
-    forecast = changeBaseListT (zoom pendingLens) forecast
-    advance n = do
-        r <- zoom pendingLens (advance n)
-        let delta = case r of
-                Advance.Success -> review Positive.refine n
-                Advance.InsufficientInput{ Advance.shortfall = s } -> review Positive.refine n - review Positive.refine s
-        modifying positionLens (CursorPosition.increase delta)
-        return r
+    curse = case curse @(StateT input m) of
+        Session{ run = (run' :: forall a. m' a -> StateT input m a), next = next', commit = commit' } ->
+            Cursor.Session{ run, next, commit }
+              where
+                run :: StateT CursorPosition m' a -> StateT (Counter input) m a
+                run a = do
+                    p <- get <&> position
+                    (x, p') <- zoom pendingLens (run' (runStateT a p))
+                    assign positionLens p'
+                    return x
+
+                next :: StateT CursorPosition m' (Maybe (Nontrivial (Text (StateT input m)) (Char (StateT input m))))
+                next = lift next'
+
+                commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
+                commit n = do
+                    r <- lift (commit' n)
+                    modify' $ CursorPosition.increase $ case r of
+                        Advance.Success -> review Positive.refine n
+                        Advance.InsufficientInput{ Advance.shortfall = s } -> review Positive.refine n - review Positive.refine s
+                    return r
 
 instance Monad m => Counting (StateT (Counter input) m)
   where

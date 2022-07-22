@@ -24,6 +24,7 @@ import Step.Input.CursorPosition (CursorPosition)
 import Loc (Loc)
 
 import Step.Input.Cursor (Cursor (..))
+import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
 
@@ -47,8 +48,7 @@ data DocumentMemory text char m =
 instance (ListLike text char, Monad m) => Cursor (StateT (DocumentMemory text char m) m) where
     type Text (StateT (DocumentMemory text char m) m) = text
     type Char (StateT (DocumentMemory text char m) m) = char
-    forecast = changeBaseListT runCursorState forecast
-    advance n = runCursorState (advance n)
+    curse = Cursor.rebaseSession runCursorState curse
 
 instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1

@@ -22,8 +22,8 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import Text (Text)
 
-import Step.Input.Cursor (Cursor, advance, forecast)
-import qualified Step.Input.Cursor
+import Step.Input.Cursor (Cursor, curse)
+import qualified Step.Input.Cursor as Cursor
 
 import Step.Document.Locating (Locating (..))
 
@@ -32,6 +32,36 @@ import qualified Step.Configuration as Config
 
 import Step.Failure (Fallible)
 import qualified Step.Failure as F
+
+import Step.Input.Counter (Counting)
+import qualified Step.Input.Counter as Counting
+
+import Step.Document.Lines (Char, LineHistory)
+import qualified Step.Document.Lines as Lines
+
+import Step.Input.Counter (Counter)
+import qualified Step.Input.Counter as Counter
+
+import Step.Input.BufferedStream (BufferedStream)
+import qualified Step.Input.BufferedStream as BufferedStream
+
+import Step.Input.CursorPosition (CursorPosition)
+import qualified Step.Input.CursorPosition as CursorPosition
+
+import Loc (Loc)
+
+import Step.Input.Cursor (Cursor, curse)
+import qualified Step.Input.Cursor as Cursor
+
+import qualified Step.Input.AdvanceResult as Advance
+
+import Step.Input.Counter (Counting, cursorPosition)
+import qualified Step.Input.Counter
+
+import Step.Input.Buffering (Buffering (..))
+
+import Step.Document.Locating (Locating)
+import qualified Step.Document.Locating as Locating
 
 ---
 
@@ -60,8 +90,7 @@ newtype DocumentParsing text char m a =
 instance (Monad m, ListLike text char) => Cursor (DocumentParsing text char m) where
     type Text (DocumentParsing text char m) = text
     type Char (DocumentParsing text char m) = char
-    advance n = DocumentParsing (advance n)
-    forecast = changeBaseListT DocumentParsing forecast
+    curse = Cursor.rebaseSession DocumentParsing curse
 
 instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
     position = DocumentParsing position
@@ -73,6 +102,9 @@ instance (ListLike text char, Monad m) => Fallible (DocumentParsing text char m)
 instance (ListLike text char, Monad m) => Configure (DocumentParsing text char m) where
     type Config (DocumentParsing text char m) = Config
     configure f (DocumentParsing a) = DocumentParsing (configure f a)
+
+instance (ListLike text char, Monad m) => Counting (DocumentParsing text char m) where
+    cursorPosition = DocumentParsing Counting.cursorPosition
 
 ---
 
