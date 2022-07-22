@@ -2,10 +2,10 @@
 
 module Step.Buffer.Base
   (
-    Buffer, singleton, isEmpty, empty, fold,
+    Buffer, isEmpty, empty, (|>),
 
     -- * State operations
-    takeChunk, TakeStringResult (..), dropN,
+    takeChunk, dropN,
   )
   where
 
@@ -27,11 +27,8 @@ import Step.Input.AdvanceResult (AdvanceResult)
 
 data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 
-instance Semigroup (Buffer text char) where
-    a <> b = Buffer{ chunks = chunks a <> chunks b }
-
-singleton :: Nontrivial text char -> Buffer text char
-singleton x = Buffer{ chunks = Seq.singleton x }
+(|>) :: Buffer text char -> Nontrivial text char -> Buffer text char
+Buffer xs |> x = Buffer (xs Seq.|> x)
 
 isEmpty :: Buffer text char -> Bool
 isEmpty = Seq.null . chunks
@@ -39,27 +36,10 @@ isEmpty = Seq.null . chunks
 empty :: Buffer text char
 empty = Buffer{ chunks = Seq.empty }
 
-fold :: Monoid text => Buffer text char -> text
-fold = Prelude.fold . fmap Nontrivial.generalize . chunks
-
-unconsChunk :: Buffer text char -> Maybe (Nontrivial text char, Buffer text char)
-unconsChunk b = case uncons (chunks b) of
-    Nothing -> Nothing
-    Just (c, cs) -> Just (c, Buffer{ chunks = cs } )
-
-data TakeStringResult text char =
-    TakeStringFail
-  | TakeStringPartial (Nontrivial text char) -- ^ What further needed text remains
-  | TakeStringSuccess
-
 takeChunk :: Monad m => StateT (Buffer text char) m (Maybe (Nontrivial text char))
-takeChunk = do
-    b <- get
-    case unconsChunk b of
-        Nothing -> return Nothing
-        Just (c, b') -> do
-            put b'
-            return (Just c)
+takeChunk = get >>= \b -> case uncons (chunks b) of
+    Nothing -> return Nothing
+    Just (c, cs) -> put Buffer{ chunks = cs } $> Just c
 
 dropN :: (Monad m, ListLike text char) => Positive Natural -> StateT (Buffer text char) m AdvanceResult
 dropN = fix \r n -> get >>= \case

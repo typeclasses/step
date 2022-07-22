@@ -64,8 +64,8 @@ sessionBufferMore :: Monad m => StateT (BufferedStreamSession m text char) m Buf
 sessionBufferMore = use sessionPendingLens >>= \p -> lift (Stream.next p) >>= \case
     Nothing -> return NothingToBuffer
     Just x -> do
-        modifying (bufferSessionLens % BufferSession.uncommittedLens) (<> Buffer.singleton x)
-        modifying (bufferSessionLens % BufferSession.unseenLens) (<> Buffer.singleton x)
+        modifying (bufferSessionLens % BufferSession.uncommittedLens) (Buffer.|> x)
+        modifying (bufferSessionLens % BufferSession.unseenLens) (Buffer.|> x)
         return BufferedMore
 
 curse :: forall m text char. Monad m => ListLike text char => Session text char (StateT (BufferedStream m text char) m)
@@ -98,7 +98,7 @@ instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m te
 
     bufferMore = use pendingLens >>= \p ->
         lift (Stream.next p) >>= traverse_ \x ->
-            modifying bufferLens (<> Buffer.singleton x)
+            modifying bufferLens (Buffer.|> x)
 
 ---
 
