@@ -5,7 +5,7 @@
 
 module Step.ActionTypes.Do
   (
-    {- * Monad -} join, (>>=), (>>), return,
+    {- * Monad -} join, (>>=), (>=>), (>>), return,
     {- * Applicative -} (<*), (*>), (<*>), pure,
     {- * Functor -} fmap, (<$>),
   )
@@ -22,6 +22,10 @@ import Step.ActionTypes.Types (SureQuery)
 infixl 1 >>=
 (>>=) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 m e a -> (a -> act2 m e b) -> act3 m e b
 x >>= f = join (fmap f x)
+
+infixr 1 >=>
+(>=>) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => (a -> act1 m e b) -> (b -> act2 m e c) -> a -> act3 m e c
+a >=> b = \x -> a x >>= b
 
 infixl 4 <*
 (<*) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 m e a -> act2 m e b -> act3 m e a

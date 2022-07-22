@@ -16,38 +16,40 @@ import qualified Char
 import qualified Text
 import Text (Text)
 
+import qualified Step.Nontrivial.Base as Nontrivial
+
 type Parser base action value =
     action (P.DocumentParsing Text Char base) P.Error value
 
 char :: Monad m => Char -> Parser m AtomicMove Char
-char x = P.satisfy (== x) P.<?> "char " <> Text.pack (show x)
+char x = P.satisfyJust (\y -> if y == x then Just y else Nothing) P.<?> "char " <> Text.pack (show x)
 
 anyChar :: Monad m => Parser m AtomicMove Char
-anyChar = P.char P.<?> "anyChar"
+anyChar = P.satisfyJust Just P.<?> "anyChar"
 
 notChar :: Monad m => Char -> Parser m AtomicMove Char
-notChar x = P.satisfy (/= x) P.<?> "not " <> Text.singleton x
+notChar x = P.satisfyJust (\y -> if y /= x then Just y else Nothing) P.<?> "not " <> Text.singleton x
 
 satisfy :: Monad m => (Char -> Bool) -> Parser m AtomicMove Char
-satisfy f = P.satisfy f P.<?> "satisfy"
+satisfy f = P.satisfyJust (\x -> if f x then Just x else Nothing) P.<?> "satisfy"
 
 satisfyWith :: Monad m => (Char -> a) -> (a -> Bool) -> Parser m AtomicMove a
 satisfyWith f ok = P.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) P.<?> "satisfyWith"
 
 skip :: Monad m => (Char -> Bool) -> Parser m AtomicMove ()
-skip f = void (P.satisfy f) P.<?> "skip"
+skip f = P.satisfyJust (\x -> if f x then Just () else Nothing) P.<?> "skip"
 
 peekChar :: Monad m => Parser m SureQuery (Maybe Char)
 peekChar = P.peekCharMaybe
 
 peekChar' :: Monad m => Parser m Query Char
-peekChar' = P.peekChar P.<?> "peekChar'"
+peekChar' = (P.peekCharMaybe P.>>= maybe (cast P.failure) return) P.<?> "peekChar'"
 
 digit :: Monad m => Parser m AtomicMove Char
-digit = P.satisfy Char.isDigit P.<?> "digit"
+digit = P.satisfyJust (\x -> if Char.isDigit x then Just x else Nothing) P.<?> "digit"
 
 letter :: Monad m => Parser m AtomicMove Char
-letter = P.satisfy Char.isAlpha P.<?> "letter"
+letter = P.satisfyJust (\x -> if Char.isAlpha x then Just x else Nothing) P.<?> "letter"
 
 -- todo
 -- space :: Parser Char
@@ -89,7 +91,7 @@ letter = P.satisfy Char.isAlpha P.<?> "letter"
 -- takeTill :: (Char -> Bool) -> Parser Text
 
 takeText :: Monad m => Parser m Sure Text
-takeText = P.all
+takeText = repetition0 P.some <&> Nontrivial.fold
 
 -- todo
 -- takeLazyText :: Parser Text
@@ -165,7 +167,7 @@ many1' p = many1 P.do{ x <- p; P.return $! x }
 -- match :: Parser a -> Parser (Text, a)
 
 endOfInput :: Monad m => Parser m Query ()
-endOfInput = P.end P.<?> "endOfInput"
+endOfInput = (P.atEnd P.>>= \case{ True -> cast (P.return ()); False -> cast P.failure }) P.<?> "endOfInput"
 
 atEnd :: Monad m => Parser m SureQuery Bool
 atEnd = P.atEnd

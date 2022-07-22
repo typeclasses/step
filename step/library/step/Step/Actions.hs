@@ -1,6 +1,16 @@
 {-# language ConstraintKinds, FlexibleContexts, NamedFieldPuns, TypeFamilies, TypeOperators, ViewPatterns #-}
 
-module Step.Actions where
+module Step.Actions
+  (
+    satisfyJust, peekCharMaybe, takeCharMaybe,
+    failure,
+    atEnd,
+    some,
+    text,
+    cursorPosition, position,
+    (<?>), contextualize,
+  )
+  where
 
 import Step.Internal.Prelude
 
@@ -49,18 +59,6 @@ import Step.Input.CursorPosition (CursorPosition)
 
 type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), Cursor.Cursor m, Fallible m)
 
-char :: Cursor m => AtomicMove m (Error m) (Char m)
-char = Action.Unsafe.AtomicMove $ case curse of
-    Session{ run, next, commit } -> run $ next >>= \case
-        Nothing -> return (Left F.failure)
-        Just x -> commit (PositiveUnsafe 1) $> Right (Nontrivial.head x)
-
-peekChar :: Cursor m => Query m (Error m) (Char m)
-peekChar = Action.Unsafe.Query $ case curse of
-    Session{ run, next } -> run $ next <&> \case
-        Nothing -> Left F.failure
-        Just x -> Right (Nontrivial.head x)
-
 takeCharMaybe :: Cursor m => Sure m e (Maybe (Char m))
 takeCharMaybe = Action.Unsafe.Sure $ case curse of
     Session{ run, next, commit } -> run $ next >>= \case
@@ -73,12 +71,6 @@ peekCharMaybe = Action.Unsafe.SureQuery $ case curse of
         Nothing -> Nothing
         Just x -> Just (Nontrivial.head x)
 
-satisfy :: Cursor m => (Char m -> Bool) -> AtomicMove m (Error m) (Char m)
-satisfy ok = Action.Unsafe.AtomicMove $ case curse of
-    Session{ run, next, commit } -> run $ next >>= \case
-        Just (Nontrivial.head -> x) | ok x -> commit (PositiveUnsafe 1) $> Right x
-        _ -> return (Left F.failure)
-
 satisfyJust :: Cursor m => (Char m -> Maybe a) -> AtomicMove m (Error m) a
 satisfyJust ok = Action.Unsafe.AtomicMove $ case curse of
     Session{ run, next, commit } -> run $ next >>= \case
@@ -89,26 +81,11 @@ atEnd :: Cursor m => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery $ case curse of
     Session{ run, next } -> run $ next <&> isNothing
 
-end :: Cursor m => Query m (Error m) ()
-end = atEnd A.>>= guard
-
-guard :: Cursor m => Bool -> Query m (Error m) ()
-guard = \case{ True -> cast (A.return ()); False -> cast failure }
-
 cursorPosition :: Counting m => SureQuery m e CursorPosition
 cursorPosition = Action.Unsafe.SureQuery Counting.cursorPosition
 
 position :: Locating m => SureQuery m e Loc
 position = Action.Unsafe.SureQuery Locating.position
-
-withLocation ::
-    (Monad m, Locating m) =>
-    Join SureQuery act =>
-    Join act SureQuery =>
-    act m e a -> act m e (SpanOrLoc, a)
-withLocation act =
-    (\a x b -> (Loc.spanOrLocFromTo a b, x))
-    A.<$> position A.<*> act A.<*> position
 
 failure :: Cursor m => Fail m (Error m) a
 failure = Action.Unsafe.Fail F.failure
@@ -118,9 +95,6 @@ some = Action.Unsafe.AtomicMove $ case curse of
     Session{ run, next, commit } -> run $ next >>= \case
         Nothing -> return (Left F.failure)
         Just x -> commit (Nontrivial.length x) $> Right x
-
-all :: Cursor m => Sure m (Error m) (Text m)
-all = repetition0 some <&> Nontrivial.fold
 
 configure :: Configure m => Action.Unsafe.ChangeBase act =>
     (Config m -> Config m) -> act m e a -> act m e a
@@ -137,33 +111,25 @@ p <?> c = contextualize c p
 
 -- todo: add an atomic version of 'text'
 
-text :: Cursor m => Text m -> Any m (Error m) ()
-text x = case Nontrivial.refine x of
-    Nothing -> return ()
-    Just y -> cast (nontrivialText y)
-
-nontrivialText :: Cursor m => Nontrivial (Text m) (Char m) -> Move m (Error m) ()
-nontrivialText x = someOfNontrivialText x A.>>= text
-
--- | Returns what remainder is needed
-someOfNontrivialText :: Cursor m =>
-    Nontrivial (Text m) (Char m) -> AtomicMove m (Error m) (Text m)
-someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
-    Session{ run, next, commit } -> run $ next >>= \case
-        Nothing -> return (Left F.failure)
-        Just y ->
-            if x `Nontrivial.isPrefixOf` y
-            then commit (Nontrivial.length x) $> Right ListLike.empty
-            else
-            if y `Nontrivial.isPrefixOf` x
-            then commit (Nontrivial.length y) $>
-                  Right
-                    (
-                      ListLike.drop
-                          (ListLike.length (Nontrivial.generalize y))
-                          (Nontrivial.generalize x)
-                    )
-            else return (Left F.failure)
+text :: Cursor m => Nontrivial (Text m) (Char m) -> Move m (Error m) ()
+text = someOfNontrivialText A.>=> (maybe (return ()) (cast @Any . text) . Nontrivial.refine)
+  where
+    someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
+        Session{ run, next, commit } -> run $ next >>= \case
+            Nothing -> return (Left F.failure)
+            Just y ->
+                if x `Nontrivial.isPrefixOf` y
+                then commit (Nontrivial.length x) $> Right ListLike.empty
+                else
+                if y `Nontrivial.isPrefixOf` x
+                then commit (Nontrivial.length y) $>
+                      Right
+                        (
+                          ListLike.drop
+                              (ListLike.length (Nontrivial.generalize y))
+                              (Nontrivial.generalize x)
+                        )
+                else return (Left F.failure)
 
 -- while ::
 --     Action.Unsafe.ChangeBase act =>
