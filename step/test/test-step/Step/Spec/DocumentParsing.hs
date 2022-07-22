@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, QualifiedDo, OverloadedStrings, TypeFamilies #-}
+{-# language FlexibleContexts, QualifiedDo, OverloadedStrings #-}
 
 module Step.Spec.DocumentParsing where
 

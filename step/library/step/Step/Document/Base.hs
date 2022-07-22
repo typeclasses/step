@@ -1,4 +1,4 @@
-{-# language DataKinds, FlexibleContexts, FlexibleInstances, KindSignatures, StandaloneKindSignatures, TypeFamilies #-}
+{-# language DataKinds, FlexibleContexts, FlexibleInstances, KindSignatures, StandaloneKindSignatures #-}
 {-# language DerivingVia, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 
 module Step.Document.Base

@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FunctionalDependencies, QualifiedDo, Safe, TypeFamilies, TypeOperators #-}
+{-# language FlexibleContexts, FunctionalDependencies, QualifiedDo, Safe, TypeOperators #-}
 
 module Step.ActionTypes.Loop where
 

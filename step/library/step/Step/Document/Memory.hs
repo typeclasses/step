@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies #-}
 
 module Step.Document.Memory
   (

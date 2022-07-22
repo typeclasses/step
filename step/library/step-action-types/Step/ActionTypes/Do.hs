@@ -1,5 +1,5 @@
 {-# options_ghc -fno-warn-missing-signatures #-}
-{-# language FlexibleContexts, Safe, TypeFamilies, TypeOperators #-}
+{-# language FlexibleContexts, Safe, TypeOperators #-}
 
 -- | This module is for use with the QualifiedDo language extension.
 

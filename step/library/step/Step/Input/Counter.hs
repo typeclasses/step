@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, RankNTypes,TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, RankNTypes #-}
 
 module Step.Input.Counter
   (

@@ -1,4 +1,4 @@
-{-# language DataKinds, Safe, TypeFamilies, TypeOperators #-}
+{-# language DataKinds, Safe, TypeOperators #-}
 
 module Step.ActionTypes.KindJoin where
 

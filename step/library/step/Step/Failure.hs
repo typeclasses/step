@@ -1,5 +1,3 @@
-{-# language TypeFamilies #-}
-
 module Step.Failure where
 
 import Step.Internal.Prelude

@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, OverloadedStrings, QualifiedDo, RankNTypes, TypeFamilies #-}
+{-# language FlexibleContexts, OverloadedStrings, QualifiedDo, RankNTypes #-}
 
 -- | This module is just here to demonstrate that we can do everything that "Data.Attoparsec.Text" does.
 

@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances #-}
 
 module Step.Configuration where
 

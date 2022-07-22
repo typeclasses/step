@@ -1,4 +1,4 @@
-{-# language DataKinds, FlexibleContexts, FunctionalDependencies, KindSignatures, Trustworthy, TypeFamilies #-}
+{-# language DataKinds, FlexibleContexts, FunctionalDependencies, KindSignatures, Trustworthy #-}
 
 module Step.ActionTypes.Atomic where
 
