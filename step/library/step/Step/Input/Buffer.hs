@@ -9,7 +9,7 @@ module Step.Input.Buffer
     curse, BufferSession (..), newBufferSession, uncommittedLens, unseenLens,
 
     -- * State operations
-    considerChunk, takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
+    takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
   )
   where
 
@@ -174,12 +174,6 @@ dropN = fix \r n -> get >>= \case
         SplitAtPositive.All -> put Buffer{ chunks = xs } $> Advance.Success
         SplitAtPositive.Split _ b -> put Buffer{ chunks = (Seq.:<|) b xs } $> Advance.Success
         SplitAtPositive.Insufficient n' -> r n'
-
-considerChunk :: Monad m => ListLike text char =>
-    (Nontrivial text char -> (Natural, a)) -> StateT (Buffer text char) m (Maybe a)
-considerChunk f = takeChunk >>= \case
-    Nothing -> return Nothing
-    Just x -> let (n, r) = f x in putChunk (Nontrivial.drop n x) $> Just r
 
 -- | Adds a chunk back to the left side of the buffer if the argument is non-empty
 putChunk :: Monad m => ListLike text char => text -> StateT (Buffer text char) m ()

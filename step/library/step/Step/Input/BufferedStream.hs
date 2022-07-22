@@ -6,7 +6,7 @@ module Step.Input.BufferedStream
     {- * Conversion with Stream -} fromStream,
     {- * Buffer querying -} bufferIsEmpty, bufferedHeadChar,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar,
-    {- * Taking by chunk -} takeChunk, considerChunk,
+    {- * Taking by chunk -} takeChunk,
   )
   where
 
@@ -142,7 +142,3 @@ takeChunk :: (ListLike text char, Monad m) => StateT (BufferedStream m text char
 takeChunk = do
     fillBuffer1
     zoom bufferLens Buffer.takeChunk
-
-considerChunk :: Monad m => ListLike text char =>
-    (Nontrivial text char -> (Natural, a)) -> StateT (BufferedStream m text char) m (Maybe a)
-considerChunk f = zoom bufferLens (Buffer.considerChunk f)
