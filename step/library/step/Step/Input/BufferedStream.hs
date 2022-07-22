@@ -1,11 +1,11 @@
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, TypeFamilies #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, NamedFieldPuns, TypeFamilies #-}
 
 module Step.Input.BufferedStream
   (
-    {- * The type -} BufferedStream (..),
-    {- * Constants -} empty,
-    {- * Conversion with ListT -} toListT, fromListT,
-    {- * Buffer querying -} bufferIsEmpty, isAllBuffered, bufferedHeadChar,
+    {- * The type -} BufferedStream (..), BufferResult (..),
+    {- * Constants -} -- empty,
+    {- * Conversion with Stream -} fromStream, -- toListT, fromListT,
+    {- * Buffer querying -} bufferIsEmpty, bufferedHeadChar, -- isAllBuffered,
     {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar,
     {- * Taking by chunk -} takeChunk, considerChunk,
   )
@@ -13,21 +13,18 @@ module Step.Input.BufferedStream
 
 import Step.Internal.Prelude
 
-import qualified ListT
-
-import Step.Input.Buffer (Buffer)
+import Step.Input.Buffer (Buffer, BufferSession (..))
 import qualified Step.Input.Buffer as Buffer
 
 import Step.Nontrivial.Base (Nontrivial)
 import qualified Step.Nontrivial.Base as Nontrivial
-import qualified Step.Nontrivial.ListT as Nontrivial.ListT
 import qualified Step.Nontrivial.List as Nontrivial
 
-import Step.Input.Cursor (Cursor (..))
+import Step.Input.Cursor (Cursor (..), Session (..))
 import qualified Step.Input.Cursor as Cursor
 
 import qualified Step.Input.AdvanceResult as Advance
-import Step.Input.AdvanceResult (AdvanceResult)
+import Step.Input.AdvanceResult (AdvanceResult, shortfall)
 
 import Step.Input.Buffering (Buffering (..))
 
@@ -36,51 +33,63 @@ import qualified Positive
 import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
 import Step.Nontrivial.SplitAtPositive (splitAtPositive, SplitAtPositive)
 
+import Step.Input.Stream (Stream)
+import qualified Step.Input.Stream as Stream
+
 ---
 
 data BufferedStream m text char =
   BufferedStream
     { buffer :: Buffer text char
-    , pending :: Maybe (ListT m (Nontrivial text char))
-        -- ^ 'Nothing' indicates that the end of the stream has been reached.
+    , pending :: Stream m (Nontrivial text char)
     }
+
+data BufferedStreamSession m text char =
+  BufferedStreamSession
+    { sessionPending :: Stream m (Nontrivial text char)
+    , bufferSession :: BufferSession text char
+    }
+
+sessionPendingLens = lens sessionPending \x y -> x{ sessionPending = y }
+bufferSessionLens = lens bufferSession \x y -> x{ bufferSession = y }
+
+data BufferResult = BufferedMore | NothingToBuffer
+
+sessionBufferMore :: Monad m => StateT (BufferedStreamSession m text char) m BufferResult
+sessionBufferMore = (get <&> sessionPending) >>= \p -> lift (Stream.next p) >>= \case
+    Nothing -> return NothingToBuffer
+    Just x -> do
+        modifying (bufferSessionLens % Buffer.uncommittedLens) (<> Buffer.singleton x)
+        modifying (bufferSessionLens % Buffer.unseenLens) (<> Buffer.singleton x)
+        return BufferedMore
 
 instance (Monad m, ListLike text char) => Cursor (StateT (BufferedStream m text char) m) where
     type Text (StateT (BufferedStream m text char) m) = text
     type Char (StateT (BufferedStream m text char) m) = char
-    curse = Cursor.stateSession takeChunk dropN
+    curse = Session{ run, commit, next }
+      where
+        run :: StateT (BufferedStreamSession m text char) m a -> StateT (BufferedStream m text char) m a
+        run a = do
+            bs <- get
+            (x, bss) <- lift (runStateT a (BufferedStreamSession{ sessionPending = pending bs, bufferSession = Buffer.newBufferSession (buffer bs) }))
+            put BufferedStream{ buffer = Buffer.uncommitted (bufferSession bss), pending = sessionPending bss }
+            return x
 
-    -- forecast =
-    --     changeBaseListT (zoom bufferLens) forecast
-    --     <|>
-    --     ListT
-    --       (
-    --         use pendingLens
-    --         >>=
-    --         maybe
-    --             (return ListT.Nil)
-    --             (
-    --               fix \r p ->
-    --                   lift (ListT.next p) >>= \case
-    --                       ListT.Nil -> assign pendingLens Nothing $> ListT.Nil
-    --                       ListT.Cons x xs -> do
-    --                           modifying bufferLens (<> Buffer.singleton x)
-    --                           assign pendingLens (Just xs)
-    --                           return (ListT.Cons x (ListT (r xs)))
-    --             )
-    --       )
-    -- advance n =
-    --     zoom bufferLens (advance n) >>= \case
-    --         Advance.Success -> return Advance.Success
-    --         Advance.InsufficientInput n' -> use pendingLens >>= \case
-    --             Nothing -> return (Advance.InsufficientInput n')
-    --             Just p -> do
-    --                 lift (ListT.next p) >>= \case
-    --                     ListT.Nil -> assign pendingLens Nothing $> Advance.InsufficientInput n'
-    --                     ListT.Cons x xs -> do
-    --                         modifying bufferLens (<> Buffer.singleton x)
-    --                         assign pendingLens (Just xs)
-    --                         advance n'
+        next :: StateT (BufferedStreamSession m text char) m (Maybe (Nontrivial text char))
+        next =
+            zoom (bufferSessionLens % Buffer.unseenLens) Buffer.takeChunk >>= \case
+                Just x -> return (Just x)
+                Nothing -> sessionBufferMore >>= \case
+                    NothingToBuffer -> return Nothing
+                    BufferedMore -> zoom (bufferSessionLens % Buffer.unseenLens) Buffer.takeChunk
+
+        commit :: Positive Natural -> StateT (BufferedStreamSession m text char) m AdvanceResult
+        commit n =
+            zoom (bufferSessionLens % Buffer.uncommittedLens) (Buffer.dropN n) >>= \case
+                Advance.Success -> return Advance.Success
+                Advance.InsufficientInput{ shortfall = n' } -> sessionBufferMore >>= \case
+                    NothingToBuffer -> return Advance.InsufficientInput{ shortfall = n' }
+                    BufferedMore -> zoom (bufferSessionLens % Buffer.uncommittedLens) (Buffer.dropN n)
 
 instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m text char) m) where
 
@@ -88,53 +97,26 @@ instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m te
         ie <- get <&> Buffer.isEmpty . buffer
         when ie bufferMore
 
-    bufferMore = (get <&> pending) >>= \case
-
-        -- If the end of the stream has been reached, do nothing
-        Nothing -> return ()
-
-        Just p ->
-
-            -- Perform the next step in the pending input stream
-            lift (ListT.next p)
-
-            >>= \case
-
-                -- If the stream is now empty, change its value to 'Nothing' to remember that we have reached the end
-                ListT.Nil -> assign pendingLens Nothing
-
-                -- We got a new chunk of input.
-                ListT.Cons x xs -> do
-
-                    -- Add the chunk to the buffer
-                    modifying bufferLens (<> Buffer.singleton x)
-
-                    -- Remove the chunk from the pending input stream
-                    assign pendingLens (Just xs)
+    bufferMore = (get <&> pending) >>= \p ->
+        lift (Stream.next p) >>= traverse_ \x ->
+            modifying bufferLens (<> Buffer.singleton x)
 
 ---
 
-bufferLens :: Lens' (BufferedStream m text char) (Buffer text char)
 bufferLens = lens buffer \x y -> x{ buffer = y }
-
-pendingLens :: Lens
-    (BufferedStream m1 text char)
-    (BufferedStream m2 text char)
-    (Maybe (ListT m1 (Nontrivial text char)))
-    (Maybe (ListT m2 (Nontrivial text char)))
 pendingLens = lens pending \x y -> x{ pending = y }
 
-empty :: BufferedStream m text char
-empty = BufferedStream Buffer.empty Nothing
+-- empty :: BufferedStream m text char
+-- empty = BufferedStream Buffer.empty Nothing
 
-isAllBuffered :: BufferedStream m text char -> Bool
-isAllBuffered = isNothing . pending
+-- isAllBuffered :: BufferedStream m text char -> Bool
+-- isAllBuffered = isNothing . pending
 
-toListT :: Monad m => BufferedStream m text char -> ListT m (Nontrivial text char)
-toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
+-- toListT :: Monad m => BufferedStream m text char -> ListT m (Nontrivial text char)
+-- toListT x = Buffer.toListT (buffer x) <|> asum (pending x)
 
-fromListT :: ListLike text char => Monad m => ListT m text -> BufferedStream m text char
-fromListT x = BufferedStream{ buffer = Buffer.empty, pending = Just (Nontrivial.ListT.filter x) }
+fromStream :: ListLike text char => Monad m => Stream m text -> BufferedStream m text char
+fromStream xs = BufferedStream{ buffer = Buffer.empty, pending = Stream.mapMaybe Nontrivial.refine xs }
 
 bufferIsEmpty :: BufferedStream m text char -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer

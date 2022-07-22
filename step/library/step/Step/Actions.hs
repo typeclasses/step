@@ -26,8 +26,6 @@ import qualified Step.Nontrivial.Base as Nontrivial
 import Step.Input.Cursor (Text, Char, curse, Session (..))
 import qualified Step.Input.Cursor as Cursor
 
-import qualified ListT
-
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
 import Step.Nontrivial.Base (Nontrivial)

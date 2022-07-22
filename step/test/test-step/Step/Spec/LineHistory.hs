@@ -9,7 +9,6 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import qualified ListT
 import qualified ListLike
 import qualified Char
 
@@ -23,37 +22,81 @@ import Text (Text)
 import Loc (loc)
 import qualified SpanOrLoc
 
+import qualified Map
+
 import qualified Step.Document.Lines as Lines
+import Step.Document.Lines (CursorLocation (..), locateCursorInDocument, LineHistory (..))
 
 spec :: SpecWith ()
 spec = describe "Line history" do
 
     specify "example 1" $ hedgehog do
+
         input :: [Text] <- forAll (genChunks "Move\r\nTwo\rThree")
-        let lh = Lines.build input
-        Lines.locateCursorInDocument  0 lh === Just (Lines.CursorAt (loc 1 1))
-        Lines.locateCursorInDocument  1 lh === Just (Lines.CursorAt (loc 1 2))
-        Lines.locateCursorInDocument  2 lh === Just (Lines.CursorAt (loc 1 3))
-        Lines.locateCursorInDocument  3 lh === Just (Lines.CursorAt (loc 1 4))
-        Lines.locateCursorInDocument  4 lh === Just (Lines.CursorAt (loc 1 5))
-        Lines.locateCursorInDocument  5 lh === Just (Lines.CursorAt (loc 1 6))
-        Lines.locateCursorInDocument  6 lh === Just (Lines.CursorAt (loc 2 1))
-        Lines.locateCursorInDocument  7 lh === Just (Lines.CursorAt (loc 2 2))
-        Lines.locateCursorInDocument  8 lh === Just (Lines.CursorAt (loc 2 3))
-        Lines.locateCursorInDocument  9 lh === Just (Lines.CursorAt (loc 2 4))
-        Lines.locateCursorInDocument 10 lh === Just (Lines.CursorAt (loc 3 1))
-        Lines.locateCursorInDocument 11 lh === Just (Lines.CursorAt (loc 3 2))
-        Lines.locateCursorInDocument 12 lh === Just (Lines.CursorAt (loc 3 3))
-        Lines.locateCursorInDocument 13 lh === Just (Lines.CursorAt (loc 3 4))
-        Lines.locateCursorInDocument 14 lh === Just (Lines.CursorAt (loc 3 5))
-        Lines.locateCursorInDocument 15 lh === Just (Lines.CursorAt (loc 3 6))
-        Lines.locateCursorInDocument 16 lh === Nothing
+
+        t <- forAll Gen.bool
+        let lh = Lines.build input & (if t then execState Lines.terminate else id)
+
+        locateCursorInDocument  0 lh === Just (CursorAt (loc 1 1))
+        locateCursorInDocument  1 lh === Just (CursorAt (loc 1 2))
+        locateCursorInDocument  2 lh === Just (CursorAt (loc 1 3))
+        locateCursorInDocument  3 lh === Just (CursorAt (loc 1 4))
+        locateCursorInDocument  4 lh === Just (CursorAt (loc 1 5))
+        locateCursorInDocument  5 lh === Just (CursorAt (loc 1 6))
+        locateCursorInDocument  6 lh === Just (CursorAt (loc 2 1))
+        locateCursorInDocument  7 lh === Just (CursorAt (loc 2 2))
+        locateCursorInDocument  8 lh === Just (CursorAt (loc 2 3))
+        locateCursorInDocument  9 lh === Just (CursorAt (loc 2 4))
+        locateCursorInDocument 10 lh === Just (CursorAt (loc 3 1))
+        locateCursorInDocument 11 lh === Just (CursorAt (loc 3 2))
+        locateCursorInDocument 12 lh === Just (CursorAt (loc 3 3))
+        locateCursorInDocument 13 lh === Just (CursorAt (loc 3 4))
+        locateCursorInDocument 14 lh === Just (CursorAt (loc 3 5))
+        locateCursorInDocument 15 lh === Just (CursorAt (loc 3 6))
+        locateCursorInDocument 16 lh === Nothing
 
     specify "example 2" $ hedgehog do
+
         input :: [Text] <- forAll (genChunks "ab\r")
+
+        t <- forAll Gen.bool
+        let lh = Lines.build input & (if t then execState Lines.terminate else id)
+
+        locateCursorInDocument  0 lh === Just (CursorAt (loc 1 1))
+        locateCursorInDocument  1 lh === Just (CursorAt (loc 1 2))
+        locateCursorInDocument  2 lh === Just (CursorAt (loc 1 3))
+        locateCursorInDocument  3 lh === Just
+            (
+                if t then CursorAt (loc 2 1) else CursorLocationNeedsMoreInput
+            )
+        locateCursorInDocument  4 lh === Nothing
+
+    specify "example 3" $ hedgehog do
+        let lh = LineHistory
+                  { lineStartPosition = Map.fromList [(0, 1)]
+                  , lineTracker = 1
+                  , cursorPosition = 6
+                  , afterCR = False
+                  , terminated = False
+                  }
+        locateCursorInDocument 3 lh === Just (CursorAt (loc 1 4))
+
+    specify "one-line example" $ hedgehog do
+
+        input :: [Text] <- forAll (genChunks "abc")
+
         let lh = Lines.build input
-        Lines.locateCursorInDocument  0 lh === Just (Lines.CursorAt (loc 1 1))
-        Lines.locateCursorInDocument  1 lh === Just (Lines.CursorAt (loc 1 2))
-        Lines.locateCursorInDocument  2 lh === Just (Lines.CursorAt (loc 1 3))
-        Lines.locateCursorInDocument  3 lh === Just (Lines.CursorLocationNeedsMoreInput{ Lines.ifEndOfInput = loc 2 1 })
-        Lines.locateCursorInDocument  4 lh === Nothing
+
+        lh === LineHistory
+                  { lineStartPosition = Map.fromList [(0, 1)]
+                  , lineTracker = 1
+                  , cursorPosition = 3
+                  , afterCR = False
+                  , terminated = False
+                  }
+
+        locateCursorInDocument  0 lh === Just (CursorAt (loc 1 1))
+        locateCursorInDocument  1 lh === Just (CursorAt (loc 1 2))
+        locateCursorInDocument  2 lh === Just (CursorAt (loc 1 3))
+        locateCursorInDocument  3 lh === Just (CursorAt (loc 1 4))
+        locateCursorInDocument  4 lh === Nothing

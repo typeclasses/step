@@ -3,8 +3,8 @@
 module Step.Document.Memory
   (
     {- * The type -} DocumentMemory,
-    {- * Construction -} fromListT,
-    {- * Cursor location -} position, CursorLocation,
+    {- * Construction -} fromStream,
+    {- * Cursor location -} position,
   )
   where
 
@@ -36,6 +36,11 @@ import Step.Input.Buffering (Buffering (..))
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
 
+import Step.Input.Stream (Stream)
+import qualified Step.Input.Stream as Stream
+
+import qualified Maybe
+
 
 -- The type
 
@@ -54,11 +59,11 @@ instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text 
     position = attempt1
       where
         attempt1 = use (to position) >>= \case
-            CursorAt x -> return x
-            CursorLocationNeedsMoreInput -> bufferMore *> attempt2
+            Lines.CursorAt x -> return x
+            Lines.CursorLocationNeedsMoreInput -> bufferMore *> attempt2
         attempt2 = use (to position) <&> \case
-            CursorAt x -> x
-            CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
+            Lines.CursorAt x -> x
+            Lines.CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
 
 instance (ListLike text char, Monad m) => Buffering (StateT (DocumentMemory text char m) m) where
     fillBuffer1 = runCursorState fillBuffer1
@@ -94,24 +99,22 @@ runCursorState go = do
 
 -- Construction
 
-fromListT :: Lines.Char char => ListLike text char => Monad m => ListT m text -> DocumentMemory text char m
-fromListT xs =
+fromStream :: Lines.Char char => ListLike text char => Monad m => Stream m text -> DocumentMemory text char m
+fromStream xs =
   DocumentMemory
     { content = Lines.empty
-    , cursor = Counter.start $ BufferedStream.fromListT $ recordStream (execState . Lines.record) xs
+    , cursor = Counter.start $ BufferedStream.fromStream $ Stream.record (execState . Lines.record) xs
     }
 
 
 -- Cursor location
 
-data CursorLocation =
-    CursorAt Loc
-  | CursorLocationNeedsMoreInput
+position :: DocumentMemory text char m -> Lines.CursorLocation
+position x =
+    case Lines.locateCursorInDocument p ls of
+        Just cl -> cl
+        Nothing -> error $ "invalid DocumentMemory, lh = " <> show ls <> " does not contain position " <> show p
 
-position :: DocumentMemory text char m -> CursorLocation
-position x = case Lines.locateCursorInDocument (Counter.position (cursor x)) (content x) of
-    Just l -> case l of
-        Lines.CursorLocationNeedsMoreInput{ Lines.ifEndOfInput = i } ->
-            if BufferedStream.isAllBuffered (Counter.pending (cursor x)) then CursorAt i else CursorLocationNeedsMoreInput
-        Lines.CursorAt l' -> CursorAt l'
-    Nothing -> error "invalid DocumentMemory"
+  where
+    ls = content x
+    p = Counter.position (cursor x)

@@ -63,6 +63,9 @@ import Step.Input.Buffering (Buffering (..))
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
 
+import Step.Input.Stream (Stream)
+import qualified Step.Input.Stream as Stream
+
 ---
 
 data Config = Config{ configContext :: [Text] }
@@ -116,7 +119,7 @@ parse config p =
         Left (DocumentParsing errorMaker) -> Left <$> runReaderT errorMaker config
         Right x -> return (Right x)
 
-parseOnly :: Action.Is kind Any => Monad m => Char char => ListLike text char =>
-    Config -> kind (DocumentParsing text char m) Error value -> ListT m text -> m (Either Error value)
+parseOnly :: forall m text char kind value. Action.Is kind Any => Monad m => Char char => ListLike text char =>
+    Config -> kind (DocumentParsing text char m) Error value -> Stream m text -> m (Either Error value)
 parseOnly config p xs =
-    evalStateT (parse config p) (DocumentMemory.fromListT xs)
+    evalStateT (parse config p) (DocumentMemory.fromStream xs)

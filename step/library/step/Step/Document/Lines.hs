@@ -8,7 +8,7 @@ module Step.Document.Lines
     {- * Finding location at a cursor -} CursorLocation (..), locateCursorInDocument,
     {- * Construction -} build,
     {- * Char class -} Char (..),
-    {- * Feeding input -} record,
+    {- * Feeding input -} record, terminate,
   ) where
 
 import Step.Internal.Prelude
@@ -32,11 +32,13 @@ data LineHistory =
     , lineTracker :: Line
     , cursorPosition :: CursorPosition
     , afterCR :: Bool
+    , terminated :: Bool
     }
+  deriving stock (Eq, Show)
 
 data CursorLocation =
     CursorAt Loc
-  | CursorLocationNeedsMoreInput{ ifEndOfInput :: Loc } -- ^ The cursor is at this location, but this location immediately follows a carriage return character at the end of the recorded history. There is an ambiguity in this situation. If the next character is a line feed, then this location will change to 'CursorAt'. If the next character is not a line feed, this location will change to 'CursorAtLineEnd'.
+  | CursorLocationNeedsMoreInput -- ^ The location immediately follows a carriage return character at the end of unterminated history. There is an ambiguity in this situation. To resolve it, feed more input using 'record' or 'terminate'.
   deriving stock (Eq, Show)
 
 cursorPositionLens :: Lens' LineHistory CursorPosition
@@ -52,12 +54,18 @@ afterCRLens :: Lens' LineHistory Bool
 afterCRLens = lens afterCR \x y -> x{ afterCR = y }
 
 locateCursorInDocument :: CursorPosition -> LineHistory -> Maybe CursorLocation
-locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh =
-    Just $ CursorLocationNeedsMoreInput{ ifEndOfInput = loc l c }
+
+locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh && terminated lh =
+    Just $ CursorAt $ loc l c
   where
     l = 1 + lineTracker lh
     c = fromIntegral $ 1 + CursorPosition.absoluteDifference cp (cursorPosition lh)
+
+locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh =
+    Just CursorLocationNeedsMoreInput
+
 locateCursorInDocument cp lh | cp > cursorPosition lh = Nothing
+
 locateCursorInDocument cp lh =
     case Map.splitLookup cp (lineStartPosition lh) of
         (_, Just x, _) -> Just (CursorAt (loc x 1))
@@ -74,6 +82,7 @@ empty =
     , lineTracker = 1
     , cursorPosition = CursorPosition.origin
     , afterCR = False
+    , terminated = False
     }
 
 build :: Char char => ListLike text char => [text] -> LineHistory
@@ -103,6 +112,9 @@ record x =
             let (a, b) = ListLike.break (`elem` [carriageReturn, lineFeed]) x
             recordOther a
             record b
+
+terminate :: Monad m => StateT LineHistory m ()
+terminate = modify' \x -> x{ terminated = True }
 
 startNewLine :: Monad m => StateT LineHistory m ()
 startNewLine = do
