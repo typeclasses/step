@@ -5,7 +5,7 @@ module Step.Buffer.Base
     Buffer, singleton, isEmpty, empty, fold,
 
     -- * State operations
-    takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
+    takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
   )
   where
 
@@ -42,13 +42,6 @@ empty = Buffer{ chunks = Seq.empty }
 fold :: Monoid text => Buffer text char -> text
 fold = Prelude.fold . fmap Nontrivial.generalize . chunks
 
-unconsChar :: ListLike text char => Buffer text char -> Maybe (char, Buffer text char)
-unconsChar b =
-    case chunks b of
-        Seq.Empty -> Nothing
-        (Seq.:<|) x xs -> let (c, x') = Nontrivial.uncons x in
-            Just (c, Buffer{ chunks = Nontrivial.List.cons x' xs })
-
 unconsChunk :: Buffer text char -> Maybe (Nontrivial text char, Buffer text char)
 unconsChunk b = case uncons (chunks b) of
     Nothing -> Nothing
@@ -78,15 +71,6 @@ stripNontrivialPrefix c b = case chunks b of
             Just x' -> case Nontrivial.refine x' of
                 Nothing -> error "stripNontrivialPrefix: failure"
                 Just x'' -> StripPrefixSuccess Buffer{ chunks = (Seq.<|) x'' xs }
-
-takeChar :: (Monad m, ListLike text char) => StateT (Buffer text char) m (Maybe char)
-takeChar = do
-    b <- get
-    case unconsChar b of
-        Nothing -> return Nothing
-        Just (c, b') -> do
-            put b'
-            return (Just c)
 
 data TakeStringResult text char =
     TakeStringFail
