@@ -96,10 +96,6 @@ curse = Session{ run, commit, next }
 
 instance (Monad m, ListLike text char) => Buffering (StateT (BufferedStream m text char) m) where
 
-    fillBuffer1 = do
-        ie <- get <&> Buffer.isEmpty . buffer
-        when ie bufferMore
-
     bufferMore = use pendingLens >>= \p ->
         lift (Stream.next p) >>= traverse_ \x ->
             modifying bufferLens (<> Buffer.singleton x)
@@ -129,5 +125,6 @@ bufferIsEmpty = Buffer.isEmpty . buffer
 -- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
 takeChunk :: (ListLike text char, Monad m) => StateT (BufferedStream m text char) m (Maybe (Nontrivial text char))
 takeChunk = do
-    fillBuffer1
+    ie <- get <&> Buffer.isEmpty . buffer
+    when ie bufferMore
     zoom bufferLens Buffer.takeChunk

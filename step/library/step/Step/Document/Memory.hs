@@ -56,7 +56,6 @@ instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text 
             Lines.CursorLocationNeedsMoreInput -> error "position @DocumentMemory" -- after buffering more, should not need more input to determine position
 
 instance (ListLike text char, Monad m) => Buffering (StateT (DocumentMemory text char m) m) where
-    fillBuffer1 = runCursorState fillBuffer1
     bufferMore = runCursorState bufferMore
 
 instance Monad m => Counting (StateT (DocumentMemory text char m) m) where

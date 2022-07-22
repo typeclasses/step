@@ -73,7 +73,6 @@ instance Monad m => Counting (StateT (Counter input) m)
 instance (Monad m, Buffering (StateT input m)) =>
     Buffering (StateT (Counter input) m)
   where
-    fillBuffer1 = zoom pendingLens fillBuffer1
     bufferMore = zoom pendingLens bufferMore
 
 ---
