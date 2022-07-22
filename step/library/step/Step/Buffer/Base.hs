@@ -5,7 +5,7 @@ module Step.Buffer.Base
     Buffer, singleton, isEmpty, empty, fold,
 
     -- * State operations
-    takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
+    takeChunk, TakeStringResult (..), dropN,
   )
   where
 
@@ -47,52 +47,10 @@ unconsChunk b = case uncons (chunks b) of
     Nothing -> Nothing
     Just (c, cs) -> Just (c, Buffer{ chunks = cs } )
 
-data StripPrefixResult text char =
-    StripPrefixFail
-  | StripPrefixPartial (Nontrivial text char) -- ^ What further needed text remains
-  | StripPrefixSuccess (Buffer text char) -- ^ What buffer is left after removing the text
-
-stripPrefix :: (ListLike text char, Eq text, Eq char) => text -> Buffer text char -> StripPrefixResult text char
-stripPrefix c b = case Nontrivial.refine c of
-    Nothing -> StripPrefixSuccess b
-    Just c' -> stripNontrivialPrefix c' b
-
-stripNontrivialPrefix :: (ListLike text char, Eq text, Eq char) => Nontrivial text char -> Buffer text char -> StripPrefixResult text char
-stripNontrivialPrefix c b = case chunks b of
-    Seq.Empty -> StripPrefixPartial c
-    (Seq.:<|) x xs -> case compare (Nontrivial.List.length x) (Nontrivial.List.length c) of
-        EQ -> if x /= c then StripPrefixFail else
-            StripPrefixSuccess Buffer{ chunks = xs }
-        LT -> case Nontrivial.stripPrefix x c of
-            Nothing -> StripPrefixFail
-            Just c' -> stripPrefix c' Buffer{ chunks = xs }
-        GT -> case Nontrivial.stripPrefix c x of
-            Nothing -> StripPrefixFail
-            Just x' -> case Nontrivial.refine x' of
-                Nothing -> error "stripNontrivialPrefix: failure"
-                Just x'' -> StripPrefixSuccess Buffer{ chunks = (Seq.<|) x'' xs }
-
 data TakeStringResult text char =
     TakeStringFail
   | TakeStringPartial (Nontrivial text char) -- ^ What further needed text remains
   | TakeStringSuccess
-
-takeString :: (Monad m, ListLike text char, Eq text, Eq char) =>
-    text -> StateT (Buffer text char) m (TakeStringResult text char)
-takeString x = case Nontrivial.refine x of Nothing -> return TakeStringSuccess; Just y -> takeNontrivialString y
-
-takeNontrivialString :: (Monad m, ListLike text char, Eq text, Eq char) =>
-    Nontrivial text char -> StateT (Buffer text char) m (TakeStringResult text char)
-takeNontrivialString c = do
-    b <- get
-    case stripNontrivialPrefix c b of
-        StripPrefixFail -> return TakeStringFail
-        StripPrefixPartial c' -> do
-            put empty
-            return (TakeStringPartial c')
-        StripPrefixSuccess b' -> do
-            put b'
-            return TakeStringSuccess
 
 takeChunk :: Monad m => StateT (Buffer text char) m (Maybe (Nontrivial text char))
 takeChunk = do
