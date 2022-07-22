@@ -4,8 +4,7 @@ module Step.Input.BufferedStream
   (
     {- * The type -} BufferedStream (..), BufferResult (..), curse,
     {- * Conversion with Stream -} fromStream,
-    {- * Buffer querying -} bufferIsEmpty, bufferedHeadChar,
-    {- * Buffer manipulation -} bufferUnconsChunk, bufferUnconsChar,
+    {- * Buffer querying -} bufferIsEmpty,
     {- * Taking by chunk -} takeChunk,
   )
   where
@@ -126,19 +125,6 @@ fromStream xs = BufferedStream{ buffer = Buffer.empty, pending = Stream.mapMaybe
 
 bufferIsEmpty :: BufferedStream m text char -> Bool
 bufferIsEmpty = Buffer.isEmpty . buffer
-
-bufferUnconsChunk :: BufferedStream m text char -> Maybe (Nontrivial text char, BufferedStream m text char)
-bufferUnconsChunk s = case Buffer.unconsChunk (buffer s) of
-    Nothing -> Nothing
-    Just (c, b') -> Just (c, s{ buffer = b' })
-
-bufferUnconsChar :: ListLike text char => BufferedStream m text char -> Maybe (char, BufferedStream m text char)
-bufferUnconsChar s = do
-    (c, b') <- Buffer.unconsChar (buffer s)
-    Just (c, s{ buffer = b' })
-
-bufferedHeadChar :: ListLike text char => BufferedStream m text char -> Maybe char
-bufferedHeadChar = Buffer.headChar . buffer
 
 -- | Remove some text from the buffered stream, buffering more first if necessary, returning 'Nothing' if the end of the stream has been reached
 takeChunk :: (ListLike text char, Monad m) => StateT (BufferedStream m text char) m (Maybe (Nontrivial text char))

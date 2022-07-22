@@ -2,8 +2,7 @@
 
 module Step.Buffer.Base
   (
-    Buffer, singleton, isEmpty, empty,
-    fold, headChar, unconsChar, unconsChunk,
+    Buffer, singleton, isEmpty, empty, fold,
 
     -- * State operations
     takeChar, takeChunk, takeString, takeNontrivialString, TakeStringResult (..), dropN,
@@ -42,12 +41,6 @@ empty = Buffer{ chunks = Seq.empty }
 
 fold :: Monoid text => Buffer text char -> text
 fold = Prelude.fold . fmap Nontrivial.generalize . chunks
-
-headChar :: ListLike text char => Buffer text char -> Maybe char
-headChar b =
-    case chunks b of
-        Seq.Empty -> Nothing
-        (Seq.:<|) x _ -> let (c, _) = Nontrivial.uncons x in Just c
 
 unconsChar :: ListLike text char => Buffer text char -> Maybe (char, Buffer text char)
 unconsChar b =
