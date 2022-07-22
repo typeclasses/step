@@ -2,8 +2,8 @@
 
 module Step.Input.BufferedStream
   (
-    {- * The type -} BufferedStream (..), BufferResult (..), curse,
-    {- * Conversion with Stream -} fromStream,
+    BufferedStream (..), BufferResult (..),
+    curse, fromStream,
   )
   where
 
