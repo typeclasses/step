@@ -24,6 +24,9 @@ import Step.Input.AdvanceResult (AdvanceResult)
 
 import qualified Positive
 
+import qualified Step.Input.Stream as Stream
+import Step.Input.Stream (Stream)
+
 ---
 
 class Monad m => Counting m where
@@ -43,22 +46,22 @@ data Counter input =
 curse :: forall m input text char. Monad m =>
     Session text char (StateT input m)
     -> Session text char (StateT (Counter input) m)
-curse Session{ run = (run' :: forall a. m' a -> StateT input m a), next = next', commit = commit' } =
-    Cursor.Session{ run, next, commit }
+curse Session{ run = (runUpstream :: forall a. m' a -> StateT input m a), input = inputUpstream, commit = commitUpstream } =
+    Cursor.Session{ run, input, commit }
   where
     run :: StateT CursorPosition m' a -> StateT (Counter input) m a
     run a = do
         p <- get <&> position
-        (x, p') <- zoom pendingLens (run' (runStateT a p))
+        (x, p') <- zoom pendingLens (runUpstream (runStateT a p))
         assign positionLens p'
         return x
 
-    next :: StateT CursorPosition m' (Maybe (Nontrivial text char))
-    next = lift next'
+    input :: Stream (StateT CursorPosition m') (Nontrivial text char)
+    input = Stream.changeBase lift inputUpstream
 
     commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
     commit n = do
-        r <- lift (commit' n)
+        r <- lift (commitUpstream n)
         modify' $ CursorPosition.increase $ case r of
             Advance.Success -> review Positive.refine n
             Advance.InsufficientInput{ Advance.shortfall = s } -> review Positive.refine n - review Positive.refine s

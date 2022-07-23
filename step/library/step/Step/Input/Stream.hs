@@ -1,8 +1,13 @@
+{-# language RankNTypes #-}
+
 module Step.Input.Stream where
 
 import Step.Internal.Prelude
 
 newtype Stream m a = Stream{ next :: m (Maybe a) }
+
+changeBase :: (forall x. m1 x -> m2 x) -> Stream m1 a -> Stream m2 a
+changeBase f Stream{ next } = Stream{ next = f next }
 
 record :: Monad m => (a -> s -> s) -> Stream m a -> Stream (StateT s m) a
 record add = r

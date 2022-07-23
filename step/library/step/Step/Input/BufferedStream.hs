@@ -23,7 +23,7 @@ import Step.Input.Cursor (Session (..))
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult, shortfall)
 
-import Step.Input.Stream (Stream)
+import Step.Input.Stream (Stream (..))
 import qualified Step.Input.Stream as Stream
 
 ---
@@ -65,7 +65,7 @@ sessionBufferMore = use sessionPendingLens >>= \p -> lift (Stream.next p) >>= \c
         return BufferedMore
 
 curse :: forall m text char. Monad m => ListLike text char => Session text char (StateT (BufferedStream m text char) m)
-curse = Session{ run, commit, next }
+curse = Session{ run, commit, input }
   where
     run :: StateT (BufferedStreamSession m text char) m a -> StateT (BufferedStream m text char) m a
     run a = do
@@ -74,13 +74,15 @@ curse = Session{ run, commit, next }
         put BufferedStream{ buffer = BufferSession.uncommitted (bufferSession bss), pending = sessionPending bss }
         return x
 
-    next :: StateT (BufferedStreamSession m text char) m (Maybe (Nontrivial text char))
-    next =
-        zoom (bufferSessionLens % BufferSession.unseenLens) Buffer.takeChunk >>= \case
-            Just x -> return (Just x)
-            Nothing -> sessionBufferMore >>= \case
-                NothingToBuffer -> return Nothing
-                BufferedMore -> zoom (bufferSessionLens % BufferSession.unseenLens) Buffer.takeChunk
+    input :: Stream (StateT (BufferedStreamSession m text char) m) (Nontrivial text char)
+    input = Stream
+        { next =
+              zoom (bufferSessionLens % BufferSession.unseenLens) Buffer.takeChunk >>= \case
+                  Just x -> return (Just x)
+                  Nothing -> sessionBufferMore >>= \case
+                      NothingToBuffer -> return Nothing
+                      BufferedMore -> zoom (bufferSessionLens % BufferSession.unseenLens) Buffer.takeChunk
+        }
 
     commit :: Positive Natural -> StateT (BufferedStreamSession m text char) m AdvanceResult
     commit n =

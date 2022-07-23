@@ -19,6 +19,9 @@ import qualified Step.Buffer.Base as Buffer
 import Step.Input.Cursor (Session (Session))
 import qualified Step.Input.Cursor as Session
 
+import qualified Step.Input.Stream as Stream
+import Step.Input.Stream (Stream (..))
+
 data BufferSession text char = BufferSession
   { uncommitted :: Buffer text char
   , unseen :: Buffer text char
@@ -42,7 +45,7 @@ unseenLens :: Lens
 unseenLens = lens unseen \x y -> x{ unseen = y }
 
 curse :: Monad m => ListLike text char => Session text char (StateT (Buffer text char) m)
-curse = Session{ Session.run, Session.commit, Session.next }
+curse = Session{ Session.run, Session.commit, Session.input }
 
 run :: Monad m => ListLike text char => StateT (BufferSession text char) m a -> StateT (Buffer text char) m a
 run a = do
@@ -51,8 +54,8 @@ run a = do
     put (uncommitted bs)
     return x
 
-next :: Monad m => ListLike text char => StateT (BufferSession text char) m (Maybe (Nontrivial text char))
-next = zoom unseenLens Buffer.takeChunk
+input :: Monad m => ListLike text char => Stream (StateT (BufferSession text char) m) (Nontrivial text char)
+input = Stream{ next = zoom unseenLens Buffer.takeChunk }
 
 commit :: Monad m => ListLike text char => Positive Natural -> StateT (BufferSession text char) m AdvanceResult
 commit n = zoom uncommittedLens (Buffer.dropN n)

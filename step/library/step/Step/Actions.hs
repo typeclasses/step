@@ -52,29 +52,31 @@ import qualified Step.Input.Counter as Counting
 
 import Step.Input.CursorPosition (CursorPosition)
 
+import qualified Step.Input.Stream as Stream
+
 type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), Cursor.Cursor m, Fallible m)
 
 takeCharMaybe :: Cursor m => Sure m e (Maybe (Char m))
 takeCharMaybe = Action.Unsafe.Sure $ case curse of
-    Session{ run, next, commit } -> run $ next >>= \case
+    Session{ run, input, commit } -> run $ Stream.next input >>= \case
         Nothing -> return Nothing
         Just x -> commit (PositiveUnsafe 1) $> Just (Nontrivial.head x)
 
 peekCharMaybe :: Cursor m => SureQuery m e (Maybe (Char m))
 peekCharMaybe = Action.Unsafe.SureQuery $ case curse of
-    Session{ run, next } -> run $ next <&> \case
+    Session{ run, input } -> run $ Stream.next input <&> \case
         Nothing -> Nothing
         Just x -> Just (Nontrivial.head x)
 
 satisfyJust :: Cursor m => (Char m -> Maybe a) -> AtomicMove m (Error m) a
 satisfyJust ok = Action.Unsafe.AtomicMove $ case curse of
-    Session{ run, next, commit } -> run $ next >>= \case
+    Session{ run, input, commit } -> run $ Stream.next input >>= \case
         Just (ok . Nontrivial.head -> Just x) -> commit (PositiveUnsafe 1) $> Right x
         _ -> return (Left F.failure)
 
 atEnd :: Cursor m => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery $ case curse of
-    Session{ run, next } -> run $ next <&> isNothing
+    Session{ run, input } -> run $ Stream.next input <&> isNothing
 
 cursorPosition :: Counting m => SureQuery m e CursorPosition
 cursorPosition = Action.Unsafe.SureQuery Counting.cursorPosition
@@ -87,7 +89,7 @@ failure = Action.Unsafe.Fail F.failure
 
 some :: Cursor m => AtomicMove m (Error m) (Nontrivial (Text m) (Char m))
 some = Action.Unsafe.AtomicMove $ case curse of
-    Session{ run, next, commit } -> run $ next >>= \case
+    Session{ run, input, commit } -> run $ Stream.next input >>= \case
         Nothing -> return (Left F.failure)
         Just x -> commit (Nontrivial.length x) $> Right x
 
@@ -110,7 +112,7 @@ text :: Cursor m => Nontrivial (Text m) (Char m) -> Move m (Error m) ()
 text = someOfNontrivialText A.>=> (maybe (return ()) (cast @Any . text) . Nontrivial.refine)
   where
     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
-        Session{ run, next, commit } -> run $ next >>= \case
+        Session{ run, input, commit } -> run $ Stream.next input >>= \case
             Nothing -> return (Left F.failure)
             Just y ->
                 if x `Nontrivial.isPrefixOf` y
