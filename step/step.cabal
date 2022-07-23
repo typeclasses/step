@@ -22,6 +22,7 @@ common base
         NoMonomorphismRestriction
         NoImplicitPrelude
         NamedFieldPuns
+        RankNTypes
         ScopedTypeVariables
         TypeApplications
         TypeFamilies

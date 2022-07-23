@@ -1,5 +1,3 @@
-{-# language RankNTypes #-}
-
 module Step.Input.Stream where
 
 import Step.Internal.Prelude

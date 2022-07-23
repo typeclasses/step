@@ -1,4 +1,4 @@
-{-# language DataKinds, KindSignatures, RankNTypes #-}
+{-# language DataKinds, KindSignatures #-}
 
 module Step.ActionTypes.ChangeBase where
 
