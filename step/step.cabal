@@ -128,8 +128,11 @@ library
         Step.Nontrivial.Span
         Step.Nontrivial.SplitAt
         Step.Nontrivial.SplitAtPositive
+        Step.Nontrivial.TakeWhile
 
         Step.Test.InputChunking
+
+        Step.While
 
     reexported-modules:
         Step.ActionTypes
