@@ -6,7 +6,7 @@ module Step.Nontrivial.SplitAt
 
 import Step.Internal.Prelude hiding (cons)
 
-import Step.Nontrivial.Constructor (Nontrivial (..))
+import Step.Nontrivial.Unsafe (Nontrivial (..))
 
 import qualified Positive
 

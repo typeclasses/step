@@ -10,7 +10,7 @@ module Step.Nontrivial.List
 import qualified Step.Internal.Prelude as Prelude
 import Step.Internal.Prelude hiding (cons)
 
-import Step.Nontrivial.Constructor (Nontrivial (..))
+import Step.Nontrivial.Unsafe (Nontrivial (..))
 import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified ListLike

@@ -2,7 +2,7 @@ module Step.Nontrivial.Span where
 
 import Step.Internal.Prelude
 
-import Step.Nontrivial.Constructor (Nontrivial (..))
+import Step.Nontrivial.Unsafe (Nontrivial (..))
 import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified ListLike

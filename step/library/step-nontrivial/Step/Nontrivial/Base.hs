@@ -10,7 +10,7 @@ module Step.Nontrivial.Base
 
 import Step.Internal.Prelude hiding (uncons, fold)
 
-import Step.Nontrivial.Constructor
+import Step.Nontrivial.Unsafe
 
 import qualified ListLike
 

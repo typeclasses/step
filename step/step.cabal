@@ -94,7 +94,10 @@ common base
 library
     import: base
     hs-source-dirs: library/step
-    build-depends: step-internal, step-action-types
+    build-depends:
+        step-internal
+      , step-action-types
+      , step-nontrivial
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Actions
@@ -122,14 +125,6 @@ library
         Step.Document.Location
         Step.Document.Memory
 
-        Step.Nontrivial.Base
-        Step.Nontrivial.Constructor
-        Step.Nontrivial.List
-        Step.Nontrivial.Span
-        Step.Nontrivial.SplitAt
-        Step.Nontrivial.SplitAtPositive
-        Step.Nontrivial.TakeWhile
-
         Step.Test.InputChunking
 
         Step.While
@@ -138,6 +133,22 @@ library
         Step.ActionTypes
       , Step.ActionTypes.Types
       , Step.ActionTypes.Unsafe
+      , Step.Nontrivial
+      , Step.Nontrivial.Unsafe
+
+library step-nontrivial
+    import: base
+    hs-source-dirs: library/step-nontrivial
+    build-depends: step-internal
+    exposed-modules:
+        Step.Nontrivial
+        Step.Nontrivial.Base
+        Step.Nontrivial.List
+        Step.Nontrivial.Span
+        Step.Nontrivial.SplitAt
+        Step.Nontrivial.SplitAtPositive
+        Step.Nontrivial.TakeWhile
+        Step.Nontrivial.Unsafe
 
 library step-action-types
     import: base

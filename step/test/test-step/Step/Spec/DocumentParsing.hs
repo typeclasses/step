@@ -24,7 +24,7 @@ import Char (Char)
 import Text (Text)
 
 import qualified Step.Input.Stream as Stream
-import Step.Nontrivial.Constructor (Nontrivial (NontrivialUnsafe))
+import Step.Nontrivial.Unsafe (Nontrivial (NontrivialUnsafe))
 
 -- The module under test
 import qualified Step.Document as P
