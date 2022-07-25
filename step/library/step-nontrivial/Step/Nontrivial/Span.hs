@@ -7,12 +7,12 @@ import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified ListLike
 
-data Span text char = All | None | Split (Nontrivial text char) (Nontrivial text char)
+data Span xs x = All | None | Split (Nontrivial xs x) (Nontrivial xs x)
 
-span :: ListLike text char => (char -> Bool) -> Nontrivial text char -> Span text char
+span :: ListLike xs x => (x -> Bool) -> Nontrivial xs x -> Span xs x
 span f whole = tupleSpan $ ListLike.span f (Nontrivial.generalize whole)
 
-tupleSpan :: ListLike text char => (text, text) -> Span text char
+tupleSpan :: ListLike xs x => (xs, xs) -> Span xs x
 tupleSpan (a, b) =
     if ListLike.null b then All else
     if ListLike.null a then None else

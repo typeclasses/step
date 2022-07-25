@@ -13,14 +13,14 @@ import qualified Positive
 import qualified Step.Nontrivial.SplitAtPositive as P
 import Step.Nontrivial.SplitAtPositive (SplitAtPositive)
 
-data SplitAt text char = None | All | Insufficient (Positive Natural) | Split (Nontrivial text char) (Nontrivial text char)
+data SplitAt xs x = None | All | Insufficient (Positive Natural) | Split (Nontrivial xs x) (Nontrivial xs x)
 
-splitAt :: ListLike text char => Natural -> Nontrivial text char -> SplitAt text char
+splitAt :: ListLike xs x => Natural -> Nontrivial xs x -> SplitAt xs x
 splitAt n = case preview Positive.refine n of
     Nothing -> \_ -> None
     Just p -> liftSplitAtPositive . P.splitAtPositive p
 
-liftSplitAtPositive :: SplitAtPositive text char -> SplitAt text char
+liftSplitAtPositive :: SplitAtPositive xs x -> SplitAt xs x
 liftSplitAtPositive = \case
     P.All -> All
     P.Insufficient r -> Insufficient r

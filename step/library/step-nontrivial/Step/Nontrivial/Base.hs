@@ -14,28 +14,28 @@ import Step.Nontrivial.Unsafe
 
 import qualified ListLike
 
-refine :: ListLike text char => text -> Maybe (Nontrivial text char)
+refine :: ListLike xs x => xs -> Maybe (Nontrivial xs x)
 refine x = if ListLike.null x then Nothing else Just (NontrivialUnsafe x)
 
-generalize :: Nontrivial text char -> text
-generalize (NontrivialUnsafe x) = x
+generalize :: Nontrivial xs x -> xs
+generalize (NontrivialUnsafe xs) = xs
 
-stripPrefix :: Eq a => ListLike text a => Nontrivial text char -> Nontrivial text char -> Maybe text
-stripPrefix x y = ListLike.stripPrefix (generalize x) (generalize y)
+stripPrefix :: Eq x => ListLike xs x => Nontrivial xs x -> Nontrivial xs x -> Maybe xs
+stripPrefix a b = ListLike.stripPrefix (generalize a) (generalize b)
 
-uncons :: ListLike text a => Nontrivial text char -> (a, text)
-uncons x = case ListLike.uncons (generalize x) of
+uncons :: ListLike xs x => Nontrivial xs x -> (x, xs)
+uncons a = case ListLike.uncons (generalize a) of
     Nothing -> error "trivial Nontrivial"
-    Just y -> y
+    Just b -> b
 
-drop :: ListLike text a => Natural -> Nontrivial text char -> text
+drop :: ListLike xs x => Natural -> Nontrivial xs x -> xs
 drop n = ListLike.drop (fromIntegral n) . generalize
 
-head :: ListLike text a => Nontrivial text a -> a
+head :: ListLike xs x => Nontrivial xs x -> x
 head = ListLike.head . generalize
 
-fold :: ListLike text a => [Nontrivial text a] -> text
+fold :: ListLike xs x => [Nontrivial xs x] -> xs
 fold = ListLike.foldMap generalize
 
-isPrefixOf :: ListLike text char => Eq char => Nontrivial text char -> Nontrivial text char -> Bool
+isPrefixOf :: ListLike xs x => Eq x => Nontrivial xs x -> Nontrivial xs x -> Bool
 a `isPrefixOf` b = generalize a `ListLike.isPrefixOf` generalize b

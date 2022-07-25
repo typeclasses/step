@@ -18,9 +18,9 @@ import qualified Positive
 
 import qualified Maybe
 
-data TakeWhile text char = None | Prefix (Nontrivial text char) | All
+data TakeWhile xs x = None | Prefix (Nontrivial xs x) | All
 
-takeWhile :: ListLike text char => (char -> Bool) -> Nontrivial text char -> TakeWhile text char
+takeWhile :: ListLike xs x => (x -> Bool) -> Nontrivial xs x -> TakeWhile xs x
 takeWhile f x =
     case Nontrivial.refine (ListLike.takeWhile f (Nontrivial.generalize x)) of
         Nothing -> None

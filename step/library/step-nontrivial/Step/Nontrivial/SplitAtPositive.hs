@@ -17,9 +17,9 @@ import qualified Positive.Math as Positive
 
 import qualified Signed as Signed
 
-data SplitAtPositive text char = All | Insufficient (Positive Natural) | Split (Nontrivial text char) (Nontrivial text char)
+data SplitAtPositive xs x = All | Insufficient (Positive Natural) | Split (Nontrivial xs x) (Nontrivial xs x)
 
-splitAtPositive :: ListLike text char => Positive Natural -> Nontrivial text char -> SplitAtPositive text char
+splitAtPositive :: ListLike xs x => Positive Natural -> Nontrivial xs x -> SplitAtPositive xs x
 splitAtPositive n whole =
     case Positive.minus (Nontrivial.length whole) n of
         Signed.Zero -> All
