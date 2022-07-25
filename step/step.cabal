@@ -142,11 +142,14 @@ library step-nontrivial
     build-depends: step-internal
     exposed-modules:
         Step.Nontrivial
-        Step.Nontrivial.Base
+        Step.Nontrivial.Constructor
+        Step.Nontrivial.Length
+        Step.Nontrivial.Refinement
         Step.Nontrivial.Span
         Step.Nontrivial.SplitAt
         Step.Nontrivial.SplitAtPositive
         Step.Nontrivial.TakeWhile
+        Step.Nontrivial.Type
         Step.Nontrivial.Unsafe
 
 library step-action-types

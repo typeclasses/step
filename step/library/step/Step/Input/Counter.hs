@@ -14,7 +14,7 @@ import Step.Internal.Prelude
 import Step.Input.CursorPosition (CursorPosition)
 import qualified Step.Input.CursorPosition as CursorPosition
 
-import Step.Nontrivial.Base (Nontrivial)
+import Step.Nontrivial (Nontrivial)
 
 import Step.Input.Cursor (Session (..))
 import qualified Step.Input.Cursor as Cursor

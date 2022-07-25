@@ -26,15 +26,13 @@ import qualified Step.ActionTypes.Do as A
 
 import qualified Text as T
 
-import qualified Step.Nontrivial.Base as Nontrivial
+import qualified Step.Nontrivial as Nontrivial
+import Step.Nontrivial (Nontrivial)
 
 import Step.Input.Cursor (Text, Char, curse, Session (..))
 import qualified Step.Input.Cursor as Cursor
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
-
-import Step.Nontrivial.Base (Nontrivial)
-import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified ListLike
 

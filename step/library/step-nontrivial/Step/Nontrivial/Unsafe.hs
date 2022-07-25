@@ -1,8 +1,9 @@
-{-# language DerivingStrategies, GeneralizedNewtypeDeriving, Unsafe #-}
+{-# language Unsafe #-}
 
-module Step.Nontrivial.Unsafe where
+module Step.Nontrivial.Unsafe
+  (
+    Nontrivial (NontrivialUnsafe),
+  )
+  where
 
-import Step.Internal.Prelude
-
-newtype Nontrivial xs x = NontrivialUnsafe xs
-    deriving newtype (Semigroup, Eq, Ord, Show)
+import Step.Nontrivial.Constructor

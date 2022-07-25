@@ -1,19 +1,26 @@
+{-# language Safe #-}
+
 module Step.Nontrivial.SplitAt
   (
-    splitAt, SplitAt (..),
+    splitAt,
+    SplitAt (..),
   )
   where
 
 import Step.Internal.Prelude hiding (cons)
 
-import Step.Nontrivial.Unsafe (Nontrivial (..))
+import Step.Nontrivial.Type (Nontrivial)
+
+import Step.Nontrivial.SplitAtPositive (SplitAtPositive)
+import qualified Step.Nontrivial.SplitAtPositive as P
 
 import qualified Positive
 
-import qualified Step.Nontrivial.SplitAtPositive as P
-import Step.Nontrivial.SplitAtPositive (SplitAtPositive)
-
-data SplitAt xs x = None | All | Insufficient (Positive Natural) | Split (Nontrivial xs x) (Nontrivial xs x)
+data SplitAt xs x =
+    None
+  | All
+  | Insufficient (Positive Natural)
+  | Split (Nontrivial xs x) (Nontrivial xs x)
 
 splitAt :: ListLike xs x => Natural -> Nontrivial xs x -> SplitAt xs x
 splitAt n = case preview Positive.refine n of

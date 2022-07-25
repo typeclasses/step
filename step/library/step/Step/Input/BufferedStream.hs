@@ -15,8 +15,8 @@ import qualified Step.Buffer.Base as Buffer
 import Step.Buffer.Session (BufferSession (..))
 import qualified Step.Buffer.Session as BufferSession
 
-import Step.Nontrivial.Base (Nontrivial)
-import qualified Step.Nontrivial.Base as Nontrivial
+import Step.Nontrivial (Nontrivial)
+import qualified Step.Nontrivial as Nontrivial
 
 import Step.Input.Cursor (Session (..))
 

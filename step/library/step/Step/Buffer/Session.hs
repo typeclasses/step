@@ -9,7 +9,7 @@ module Step.Buffer.Session
 
 import Step.Internal.Prelude hiding (fold)
 
-import Step.Nontrivial.Base (Nontrivial)
+import Step.Nontrivial (Nontrivial)
 
 import Step.Input.AdvanceResult (AdvanceResult)
 

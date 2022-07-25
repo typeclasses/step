@@ -16,7 +16,7 @@ import qualified Char
 import qualified Text
 import Text (Text)
 
-import qualified Step.Nontrivial.Base as Nontrivial
+import qualified Step.Nontrivial as Nontrivial
 
 type Parser base action value =
     action (P.DocumentParsing Text Char base) P.Error value

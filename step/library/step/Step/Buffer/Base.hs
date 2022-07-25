@@ -13,9 +13,9 @@ import Step.Internal.Prelude hiding (fold)
 
 import qualified Seq
 
-import Step.Nontrivial.Base (Nontrivial)
+import Step.Nontrivial (Nontrivial)
+import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.SplitAtPositive as SplitAtPositive
-import Step.Nontrivial.SplitAtPositive (splitAtPositive)
 
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult)
@@ -39,7 +39,7 @@ takeChunk = get >>= \b -> case uncons (chunks b) of
 dropN :: (Monad m, ListLike text char) => Positive Natural -> StateT (Buffer text char) m AdvanceResult
 dropN = fix \r n -> get >>= \case
     Buffer{ chunks = Seq.Empty } -> return Advance.InsufficientInput{ Advance.shortfall = n }
-    Buffer{ chunks = (Seq.:<|) x xs } -> case splitAtPositive n x of
+    Buffer{ chunks = (Seq.:<|) x xs } -> case Nontrivial.splitAtPositive n x of
         SplitAtPositive.All -> put Buffer{ chunks = xs } $> Advance.Success
         SplitAtPositive.Split _ b -> put Buffer{ chunks = (Seq.:<|) b xs } $> Advance.Success
         SplitAtPositive.Insufficient n' -> r n'

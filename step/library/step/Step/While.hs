@@ -2,9 +2,8 @@ module Step.While where
 
 import Step.Internal.Prelude hiding (while)
 
-import Step.Nontrivial.Base
-import qualified Step.Nontrivial.Base as Nontrivial
-import qualified Step.Nontrivial.TakeWhile as Nontrivial (takeWhile, TakeWhile)
+import Step.Nontrivial (Nontrivial)
+import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
 
 import Step.Input.AdvanceResult
