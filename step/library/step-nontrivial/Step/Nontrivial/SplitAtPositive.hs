@@ -8,7 +8,6 @@ import Step.Internal.Prelude hiding (cons)
 
 import Step.Nontrivial.Unsafe (Nontrivial (..))
 import qualified Step.Nontrivial.Base as Nontrivial
-import qualified Step.Nontrivial.List as Nontrivial
 
 import qualified ListLike
 

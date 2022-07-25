@@ -34,7 +34,7 @@ import qualified Step.Input.Cursor as Cursor
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
 import Step.Nontrivial.Base (Nontrivial)
-import qualified Step.Nontrivial.List as Nontrivial
+import qualified Step.Nontrivial.Base as Nontrivial
 
 import qualified ListLike
 

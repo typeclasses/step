@@ -143,7 +143,6 @@ library step-nontrivial
     exposed-modules:
         Step.Nontrivial
         Step.Nontrivial.Base
-        Step.Nontrivial.List
         Step.Nontrivial.Span
         Step.Nontrivial.SplitAt
         Step.Nontrivial.SplitAtPositive

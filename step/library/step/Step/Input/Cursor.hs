@@ -5,7 +5,6 @@ module Step.Input.Cursor where
 import Step.Internal.Prelude hiding (while)
 
 import Step.Nontrivial.Base
-import qualified Step.Nontrivial.List as Nontrivial
 
 import Step.Input.AdvanceResult
 

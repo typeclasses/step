@@ -5,6 +5,7 @@ module Step.Nontrivial.Base
     {- * The type -} Nontrivial,
     {- * Construct and deconstruct -} refine, generalize,
     {- * List operations -} stripPrefix, uncons, drop, head, fold, isPrefixOf,
+    {- ** Length -} length, lengthNat, lengthInt,
   )
   where
 
@@ -13,6 +14,10 @@ import Step.Internal.Prelude hiding (uncons, fold)
 import Step.Nontrivial.Unsafe
 
 import qualified ListLike
+
+import qualified Maybe
+
+import qualified Positive
 
 refine :: ListLike xs x => xs -> Maybe (Nontrivial xs x)
 refine x = if ListLike.null x then Nothing else Just (NontrivialUnsafe x)
@@ -39,3 +44,12 @@ fold = ListLike.foldMap generalize
 
 isPrefixOf :: ListLike xs x => Eq x => Nontrivial xs x -> Nontrivial xs x -> Bool
 a `isPrefixOf` b = generalize a `ListLike.isPrefixOf` generalize b
+
+length :: ListLike xs x => Nontrivial xs x -> Positive Natural
+length = Maybe.fromJust . preview Positive.natPrism . fromIntegral . ListLike.length . generalize
+
+lengthNat :: ListLike xs x => Nontrivial xs x -> Natural
+lengthNat = fromIntegral . ListLike.length . generalize
+
+lengthInt :: ListLike xs x => Nontrivial xs x -> Integer
+lengthInt = fromIntegral . ListLike.length . generalize
