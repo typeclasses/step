@@ -87,7 +87,7 @@ fromStream :: Lines.Char char => ListLike text char => Monad m => Stream m text 
 fromStream xs =
   DocumentMemory
     { content = Lines.empty
-    , cursor = Counter.start $ BufferedStream.fromStream $ Stream.record (execState . Lines.record) xs
+    , cursor = Counter.start $ BufferedStream.fromStream $ Stream.record Lines.record xs
     }
 
 

@@ -25,8 +25,6 @@ import qualified Signed
 
 import qualified Maybe
 
-data Completion = Done | MightBeMore
-
 data While text char =
   While
     { completion :: Completion -- ^ Should we read any more from upstream
