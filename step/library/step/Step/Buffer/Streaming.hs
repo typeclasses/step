@@ -12,8 +12,8 @@ module Step.Buffer.Streaming
 
 import Step.Internal.Prelude hiding (fold)
 
-import Step.Buffer.Base (Buffer)
-import qualified Step.Buffer.Base as Buffer
+import Step.Buffer.Buffer (Buffer)
+import qualified Step.Buffer.Buffer as Buffer
 
 import Step.Cursor (AdvanceResult (..), Cursor (..), Stream)
 import qualified Step.Cursor as Cursor

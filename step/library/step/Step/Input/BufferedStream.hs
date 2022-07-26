@@ -9,8 +9,8 @@ module Step.Input.BufferedStream
 
 import Step.Internal.Prelude
 
-import Step.Buffer.Base (Buffer)
-import qualified Step.Buffer.Base as Buffer
+import Step.Buffer.Buffer (Buffer)
+import qualified Step.Buffer.Buffer as Buffer
 
 import Step.Buffer.Double (DoubleBuffer (..))
 import qualified Step.Buffer.Double as DoubleBuffer

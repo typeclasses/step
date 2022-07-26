@@ -1,6 +1,6 @@
 {-# language FlexibleInstances, FlexibleContexts, Trustworthy #-}
 
-module Step.Buffer.Base
+module Step.Buffer.Buffer
   (
     Buffer, isEmpty, empty, (|>),
 
