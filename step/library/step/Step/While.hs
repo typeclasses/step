@@ -30,8 +30,8 @@ bufferLens = lens buffer \x y -> x{ buffer = y }
 init :: While text char
 init = While{ completion = Cursor.MightBeMore, uncommitted = 0, buffer = Buffer.empty }
 
-while :: forall m text char. Monad m => ListLike text char =>
-    Predicate char -> Cursor text char m -> Cursor text char m
+while :: forall m m' xs x. Monad m => Monad m' => ListLike xs x =>
+    Predicate x -> Cursor xs x m m' -> Cursor xs x m (StateT (While xs x) m')
 while ok
   Cursor
     { Cursor.run = runUpstream :: forall a. m' a -> m a

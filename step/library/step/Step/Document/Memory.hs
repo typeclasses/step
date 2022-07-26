@@ -26,6 +26,10 @@ import qualified Step.Cursor as Cursor
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
 
+import Step.Input.BufferedStream (BufferedStreamSession)
+
+import Step.Input.CursorPosition (CursorPosition)
+
 
 -- The type
 
@@ -35,7 +39,13 @@ data DocumentMemory xs x m =
     , cursor :: Counter (BufferedStream (StateT LineHistory m) xs x)
     }
 
-curse :: Monad m => ListLike xs x => Cursor xs x (StateT (DocumentMemory xs x m) m)
+
+curse :: (ListLike xs x, Monad m) => Cursor xs x
+  (StateT (DocumentMemory xs x m) m)
+  (StateT CursorPosition
+    (StateT (BufferedStreamSession
+      (StateT LineHistory m) xs x)
+        (StateT LineHistory m)))
 curse = Cursor.rebaseCursor runCursorState (Counter.curse BufferedStream.curse)
 
 instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text char m) m) where

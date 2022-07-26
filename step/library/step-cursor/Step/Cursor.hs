@@ -19,7 +19,7 @@ import Step.Cursor.InputChunking (genChunks)
 import qualified Step.Cursor.Type as Cursor
 import qualified Step.Cursor.ChunkStream as Stream
 
-rebaseCursor :: (forall a. m1 a -> m2 a) -> Cursor xs x m1 -> Cursor xs x m2
+rebaseCursor :: (forall a. base1 a -> base2 a) -> Cursor xs x base1 cursor -> Cursor xs x base2 cursor
 rebaseCursor = Cursor.rebase
 
 rebaseStream :: (forall a. m1 a -> m2 a) -> Stream m1 xs x -> Stream m2 xs x

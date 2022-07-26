@@ -29,7 +29,7 @@ import qualified Text as T
 import qualified Step.Nontrivial as Nontrivial
 import Step.Nontrivial (Nontrivial)
 
-import Step.Cursor (Text, Char, curse, Cursor (..))
+import Step.Cursor (Cursor (..), CursoryText, CursoryChar, curse)
 import qualified Step.Cursor as Cursor
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
@@ -50,21 +50,21 @@ import qualified Step.Input.Counter as Counting
 
 import Step.Input.CursorPosition (CursorPosition)
 
-type Cursory m = (ListLike (Text m) (Char m), Eq (Char m), Cursor.Cursory m, Fallible m)
+type Cursory m = (ListLike (CursoryText m) (CursoryChar m), Eq (CursoryChar m), Cursor.Cursory m, Fallible m)
 
-takeCharMaybe :: Cursory m => Sure m e (Maybe (Char m))
+takeCharMaybe :: Cursory m => Sure m e (Maybe (CursoryChar m))
 takeCharMaybe = Action.Unsafe.Sure $ case curse of
     Cursor{ run, input, commit } -> run $ Cursor.next input >>= \case
         Nothing -> return Nothing
         Just x -> commit (PositiveUnsafe 1) $> Just (Nontrivial.head x)
 
-peekCharMaybe :: Cursory m => SureQuery m e (Maybe (Char m))
+peekCharMaybe :: Cursory m => SureQuery m e (Maybe (CursoryChar m))
 peekCharMaybe = Action.Unsafe.SureQuery $ case curse of
     Cursor{ run, input } -> run $ Cursor.next input <&> \case
         Nothing -> Nothing
         Just x -> Just (Nontrivial.head x)
 
-satisfyJust :: Cursory m => (Char m -> Maybe a) -> AtomicMove m (Error m) a
+satisfyJust :: Cursory m => (CursoryChar m -> Maybe a) -> AtomicMove m (Error m) a
 satisfyJust ok = Action.Unsafe.AtomicMove $ case curse of
     Cursor{ run, input, commit } -> run $ Cursor.next input >>= \case
         Just (ok . Nontrivial.head -> Just x) -> commit (PositiveUnsafe 1) $> Right x
@@ -83,7 +83,7 @@ position = Action.Unsafe.SureQuery Locating.position
 failure :: Cursory m => Fail m (Error m) a
 failure = Action.Unsafe.Fail F.failure
 
-some :: Cursory m => AtomicMove m (Error m) (Nontrivial (Text m) (Char m))
+some :: Cursory m => AtomicMove m (Error m) (Nontrivial (CursoryText m) (CursoryChar m))
 some = Action.Unsafe.AtomicMove $ case curse of
     Cursor{ run, input, commit } -> run $ Cursor.next input >>= \case
         Nothing -> return (Left F.failure)
@@ -104,7 +104,7 @@ p <?> c = contextualize c p
 
 -- todo: add an atomic version of 'text'
 
-text :: Cursory m => Nontrivial (Text m) (Char m) -> Move m (Error m) ()
+text :: Cursory m => Nontrivial (CursoryText m) (CursoryChar m) -> Move m (Error m) ()
 text = someOfNontrivialText A.>=> (maybe (return ()) (cast @Any . text) . Nontrivial.refine)
   where
     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of

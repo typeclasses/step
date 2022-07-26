@@ -31,7 +31,7 @@ newtype BufferedStreamSession xs x m a =
         via ReaderT (Stream m xs x) (BufferSession xs x m)
 
 curseBufferedStream :: Monad m => ListLike xs x =>
-    Stream m xs x -> Cursor xs x (StateT (Buffer xs x) m)
+    Stream m xs x -> Cursor xs x (StateT (Buffer xs x) m) (BufferedStreamSession xs x m)
 curseBufferedStream upstream =
   Cursor
     { run = runBufferedStreamSession upstream

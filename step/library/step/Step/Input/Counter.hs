@@ -35,9 +35,9 @@ data Counter input =
     , pending :: input
     }
 
-curse :: forall m input xs x. Monad m =>
-    Cursor xs x (StateT input m) -> Cursor xs x (StateT (Counter input) m)
-curse Cursor{ run = (runUpstream :: forall a. m' a -> StateT input m a), input = inputUpstream, commit = commitUpstream } =
+curse :: forall m m' input xs x. Monad m => Monad m' =>
+    Cursor xs x (StateT input m) m' -> Cursor xs x (StateT (Counter input) m) (StateT CursorPosition m')
+curse Cursor{ run = runUpstream, input = inputUpstream, commit = commitUpstream } =
     Cursor{ run, input, commit }
   where
     run :: StateT CursorPosition m' a -> StateT (Counter input) m a

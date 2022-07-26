@@ -27,7 +27,7 @@ newtype BufferSession xs x m a =
     BufferSession (StateT (BufferCursor xs x) m a)
     deriving newtype (Functor, Applicative, Monad)
 
-curseBuffer :: Monad m => ListLike xs x => Cursor xs x (StateT (Buffer xs x) m)
+curseBuffer :: Monad m => ListLike xs x => Cursor xs x (StateT (Buffer xs x) m) (BufferSession xs x m)
 curseBuffer =
    Cursor
     { run = runBufferSession

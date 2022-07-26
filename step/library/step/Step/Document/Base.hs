@@ -39,6 +39,12 @@ import qualified Step.Input.Counter as Counting
 
 import Step.Input.Counter (cursorPosition)
 
+import Step.Input.BufferedStream (BufferedStreamSession)
+
+import Step.Input.CursorPosition (CursorPosition)
+
+import Step.Document.Lines (LineHistory)
+
 ---
 
 data Config = Config{ configContext :: [Text] }
@@ -63,9 +69,14 @@ newtype DocumentParsing text char m a =
     deriving (Functor, Applicative, Monad)
         via (ReaderT Config (StateT (DocumentMemory text char m) m))
 
-instance (Monad m, ListLike text char) => Cursory (DocumentParsing text char m) where
-    type Text (DocumentParsing text char m) = text
-    type Char (DocumentParsing text char m) = char
+instance (Monad m, ListLike xs x) => Cursory (DocumentParsing xs x m) where
+    type CursoryText (DocumentParsing xs x m) = xs
+    type CursoryChar (DocumentParsing xs x m) = x
+    type CursoryContext (DocumentParsing xs x m) =
+      (StateT CursorPosition
+        (StateT (BufferedStreamSession
+          (StateT LineHistory m) xs x)
+            (StateT LineHistory m)))
     curse = Cursor.rebaseCursor (DocumentParsing . lift) DocumentMemory.curse
 
 instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where

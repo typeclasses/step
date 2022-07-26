@@ -2,7 +2,7 @@
 
 module Step.Input.BufferedStream
   (
-    BufferedStream (..),
+    BufferedStream (..), BufferedStreamSession,
     curse, fromStream, bufferMore,
   )
   where
@@ -48,7 +48,8 @@ sessionBufferMore = use sessionPendingLens >>= \p -> lift (Cursor.next p) >>= \c
         modifying (bufferSessionLens % BufferCursor.unseenLens) (Buffer.|> x)
         return BufferedMore
 
-curse :: forall m xs x. Monad m => ListLike xs x => Cursor xs x (StateT (BufferedStream m xs x) m)
+curse :: forall m xs x. Monad m => ListLike xs x =>
+    Cursor xs x (StateT (BufferedStream m xs x) m) (StateT (BufferedStreamSession m xs x) m)
 curse = Cursor{ run, commit, input }
   where
     run :: StateT (BufferedStreamSession m xs x) m a -> StateT (BufferedStream m xs x) m a
