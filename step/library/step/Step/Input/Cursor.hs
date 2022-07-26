@@ -14,7 +14,7 @@ import qualified Step.Input.Stream as Stream
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-class Cursor m where
+class Cursory m where
     type Text m :: Type
     type Char m :: Type
     curse :: Session (Text m) (Char m) m

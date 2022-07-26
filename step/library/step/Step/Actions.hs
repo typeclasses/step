@@ -52,7 +52,7 @@ import Step.Input.CursorPosition (CursorPosition)
 
 import qualified Step.Input.Stream as Stream
 
-type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), Cursor.Cursor m, Fallible m)
+type Cursor m = (ListLike (Text m) (Char m), Eq (Char m), Cursor.Cursory m, Fallible m)
 
 takeCharMaybe :: Cursor m => Sure m e (Maybe (Char m))
 takeCharMaybe = Action.Unsafe.Sure $ case curse of

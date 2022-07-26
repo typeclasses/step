@@ -23,7 +23,7 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import Text (Text)
 
-import Step.Input.Cursor (Cursor, curse)
+import Step.Input.Cursor (Cursory, curse)
 import qualified Step.Input.Cursor as Cursor
 
 import Step.Document.Locating (Locating (..))
@@ -65,7 +65,7 @@ newtype DocumentParsing text char m a =
     deriving (Functor, Applicative, Monad)
         via (ReaderT Config (StateT (DocumentMemory text char m) m))
 
-instance (Monad m, ListLike text char) => Cursor (DocumentParsing text char m) where
+instance (Monad m, ListLike text char) => Cursory (DocumentParsing text char m) where
     type Text (DocumentParsing text char m) = text
     type Char (DocumentParsing text char m) = char
     curse = Cursor.rebaseSession (DocumentParsing . lift) DocumentMemory.curse
