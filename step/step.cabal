@@ -114,7 +114,6 @@ library
         Step.Buffer.Session
 
         Step.Input.AdvanceResult
-        Step.Input.BufferedStream
         Step.Input.Counter
         Step.Input.Cursor
         Step.Input.CursorPosition

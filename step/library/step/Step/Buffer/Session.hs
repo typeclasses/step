@@ -1,7 +1,8 @@
 module Step.Buffer.Session
   (
-    curse,
+    curseBuffer, curseBufferedStream,
     BufferSession (..),
+    drink,
 
     {- * Optics -} newBufferSession, uncommittedLens, unseenLens,
   )
@@ -11,7 +12,8 @@ import Step.Internal.Prelude hiding (fold)
 
 import Step.Nontrivial (Nontrivial)
 
-import Step.Input.AdvanceResult (AdvanceResult)
+import qualified Step.Input.AdvanceResult as Advance
+import Step.Input.AdvanceResult (AdvanceResult, shortfall)
 
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
@@ -21,6 +23,8 @@ import qualified Step.Input.Cursor as Session
 
 import qualified Step.Input.Stream as Stream
 import Step.Input.Stream (Stream (..))
+
+import Step.Buffer.Result
 
 data BufferSession text char = BufferSession
   { uncommitted :: Buffer text char
@@ -44,18 +48,64 @@ unseenLens :: Lens
   (Buffer text char)
 unseenLens = lens unseen \x y -> x{ unseen = y }
 
-curse :: Monad m => ListLike text char => Session text char (StateT (Buffer text char) m)
-curse = Session{ Session.run, Session.commit, Session.input }
+drink :: Monad m => Stream m (Nontrivial text char) -> StateT (BufferSession text char) m BufferResult
+drink xs = lift (Stream.next xs) >>= \case
+    Nothing -> return NothingToBuffer
+    Just x -> do
+        modifying uncommittedLens (Buffer.|> x)
+        modifying unseenLens (Buffer.|> x)
+        return BufferedMore
 
-run :: Monad m => ListLike text char => StateT (BufferSession text char) m a -> StateT (Buffer text char) m a
-run a = do
-    b <- get
-    (x, bs) <- lift (runStateT a (BufferSession b b))
-    put (uncommitted bs)
-    return x
+curseBuffer :: forall m text char. Monad m => ListLike text char =>
+    Session text char (StateT (Buffer text char) m)
+curseBuffer = Session{ Session.run, Session.commit, Session.input }
+  where
+    run :: Monad m => ListLike text char => StateT (BufferSession text char) m a -> StateT (Buffer text char) m a
+    run a = do
+        b <- get
+        (x, bs) <- lift (runStateT a (newBufferSession b))
+        put (uncommitted bs)
+        return x
 
-input :: Monad m => ListLike text char => Stream (StateT (BufferSession text char) m) (Nontrivial text char)
-input = Stream{ next = zoom unseenLens Buffer.takeChunk }
+    input :: Monad m => ListLike text char => Stream (StateT (BufferSession text char) m) (Nontrivial text char)
+    input = Stream{ next = zoom unseenLens Buffer.takeChunk }
 
-commit :: Monad m => ListLike text char => Positive Natural -> StateT (BufferSession text char) m AdvanceResult
-commit n = zoom uncommittedLens (Buffer.dropN n)
+    commit :: Monad m => ListLike text char => Positive Natural -> StateT (BufferSession text char) m AdvanceResult
+    commit n = zoom uncommittedLens (Buffer.dropN n)
+
+curseBufferedStream :: forall m text char. Monad m => ListLike text char =>
+    Stream m (Nontrivial text char) -> Session text char (StateT (Buffer text char) m)
+curseBufferedStream upstream = Session{ Session.run, Session.commit, Session.input }
+  where
+    run :: StateT (BufferSession text char) m a -> StateT (Buffer text char) m a
+    run a = do
+        b <- get
+        (x, bs) <- lift (runStateT a (newBufferSession b))
+        put (uncommitted bs)
+        return x
+
+    input :: Stream (StateT (BufferSession text char) m) (Nontrivial text char)
+    input = Stream
+        { next =
+              zoom unseenLens Buffer.takeChunk >>= \case
+                  Just x -> return (Just x)
+                  Nothing -> bufferMore >>= \case
+                      NothingToBuffer -> return Nothing
+                      BufferedMore -> zoom unseenLens Buffer.takeChunk
+        }
+
+    commit :: Positive Natural -> StateT (BufferSession text char) m AdvanceResult
+    commit n =
+        zoom uncommittedLens (Buffer.dropN n) >>= \case
+            Advance.Success -> return Advance.Success
+            Advance.InsufficientInput{ shortfall = n' } -> bufferMore >>= \case
+                NothingToBuffer -> return Advance.InsufficientInput{ shortfall = n' }
+                BufferedMore -> zoom uncommittedLens (Buffer.dropN n)
+
+    bufferMore :: StateT (BufferSession text char) m BufferResult
+    bufferMore = lift (Stream.next upstream) >>= \case
+        Nothing -> return NothingToBuffer
+        Just x -> do
+            modifying (uncommittedLens) (Buffer.|> x)
+            modifying (unseenLens) (Buffer.|> x)
+            return BufferedMore
