@@ -7,12 +7,9 @@ module Step.Cursor.Stream
 
 import Step.Internal.Prelude
 
-import Step.Nontrivial (Nontrivial)
-import qualified Step.Nontrivial as Nontrivial
-import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
-
 newtype Stream m a = Stream{ next :: m (Maybe a) }
 
+stream :: m (Maybe a) -> Stream m a
 stream = Stream
 
 rebase :: (forall x. m1 x -> m2 x) -> Stream m1 a -> Stream m2 a

@@ -15,9 +15,6 @@ import qualified Step.Buffer.Base as Buffer
 import Step.Buffer.Session (BufferSession (..))
 import qualified Step.Buffer.Session as BufferSession
 
-import Step.Nontrivial (Nontrivial)
-import qualified Step.Nontrivial as Nontrivial
-
 import Step.Cursor (Cursor (..), AdvanceResult (..), shortfall, Stream)
 import qualified Step.Cursor as Cursor
 

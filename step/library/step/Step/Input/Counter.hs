@@ -14,8 +14,6 @@ import Step.Internal.Prelude
 import Step.Input.CursorPosition (CursorPosition)
 import qualified Step.Input.CursorPosition as CursorPosition
 
-import Step.Nontrivial (Nontrivial)
-
 import Step.Cursor (Cursor (..), AdvanceResult (..), Stream)
 import qualified Step.Cursor as Cursor
 

@@ -2,23 +2,14 @@ module Step.While where
 
 import Step.Internal.Prelude hiding (while)
 
-import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
 
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-import Step.Buffer.Session (BufferSession)
-import qualified Step.Buffer.Session as BufferSession
-
 import Step.Cursor (Cursor (Cursor), StreamCompletion, Stream, AdvanceResult (..))
 import qualified Step.Cursor as Cursor
-
-import Signed (Signed (..))
-import qualified Signed
-
-import qualified Maybe
 
 data While text char =
   While
