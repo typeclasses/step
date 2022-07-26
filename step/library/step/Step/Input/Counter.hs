@@ -16,16 +16,10 @@ import qualified Step.Input.CursorPosition as CursorPosition
 
 import Step.Nontrivial (Nontrivial)
 
-import Step.Input.Cursor (Session (..))
-import qualified Step.Input.Cursor as Cursor
-
-import qualified Step.Input.AdvanceResult as Advance
-import Step.Input.AdvanceResult (AdvanceResult)
+import Step.Cursor (Cursor (..), AdvanceResult (..), Stream)
+import qualified Step.Cursor as Cursor
 
 import qualified Positive
-
-import qualified Step.Input.Stream as Stream
-import Step.Input.Stream (Stream)
 
 ---
 
@@ -43,11 +37,10 @@ data Counter input =
     , pending :: input
     }
 
-curse :: forall m input text char. Monad m =>
-    Session text char (StateT input m)
-    -> Session text char (StateT (Counter input) m)
-curse Session{ run = (runUpstream :: forall a. m' a -> StateT input m a), input = inputUpstream, commit = commitUpstream } =
-    Cursor.Session{ run, input, commit }
+curse :: forall m input xs x. Monad m =>
+    Cursor xs x (StateT input m) -> Cursor xs x (StateT (Counter input) m)
+curse Cursor{ run = (runUpstream :: forall a. m' a -> StateT input m a), input = inputUpstream, commit = commitUpstream } =
+    Cursor{ run, input, commit }
   where
     run :: StateT CursorPosition m' a -> StateT (Counter input) m a
     run a = do
@@ -56,15 +49,15 @@ curse Session{ run = (runUpstream :: forall a. m' a -> StateT input m a), input 
         assign positionLens p'
         return x
 
-    input :: Stream (StateT CursorPosition m') (Nontrivial text char)
-    input = Stream.changeBase lift inputUpstream
+    input :: Stream (StateT CursorPosition m') xs x
+    input = Cursor.rebaseStream lift inputUpstream
 
     commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
     commit n = do
         r <- lift (commitUpstream n)
         modify' $ CursorPosition.increase $ case r of
-            Advance.Success -> review Positive.refine n
-            Advance.InsufficientInput{ Advance.shortfall = s } -> review Positive.refine n - review Positive.refine s
+            AdvanceSuccess -> review Positive.refine n
+            YouCanNotAdvance{ shortfall = s } -> review Positive.refine n - review Positive.refine s
         return r
 
 instance Monad m => Counting (StateT (Counter input) m)

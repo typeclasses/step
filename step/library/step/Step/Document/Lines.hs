@@ -88,8 +88,8 @@ empty =
     , terminated = False
     }
 
-build :: Char char => ListLike text char => [text] -> LineHistory
-build xs = execState (traverse_ record xs) empty
+build :: Char x => ListLike xs x => [Nontrivial xs x] -> LineHistory
+build xs = execState (traverse_ recordNontrivial xs) empty
 
 class Eq a => Char a
   where

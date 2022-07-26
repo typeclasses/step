@@ -6,19 +6,14 @@ import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
 
-import Step.Input.AdvanceResult
-
-import Step.Input.Stream
-import qualified Step.Input.Stream as Stream
-
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
 import Step.Buffer.Session (BufferSession)
 import qualified Step.Buffer.Session as BufferSession
 
-import Step.Input.Cursor (Session (Session))
-import qualified Step.Input.Cursor as Session
+import Step.Cursor (Cursor (Cursor), StreamCompletion, Stream, AdvanceResult (..))
+import qualified Step.Cursor as Cursor
 
 import Signed (Signed (..))
 import qualified Signed
@@ -27,12 +22,12 @@ import qualified Maybe
 
 data While text char =
   While
-    { completion :: Completion -- ^ Should we read any more from upstream
+    { completion :: StreamCompletion -- ^ Should we read any more from upstream
     , uncommitted :: Integer -- ^ How many characters have been sent downstream but not committed
     , buffer :: Buffer text char -- ^ Input that has been read from upstream but not seen downstream
     }
 
-completionLens :: Lens (While text char) (While text char) Completion Completion
+completionLens :: Lens (While text char) (While text char) StreamCompletion StreamCompletion
 completionLens = lens completion \x y -> x{ completion = y }
 
 uncommittedLens :: Lens (While text char) (While text char) Integer Integer
@@ -42,20 +37,20 @@ bufferLens :: Lens (While text1 char1) (While text2 char2) (Buffer text1 char1) 
 bufferLens = lens buffer \x y -> x{ buffer = y }
 
 init :: While text char
-init = While{ completion = MightBeMore, uncommitted = 0, buffer = Buffer.empty }
+init = While{ completion = Cursor.MightBeMore, uncommitted = 0, buffer = Buffer.empty }
 
 while :: forall m text char. Monad m => ListLike text char =>
-    Predicate char -> Session text char m -> Session text char m
+    Predicate char -> Cursor text char m -> Cursor text char m
 while ok
-  Session
-    { Session.run = runUpstream :: forall a. m' a -> m a
-    , Session.commit = commitUpstream
-    , Session.input = inputUpstream
+  Cursor
+    { Cursor.run = runUpstream :: forall a. m' a -> m a
+    , Cursor.commit = commitUpstream
+    , Cursor.input = inputUpstream
     } =
-      Session
-        { Session.run = \a -> runUpstream (evalStateT a init)
-        , Session.commit = commit ok commitUpstream
-        , Session.input = input ok inputUpstream
+      Cursor
+        { Cursor.run = \a -> runUpstream (evalStateT a init)
+        , Cursor.commit = commit ok commitUpstream
+        , Cursor.input = input ok inputUpstream
         }
 
 run :: Monad m => StateT (While text char) m a -> m a
@@ -63,33 +58,30 @@ run = _
 
 input :: ListLike text char => Monad m =>
     Predicate char
-    -> Stream m (Nontrivial text char)
-    -> Stream (StateT (While text char) m) (Nontrivial text char)
-input ok upstream =
-  Stream
-    { next = do
-          xm <-
-              zoom bufferLens Buffer.takeChunk >>= \case
-                  Just x -> return (Just x)
-                  Nothing -> use completionLens >>= \case
-                      Done -> return Nothing
-                      MightBeMore -> lift (Stream.next upstream) >>= \case
-                          Nothing -> assign completionLens Done $> Nothing
-                          Just x -> return (Just x)
-          case xm of
-              Nothing -> return Nothing
-              Just x -> case Nontrivial.takeWhile ok x of
-                  Nontrivial.TakeWhile.None -> do
-                      assign completionLens Done
-                      return Nothing
-                  Nontrivial.TakeWhile.All -> do
-                      modifying uncommittedLens (+ Nontrivial.lengthInt x)
-                      return (Just x)
-                  Nontrivial.TakeWhile.Prefix y -> do
-                      modifying uncommittedLens (+ Nontrivial.lengthInt y)
-                      assign completionLens Done
-                      return (Just y)
-    }
+    -> Stream m text char
+    -> Stream (StateT (While text char) m) text char
+input ok upstream = Cursor.stream do
+    xm <-
+        zoom bufferLens Buffer.takeChunk >>= \case
+            Just x -> return (Just x)
+            Nothing -> use completionLens >>= \case
+                Cursor.Done -> return Nothing
+                Cursor.MightBeMore -> lift (Cursor.next upstream) >>= \case
+                    Nothing -> assign completionLens Cursor.Done $> Nothing
+                    Just x -> return (Just x)
+    case xm of
+        Nothing -> return Nothing
+        Just x -> case Nontrivial.takeWhile ok x of
+            Nontrivial.TakeWhile.None -> do
+                assign completionLens Cursor.Done
+                return Nothing
+            Nontrivial.TakeWhile.All -> do
+                modifying uncommittedLens (+ Nontrivial.lengthInt x)
+                return (Just x)
+            Nontrivial.TakeWhile.Prefix y -> do
+                modifying uncommittedLens (+ Nontrivial.lengthInt y)
+                assign completionLens Cursor.Done
+                return (Just y)
 
 commit :: ListLike text char => Monad m =>
     Predicate char

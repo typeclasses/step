@@ -99,6 +99,7 @@ library
         step-internal
       , step-action-types
       , step-nontrivial
+      , step-cursor
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Actions
@@ -113,12 +114,9 @@ library
         Step.Buffer.Result
         Step.Buffer.Session
 
-        Step.Input.AdvanceResult
         Step.Input.BufferedStream
         Step.Input.Counter
-        Step.Input.Cursor
         Step.Input.CursorPosition
-        Step.Input.Stream
 
         Step.Document
         Step.Document.Base
@@ -127,16 +125,30 @@ library
         Step.Document.Location
         Step.Document.Memory
 
-        Step.Test.InputChunking
-
         Step.While
 
     reexported-modules:
         Step.ActionTypes
       , Step.ActionTypes.Types
       , Step.ActionTypes.Unsafe
+      , Step.Cursor
       , Step.Nontrivial
       , Step.Nontrivial.Unsafe
+
+library step-cursor
+    import: base
+    hs-source-dirs: library/step-cursor
+    build-depends: step-internal, step-nontrivial
+    exposed-modules:
+        Step.Cursor
+    other-modules:
+        Step.Cursor.AdvanceResult
+        Step.Cursor.ChunkStream
+        Step.Cursor.Class
+        Step.Cursor.InputChunking
+        Step.Cursor.Stream
+        Step.Cursor.StreamCompletion
+        Step.Cursor.Type
 
 library step-nontrivial
     import: base

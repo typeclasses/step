@@ -20,26 +20,23 @@ import qualified Step.Input.Counter as Counter
 import Step.Input.BufferedStream (BufferedStream)
 import qualified Step.Input.BufferedStream as BufferedStream
 
-import Step.Input.Cursor (Session (..))
-import qualified Step.Input.Cursor as Cursor
+import Step.Cursor (Cursor (..), Stream)
+import qualified Step.Cursor as Cursor
 
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
 
-import Step.Input.Stream (Stream)
-import qualified Step.Input.Stream as Stream
-
 
 -- The type
 
-data DocumentMemory text char m =
+data DocumentMemory xs x m =
   DocumentMemory
     { content :: LineHistory
-    , cursor :: Counter (BufferedStream (StateT LineHistory m) text char)
+    , cursor :: Counter (BufferedStream (StateT LineHistory m) xs x)
     }
 
-curse :: Monad m => ListLike text char => Session text char (StateT (DocumentMemory text char m) m)
-curse = Cursor.rebaseSession runCursorState (Counter.curse BufferedStream.curse)
+curse :: Monad m => ListLike xs x => Cursor xs x (StateT (DocumentMemory xs x m) m)
+curse = Cursor.rebaseCursor runCursorState (Counter.curse BufferedStream.curse)
 
 instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1
@@ -83,11 +80,11 @@ runCursorState go = do
 
 -- Construction
 
-fromStream :: Lines.Char char => ListLike text char => Monad m => Stream m text -> DocumentMemory text char m
+fromStream :: Lines.Char x => ListLike xs x => Monad m => Stream m xs x -> DocumentMemory xs x m
 fromStream xs =
   DocumentMemory
     { content = Lines.empty
-    , cursor = Counter.start $ BufferedStream.fromStream $ Stream.record Lines.record xs
+    , cursor = Counter.start $ BufferedStream.fromStream $ Cursor.record Lines.recordNontrivial xs
     }
 
 

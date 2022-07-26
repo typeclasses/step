@@ -1,6 +1,10 @@
 {-# language ViewPatterns #-}
 
-module Step.Test.InputChunking (genChunks) where
+module Step.Cursor.InputChunking
+  (
+    genChunks,
+  )
+  where
 
 import Step.Internal.Prelude
 
@@ -11,9 +15,17 @@ import qualified Hedgehog.Range as Range
 
 import qualified ListLike
 
+import Step.Nontrivial (Nontrivial)
+import qualified Step.Nontrivial as Nontrivial
+
+import qualified Maybe
+
+genChunks :: ListLike xs x => xs -> Gen [Nontrivial xs x]
+genChunks t = genChunks' t <&> Maybe.mapMaybe Nontrivial.refine
+
 -- | Generates various ways of chunking a given input text. Shrinks toward the smallest number of chunks.
-genChunks :: ListLike text char => text -> Gen [text]
-genChunks x =
+genChunks' :: ListLike text char => text -> Gen [text]
+genChunks' x =
     if ListLike.null x
     then Gen.integral (Range.linear 0 4) <&> \n -> ListLike.replicate n ListLike.empty
     else do

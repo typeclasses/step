@@ -23,8 +23,8 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import Text (Text)
 
-import Step.Input.Cursor (Cursory, curse)
-import qualified Step.Input.Cursor as Cursor
+import Step.Cursor (Cursory, curse, Stream)
+import qualified Step.Cursor as Cursor
 
 import Step.Document.Locating (Locating (..))
 
@@ -38,8 +38,6 @@ import Step.Input.Counter (Counting)
 import qualified Step.Input.Counter as Counting
 
 import Step.Input.Counter (cursorPosition)
-
-import Step.Input.Stream (Stream)
 
 ---
 
@@ -68,7 +66,7 @@ newtype DocumentParsing text char m a =
 instance (Monad m, ListLike text char) => Cursory (DocumentParsing text char m) where
     type Text (DocumentParsing text char m) = text
     type Char (DocumentParsing text char m) = char
-    curse = Cursor.rebaseSession (DocumentParsing . lift) DocumentMemory.curse
+    curse = Cursor.rebaseCursor (DocumentParsing . lift) DocumentMemory.curse
 
 instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
     position = DocumentParsing position
@@ -94,7 +92,7 @@ parse config p =
         Left (DocumentParsing errorMaker) -> Left <$> runReaderT errorMaker config
         Right x -> return (Right x)
 
-parseOnly :: forall m text char kind value. Action.Is kind Any => Monad m => Char char => ListLike text char =>
-    Config -> kind (DocumentParsing text char m) Error value -> Stream m text -> m (Either Error value)
+parseOnly :: forall m xs x kind value. Action.Is kind Any => Monad m => Char x => ListLike xs x =>
+    Config -> kind (DocumentParsing xs x m) Error value -> Stream m xs x -> m (Either Error value)
 parseOnly config p xs =
     evalStateT (parse config p) (DocumentMemory.fromStream xs)

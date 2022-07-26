@@ -1,13 +1,7 @@
-module Step.Input.Stream
+module Step.Cursor.Stream
   (
-    Stream (..),
-    changeBase,
-    record,
-    filter,
-    mapMaybe,
-    list,
-    chunkedWhile,
-    Completion (..),
+    {- * Core -} Stream, stream, next,
+    {- * Extras -} rebase, record, filter, mapMaybe, list,
   )
   where
 
@@ -19,8 +13,10 @@ import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
 
 newtype Stream m a = Stream{ next :: m (Maybe a) }
 
-changeBase :: (forall x. m1 x -> m2 x) -> Stream m1 a -> Stream m2 a
-changeBase f Stream{ next } = Stream{ next = f next }
+stream = Stream
+
+rebase :: (forall x. m1 x -> m2 x) -> Stream m1 a -> Stream m2 a
+rebase f Stream{ next } = Stream{ next = f next }
 
 record :: Monad m => (a -> StateT s m ()) -> Stream m a -> Stream (StateT s m) a
 record add = r
@@ -44,18 +40,3 @@ mapMaybe ok xs = Stream $ fix \r ->
 
 list :: Monad m => Stream (StateT [a] m) a
 list = Stream{ next = StateT \case [] -> return (Nothing, []); (x : xs) -> return (Just x, xs) }
-
-data Completion = Done | MightBeMore
-
-chunkedWhile :: Monad m => ListLike xs x =>
-    Predicate x
-    -> Stream m (Nontrivial xs x)
-    -> Stream (StateT Completion m) (Nontrivial xs x)
-chunkedWhile ok xs = Stream $ get >>= \case
-    Done -> return Nothing
-    MightBeMore -> lift (next xs) >>= \case
-        Nothing -> put Done $> Nothing
-        Just x -> case Nontrivial.takeWhile ok x of
-            Nontrivial.TakeWhile.All -> return (Just x)
-            Nontrivial.TakeWhile.None -> put Done $> Nothing
-            Nontrivial.TakeWhile.Prefix y -> put Done $> Just y

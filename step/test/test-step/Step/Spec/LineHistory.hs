@@ -8,7 +8,7 @@ import Hedgehog
 
 import qualified Hedgehog.Gen as Gen
 
-import Step.Test.InputChunking (genChunks)
+import Step.Cursor (genChunks)
 
 import Test.Hspec
 import Test.Hspec.Hedgehog
@@ -22,12 +22,18 @@ import qualified Map
 import qualified Step.Document.Lines as Lines
 import Step.Document.Lines (CursorLocation (..), locateCursorInDocument, LineHistory (..))
 
+import Step.Nontrivial (Nontrivial)
+
+import Char (Char)
+
+type TextChunks = [Nontrivial Text Char]
+
 spec :: SpecWith ()
 spec = describe "Line history" do
 
     specify "example 1" $ hedgehog do
 
-        input :: [Text] <- forAll (genChunks "Move\r\nTwo\rThree")
+        input :: TextChunks <- forAll (genChunks "Move\r\nTwo\rThree")
 
         t <- forAll Gen.bool
         let lh = Lines.build input & (if t then execState Lines.terminate else id)
@@ -52,7 +58,7 @@ spec = describe "Line history" do
 
     specify "example 2" $ hedgehog do
 
-        input :: [Text] <- forAll (genChunks "ab\r")
+        input :: TextChunks <- forAll (genChunks "ab\r")
 
         t <- forAll Gen.bool
         let lh = Lines.build input & (if t then execState Lines.terminate else id)
@@ -78,7 +84,7 @@ spec = describe "Line history" do
 
     specify "one-line example" $ hedgehog do
 
-        input :: [Text] <- forAll (genChunks "abc")
+        input :: TextChunks <- forAll (genChunks "abc")
 
         let lh = Lines.build input
 
