@@ -22,13 +22,13 @@ import Step.Buffer.Result (BufferResult(..))
 
 import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 
-import Step.Buffer.Session (BufferSession (BufferSession), runBufferSession, bufferSessionInput, bufferSessionCommit)
-import qualified Step.Buffer.Session as BufferSession
+import Step.Buffer.Session (DoubleBufferState (DoubleBufferState), runBufferSession, bufferSessionInput, bufferSessionCommit)
+import qualified Step.Buffer.Session as DoubleBufferState
 
 newtype BufferedStreamSession xs x m a =
-    BufferedStreamSession (Stream m xs x -> BufferSession xs x m a)
+    BufferedStreamSession (Stream m xs x -> DoubleBufferState xs x m a)
     deriving (Functor, Applicative, Monad)
-        via ReaderT (Stream m xs x) (BufferSession xs x m)
+        via ReaderT (Stream m xs x) (DoubleBufferState xs x m)
 
 curseBufferedStream :: Monad m => ListLike xs x =>
     Stream m xs x -> Cursor xs x (StateT (Buffer xs x) m) (BufferedStreamSession xs x m)
@@ -64,7 +64,7 @@ bufferedStreamSessionCommit =
 
 bufferMore :: Monad m => BufferedStreamSession xs x m BufferResult
 bufferMore = BufferedStreamSession \upstream ->
-    BufferSession $ lift (Cursor.next upstream) >>= \case
+    DoubleBufferState $ lift (Cursor.next upstream) >>= \case
         Nothing -> return NothingToBuffer
         Just x -> do
             modifying uncommittedLens (Buffer.|> x)

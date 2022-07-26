@@ -2,7 +2,7 @@
 
 module Step.Buffer.Session
   (
-    BufferSession (..),
+    DoubleBufferState (..),
     curseBuffer,
     runBufferSession,
     bufferSessionInput,
@@ -23,11 +23,11 @@ import Step.Buffer.Result (BufferResult(..))
 import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 import qualified Step.Buffer.DoubleBuffer as DoubleBuffer
 
-newtype BufferSession xs x m a =
-    BufferSession (StateT (DoubleBuffer xs x) m a)
+newtype DoubleBufferState xs x m a =
+    DoubleBufferState (StateT (DoubleBuffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad)
 
-curseBuffer :: Monad m => ListLike xs x => Cursor xs x (StateT (Buffer xs x) m) (BufferSession xs x m)
+curseBuffer :: Monad m => ListLike xs x => Cursor xs x (StateT (Buffer xs x) m) (DoubleBufferState xs x m)
 curseBuffer =
    Cursor
     { run = runBufferSession
@@ -35,15 +35,15 @@ curseBuffer =
     , input = bufferSessionInput
     }
 
-runBufferSession :: Monad m => ListLike xs x => BufferSession xs x m a -> StateT (Buffer xs x) m a
-runBufferSession (BufferSession a) = do
+runBufferSession :: Monad m => ListLike xs x => DoubleBufferState xs x m a -> StateT (Buffer xs x) m a
+runBufferSession (DoubleBufferState a) = do
     b <- get
     (x, bs) <- lift (runStateT a (DoubleBuffer b b))
     put (view uncommittedLens bs)
     return x
 
-bufferSessionInput :: Monad m => ListLike xs x => Stream (BufferSession xs x m) xs x
-bufferSessionInput = Cursor.stream $ BufferSession $ zoom unseenLens Buffer.takeChunk
+bufferSessionInput :: Monad m => ListLike xs x => Stream (DoubleBufferState xs x m) xs x
+bufferSessionInput = Cursor.stream $ DoubleBufferState $ zoom unseenLens Buffer.takeChunk
 
-bufferSessionCommit :: Monad m => ListLike xs x => Positive Natural -> BufferSession xs x m AdvanceResult
-bufferSessionCommit n = BufferSession $ zoom uncommittedLens (Buffer.dropN n)
+bufferSessionCommit :: Monad m => ListLike xs x => Positive Natural -> DoubleBufferState xs x m AdvanceResult
+bufferSessionCommit n = DoubleBufferState $ zoom uncommittedLens (Buffer.dropN n)
