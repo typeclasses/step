@@ -2,7 +2,7 @@
 
 module Step.Input.BufferedStream
   (
-    BufferedStream (..), BufferResult (..),
+    BufferedStream (..),
     curse, fromStream, bufferMore,
   )
   where
@@ -25,6 +25,8 @@ import Step.Input.AdvanceResult (AdvanceResult, shortfall)
 
 import Step.Input.Stream (Stream (..))
 import qualified Step.Input.Stream as Stream
+
+import Step.Buffer.Result (BufferResult (..))
 
 ---
 
@@ -53,8 +55,6 @@ bufferSessionLens :: Lens
   (BufferSession text char)
   (BufferSession text char)
 bufferSessionLens = lens bufferSession \x y -> x{ bufferSession = y }
-
-data BufferResult = BufferedMore | NothingToBuffer
 
 sessionBufferMore :: Monad m => StateT (BufferedStreamSession m text char) m BufferResult
 sessionBufferMore = use sessionPendingLens >>= \p -> lift (Stream.next p) >>= \case

@@ -110,6 +110,7 @@ library
         Step.Competitors.Attoparsec.Text
 
         Step.Buffer.Base
+        Step.Buffer.Result
         Step.Buffer.Session
 
         Step.Input.AdvanceResult
