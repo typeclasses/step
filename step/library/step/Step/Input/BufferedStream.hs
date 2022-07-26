@@ -18,7 +18,7 @@ import qualified Step.Buffer.DoubleBuffer as DoubleBuffer
 import Step.Cursor (Cursor (..), AdvanceResult (..), shortfall, Stream)
 import qualified Step.Cursor as Cursor
 
-import Step.Buffer.Result (BufferResult (..))
+import Step.Buffer.BufferResult (BufferResult (..))
 
 ---
 

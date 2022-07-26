@@ -1,3 +1,3 @@
-module Step.Buffer.Result where
+module Step.Buffer.BufferResult where
 
 data BufferResult = BufferedMore | NothingToBuffer

@@ -112,7 +112,7 @@ library
 
         Step.Buffer.Buffer
         Step.Buffer.DoubleBuffer
-        Step.Buffer.Result
+        Step.Buffer.BufferResult
         Step.Buffer.DoubleBufferState
         Step.Buffer.Streaming
 

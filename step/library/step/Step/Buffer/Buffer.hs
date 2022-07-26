@@ -20,7 +20,7 @@ import qualified Step.Nontrivial.Drop as Drop
 import Step.Cursor (Stream, AdvanceResult (..))
 import qualified Step.Cursor as Cursor
 
-import Step.Buffer.Result (BufferResult(..))
+import Step.Buffer.BufferResult (BufferResult(..))
 
 data Buffer xs x = Buffer { chunks :: Seq (Nontrivial xs x) }
 

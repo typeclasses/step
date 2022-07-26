@@ -18,7 +18,7 @@ import qualified Step.Buffer.Buffer as Buffer
 import Step.Cursor (AdvanceResult (..), Cursor (..), Stream)
 import qualified Step.Cursor as Cursor
 
-import Step.Buffer.Result (BufferResult(..))
+import Step.Buffer.BufferResult (BufferResult(..))
 
 import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 
