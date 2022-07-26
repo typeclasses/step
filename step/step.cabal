@@ -114,6 +114,7 @@ library
         Step.Buffer.Cursor
         Step.Buffer.Result
         Step.Buffer.Session
+        Step.Buffer.Streaming
 
         Step.Input.BufferedStream
         Step.Input.Counter

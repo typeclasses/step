@@ -1,7 +1,7 @@
 module Step.Cursor.ChunkStream
   (
     {- * Core -} Stream, stream, next,
-    {- * Extras -} while, untrivialize, rebase, record, list,
+    {- * Extras -} while, untrivialize, rebase, record, list, choice,
   )
   where
 
@@ -47,3 +47,6 @@ while ok xs = stream $ get >>= \case
 
 list :: Monad m => Stream (StateT [Nontrivial xs x] m) xs x
 list = stream $ StateT \case [] -> return (Nothing, []); (x : xs) -> return (Just x, xs)
+
+choice :: Monad m => Stream m xs x -> Stream m xs x -> Stream m xs x
+choice (Stream a) (Stream b) = Stream (S.choice a b)

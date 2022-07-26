@@ -4,6 +4,9 @@ module Step.Buffer.Session
   (
     BufferSession (..),
     curseBuffer,
+    runBufferSession,
+    bufferSessionInput,
+    bufferSessionCommit,
   )
   where
 
@@ -18,13 +21,19 @@ import qualified Step.Cursor as Cursor
 import Step.Buffer.Result (BufferResult(..))
 
 import Step.Buffer.Cursor (BufferCursor (BufferCursor), unseenLens, uncommittedLens)
+import qualified Step.Buffer.Cursor as BufferCursor
 
 newtype BufferSession xs x m a =
     BufferSession (StateT (BufferCursor xs x) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 curseBuffer :: Monad m => ListLike xs x => Cursor xs x (StateT (Buffer xs x) m)
-curseBuffer = Cursor{ run = runBufferSession, commit = bufferSessionCommit, input = bufferSessionInput }
+curseBuffer =
+   Cursor
+    { run = runBufferSession
+    , commit = bufferSessionCommit
+    , input = bufferSessionInput
+    }
 
 runBufferSession :: Monad m => ListLike xs x => BufferSession xs x m a -> StateT (Buffer xs x) m a
 runBufferSession (BufferSession a) = do

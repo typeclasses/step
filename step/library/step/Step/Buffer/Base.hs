@@ -5,7 +5,7 @@ module Step.Buffer.Base
     Buffer, isEmpty, empty, (|>),
 
     -- * State operations
-    takeChunk, dropN, drink,
+    takeChunk, dropN,
   )
   where
 
@@ -49,8 +49,3 @@ dropN = fix \r n -> get >>= \case
                 put Buffer{ chunks = (Seq.:<|) remainder xs } $> AdvanceSuccess
             Drop.Insufficient{ Drop.shortfall } ->
                 put Buffer{ chunks = xs } *> r shortfall
-
-drink :: Monad m => Stream m xs x -> StateT (Buffer xs x) m BufferResult
-drink xs = lift (Cursor.next xs) >>= \case
-    Nothing -> return NothingToBuffer
-    Just x -> modify' (|> x) $> BufferedMore

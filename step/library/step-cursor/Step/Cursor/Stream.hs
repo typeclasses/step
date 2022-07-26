@@ -1,7 +1,7 @@
 module Step.Cursor.Stream
   (
     {- * Core -} Stream, stream, next,
-    {- * Extras -} rebase, record, filter, mapMaybe, list,
+    {- * Extras -} rebase, record, filter, mapMaybe, list, choice,
   )
   where
 
@@ -37,3 +37,8 @@ mapMaybe ok xs = Stream $ fix \r ->
 
 list :: Monad m => Stream (StateT [a] m) a
 list = Stream{ next = StateT \case [] -> return (Nothing, []); (x : xs) -> return (Just x, xs) }
+
+choice :: Monad m => Stream m a -> Stream m a -> Stream m a
+choice xs ys = stream $ next xs >>= \case
+    Just x -> return (Just x)
+    Nothing -> next ys
