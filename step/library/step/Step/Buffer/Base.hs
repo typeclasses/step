@@ -5,7 +5,7 @@ module Step.Buffer.Base
     Buffer, isEmpty, empty, (|>),
 
     -- * State operations
-    takeChunk, dropN,
+    takeChunk, dropN, drink,
   )
   where
 
@@ -19,6 +19,11 @@ import qualified Step.Nontrivial.Drop as Drop
 
 import qualified Step.Input.AdvanceResult as Advance
 import Step.Input.AdvanceResult (AdvanceResult)
+
+import Step.Input.Stream (Stream)
+import qualified Step.Input.Stream as Stream
+
+import Step.Buffer.Result (BufferResult(..))
 
 data Buffer text char = Buffer { chunks :: Seq (Nontrivial text char) }
 
@@ -48,3 +53,8 @@ dropN = fix \r n -> get >>= \case
                 put Buffer{ chunks = (Seq.:<|) remainder xs } $> Advance.Success
             Drop.Insufficient{ Drop.shortfall } ->
                 put Buffer{ chunks = xs } *> r shortfall
+
+drink :: Monad m => Stream m (Nontrivial text char) -> StateT (Buffer text char) m BufferResult
+drink xs = lift (Stream.next xs) >>= \case
+    Nothing -> return NothingToBuffer
+    Just x -> modify' (|> x) $> BufferedMore
