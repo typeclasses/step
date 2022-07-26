@@ -20,11 +20,11 @@ import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Result (BufferResult(..))
 
-import Step.Buffer.Cursor (BufferCursor (BufferCursor), unseenLens, uncommittedLens)
-import qualified Step.Buffer.Cursor as BufferCursor
+import Step.Buffer.Double (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
+import qualified Step.Buffer.Double as DoubleBuffer
 
 newtype BufferSession xs x m a =
-    BufferSession (StateT (BufferCursor xs x) m a)
+    BufferSession (StateT (DoubleBuffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 curseBuffer :: Monad m => ListLike xs x => Cursor xs x (StateT (Buffer xs x) m) (BufferSession xs x m)
@@ -38,7 +38,7 @@ curseBuffer =
 runBufferSession :: Monad m => ListLike xs x => BufferSession xs x m a -> StateT (Buffer xs x) m a
 runBufferSession (BufferSession a) = do
     b <- get
-    (x, bs) <- lift (runStateT a (BufferCursor b b))
+    (x, bs) <- lift (runStateT a (DoubleBuffer b b))
     put (view uncommittedLens bs)
     return x
 

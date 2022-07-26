@@ -111,7 +111,7 @@ library
         Step.Competitors.Attoparsec.Text
 
         Step.Buffer.Base
-        Step.Buffer.Cursor
+        Step.Buffer.Double
         Step.Buffer.Result
         Step.Buffer.Session
         Step.Buffer.Streaming
