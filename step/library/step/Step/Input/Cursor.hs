@@ -17,7 +17,7 @@ import qualified Step.Buffer.Base as Buffer
 class Cursor m where
     type Text m :: Type
     type Char m :: Type
-    curse :: m (Session (Text m) (Char m) m)
+    curse :: Session (Text m) (Char m) m
 
 data Session text char m =
   forall m'. Monad m' => Session
