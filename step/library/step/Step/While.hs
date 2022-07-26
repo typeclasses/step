@@ -47,7 +47,7 @@ init :: While text char
 init = While{ completion = MightBeMore, uncommitted = 0, buffer = Buffer.empty }
 
 while :: forall m text char. Monad m => ListLike text char =>
-    (char -> Bool) -> Session text char m -> Session text char m
+    Predicate char -> Session text char m -> Session text char m
 while ok
   Session
     { Session.run = runUpstream :: forall a. m' a -> m a
@@ -64,7 +64,7 @@ run :: Monad m => StateT (While text char) m a -> m a
 run = _
 
 input :: ListLike text char => Monad m =>
-    (char -> Bool)
+    Predicate char
     -> Stream m (Nontrivial text char)
     -> Stream (StateT (While text char) m) (Nontrivial text char)
 input ok upstream =
@@ -94,7 +94,7 @@ input ok upstream =
     }
 
 commit :: ListLike text char => Monad m =>
-    (char -> Bool)
+    Predicate char
     -> (Positive Natural -> m AdvanceResult)
     -> Positive Natural
     -> StateT (While text char) m AdvanceResult

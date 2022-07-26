@@ -35,7 +35,7 @@ common base
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , transformers
-      , nat-optics ^>= 1.0.0.3
+      , nat-optics ^>= 1.0.0.4
       , optics ^>= 0.4
       , text
     mixins:
@@ -52,6 +52,7 @@ common base
           , Data.Function as Function
           , Numeric.Natural as Natural
           , Control.Applicative as Applicative
+          , Data.Functor.Contravariant as Contravariant
           , Data.Maybe as Maybe
           , Data.Foldable as Foldable
           , Data.String as String
@@ -143,6 +144,7 @@ library step-nontrivial
     exposed-modules:
         Step.Nontrivial
         Step.Nontrivial.Constructor
+        Step.Nontrivial.Drop
         Step.Nontrivial.Length
         Step.Nontrivial.Refinement
         Step.Nontrivial.Span
