@@ -12,8 +12,8 @@ import Step.Internal.Prelude
 import Step.Buffer.Base (Buffer)
 import qualified Step.Buffer.Base as Buffer
 
-import Step.Buffer.Session (BufferCursor (..))
-import qualified Step.Buffer.Session as BufferCursor
+import Step.Buffer.Cursor (BufferCursor (..))
+import qualified Step.Buffer.Cursor as BufferCursor
 
 import Step.Cursor (Cursor (..), AdvanceResult (..), shortfall, Stream)
 import qualified Step.Cursor as Cursor
