@@ -1,6 +1,6 @@
 module Step.Buffer.Session
   (
-    curse,
+    curse, drink,
     BufferSession (..),
 
     {- * Optics -} newBufferSession, uncommittedLens, unseenLens,
@@ -21,6 +21,8 @@ import qualified Step.Input.Cursor as Session
 
 import qualified Step.Input.Stream as Stream
 import Step.Input.Stream (Stream (..))
+
+import Step.Buffer.Result (BufferResult(..))
 
 data BufferSession text char = BufferSession
   { uncommitted :: Buffer text char
@@ -59,3 +61,11 @@ input = Stream{ next = zoom unseenLens Buffer.takeChunk }
 
 commit :: Monad m => ListLike text char => Positive Natural -> StateT (BufferSession text char) m AdvanceResult
 commit n = zoom uncommittedLens (Buffer.dropN n)
+
+drink :: Monad m => Stream m (Nontrivial text char) -> StateT (BufferSession text char) m BufferResult
+drink xs = lift (Stream.next xs) >>= \case
+    Nothing -> return NothingToBuffer
+    Just x -> do
+        modifying uncommittedLens (Buffer.|> x)
+        modifying unseenLens (Buffer.|> x)
+        return BufferedMore
