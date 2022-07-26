@@ -20,8 +20,8 @@ import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Result (BufferResult(..))
 
-import Step.Buffer.Double (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
-import qualified Step.Buffer.Double as DoubleBuffer
+import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
+import qualified Step.Buffer.DoubleBuffer as DoubleBuffer
 
 newtype BufferSession xs x m a =
     BufferSession (StateT (DoubleBuffer xs x) m a)

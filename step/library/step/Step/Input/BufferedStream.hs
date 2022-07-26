@@ -12,8 +12,8 @@ import Step.Internal.Prelude
 import Step.Buffer.Buffer (Buffer)
 import qualified Step.Buffer.Buffer as Buffer
 
-import Step.Buffer.Double (DoubleBuffer (..))
-import qualified Step.Buffer.Double as DoubleBuffer
+import Step.Buffer.DoubleBuffer (DoubleBuffer (..))
+import qualified Step.Buffer.DoubleBuffer as DoubleBuffer
 
 import Step.Cursor (Cursor (..), AdvanceResult (..), shortfall, Stream)
 import qualified Step.Cursor as Cursor

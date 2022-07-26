@@ -1,4 +1,4 @@
-module Step.Buffer.Double
+module Step.Buffer.DoubleBuffer
   (
     {- * Type -} DoubleBuffer (..),
     {- * Creation -} newDoubleBuffer,

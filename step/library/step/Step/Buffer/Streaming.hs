@@ -20,7 +20,7 @@ import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Result (BufferResult(..))
 
-import Step.Buffer.Double (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
+import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 
 import Step.Buffer.Session (BufferSession (BufferSession), runBufferSession, bufferSessionInput, bufferSessionCommit)
 import qualified Step.Buffer.Session as BufferSession
