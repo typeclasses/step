@@ -2,24 +2,23 @@ module Step.Nontrivial
   (
     {- * The type -} Nontrivial,
     {- * Refinement -} refine, generalize,
-    {- * Operations -} stripPrefix, uncons, head, fold, isPrefixOf,
+    {- * Operations -} stripPrefix, uncons, drop, head, fold, isPrefixOf,
     {- ** length -} length, lengthNat, lengthInt,
     {- ** span -} span, Span,
-    {- ** splitAt -} splitAt, SplitAt, splitAtPositive, SplitAtPositive,
+    {- ** splitAt -} splitAt, SplitAt,
+    {- ** splitAtPositive -} splitAtPositive, SplitAtPositive,
     {- ** takeWhile -} takeWhile, TakeWhile,
-    {- ** drop -} drop, dropPositive, Drop,
   ) where
 
 import Step.Internal.Prelude hiding (uncons, fold)
 
-import Step.Nontrivial.Drop
-import Step.Nontrivial.Length
+import Step.Nontrivial.Unsafe
 import Step.Nontrivial.Refinement
+import Step.Nontrivial.Length
 import Step.Nontrivial.Span
 import Step.Nontrivial.SplitAt
 import Step.Nontrivial.SplitAtPositive
 import Step.Nontrivial.TakeWhile
-import Step.Nontrivial.Unsafe
 
 import qualified ListLike
 import qualified Maybe
@@ -32,6 +31,9 @@ uncons :: ListLike xs x => Nontrivial xs x -> (x, xs)
 uncons a = case ListLike.uncons (generalize a) of
     Nothing -> error "trivial Nontrivial"
     Just b -> b
+
+drop :: ListLike xs x => Natural -> Nontrivial xs x -> xs
+drop n = ListLike.drop (fromIntegral n) . generalize
 
 head :: ListLike xs x => Nontrivial xs x -> x
 head = ListLike.head . generalize

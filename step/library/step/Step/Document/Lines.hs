@@ -8,7 +8,7 @@ module Step.Document.Lines
     {- * Finding location at a cursor -} CursorLocation (..), locateCursorInDocument,
     {- * Construction -} build,
     {- * Char class -} Char (..),
-    {- * Feeding input -} record, recordNontrivial, terminate,
+    {- * Feeding input -} record, terminate,
   ) where
 
 import Step.Internal.Prelude
@@ -25,9 +25,6 @@ import qualified Char
 import qualified ListLike
 
 import qualified Loc
-
-import Step.Nontrivial (Nontrivial)
-import qualified Step.Nontrivial as Nontrivial
 
 data LineHistory =
   LineHistory
@@ -102,22 +99,19 @@ instance Char Char.Char
     lineFeed = '\n'
 
 record :: Monad m => Char char => ListLike text char => text -> StateT LineHistory m ()
-record x = case Nontrivial.refine x of
-    Nothing -> return ()
-    Just x' -> recordNontrivial x'
-
-recordNontrivial :: Monad m => Char char => ListLike text char => Nontrivial text char -> StateT LineHistory m ()
-recordNontrivial x = case Nontrivial.uncons x of
-    (c, x') | c == carriageReturn -> do
-        recordCR
-        record x'
-    (c, x') | c == lineFeed -> do
-        recordLF
-        record x'
-    _ -> do
-        let (a, b) = ListLike.break (`elem` [carriageReturn, lineFeed]) (Nontrivial.generalize x)
-        recordOther a
-        record b
+record x =
+    case ListLike.uncons x of
+        Nothing -> return ()
+        Just (c, x') | c == carriageReturn -> do
+            recordCR
+            record x'
+        Just (c, x') | c == lineFeed -> do
+            recordLF
+            record x'
+        Just _ -> do
+            let (a, b) = ListLike.break (`elem` [carriageReturn, lineFeed]) x
+            recordOther a
+            record b
 
 terminate :: Monad m => StateT LineHistory m ()
 terminate = modify' \x -> x{ terminated = True }

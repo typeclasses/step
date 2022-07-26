@@ -35,8 +35,7 @@ common base
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , transformers
-      , mtl
-      , nat-optics ^>= 1.0.0.4
+      , nat-optics ^>= 1.0.0.3
       , optics ^>= 0.4
       , text
     mixins:
@@ -53,7 +52,6 @@ common base
           , Data.Function as Function
           , Numeric.Natural as Natural
           , Control.Applicative as Applicative
-          , Data.Functor.Contravariant as Contravariant
           , Data.Maybe as Maybe
           , Data.Foldable as Foldable
           , Data.String as String
@@ -77,10 +75,6 @@ common base
           )
       , data-default-class (Data.Default.Class as Default)
       , ListLike (Data.ListLike as ListLike)
-      , mtl
-          ( Control.Monad.Reader as Reader
-          , Control.Monad.State.Strict as State
-          )
       , nat-optics
           ( NatOptics.Positive as Positive
           , NatOptics.Positive.Math as Positive.Math
@@ -88,7 +82,9 @@ common base
           , NatOptics.Signed as Signed
           )
       , transformers
-          ( Control.Monad.Trans.Class as MonadTrans
+          ( Control.Monad.Trans.State.Strict as State
+          , Control.Monad.Trans.Class as MonadTrans
+          , Control.Monad.Trans.Reader as Reader
           , Control.Monad.Trans.Except as Except
           )
       , loc (Data.Loc as Loc, Data.Loc.SpanOrLoc as SpanOrLoc)
@@ -113,11 +109,10 @@ library
         Step.Competitors.Attoparsec.Text
 
         Step.Buffer.Base
-        Step.Buffer.Result
         Step.Buffer.Session
-        Step.Buffer.Sized
 
         Step.Input.AdvanceResult
+        Step.Input.BufferedStream
         Step.Input.Counter
         Step.Input.Cursor
         Step.Input.CursorPosition
@@ -148,7 +143,6 @@ library step-nontrivial
     exposed-modules:
         Step.Nontrivial
         Step.Nontrivial.Constructor
-        Step.Nontrivial.Drop
         Step.Nontrivial.Length
         Step.Nontrivial.Refinement
         Step.Nontrivial.Span

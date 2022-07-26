@@ -19,8 +19,8 @@ data Span xs x =
   | None
   | Split (Nontrivial xs x) (Nontrivial xs x)
 
-span :: ListLike xs x => Predicate x -> Nontrivial xs x -> Span xs x
-span f whole = tupleSpan (ListLike.span (getPredicate f) (generalize whole))
+span :: ListLike xs x => (x -> Bool) -> Nontrivial xs x -> Span xs x
+span f whole = tupleSpan (ListLike.span f (generalize whole))
 
 tupleSpan :: ListLike xs x => (xs, xs) -> Span xs x
 tupleSpan (a, b) =
