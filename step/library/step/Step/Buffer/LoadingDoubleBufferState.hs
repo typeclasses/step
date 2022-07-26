@@ -1,8 +1,8 @@
 {-# language FlexibleContexts, DerivingVia, GeneralizedNewtypeDeriving #-}
 
-module Step.Buffer.Streaming
+module Step.Buffer.LoadingDoubleBufferState
   (
-    BufferedStreamSession (..),
+    LoadingDoubleBufferState (..),
     curseBufferedStream,
     runBufferedStreamSession,
     bufferedStreamSessionInput,
@@ -25,13 +25,13 @@ import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncomm
 import Step.Buffer.DoubleBufferState (DoubleBufferState (DoubleBufferState), runBufferSession, bufferSessionInput, bufferSessionCommit)
 import qualified Step.Buffer.DoubleBufferState as DoubleBufferState
 
-newtype BufferedStreamSession xs x m a =
-    BufferedStreamSession (Stream m xs x -> DoubleBufferState xs x m a)
+newtype LoadingDoubleBufferState xs x m a =
+    LoadingDoubleBufferState (Stream m xs x -> DoubleBufferState xs x m a)
     deriving (Functor, Applicative, Monad)
         via ReaderT (Stream m xs x) (DoubleBufferState xs x m)
 
 curseBufferedStream :: Monad m => ListLike xs x =>
-    Stream m xs x -> Cursor xs x (StateT (Buffer xs x) m) (BufferedStreamSession xs x m)
+    Stream m xs x -> Cursor xs x (StateT (Buffer xs x) m) (LoadingDoubleBufferState xs x m)
 curseBufferedStream upstream =
   Cursor
     { run = runBufferedStreamSession upstream
@@ -40,30 +40,30 @@ curseBufferedStream upstream =
     }
 
 runBufferedStreamSession :: Monad m => ListLike xs x =>
-    Stream m xs x -> BufferedStreamSession xs x m a -> StateT (Buffer xs x) m a
-runBufferedStreamSession upstream (BufferedStreamSession f) =
+    Stream m xs x -> LoadingDoubleBufferState xs x m a -> StateT (Buffer xs x) m a
+runBufferedStreamSession upstream (LoadingDoubleBufferState f) =
     runBufferSession (f upstream)
 
 bufferedStreamSessionInput :: Monad m => ListLike xs x =>
-    Stream (BufferedStreamSession xs x m) xs x
+    Stream (LoadingDoubleBufferState xs x m) xs x
 bufferedStreamSessionInput = Cursor.streamChoice bufferedInput freshInput
   where
     bufferedInput =
         bufferSessionInput & Cursor.rebaseStream \a ->
-            BufferedStreamSession \_ -> a
+            LoadingDoubleBufferState \_ -> a
     freshInput = Cursor.stream (bufferMore *> Cursor.next bufferedInput)
 
-bufferedStreamSessionCommit :: Monad m => ListLike xs x => Positive Natural -> BufferedStreamSession xs x m AdvanceResult
+bufferedStreamSessionCommit :: Monad m => ListLike xs x => Positive Natural -> LoadingDoubleBufferState xs x m AdvanceResult
 bufferedStreamSessionCommit =
     \n -> commitBuffered n >>= \case
         r@AdvanceSuccess -> return r
         YouCanNotAdvance n' -> commitFresh n'
   where
-    commitBuffered n = BufferedStreamSession \_ -> bufferSessionCommit n
+    commitBuffered n = LoadingDoubleBufferState \_ -> bufferSessionCommit n
     commitFresh n = bufferMore *> commitBuffered n
 
-bufferMore :: Monad m => BufferedStreamSession xs x m BufferResult
-bufferMore = BufferedStreamSession \upstream ->
+bufferMore :: Monad m => LoadingDoubleBufferState xs x m BufferResult
+bufferMore = LoadingDoubleBufferState \upstream ->
     DoubleBufferState $ lift (Cursor.next upstream) >>= \case
         Nothing -> return NothingToBuffer
         Just x -> do

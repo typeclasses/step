@@ -39,7 +39,7 @@ import qualified Step.Input.Counter as Counting
 
 import Step.Input.Counter (cursorPosition)
 
-import Step.Input.BufferedStream (BufferedStreamSession)
+import Step.Input.BufferedStream (LoadingDoubleBufferState)
 
 import Step.Input.CursorPosition (CursorPosition)
 
@@ -74,7 +74,7 @@ instance (Monad m, ListLike xs x) => Cursory (DocumentParsing xs x m) where
     type CursoryChar (DocumentParsing xs x m) = x
     type CursoryContext (DocumentParsing xs x m) =
       (StateT CursorPosition
-        (StateT (BufferedStreamSession
+        (StateT (LoadingDoubleBufferState
           (StateT LineHistory m) xs x)
             (StateT LineHistory m)))
     curse = Cursor.rebaseCursor (DocumentParsing . lift) DocumentMemory.curse

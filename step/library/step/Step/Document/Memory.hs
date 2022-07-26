@@ -26,7 +26,7 @@ import qualified Step.Cursor as Cursor
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
 
-import Step.Input.BufferedStream (BufferedStreamSession)
+import Step.Input.BufferedStream (LoadingDoubleBufferState)
 
 import Step.Input.CursorPosition (CursorPosition)
 
@@ -43,7 +43,7 @@ data DocumentMemory xs x m =
 curse :: (ListLike xs x, Monad m) => Cursor xs x
   (StateT (DocumentMemory xs x m) m)
   (StateT CursorPosition
-    (StateT (BufferedStreamSession
+    (StateT (LoadingDoubleBufferState
       (StateT LineHistory m) xs x)
         (StateT LineHistory m)))
 curse = Cursor.rebaseCursor runCursorState (Counter.curse BufferedStream.curse)

@@ -2,7 +2,7 @@
 
 module Step.Input.BufferedStream
   (
-    BufferedStream (..), BufferedStreamSession,
+    BufferedStream (..), LoadingDoubleBufferState,
     curse, fromStream, bufferMore,
   )
   where
@@ -28,19 +28,19 @@ data BufferedStream m xs x =
     , pending :: Stream m xs x
     }
 
-data BufferedStreamSession m xs x =
-  BufferedStreamSession
+data LoadingDoubleBufferState m xs x =
+  LoadingDoubleBufferState
     { sessionPending :: Stream m xs x
     , bufferSession :: DoubleBuffer xs x
     }
 
-sessionPendingLens :: Lens (BufferedStreamSession m1 xs x) (BufferedStreamSession m2 xs x) (Stream m1 xs x) (Stream m2 xs x)
+sessionPendingLens :: Lens (LoadingDoubleBufferState m1 xs x) (LoadingDoubleBufferState m2 xs x) (Stream m1 xs x) (Stream m2 xs x)
 sessionPendingLens = lens sessionPending \x y -> x{ sessionPending = y }
 
-bufferSessionLens :: Lens (BufferedStreamSession m xs x) (BufferedStreamSession m xs x) (DoubleBuffer xs x) (DoubleBuffer xs x)
+bufferSessionLens :: Lens (LoadingDoubleBufferState m xs x) (LoadingDoubleBufferState m xs x) (DoubleBuffer xs x) (DoubleBuffer xs x)
 bufferSessionLens = lens bufferSession \x y -> x{ bufferSession = y }
 
-sessionBufferMore :: Monad m => StateT (BufferedStreamSession m xs x) m BufferResult
+sessionBufferMore :: Monad m => StateT (LoadingDoubleBufferState m xs x) m BufferResult
 sessionBufferMore = use sessionPendingLens >>= \p -> lift (Cursor.next p) >>= \case
     Nothing -> return NothingToBuffer
     Just x -> do
@@ -49,17 +49,17 @@ sessionBufferMore = use sessionPendingLens >>= \p -> lift (Cursor.next p) >>= \c
         return BufferedMore
 
 curse :: forall m xs x. Monad m => ListLike xs x =>
-    Cursor xs x (StateT (BufferedStream m xs x) m) (StateT (BufferedStreamSession m xs x) m)
+    Cursor xs x (StateT (BufferedStream m xs x) m) (StateT (LoadingDoubleBufferState m xs x) m)
 curse = Cursor{ run, commit, input }
   where
-    run :: StateT (BufferedStreamSession m xs x) m a -> StateT (BufferedStream m xs x) m a
+    run :: StateT (LoadingDoubleBufferState m xs x) m a -> StateT (BufferedStream m xs x) m a
     run a = do
         bs <- get
-        (x, bss) <- lift (runStateT a (BufferedStreamSession{ sessionPending = pending bs, bufferSession = DoubleBuffer.newDoubleBuffer (buffer bs) }))
+        (x, bss) <- lift (runStateT a (LoadingDoubleBufferState{ sessionPending = pending bs, bufferSession = DoubleBuffer.newDoubleBuffer (buffer bs) }))
         put BufferedStream{ buffer = DoubleBuffer.uncommitted (bufferSession bss), pending = sessionPending bss }
         return x
 
-    input :: Stream (StateT (BufferedStreamSession m xs x) m) xs x
+    input :: Stream (StateT (LoadingDoubleBufferState m xs x) m) xs x
     input = Cursor.stream $
         zoom (bufferSessionLens % DoubleBuffer.unseenLens) Buffer.takeChunk >>= \case
             Just x -> return (Just x)
@@ -67,7 +67,7 @@ curse = Cursor{ run, commit, input }
                 NothingToBuffer -> return Nothing
                 BufferedMore -> zoom (bufferSessionLens % DoubleBuffer.unseenLens) Buffer.takeChunk
 
-    commit :: Positive Natural -> StateT (BufferedStreamSession m xs x) m AdvanceResult
+    commit :: Positive Natural -> StateT (LoadingDoubleBufferState m xs x) m AdvanceResult
     commit n =
         zoom (bufferSessionLens % DoubleBuffer.uncommittedLens) (Buffer.dropN n) >>= \case
             AdvanceSuccess -> return AdvanceSuccess
