@@ -54,7 +54,7 @@ curse = Cursor{ run, commit, input }
     run :: StateT (BufferedStreamSession m xs x) m a -> StateT (BufferedStream m xs x) m a
     run a = do
         bs <- get
-        (x, bss) <- lift (runStateT a (BufferedStreamSession{ sessionPending = pending bs, bufferSession = BufferCursor.newBufferSession (buffer bs) }))
+        (x, bss) <- lift (runStateT a (BufferedStreamSession{ sessionPending = pending bs, bufferSession = BufferCursor.newBufferCursor (buffer bs) }))
         put BufferedStream{ buffer = BufferCursor.uncommitted (bufferSession bss), pending = sessionPending bss }
         return x
 
