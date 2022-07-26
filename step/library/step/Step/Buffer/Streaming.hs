@@ -22,8 +22,8 @@ import Step.Buffer.Result (BufferResult(..))
 
 import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 
-import Step.Buffer.Session (DoubleBufferState (DoubleBufferState), runBufferSession, bufferSessionInput, bufferSessionCommit)
-import qualified Step.Buffer.Session as DoubleBufferState
+import Step.Buffer.DoubleBufferState (DoubleBufferState (DoubleBufferState), runBufferSession, bufferSessionInput, bufferSessionCommit)
+import qualified Step.Buffer.DoubleBufferState as DoubleBufferState
 
 newtype BufferedStreamSession xs x m a =
     BufferedStreamSession (Stream m xs x -> DoubleBufferState xs x m a)

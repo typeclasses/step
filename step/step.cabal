@@ -113,7 +113,7 @@ library
         Step.Buffer.Buffer
         Step.Buffer.DoubleBuffer
         Step.Buffer.Result
-        Step.Buffer.Session
+        Step.Buffer.DoubleBufferState
         Step.Buffer.Streaming
 
         Step.Input.BufferedStream

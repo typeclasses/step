@@ -1,6 +1,6 @@
 {-# language DerivingVia, GeneralizedNewtypeDeriving #-}
 
-module Step.Buffer.Session
+module Step.Buffer.DoubleBufferState
   (
     DoubleBufferState (..),
     curseBuffer,
