@@ -9,7 +9,7 @@ module Step.Buffer.Base
   )
   where
 
-import Step.Internal.Prelude hiding (fold)
+import Step.Internal.Prelude
 
 import qualified Seq
 
