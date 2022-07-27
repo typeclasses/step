@@ -125,7 +125,7 @@ library
         Step.Buffer.DoubleBuffer.Constructor
         Step.Buffer.DoubleBuffer.Optics
         Step.Buffer.DoubleBuffer.Extra
-        Step.Buffer.LoadingBufferState
+        Step.Buffer.Loading
 
         Step.Input.BufferedStream
         Step.Input.Counter
