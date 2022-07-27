@@ -125,7 +125,6 @@ library
         Step.Buffer.DoubleBuffer.Optics
         Step.Buffer.DoubleBuffer.Extra
         Step.Buffer.DoubleBufferState
-        Step.Buffer.HasBuffer
         Step.Buffer.LoadingBufferState
         Step.Buffer.LoadingDoubleBufferState
 
