@@ -1,12 +1,6 @@
-{-# language FlexibleContexts, DerivingVia, GeneralizedNewtypeDeriving #-}
+{-# language GeneralizedNewtypeDeriving #-}
 
-module Step.Buffer.BufferState
-  (
-    BufferState (..),
-    takeChunk,
-    dropN,
-  )
-  where
+module Step.Buffer.BufferState (BufferState (..), takeChunk, dropN) where
 
 import Step.Internal.Prelude
 

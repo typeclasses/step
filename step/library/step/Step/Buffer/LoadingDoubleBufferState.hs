@@ -1,10 +1,6 @@
-{-# language FlexibleContexts, DerivingVia, GeneralizedNewtypeDeriving #-}
+{-# language DerivingVia #-}
 
-module Step.Buffer.LoadingDoubleBufferState
-  (
-    LoadingDoubleBufferState (..),
-  )
-  where
+module Step.Buffer.LoadingDoubleBufferState (LoadingDoubleBufferState (..)) where
 
 import Step.Internal.Prelude
 

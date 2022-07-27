@@ -1,10 +1,6 @@
-{-# language DerivingVia, GeneralizedNewtypeDeriving #-}
+{-# language GeneralizedNewtypeDeriving #-}
 
-module Step.Buffer.DoubleBufferState
-  (
-    DoubleBufferState (..),
-  )
-  where
+module Step.Buffer.DoubleBufferState (DoubleBufferState (..)) where
 
 import Step.Internal.Prelude
 

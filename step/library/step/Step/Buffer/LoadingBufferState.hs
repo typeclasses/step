@@ -1,6 +1,6 @@
-{-# language FlexibleContexts, DerivingVia, GeneralizedNewtypeDeriving #-}
+{-# language DerivingVia #-}
 
-module Step.Buffer.LoadingBufferState where
+module Step.Buffer.LoadingBufferState (LoadingBufferState (..)) where
 
 import Step.Internal.Prelude hiding (fold)
 
@@ -9,10 +9,10 @@ import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
+import Step.Buffer.BufferState (BufferState (..))
 import Step.Buffer.DoubleBuffer (DoubleBuffer, unseen, uncommitted)
 import Step.Buffer.DoubleBufferState (DoubleBufferState (..))
 import Step.Buffer.LoadingDoubleBufferState (LoadingDoubleBufferState (..))
-import Step.Buffer.BufferState (BufferState (..))
 
 newtype LoadingBufferState xs x m a =
     LoadingBufferState (Stream m xs x -> BufferState xs x m a)
