@@ -18,7 +18,7 @@ import Step.Buffer.DoubleBufferState (DoubleBufferState(..))
 
 newtype BufferState xs x m a =
     BufferState { runBufferState :: StateT (Buffer xs x) m a }
-    deriving newtype (Functor, Applicative, Monad, MonadState (Buffer xs x))
+    deriving newtype (Functor, Applicative, Monad, MonadState (Buffer xs x), MonadTrans)
 
 instance (Monad m, ListLike xs x) => Cursory (BufferState xs x m) where
     type CursoryText (BufferState xs x m) = xs

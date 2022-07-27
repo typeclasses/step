@@ -19,6 +19,9 @@ newtype LoadingBufferState xs x m a =
     deriving (Functor, Applicative, Monad)
         via ReaderT (Stream m xs x) (BufferState xs x m)
 
+instance MonadTrans (LoadingBufferState xs x) where
+    lift a = LoadingBufferState \_ -> lift a
+
 instance (Monad m, ListLike xs x) => Cursory (LoadingBufferState xs x m) where
     type CursoryText (LoadingBufferState xs x m) = xs
     type CursoryChar (LoadingBufferState xs x m) = x
