@@ -1,4 +1,4 @@
-{-# language FlexibleInstances, FlexibleContexts, Trustworthy, TypeFamilies, StandaloneDeriving, GeneralizedNewtypeDeriving, DerivingVia, MultiParamTypeClasses #-}
+{-# language GeneralizedNewtypeDeriving #-}
 
 module Step.Buffer.Buffer
   (
