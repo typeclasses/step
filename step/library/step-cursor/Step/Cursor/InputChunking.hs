@@ -49,6 +49,4 @@ genSplitAround xs = Gen.integral (Range.constant 0 (ListLike.length xs - 1)) <&>
 
 -- | Return a 3-tuple with the items (before, at, after) the chosen position. Undefined if the index is out of range.
 splitAround :: Int -> Seq a -> (Seq a, a, Seq a)
-splitAround n xs = (a, b, c)
-  where
-    (a, ListLike.uncons -> Just (b, c)) = ListLike.splitAt n xs
+splitAround n xs = let (a, b :<| c) = ListLike.splitAt n xs in (a, b, c)

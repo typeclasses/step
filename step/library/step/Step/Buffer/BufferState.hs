@@ -44,21 +44,21 @@ instance (Monad m, ListLike xs x) => Cursory (BufferState xs x m) where
     cursoryCommit n = DoubleBufferState $ zoom uncommittedLens (runBufferState (dropN n))
 
 takeChunk :: Monad m => BufferState xs x m (Maybe (Nontrivial xs x))
-takeChunk = use chunks >>= \xs -> case uncons xs of
-    Nothing -> return Nothing
-    Just (y, ys) -> do
+takeChunk = use chunks >>= \case
+    Empty -> return Nothing
+    y :<| ys -> do
         assign chunks ys
         return (Just y)
 
 dropN :: (Monad m, ListLike xs x) => Positive Natural -> BufferState xs x m AdvanceResult
 dropN = fix \r n -> use chunks >>= \case
-    Seq.Empty -> return YouCanNotAdvance{ shortfall = n }
-    (Seq.:<|) x xs -> case Nontrivial.dropPositive n x of
+    Empty -> return YouCanNotAdvance{ shortfall = n }
+    x :<| xs -> case Nontrivial.dropPositive n x of
         Drop.DroppedAll -> do
             assign chunks xs
             return AdvanceSuccess
         Drop.DroppedPart{ Drop.remainder } -> do
-            assign chunks ((Seq.:<|) remainder xs)
+            assign chunks (remainder :<| xs)
             return AdvanceSuccess
         Drop.Insufficient{ Drop.shortfall } -> do
             assign chunks xs
