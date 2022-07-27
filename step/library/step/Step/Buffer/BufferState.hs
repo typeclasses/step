@@ -1,4 +1,4 @@
-{-# language GeneralizedNewtypeDeriving #-}
+{-# language FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
 module Step.Buffer.BufferState (BufferState (..), takeChunk, dropN) where
 
@@ -14,34 +14,33 @@ import qualified Step.Cursor as Cursor
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
 import Step.Buffer.DoubleBuffer (DoubleBuffer, uncommitted, unseen, newDoubleBuffer)
-import Step.Buffer.DoubleBufferState (DoubleBufferState(..))
 
-newtype BufferState xs x m a =
-    BufferState { runBufferState :: StateT (Buffer xs x) m a }
-    deriving newtype (Functor, Applicative, Monad, MonadState (Buffer xs x), MonadTrans)
+newtype BufferState xs x buffer m a =
+    BufferState { runBufferState :: StateT (buffer xs x) m a }
+    deriving newtype (Functor, Applicative, Monad, MonadState (buffer xs x), MonadTrans)
 
-instance (Monad m, ListLike xs x) => Cursory (BufferState xs x m) where
-    type CursoryText (BufferState xs x m) = xs
-    type CursoryChar (BufferState xs x m) = x
-    type CursoryContext (BufferState xs x m) = (DoubleBufferState xs x m)
+instance (Monad m, ListLike xs x) => Cursory (BufferState xs x Buffer m) where
+    type CursoryText (BufferState xs x Buffer m) = xs
+    type CursoryChar (BufferState xs x Buffer m) = x
+    type CursoryContext (BufferState xs x Buffer m) = (BufferState xs x DoubleBuffer m)
 
-    cursoryRun (DoubleBufferState a) =
+    cursoryRun (BufferState a) =
         get
         >>= BufferState . lift . runStateT a . newDoubleBuffer
         >>= \(x, bs) -> put (view uncommitted bs) $> x
 
     cursoryInput =
-        Cursor.stream $ DoubleBufferState $ zoom unseen $ runBufferState takeChunk
+        Cursor.stream $ BufferState $ zoom unseen $ runBufferState takeChunk
 
     cursoryCommit n =
-        DoubleBufferState $ zoom uncommitted $ runBufferState $ dropN n
+        BufferState $ zoom uncommitted $ runBufferState $ dropN n
 
-takeChunk :: Monad m => BufferState xs x m (Maybe (Nontrivial xs x))
+takeChunk :: Monad m => BufferState xs x Buffer m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case
     Empty -> return Nothing
     y :<| ys -> assign chunks ys $> Just y
 
-dropN :: (Monad m, ListLike xs x) => Positive Natural -> BufferState xs x m AdvanceResult
+dropN :: (Monad m, ListLike xs x) => Positive Natural -> BufferState xs x Buffer m AdvanceResult
 dropN = fix \r n -> use chunks >>= \case
     Empty -> return YouCanNotAdvance{ shortfall = n }
     x :<| xs -> case Nontrivial.dropPositive n x of

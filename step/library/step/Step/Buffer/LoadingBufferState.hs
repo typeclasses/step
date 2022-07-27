@@ -1,4 +1,4 @@
-{-# language DerivingVia #-}
+{-# language FlexibleInstances, DerivingVia #-}
 
 module Step.Buffer.LoadingBufferState (LoadingBufferState (..)) where
 
@@ -11,30 +11,28 @@ import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
 import Step.Buffer.BufferState (BufferState (..))
 import Step.Buffer.DoubleBuffer (DoubleBuffer, unseen, uncommitted)
-import Step.Buffer.DoubleBufferState (DoubleBufferState (..))
-import Step.Buffer.LoadingDoubleBufferState (LoadingDoubleBufferState (..))
 
-newtype LoadingBufferState xs x m a =
-    LoadingBufferState (Stream m xs x -> BufferState xs x m a)
+newtype LoadingBufferState xs x buffer m a =
+    LoadingBufferState (Stream m xs x -> BufferState xs x buffer m a)
     deriving (Functor, Applicative, Monad)
-        via ReaderT (Stream m xs x) (BufferState xs x m)
+        via ReaderT (Stream m xs x) (BufferState xs x buffer m)
 
-instance MonadTrans (LoadingBufferState xs x) where
+instance MonadTrans (LoadingBufferState xs x buffer) where
     lift a = LoadingBufferState \_ -> lift a
 
-instance (Monad m, ListLike xs x) => Cursory (LoadingBufferState xs x m) where
-    type CursoryText (LoadingBufferState xs x m) = xs
-    type CursoryChar (LoadingBufferState xs x m) = x
-    type CursoryContext (LoadingBufferState xs x m) = LoadingDoubleBufferState xs x m
+instance (Monad m, ListLike xs x) => Cursory (LoadingBufferState xs x Buffer m) where
+    type CursoryText (LoadingBufferState xs x Buffer m) = xs
+    type CursoryChar (LoadingBufferState xs x Buffer m) = x
+    type CursoryContext (LoadingBufferState xs x Buffer m) = LoadingBufferState xs x DoubleBuffer m
 
-    cursoryRun (LoadingDoubleBufferState f) =
+    cursoryRun (LoadingBufferState f) =
         LoadingBufferState \upstream -> cursoryRun (f upstream)
 
     cursoryInput = Cursor.streamChoice bufferedInput freshInput
       where
         bufferedInput =
-            cursoryInput @(BufferState xs x m) & Cursor.rebaseStream \a ->
-                LoadingDoubleBufferState \_ -> a
+            cursoryInput @(BufferState xs x Buffer m) & Cursor.rebaseStream \a ->
+                LoadingBufferState \_ -> a
         freshInput = Cursor.stream (bufferMore *> Cursor.next bufferedInput)
 
     cursoryCommit =
@@ -42,12 +40,12 @@ instance (Monad m, ListLike xs x) => Cursory (LoadingBufferState xs x m) where
             r@AdvanceSuccess -> return r
             YouCanNotAdvance n' -> commitFresh n'
       where
-        commitBuffered n = LoadingDoubleBufferState \_ -> cursoryCommit @(BufferState xs x m) n
+        commitBuffered n = LoadingBufferState \_ -> cursoryCommit @(BufferState xs x Buffer m) n
         commitFresh n = bufferMore *> commitBuffered n
 
-bufferMore :: Monad m => LoadingDoubleBufferState xs x m BufferResult
-bufferMore = LoadingDoubleBufferState \upstream ->
-    DoubleBufferState $ lift (Cursor.next upstream) >>= \case
+bufferMore :: Monad m => LoadingBufferState xs x DoubleBuffer m BufferResult
+bufferMore = LoadingBufferState \upstream ->
+    BufferState $ lift (Cursor.next upstream) >>= \case
         Nothing -> return NothingToBuffer
         Just x -> do
             modifying (uncommitted % chunks) (:|> x)
