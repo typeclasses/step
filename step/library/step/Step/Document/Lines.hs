@@ -115,7 +115,7 @@ recordNontrivial x = case Nontrivial.uncons x of
         recordLF
         record x'
     _ -> do
-        let (a, b) = ListLike.break (`elem` [carriageReturn, lineFeed]) (Nontrivial.generalize x)
+        let (a, b) = ListLike.break (\c -> elem @[] c [carriageReturn, lineFeed]) (Nontrivial.generalize x)
         recordOther a
         record b
 

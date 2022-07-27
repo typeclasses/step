@@ -22,6 +22,7 @@ common base
         NoMonomorphismRestriction
         NoImplicitPrelude
         NamedFieldPuns
+        OverloadedLists
         RankNTypes
         ScopedTypeVariables
         TypeApplications
@@ -86,6 +87,7 @@ common base
       , mtl
           ( Control.Monad.State as State
           )
+
       , transformers
           ( Control.Monad.Trans.Class as MonadTrans
           , Control.Monad.Trans.Reader as Reader

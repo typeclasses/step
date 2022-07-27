@@ -19,40 +19,14 @@ import qualified Step.Nontrivial.Drop as Drop
 import Step.Cursor (Stream, AdvanceResult (..), Cursory (..))
 import qualified Step.Cursor as Cursor
 
+import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult(..))
-
-import Step.Buffer.Buffer (Buffer (..))
-
-import Step.Buffer.DoubleBufferState
-
 import Step.Buffer.DoubleBuffer (DoubleBuffer (..), uncommittedLens, unseenLens)
+import Step.Buffer.DoubleBufferState (DoubleBufferState(..))
 
 newtype BufferState xs x m a =
     BufferState { runBufferState :: StateT (Buffer xs x) m a }
-    deriving newtype (Functor, Applicative, Monad)
-
-getBuffer :: Monad m => BufferState xs x m (Buffer xs x)
-getBuffer = BufferState get
-
-setBuffer :: Monad m => Buffer xs x -> BufferState xs x m ()
-setBuffer = BufferState . put
-
-takeChunk :: Monad m => BufferState xs x m (Maybe (Nontrivial xs x))
-takeChunk = BufferState $ get >>= \b -> case uncons (chunks b) of
-    Nothing -> return Nothing
-    Just (c, cs) -> put Buffer{ chunks = cs } $> Just c
-
-dropN :: (Monad m, ListLike xs x) => Positive Natural -> BufferState xs x m AdvanceResult
-dropN = fix \r n -> getBuffer >>= \case
-    Buffer{ chunks = Seq.Empty } -> return YouCanNotAdvance{ shortfall = n }
-    Buffer{ chunks = (Seq.:<|) x xs } ->
-        case Nontrivial.dropPositive n x of
-            Drop.DroppedAll ->
-                setBuffer Buffer{ chunks = xs } $> AdvanceSuccess
-            Drop.DroppedPart{ Drop.remainder } ->
-                setBuffer Buffer{ chunks = (Seq.:<|) remainder xs } $> AdvanceSuccess
-            Drop.Insufficient{ Drop.shortfall } ->
-                setBuffer Buffer{ chunks = xs } *> r shortfall
+    deriving newtype (Functor, Applicative, Monad, MonadState (Buffer xs x))
 
 instance (Monad m, ListLike xs x) => Cursory (BufferState xs x m) where
     type CursoryText (BufferState xs x m) = xs
@@ -60,11 +34,32 @@ instance (Monad m, ListLike xs x) => Cursory (BufferState xs x m) where
     type CursoryContext (BufferState xs x m) = (DoubleBufferState xs x m)
 
     cursoryRun (DoubleBufferState a) = do
-        b <- getBuffer
+        b <- BufferState get
         (x, bs) <- BufferState $ lift (runStateT a (DoubleBuffer b b))
-        setBuffer (view uncommittedLens bs)
+        put (view uncommittedLens bs)
         return x
 
     cursoryInput = Cursor.stream $ DoubleBufferState $ zoom unseenLens (runBufferState takeChunk)
 
     cursoryCommit n = DoubleBufferState $ zoom uncommittedLens (runBufferState (dropN n))
+
+takeChunk :: Monad m => BufferState xs x m (Maybe (Nontrivial xs x))
+takeChunk = use chunks >>= \xs -> case uncons xs of
+    Nothing -> return Nothing
+    Just (y, ys) -> do
+        assign chunks ys
+        return (Just y)
+
+dropN :: (Monad m, ListLike xs x) => Positive Natural -> BufferState xs x m AdvanceResult
+dropN = fix \r n -> use chunks >>= \case
+    Seq.Empty -> return YouCanNotAdvance{ shortfall = n }
+    (Seq.:<|) x xs -> case Nontrivial.dropPositive n x of
+        Drop.DroppedAll -> do
+            assign chunks xs
+            return AdvanceSuccess
+        Drop.DroppedPart{ Drop.remainder } -> do
+            assign chunks ((Seq.:<|) remainder xs)
+            return AdvanceSuccess
+        Drop.Insufficient{ Drop.shortfall } -> do
+            assign chunks xs
+            r shortfall

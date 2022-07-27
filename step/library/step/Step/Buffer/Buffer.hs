@@ -1,32 +1,24 @@
-{-# language FlexibleInstances, FlexibleContexts, Trustworthy #-}
+{-# language FlexibleInstances, FlexibleContexts, Trustworthy, TypeFamilies, StandaloneDeriving, GeneralizedNewtypeDeriving, DerivingVia, MultiParamTypeClasses #-}
 
 module Step.Buffer.Buffer
   (
-    Buffer (..),
-    isEmpty, empty, (|>),
+    Buffer,
+    chunks,
   )
   where
 
 import Step.Internal.Prelude
 
-import qualified Seq
-
 import Step.Nontrivial (Nontrivial)
-import qualified Step.Nontrivial as Nontrivial
-import qualified Step.Nontrivial.Drop as Drop
 
-import Step.Cursor (Stream, AdvanceResult (..))
-import qualified Step.Cursor as Cursor
+newtype Buffer xs x = Buffer{ toSeq :: Seq (Nontrivial xs x) }
+    deriving stock (Eq, Ord, Show)
+    deriving newtype (Semigroup, Monoid)
 
-import Step.Buffer.BufferResult (BufferResult(..))
+instance IsList (Buffer xs x) where
+    type Item (Buffer xs x) = Nontrivial xs x
+    fromList = Buffer . fromList
+    toList = toList . toSeq
 
-data Buffer xs x = Buffer { chunks :: Seq (Nontrivial xs x) }
-
-(|>) :: Buffer xs x -> Nontrivial xs x -> Buffer xs x
-Buffer xs |> x = Buffer (xs Seq.|> x)
-
-isEmpty :: Buffer xs x -> Bool
-isEmpty = Seq.null . chunks
-
-empty :: Buffer xs x
-empty = Buffer{ chunks = Seq.empty }
+chunks :: Iso (Buffer xs x) (Buffer xs1 x1) (Seq (Nontrivial xs x)) (Seq (Nontrivial xs1 x1))
+chunks = iso toSeq Buffer

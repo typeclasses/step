@@ -37,7 +37,7 @@ fragment :: MonadGen m => ListLike text char => Seq text -> m (Seq text)
 fragment xs = do
     (before, target, after) <- genSplitAround xs
     (a, b) <- genSplit target
-    return (ListLike.fold [before, ListLike.fromList [a, b], after])
+    return (before <> [a, b] <> after)
 
 -- | Split a chunk into two. The input chunk may be empty. May produce an empty chunk.
 genSplit :: ListLike text char => MonadGen m => text -> m (text, text)

@@ -5,13 +5,13 @@ import Step.Internal.Prelude hiding (while)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
 
-import Step.Buffer.Buffer (Buffer)
-import qualified Step.Buffer.Buffer as Buffer
-
 import Step.Cursor (Cursor (Cursor), StreamCompletion, Stream, AdvanceResult (..))
 import qualified Step.Cursor as Cursor
 
+import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferState (BufferState, runBufferState)
+
+import qualified Step.Buffer.Buffer as Buffer
 import qualified Step.Buffer.BufferState as BufferState
 
 data While text char =
@@ -31,7 +31,7 @@ bufferLens :: Lens (While text1 char1) (While text2 char2) (Buffer text1 char1) 
 bufferLens = lens buffer \x y -> x{ buffer = y }
 
 init :: While text char
-init = While{ completion = Cursor.MightBeMore, uncommitted = 0, buffer = Buffer.empty }
+init = While{ completion = Cursor.MightBeMore, uncommitted = 0, buffer = [] }
 
 while :: forall m m' xs x. Monad m => Monad m' => ListLike xs x =>
     Predicate x -> Cursor xs x m m' -> Cursor xs x m (StateT (While xs x) m')

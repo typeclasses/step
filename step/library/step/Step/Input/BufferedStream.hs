@@ -9,19 +9,16 @@ module Step.Input.BufferedStream
 
 import Step.Internal.Prelude
 
-import Step.Buffer.Buffer (Buffer)
-import qualified Step.Buffer.Buffer as Buffer
-
+import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferState (BufferState, runBufferState)
-import qualified Step.Buffer.BufferState as BufferState
+import Step.Buffer.DoubleBuffer (DoubleBuffer (..), unseenLens, uncommittedLens)
+import Step.Buffer.BufferResult (BufferResult (..))
 
-import Step.Buffer.DoubleBuffer (DoubleBuffer (..))
+import qualified Step.Buffer.BufferState as BufferState
 import qualified Step.Buffer.DoubleBuffer as DoubleBuffer
 
 import Step.Cursor (Cursor (..), AdvanceResult (..), shortfall, Stream)
 import qualified Step.Cursor as Cursor
-
-import Step.Buffer.BufferResult (BufferResult (..))
 
 ---
 
@@ -47,8 +44,8 @@ sessionBufferMore :: Monad m => StateT (LoadingDoubleBufferState m xs x) m Buffe
 sessionBufferMore = use sessionPendingLens >>= \p -> lift (Cursor.next p) >>= \case
     Nothing -> return NothingToBuffer
     Just x -> do
-        modifying (bufferSessionLens % DoubleBuffer.uncommittedLens) (Buffer.|> x)
-        modifying (bufferSessionLens % DoubleBuffer.unseenLens) (Buffer.|> x)
+        modifying (bufferSessionLens % uncommittedLens % chunks) (:|> x)
+        modifying (bufferSessionLens % unseenLens % chunks) (:|> x)
         return BufferedMore
 
 curse :: forall m xs x. Monad m => ListLike xs x =>
@@ -81,7 +78,7 @@ curse = Cursor{ run, commit, input }
 bufferMore :: Monad m => StateT (BufferedStream m xs x) m ()
 bufferMore = use pendingLens >>= \p ->
     lift (Cursor.next p) >>= traverse_ \x ->
-        modifying bufferLens (Buffer.|> x)
+        modifying (bufferLens % chunks) (:|> x)
 
 bufferLens :: Lens (BufferedStream m xs x) (BufferedStream m xs x) (Buffer xs x) (Buffer xs x)
 bufferLens = lens buffer \x y -> x{ buffer = y }
@@ -90,4 +87,4 @@ pendingLens :: Lens (BufferedStream m1 xs x) (BufferedStream m2 xs x) (Stream m1
 pendingLens = lens pending \x y -> x{ pending = y }
 
 fromStream :: Monad m => Stream m xs x -> BufferedStream m xs x
-fromStream xs = BufferedStream{ buffer = Buffer.empty, pending = xs }
+fromStream xs = BufferedStream{ buffer = [], pending = xs }
