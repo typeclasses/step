@@ -19,16 +19,4 @@ class Monad (CursoryContext m) => Cursory m
     type CursoryChar m :: Type
     type CursoryContext m :: Type -> Type
 
-    {-# minimal curse | cursoryRun, cursoryCommit, cursoryInput #-}
-
     curse :: Cursor (CursoryText m) (CursoryChar m) m (CursoryContext m)
-    curse = Cursor{ run = cursoryRun @m, commit = cursoryCommit @m, input = cursoryInput @m }
-
-    cursoryRun :: CursoryContext m a -> m a
-    cursoryRun = run curse
-
-    cursoryCommit :: Positive Natural -> CursoryContext m AdvanceResult
-    cursoryCommit = commit (curse @m)
-
-    cursoryInput :: Stream (CursoryContext m) (CursoryText m) (CursoryChar m)
-    cursoryInput = input (curse @m)

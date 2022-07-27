@@ -1,6 +1,6 @@
-{-# language FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# language FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
-module Step.Buffer.BufferState (BufferState (..), takeChunk, dropN) where
+module Step.Buffer.BufferState (BufferState (..), takeChunk, dropN, bufferStateCursor) where
 
 import Step.Internal.Prelude
 
@@ -8,7 +8,7 @@ import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.Drop as Drop
 
-import Step.Cursor (Stream, AdvanceResult (..), Cursory (..))
+import Step.Cursor (Stream, AdvanceResult (..), Cursory (..), Cursor (Cursor))
 import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Buffer (Buffer, chunks)
@@ -23,16 +23,21 @@ instance (Monad m, ListLike xs x) => Cursory (BufferState xs x Buffer m) where
     type CursoryText (BufferState xs x Buffer m) = xs
     type CursoryChar (BufferState xs x Buffer m) = x
     type CursoryContext (BufferState xs x Buffer m) = (BufferState xs x DoubleBuffer m)
+    curse = bufferStateCursor
 
-    cursoryRun (BufferState a) =
+bufferStateCursor :: (ListLike xs x, Monad m) =>
+    Cursor xs x (BufferState xs x Buffer m) (BufferState xs x DoubleBuffer m)
+bufferStateCursor = Cursor{ Cursor.run, Cursor.input, Cursor.commit }
+  where
+    run (BufferState a) =
         get
         >>= BufferState . lift . runStateT a . newDoubleBuffer
         >>= \(x, bs) -> put (view uncommitted bs) $> x
 
-    cursoryInput =
+    input =
         Cursor.stream $ BufferState $ zoom unseen $ runBufferState takeChunk
 
-    cursoryCommit n =
+    commit n =
         BufferState $ zoom uncommitted $ runBufferState $ dropN n
 
 takeChunk :: Monad m => BufferState xs x Buffer m (Maybe (Nontrivial xs x))

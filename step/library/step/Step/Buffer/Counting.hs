@@ -1,4 +1,4 @@
-{-# language GeneralizedNewtypeDeriving #-}
+{-# language FlexibleContexts, GeneralizedNewtypeDeriving #-}
 
 module Step.Buffer.Counting where
 
@@ -6,7 +6,7 @@ import Step.Internal.Prelude
 
 import Step.Input.CursorPosition (CursorPosition)
 
-import Step.Cursor (Cursory (..))
+import Step.Cursor (Cursory (..), Cursor (Cursor), Stream, AdvanceResult)
 import qualified Step.Cursor as Cursor
 import qualified Step.Input.CursorPosition as CursorPosition
 
@@ -17,12 +17,17 @@ instance (Monad m, Cursory m, CursoryText m ~ xs, CursoryChar m ~ x) => Cursory 
     type CursoryText (Counting xs x m) = xs
     type CursoryChar (Counting xs x m) = x
     type CursoryContext (Counting xs x m) = StateT CursorPosition (CursoryContext m)
+    curse = countingCursor (curse @m)
 
-    cursoryRun a =
-        get >>= \p -> lift (cursoryRun @m (runStateT a p)) >>= \(x, p') -> put p' $> x
+countingCursor :: forall m m' xs x. (Monad m, Monad m') =>
+    Cursor xs x m m' -> Cursor xs x (Counting xs x m) (StateT CursorPosition m')
+countingCursor c = Cursor{ Cursor.run, Cursor.input, Cursor.commit }
+  where
+    run :: StateT CursorPosition m' a -> Counting xs x m a
+    run a = get >>= \p -> lift (Cursor.run c (runStateT a p)) >>= \(x, p') -> put p' $> x
 
-    cursoryInput =
-        Cursor.rebaseStream lift $ cursoryInput @m
+    input :: Stream (StateT CursorPosition m') xs x
+    input = Cursor.rebaseStream lift $ Cursor.input c
 
-    cursoryCommit n =
-        modify' (CursorPosition.strictlyIncrease n) *> lift (cursoryCommit @m n)
+    commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
+    commit n = modify' (CursorPosition.strictlyIncrease n) *> lift (Cursor.commit c n)
