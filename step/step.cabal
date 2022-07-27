@@ -128,6 +128,7 @@ library
         Step.Buffer.DoubleBufferState
         Step.Buffer.LoadingBufferState
         Step.Buffer.LoadingDoubleBufferState
+        Step.Buffer.Recording
 
         Step.Input.BufferedStream
         Step.Input.Counter
