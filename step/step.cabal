@@ -120,6 +120,7 @@ library
         Step.Buffer.Buffer
         Step.Buffer.BufferResult
         Step.Buffer.BufferState
+        Step.Buffer.Counting
         Step.Buffer.DoubleBuffer
         Step.Buffer.DoubleBuffer.Constructor
         Step.Buffer.DoubleBuffer.Optics
