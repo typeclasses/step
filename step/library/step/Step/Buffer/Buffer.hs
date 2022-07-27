@@ -1,11 +1,6 @@
 {-# language GeneralizedNewtypeDeriving #-}
 
-module Step.Buffer.Buffer
-  (
-    Buffer,
-    chunks,
-  )
-  where
+module Step.Buffer.Buffer (Buffer, chunks) where
 
 import Step.Internal.Prelude
 
