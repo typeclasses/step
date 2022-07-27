@@ -11,6 +11,9 @@ import qualified Step.Buffer.Buffer as Buffer
 import Step.Cursor (Cursor (Cursor), StreamCompletion, Stream, AdvanceResult (..))
 import qualified Step.Cursor as Cursor
 
+import Step.Buffer.BufferState (BufferState, runBufferState)
+import qualified Step.Buffer.BufferState as BufferState
+
 data While text char =
   While
     { completion :: StreamCompletion -- ^ Should we read any more from upstream
@@ -53,7 +56,7 @@ input :: ListLike text char => Monad m =>
     -> Stream (StateT (While text char) m) text char
 input ok upstream = Cursor.stream do
     xm <-
-        zoom bufferLens Buffer.takeChunk >>= \case
+        zoom bufferLens (runBufferState BufferState.takeChunk) >>= \case
             Just x -> return (Just x)
             Nothing -> use completionLens >>= \case
                 Cursor.Done -> return Nothing

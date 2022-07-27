@@ -111,9 +111,11 @@ library
         Step.Competitors.Attoparsec.Text
 
         Step.Buffer.Buffer
-        Step.Buffer.DoubleBuffer
         Step.Buffer.BufferResult
+        Step.Buffer.BufferState
+        Step.Buffer.DoubleBuffer
         Step.Buffer.DoubleBufferState
+        Step.Buffer.LoadingBufferState
         Step.Buffer.LoadingDoubleBufferState
 
         Step.Input.BufferedStream

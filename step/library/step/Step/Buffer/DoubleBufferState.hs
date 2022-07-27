@@ -23,9 +23,15 @@ import Step.Buffer.BufferResult (BufferResult(..))
 import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 import qualified Step.Buffer.DoubleBuffer as DoubleBuffer
 
+import qualified Step.Buffer.BufferState as BufferState
+import Step.Buffer.BufferState (runBufferState)
+
 newtype DoubleBufferState xs x m a =
     DoubleBufferState (StateT (DoubleBuffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad)
+
+
+-- todo: move stuff below into BufferState
 
 curseBuffer :: Monad m => ListLike xs x => Cursor xs x (StateT (Buffer xs x) m) (DoubleBufferState xs x m)
 curseBuffer =
@@ -43,7 +49,7 @@ runBufferSession (DoubleBufferState a) = do
     return x
 
 bufferSessionInput :: Monad m => ListLike xs x => Stream (DoubleBufferState xs x m) xs x
-bufferSessionInput = Cursor.stream $ DoubleBufferState $ zoom unseenLens Buffer.takeChunk
+bufferSessionInput = Cursor.stream $ DoubleBufferState $ zoom unseenLens (runBufferState BufferState.takeChunk)
 
 bufferSessionCommit :: Monad m => ListLike xs x => Positive Natural -> DoubleBufferState xs x m AdvanceResult
-bufferSessionCommit n = DoubleBufferState $ zoom uncommittedLens (Buffer.dropN n)
+bufferSessionCommit n = DoubleBufferState $ zoom uncommittedLens (runBufferState (BufferState.dropN n))
