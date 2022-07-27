@@ -1,5 +1,3 @@
-{-# language DerivingStrategies #-}
-
 module Step.Document.Lines
   (
     {- * The type -} LineHistory (..),

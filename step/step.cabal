@@ -18,6 +18,7 @@ common base
 
     default-extensions:
         BlockArguments
+        DerivingStrategies
         LambdaCase
         NoMonomorphismRestriction
         NoImplicitPrelude
@@ -65,6 +66,7 @@ common base
           , Data.Void as Void
           , Data.List.NonEmpty as NonEmpty
           , GHC.Exts
+          , GHC.Generics as Generic
           )
       , bytestring
           ( Data.ByteString as ByteString
@@ -119,6 +121,9 @@ library
         Step.Buffer.BufferResult
         Step.Buffer.BufferState
         Step.Buffer.DoubleBuffer
+        Step.Buffer.DoubleBuffer.Constructor
+        Step.Buffer.DoubleBuffer.Optics
+        Step.Buffer.DoubleBuffer.Extra
         Step.Buffer.DoubleBufferState
         Step.Buffer.LoadingBufferState
         Step.Buffer.LoadingDoubleBufferState
@@ -208,6 +213,7 @@ library step-internal
     other-modules:
         Step.Internal.Dependencies
         Step.Internal.Modify
+        Step.Internal.Pair
         Step.Internal.Positive
         Step.Internal.Times
         Step.Internal.While

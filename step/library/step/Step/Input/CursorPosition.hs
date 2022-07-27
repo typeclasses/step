@@ -1,4 +1,4 @@
-{-# language DerivingStrategies, GeneralizedNewtypeDeriving #-}
+{-# language GeneralizedNewtypeDeriving #-}
 
 module Step.Input.CursorPosition where
 

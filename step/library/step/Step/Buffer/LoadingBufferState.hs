@@ -8,8 +8,8 @@ import Step.Cursor (AdvanceResult (..), Cursory (..), Stream)
 import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Buffer (Buffer, chunks)
-import Step.Buffer.BufferResult (BufferResult(..))
-import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
+import Step.Buffer.BufferResult (BufferResult (..))
+import Step.Buffer.DoubleBuffer (DoubleBuffer, unseen, uncommitted)
 import Step.Buffer.DoubleBufferState (DoubleBufferState (..))
 import Step.Buffer.LoadingDoubleBufferState (LoadingDoubleBufferState (..))
 import Step.Buffer.BufferState (BufferState (..))
@@ -47,6 +47,6 @@ bufferMore = LoadingDoubleBufferState \upstream ->
     DoubleBufferState $ lift (Cursor.next upstream) >>= \case
         Nothing -> return NothingToBuffer
         Just x -> do
-            modifying (uncommittedLens % chunks) (:|> x)
-            modifying (unseenLens % chunks) (:|> x)
+            modifying (uncommitted % chunks) (:|> x)
+            modifying (unseen % chunks) (:|> x)
             return BufferedMore

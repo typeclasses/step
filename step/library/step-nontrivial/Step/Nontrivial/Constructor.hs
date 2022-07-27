@@ -1,10 +1,6 @@
-{-# language DerivingStrategies, GeneralizedNewtypeDeriving, Unsafe #-}
+{-# language GeneralizedNewtypeDeriving, Unsafe #-}
 
-module Step.Nontrivial.Constructor
-  (
-    Nontrivial (..),
-  )
-  where
+module Step.Nontrivial.Constructor (Nontrivial (..)) where
 
 import Step.Internal.Prelude
 

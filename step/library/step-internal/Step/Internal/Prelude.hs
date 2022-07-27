@@ -7,3 +7,4 @@ import Step.Internal.Modify as X
 import Step.Internal.Positive as X
 import Step.Internal.Times as X
 import Step.Internal.While as X
+import Step.Internal.Pair as X
