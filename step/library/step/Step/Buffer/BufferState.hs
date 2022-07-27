@@ -16,12 +16,16 @@ import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.Drop as Drop
 
-import Step.Cursor (Stream, AdvanceResult (..))
+import Step.Cursor (Stream, AdvanceResult (..), Cursory (..))
 import qualified Step.Cursor as Cursor
 
 import Step.Buffer.BufferResult (BufferResult(..))
 
 import Step.Buffer.Buffer (Buffer (..))
+
+import Step.Buffer.DoubleBufferState
+
+import Step.Buffer.DoubleBuffer (DoubleBuffer (..), uncommittedLens, unseenLens)
 
 newtype BufferState xs x m a =
     BufferState { runBufferState :: StateT (Buffer xs x) m a }
@@ -49,3 +53,18 @@ dropN = fix \r n -> getBuffer >>= \case
                 setBuffer Buffer{ chunks = (Seq.:<|) remainder xs } $> AdvanceSuccess
             Drop.Insufficient{ Drop.shortfall } ->
                 setBuffer Buffer{ chunks = xs } *> r shortfall
+
+instance (Monad m, ListLike xs x) => Cursory (BufferState xs x m) where
+    type CursoryText (BufferState xs x m) = xs
+    type CursoryChar (BufferState xs x m) = x
+    type CursoryContext (BufferState xs x m) = (DoubleBufferState xs x m)
+
+    cursoryRun (DoubleBufferState a) = do
+        b <- getBuffer
+        (x, bs) <- BufferState $ lift (runStateT a (DoubleBuffer b b))
+        setBuffer (view uncommittedLens bs)
+        return x
+
+    cursoryInput = Cursor.stream $ DoubleBufferState $ zoom unseenLens (runBufferState takeChunk)
+
+    cursoryCommit n = DoubleBufferState $ zoom uncommittedLens (runBufferState (dropN n))

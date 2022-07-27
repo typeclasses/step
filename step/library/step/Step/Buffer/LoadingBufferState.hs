@@ -14,7 +14,7 @@ import Step.Buffer.BufferResult (BufferResult(..))
 
 import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 
-import Step.Buffer.DoubleBufferState (DoubleBufferState (DoubleBufferState), runBufferSession, bufferSessionInput, bufferSessionCommit)
+import Step.Buffer.DoubleBufferState (DoubleBufferState (..))
 import qualified Step.Buffer.DoubleBufferState as DoubleBufferState
 
 import Step.Buffer.LoadingDoubleBufferState (LoadingDoubleBufferState (..))
@@ -32,13 +32,12 @@ instance (Monad m, ListLike xs x) => Cursory (LoadingBufferState xs x m) where
     type CursoryContext (LoadingBufferState xs x m) = LoadingDoubleBufferState xs x m
 
     cursoryRun (LoadingDoubleBufferState f) =
-        LoadingBufferState \upstream ->
-            BufferState (runBufferSession (f upstream))
+        LoadingBufferState \upstream -> cursoryRun (f upstream)
 
     cursoryInput = Cursor.streamChoice bufferedInput freshInput
       where
         bufferedInput =
-            bufferSessionInput & Cursor.rebaseStream \a ->
+            cursoryInput @(BufferState xs x m) & Cursor.rebaseStream \a ->
                 LoadingDoubleBufferState \_ -> a
         freshInput = Cursor.stream (bufferMore *> Cursor.next bufferedInput)
 
@@ -47,7 +46,7 @@ instance (Monad m, ListLike xs x) => Cursory (LoadingBufferState xs x m) where
             r@AdvanceSuccess -> return r
             YouCanNotAdvance n' -> commitFresh n'
       where
-        commitBuffered n = LoadingDoubleBufferState \_ -> bufferSessionCommit n
+        commitBuffered n = LoadingDoubleBufferState \_ -> cursoryCommit @(BufferState xs x m) n
         commitFresh n = bufferMore *> commitBuffered n
 
 bufferMore :: Monad m => LoadingDoubleBufferState xs x m BufferResult

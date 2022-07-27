@@ -18,7 +18,7 @@ import Step.Buffer.BufferResult (BufferResult(..))
 
 import Step.Buffer.DoubleBuffer (DoubleBuffer (DoubleBuffer), unseenLens, uncommittedLens)
 
-import Step.Buffer.DoubleBufferState (DoubleBufferState (DoubleBufferState), runBufferSession, bufferSessionInput, bufferSessionCommit)
+import Step.Buffer.DoubleBufferState (DoubleBufferState (..))
 import qualified Step.Buffer.DoubleBufferState as DoubleBufferState
 
 newtype LoadingDoubleBufferState xs x m a =
