@@ -34,6 +34,7 @@ common base
       , hedgehog
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
+      , mtl
       , transformers
       , nat-optics ^>= 1.0.0.4
       , optics ^>= 0.4
@@ -82,9 +83,11 @@ common base
           , NatOptics.Positive.Unsafe as Positive.Unsafe
           , NatOptics.Signed as Signed
           )
+      , mtl
+          ( Control.Monad.State as State
+          )
       , transformers
-          ( Control.Monad.Trans.State.Strict as State
-          , Control.Monad.Trans.Class as MonadTrans
+          ( Control.Monad.Trans.Class as MonadTrans
           , Control.Monad.Trans.Reader as Reader
           , Control.Monad.Trans.Except as Except
           )
