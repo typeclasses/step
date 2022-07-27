@@ -10,7 +10,6 @@ module Step.Input.BufferedStream
 import Step.Internal.Prelude
 
 import Step.Buffer.Buffer (Buffer, chunks)
-import Step.Buffer.BufferState (BufferState, runBufferState)
 import Step.Buffer.DoubleBuffer (DoubleBuffer, newDoubleBuffer, unseen, uncommitted)
 import Step.Buffer.BufferResult (BufferResult (..))
 
@@ -60,19 +59,19 @@ curse = Cursor{ run, commit, input }
 
     input :: Stream (StateT (LoadingDoubleBufferState m xs x) m) xs x
     input = Cursor.stream $
-        zoom (bufferSessionLens % unseen) (runBufferState BufferState.takeChunk) >>= \case
+        zoom (bufferSessionLens % unseen) BufferState.takeChunk >>= \case
             Just x -> return (Just x)
             Nothing -> sessionBufferMore >>= \case
                 NothingToBuffer -> return Nothing
-                BufferedMore -> zoom (bufferSessionLens % unseen) (runBufferState BufferState.takeChunk)
+                BufferedMore -> zoom (bufferSessionLens % unseen) BufferState.takeChunk
 
     commit :: Positive Natural -> StateT (LoadingDoubleBufferState m xs x) m AdvanceResult
     commit n =
-        zoom (bufferSessionLens % uncommitted) (runBufferState (BufferState.dropN n)) >>= \case
+        zoom (bufferSessionLens % uncommitted) (BufferState.dropN n) >>= \case
             AdvanceSuccess -> return AdvanceSuccess
             YouCanNotAdvance{ shortfall = n' } -> sessionBufferMore >>= \case
                 NothingToBuffer -> return YouCanNotAdvance{ shortfall = n' }
-                BufferedMore -> zoom (bufferSessionLens % uncommitted) (runBufferState (BufferState.dropN n))
+                BufferedMore -> zoom (bufferSessionLens % uncommitted) (BufferState.dropN n)
 
 bufferMore :: Monad m => StateT (BufferedStream m xs x) m ()
 bufferMore = use pendingLens >>= \p ->

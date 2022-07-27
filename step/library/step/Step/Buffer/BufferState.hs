@@ -1,6 +1,6 @@
 {-# language FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
-module Step.Buffer.BufferState (BufferState (..), takeChunk, dropN, bufferStateCursor) where
+module Step.Buffer.BufferState (BufferOnly (..), takeChunk, dropN, bufferStateCursor) where
 
 import Step.Internal.Prelude
 
@@ -15,37 +15,34 @@ import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
 import Step.Buffer.DoubleBuffer (DoubleBuffer, uncommitted, unseen, newDoubleBuffer)
 
-newtype BufferState xs x buffer m a =
-    BufferState { runBufferState :: StateT (buffer xs x) m a }
+import qualified Optics
+
+newtype BufferOnly xs x buffer m a = BufferOnly (StateT (buffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad, MonadState (buffer xs x), MonadTrans)
 
-instance (Monad m, ListLike xs x) => Cursory (BufferState xs x Buffer m) where
-    type CursoryText (BufferState xs x Buffer m) = xs
-    type CursoryChar (BufferState xs x Buffer m) = x
-    type CursoryContext (BufferState xs x Buffer m) = (BufferState xs x DoubleBuffer m)
-    curse = bufferStateCursor
+instance (Monad m, ListLike xs x) => Cursory (BufferOnly xs x Buffer m) where
+    type CursoryText (BufferOnly xs x Buffer m) = xs
+    type CursoryChar (BufferOnly xs x Buffer m) = x
+    type CursoryContext (BufferOnly xs x Buffer m) = (BufferOnly xs x DoubleBuffer m)
+    curse =
+        bufferStateCursor
+            & Cursor.rebaseCursor BufferOnly
+            & Cursor.recurseCursor Optics.coerced
 
 bufferStateCursor :: (ListLike xs x, Monad m) =>
-    Cursor xs x (BufferState xs x Buffer m) (BufferState xs x DoubleBuffer m)
+    Cursor xs x (StateT (Buffer xs x) m) (StateT (DoubleBuffer xs x) m)
 bufferStateCursor = Cursor{ Cursor.run, Cursor.input, Cursor.commit }
   where
-    run (BufferState a) =
-        get
-        >>= BufferState . lift . runStateT a . newDoubleBuffer
-        >>= \(x, bs) -> put (view uncommitted bs) $> x
+    input = Cursor.stream $ zoom unseen takeChunk
+    commit n = zoom uncommitted $ dropN n
+    run a = get >>= lift . runStateT a . newDoubleBuffer >>= \(x, bs) -> put (view uncommitted bs) $> x
 
-    input =
-        Cursor.stream $ BufferState $ zoom unseen $ runBufferState takeChunk
-
-    commit n =
-        BufferState $ zoom uncommitted $ runBufferState $ dropN n
-
-takeChunk :: Monad m => BufferState xs x Buffer m (Maybe (Nontrivial xs x))
+takeChunk :: Monad m => StateT (Buffer xs x) m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case
     Empty -> return Nothing
     y :<| ys -> assign chunks ys $> Just y
 
-dropN :: (Monad m, ListLike xs x) => Positive Natural -> BufferState xs x Buffer m AdvanceResult
+dropN :: (Monad m, ListLike xs x) => Positive Natural -> StateT (Buffer xs x) m AdvanceResult
 dropN = fix \r n -> use chunks >>= \case
     Empty -> return YouCanNotAdvance{ shortfall = n }
     x :<| xs -> case Nontrivial.dropPositive n x of

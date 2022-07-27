@@ -10,13 +10,13 @@ import Step.Cursor (Stream, AdvanceResult (..), Cursory (..), Cursor (Cursor))
 
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
-import Step.Buffer.BufferState (BufferState (..))
 import Step.Buffer.DoubleBuffer (DoubleBuffer, unseen, uncommitted)
+import Step.Buffer.BufferState (bufferStateCursor)
 
 newtype Loading xs x buffer m a =
-    Loading (Stream m xs x -> BufferState xs x buffer m a)
+    Loading (Stream m xs x -> StateT (buffer xs x) m a)
     deriving (Functor, Applicative, Monad)
-        via ReaderT (Stream m xs x) (BufferState xs x buffer m)
+        via ReaderT (Stream m xs x) (StateT (buffer xs x) m)
 
 instance MonadTrans (Loading xs x buffer) where
     lift a = Loading \_ -> lift a
@@ -31,7 +31,8 @@ loadingCursor :: forall xs x m. ListLike xs x => Monad m =>
     Cursor xs x (Loading xs x Buffer m) (Loading xs x DoubleBuffer m)
 loadingCursor = Cursor{ Cursor.run, Cursor.input, Cursor.commit }
   where
-    run (Loading f) = Loading \upstream -> Cursor.run curse (f upstream)
+    run :: Loading xs x DoubleBuffer m a -> Loading xs x Buffer m a
+    run (Loading f) = Loading \upstream -> Cursor.run c (f upstream)
 
     input = Cursor.streamChoice bufferedInput freshInput
       where
@@ -48,11 +49,11 @@ loadingCursor = Cursor{ Cursor.run, Cursor.input, Cursor.commit }
         commitBuffered n = Loading \_ -> Cursor.commit c n
         commitFresh n = bufferMore *> commitBuffered n
 
-    c = curse @(BufferState xs x Buffer m)
+    c = bufferStateCursor
 
 bufferMore :: Monad m => Loading xs x DoubleBuffer m BufferResult
 bufferMore = Loading \upstream ->
-    BufferState $ lift (Cursor.next upstream) >>= \case
+    lift (Cursor.next upstream) >>= \case
         Nothing -> return NothingToBuffer
         Just x -> do
             modifying (uncommitted % chunks) (:|> x)
