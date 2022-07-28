@@ -8,7 +8,7 @@ import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.Drop as Drop
 
-import Step.Cursor (Stream, AdvanceResult (..), Cursory (..), Cursor (Cursor))
+import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor))
 import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Buffer (Buffer, chunks)
@@ -19,15 +19,6 @@ import qualified Optics
 
 newtype BufferOnly xs x buffer m a = BufferOnly (StateT (buffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad, MonadState (buffer xs x), MonadTrans)
-
-instance (Monad m, ListLike xs x) => Cursory (BufferOnly xs x Buffer m) where
-    type CursoryText (BufferOnly xs x Buffer m) = xs
-    type CursoryChar (BufferOnly xs x Buffer m) = x
-    type CursoryContext (BufferOnly xs x Buffer m) = (BufferOnly xs x DoubleBuffer m)
-    curse =
-        bufferStateCursor
-            & Cursor.rebaseCursor BufferOnly
-            & Cursor.recurseCursor Optics.coerced
 
 bufferStateCursor :: (ListLike xs x, Monad m) =>
     Cursor xs x (StateT (Buffer xs x) m) (StateT (DoubleBuffer xs x) m)

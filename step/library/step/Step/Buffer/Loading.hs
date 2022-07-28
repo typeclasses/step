@@ -1,12 +1,11 @@
 {-# language FlexibleContexts, FlexibleInstances, DerivingVia #-}
 
-module Step.Buffer.Loading (Loading (..)) where
+module Step.Buffer.Loading (Loading (..), loadingCursor) where
 
 import Step.Internal.Prelude hiding (fold)
 
-import Step.Cursor (AdvanceResult (..), Cursory (..), Stream)
 import qualified Step.Cursor as Cursor
-import Step.Cursor (Stream, AdvanceResult (..), Cursory (..), Cursor (Cursor))
+import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor))
 
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
@@ -20,12 +19,6 @@ newtype Loading xs x buffer m a =
 
 instance MonadTrans (Loading xs x buffer) where
     lift a = Loading \_ -> lift a
-
-instance (Monad m, ListLike xs x) => Cursory (Loading xs x Buffer m) where
-    type CursoryText (Loading xs x Buffer m) = xs
-    type CursoryChar (Loading xs x Buffer m) = x
-    type CursoryContext (Loading xs x Buffer m) = Loading xs x DoubleBuffer m
-    curse = loadingCursor
 
 loadingCursor :: forall xs x m. ListLike xs x => Monad m =>
     Cursor xs x (Loading xs x Buffer m) (Loading xs x DoubleBuffer m)
