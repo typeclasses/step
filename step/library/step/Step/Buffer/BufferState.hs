@@ -24,7 +24,8 @@ bufferStateCursor :: forall xs x r m. (ListLike xs x, Monad m) =>
     Cursor xs x r (DoubleBuffer xs x) (Buffer xs x) m
 bufferStateCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
-    init = newDoubleBuffer
+    init :: RST r (Buffer xs x) m (DoubleBuffer xs x)
+    init = get <&> newDoubleBuffer
 
     input :: Stream (RST r (DoubleBuffer xs x) m) xs x
     input = Cursor.stream (zoom unseen takeChunk)
@@ -32,7 +33,8 @@ bufferStateCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.ext
     commit :: Positive Natural -> RST r (DoubleBuffer xs x) m AdvanceResult
     commit n = zoom uncommitted (dropN n)
 
-    extract = view uncommitted
+    extract :: RST r (DoubleBuffer xs x) m (Buffer xs x)
+    extract = get <&> view uncommitted
 
 takeChunk :: MonadState (Buffer xs x) m => m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case

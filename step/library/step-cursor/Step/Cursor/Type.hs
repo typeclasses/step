@@ -40,19 +40,19 @@ mapRST f = RST . ((f .) .) . runRST
 
 data Cursor xs x r s s' m =
   Cursor
-    { init :: s' -> s
+    { init :: RST r s' m s
     , input :: Stream (RST r s m) xs x
     , commit :: Positive Natural -> RST r s m AdvanceResult
-    , extract :: s -> s'
+    , extract :: RST r s m s'
     }
 
 rebase :: (forall a. m1 a -> m2 a) -> Cursor xs x r s s' m1 -> Cursor xs x r s s' m2
 rebase o Cursor{ init, commit, input, extract } =
   Cursor
-    { init = init
+    { init = mapRST o init
     , commit = mapRST o . commit
     , input = Stream.rebase (mapRST o) input
-    , extract = extract
+    , extract = mapRST o extract
     }
 
 -- recurse :: (forall a. Iso' (cursor1 a) (cursor2 a)) -> Cursor xs x base cursor1 -> Cursor xs x base cursor2

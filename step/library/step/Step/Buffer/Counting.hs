@@ -16,7 +16,8 @@ countingCursor :: forall xs x r s s' m. Monad m =>
     Cursor xs x r s s' m -> Cursor xs x r (CursorPosition, s) (CursorPosition, s') m
 countingCursor c = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
-    init (p, x) = (p, Cursor.init c x)
+    init :: RST r (CursorPosition, s') m (CursorPosition, s)
+    init = (,) <$> use _1 <*> zoom _2 (Cursor.init c)
 
     input :: Stream (RST r (CursorPosition, s) m) xs x
     input = Cursor.rebaseStream (zoom _2) $ Cursor.input c
@@ -26,4 +27,5 @@ countingCursor c = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extr
         modifying _1 (CursorPosition.strictlyIncrease n)
         zoom _2 (Cursor.commit c n)
 
-    extract (p, x) = (p, Cursor.extract c x)
+    extract :: RST r (CursorPosition, s) m (CursorPosition, s')
+    extract = (,) <$> use _1 <*> zoom _2 (Cursor.extract c)
