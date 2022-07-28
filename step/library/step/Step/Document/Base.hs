@@ -34,12 +34,8 @@ import qualified Step.Configuration as Config
 import Step.Failure (Fallible)
 import qualified Step.Failure as F
 
-import Step.Input.Counter (Counting)
-import qualified Step.Input.Counter as Counting
-
-import Step.Input.Counter (cursorPosition)
-
-import Step.Input.BufferedStream (LoadingDoubleBufferState)
+import Step.Buffer.Counting
+import Step.Buffer.Loading
 
 import Step.Input.CursorPosition (CursorPosition)
 

@@ -14,11 +14,8 @@ import Step.Internal.Prelude
 import Step.Document.Lines (LineHistory)
 import qualified Step.Document.Lines as Lines
 
-import Step.Input.Counter (Counter, Counting, cursorPosition)
+import Step.Input.Counter (KnowsCursorPosition (..))
 import qualified Step.Input.Counter as Counter
-
-import Step.Input.BufferedStream (BufferedStream)
-import qualified Step.Input.BufferedStream as BufferedStream
 
 import Step.Cursor (Cursor (..), Stream)
 import qualified Step.Cursor as Cursor
@@ -26,9 +23,9 @@ import qualified Step.Cursor as Cursor
 import Step.Document.Locating (Locating)
 import qualified Step.Document.Locating as Locating
 
-import Step.Input.BufferedStream (LoadingDoubleBufferState)
-
 import Step.Input.CursorPosition (CursorPosition)
+
+import Step.Buffer.Buffer (Buffer)
 
 
 -- The type
@@ -36,17 +33,9 @@ import Step.Input.CursorPosition (CursorPosition)
 data DocumentMemory xs x m =
   DocumentMemory
     { content :: LineHistory
-    , cursor :: Counter (BufferedStream (StateT LineHistory m) xs x)
+    , cursorPosition :: CursorPosition
+    , buffer :: Buffer xs x
     }
-
-
-curse :: (ListLike xs x, Monad m) => Cursor xs x
-  (StateT (DocumentMemory xs x m) m)
-  (StateT CursorPosition
-    (StateT (LoadingDoubleBufferState
-      (StateT LineHistory m) xs x)
-        (StateT LineHistory m)))
-curse = Cursor.rebaseCursor runCursorState (Counter.curse BufferedStream.curse)
 
 instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text char m) m) where
     position = attempt1

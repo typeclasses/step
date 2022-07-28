@@ -13,10 +13,12 @@ import Step.Cursor.Type (Cursor (..))
 import Step.Cursor.ChunkStream (Stream)
 import Step.Cursor.AdvanceResult (AdvanceResult)
 
-class Monad (CursoryContext m) => Cursory m
+class Cursory m
   where
     type CursoryText m :: Type
     type CursoryChar m :: Type
-    type CursoryContext m :: Type -> Type
+    type CursoryParam m :: Type
+    type CursoryInternalState m :: Type
+    type CursoryState m :: Type
 
-    curse :: Cursor (CursoryText m) (CursoryChar m) m (CursoryContext m)
+    curse :: Cursor (CursoryText m) (CursoryChar m) (CursoryParam m) (CursoryInternalState m) (CursoryState m) m

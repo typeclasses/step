@@ -2,10 +2,7 @@
 
 module Step.Input.Counter
   (
-    Counting (..),
-    Counter (..),
-    start, curse,
-    positionLens, pendingLens,
+    KnowsCursorPosition (..),
   )
   where
 
@@ -21,56 +18,8 @@ import qualified Positive
 
 ---
 
-class Monad m => Counting m where
+class Monad m => KnowsCursorPosition m where
     cursorPosition :: m CursorPosition
 
-instance (Monad m, Counting m) => Counting (ReaderT r m) where
+instance (Monad m, KnowsCursorPosition m) => KnowsCursorPosition (ReaderT r m) where
     cursorPosition = lift cursorPosition
-
----
-
-data Counter input =
-  Counter
-    { position :: CursorPosition
-    , pending :: input
-    }
-
-curse :: forall m m' input xs x. Monad m => Monad m' =>
-    Cursor xs x (StateT input m) m' -> Cursor xs x (StateT (Counter input) m) (StateT CursorPosition m')
-curse Cursor{ run = runUpstream, input = inputUpstream, commit = commitUpstream } =
-    Cursor{ run, input, commit }
-  where
-    run :: StateT CursorPosition m' a -> StateT (Counter input) m a
-    run a = do
-        p <- get <&> position
-        (x, p') <- zoom pendingLens (runUpstream (runStateT a p))
-        assign positionLens p'
-        return x
-
-    input :: Stream (StateT CursorPosition m') xs x
-    input = Cursor.rebaseStream lift inputUpstream
-
-    commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
-    commit n = do
-        r <- lift (commitUpstream n)
-        modify' $ CursorPosition.increase $ case r of
-            AdvanceSuccess -> review Positive.refine n
-            YouCanNotAdvance{ shortfall = s } -> review Positive.refine n - review Positive.refine s
-        return r
-
-instance Monad m => Counting (StateT (Counter input) m)
-  where
-    cursorPosition = get <&> position
-
----
-
-positionLens :: Lens' (Counter input) CursorPosition
-positionLens = lens position \x y -> x{ position = y }
-
-pendingLens :: Lens' (Counter input) input
-pendingLens = lens pending \x y -> x{ pending = y }
-
----
-
-start :: input -> Counter input
-start = Counter 0

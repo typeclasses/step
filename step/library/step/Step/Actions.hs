@@ -45,7 +45,7 @@ import qualified Step.Failure as F
 import Step.Configuration (Configure, HasContextStack, contextStackLens, Config)
 import qualified Step.Configuration as Config
 
-import Step.Input.Counter (Counting)
+import Step.Input.Counter (KnowsCursorPosition)
 import qualified Step.Input.Counter as Counting
 
 import Step.Input.CursorPosition (CursorPosition)

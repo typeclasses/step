@@ -6,22 +6,24 @@ import Step.Internal.Prelude
 
 import Step.Input.CursorPosition (CursorPosition)
 
-import Step.Cursor (Cursor (Cursor), Stream, AdvanceResult)
+import Step.Cursor (Cursor (Cursor), Stream, AdvanceResult, RST (..))
 import qualified Step.Cursor as Cursor
 import qualified Step.Input.CursorPosition as CursorPosition
 
-newtype Counting xs x m a = Counting (StateT CursorPosition m a)
-    deriving newtype (Functor, Applicative, Monad, MonadState CursorPosition, MonadTrans)
+import Optics
 
-countingCursor :: forall m m' xs x. (Monad m, Monad m') =>
-    Cursor xs x m m' -> Cursor xs x (Counting xs x m) (StateT CursorPosition m')
-countingCursor c = Cursor{ Cursor.run, Cursor.input, Cursor.commit }
+countingCursor :: forall xs x r s s' m. Monad m =>
+    Cursor xs x r s s' m -> Cursor xs x r (CursorPosition, s) (CursorPosition, s') m
+countingCursor c = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
-    run :: StateT CursorPosition m' a -> Counting xs x m a
-    run a = get >>= \p -> lift (Cursor.run c (runStateT a p)) >>= \(x, p') -> put p' $> x
+    init (p, x) = (p, Cursor.init c x)
 
-    input :: Stream (StateT CursorPosition m') xs x
-    input = Cursor.rebaseStream lift $ Cursor.input c
+    input :: Stream (RST r (CursorPosition, s) m) xs x
+    input = Cursor.rebaseStream (zoom _2) $ Cursor.input c
 
-    commit :: Positive Natural -> StateT CursorPosition m' AdvanceResult
-    commit n = modify' (CursorPosition.strictlyIncrease n) *> lift (Cursor.commit c n)
+    commit :: Positive Natural -> RST r (CursorPosition, s) m AdvanceResult
+    commit n = do
+        modifying _1 (CursorPosition.strictlyIncrease n)
+        zoom _2 (Cursor.commit c n)
+
+    extract (p, x) = (p, Cursor.extract c x)

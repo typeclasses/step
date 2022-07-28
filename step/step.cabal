@@ -36,6 +36,7 @@ common base
       , hedgehog
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
+      , mmorph
       , mtl
       , transformers
       , nat-optics ^>= 1.0.0.4
@@ -47,6 +48,7 @@ common base
           , Data.Char as Char
           , Data.Coerce as Coerce
           , Data.Either as Either
+          , Data.Functor.Compose as Functor.Compose
           , Data.Kind as Kind
           , Data.Word as Word
           , Text.Show as Show
@@ -80,6 +82,7 @@ common base
           )
       , data-default-class (Data.Default.Class as Default)
       , ListLike (Data.ListLike as ListLike)
+      , mmorph (Control.Monad.Trans.Compose as Functor.ComposeT)
       , nat-optics
           ( NatOptics.Positive as Positive
           , NatOptics.Positive.Math as Positive.Math
@@ -88,11 +91,10 @@ common base
           )
       , mtl
           ( Control.Monad.State as State
+          , Control.Monad.Reader as Reader
           )
-
       , transformers
           ( Control.Monad.Trans.Class as MonadTrans
-          , Control.Monad.Trans.Reader as Reader
           , Control.Monad.Trans.Except as Except
           )
       , loc (Data.Loc as Loc, Data.Loc.SpanOrLoc as SpanOrLoc)
@@ -127,9 +129,8 @@ library
         Step.Buffer.DoubleBuffer.Extra
         Step.Buffer.Loading
 
-        Step.Input.BufferedStream
-        Step.Input.Counter
         Step.Input.CursorPosition
+        Step.Input.Counter
 
         Step.Document
         Step.Document.Base
