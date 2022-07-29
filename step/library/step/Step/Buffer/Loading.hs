@@ -12,7 +12,7 @@ import Step.Internal.Prelude hiding (fold)
 import qualified Step.Cursor as Cursor
 import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor), expandStateCursor)
 
-import Step.RST (RST (..), expandContextRST)
+import Step.RST (RST (..), contramapRST)
 
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
@@ -46,7 +46,7 @@ bufferMore :: Monad m =>
     RST (Stream () s m xs x) (s, DoubleBuffer xs x) m BufferResult
 bufferMore =
     ask >>= \upstream ->
-    zoom _1 (expandContextRST (\_ -> ()) $ Cursor.next upstream) >>= \case
+    zoom _1 (contramapRST (\_ -> ()) (Cursor.next upstream)) >>= \case
         Nothing -> return NothingToBuffer
         Just x -> do
             modifying (_2 % uncommitted % chunks) (:|> x)
