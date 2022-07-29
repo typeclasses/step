@@ -26,24 +26,25 @@ bufferStateCursor :: forall xs x r m. (ListLike xs x, Monad m) =>
     Cursor xs x r (DoubleBuffer xs x) (Buffer xs x) m
 bufferStateCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
-    init :: RST r (Buffer xs x) m (DoubleBuffer xs x)
-    init = get <&> newDoubleBuffer
+    init :: Buffer xs x -> DoubleBuffer xs x
+    init = newDoubleBuffer
 
-    input :: Stream (RST r (DoubleBuffer xs x) m) xs x
-    input = Cursor.stream (zoom unseen takeChunk)
+    extract :: DoubleBuffer xs x -> Buffer xs x
+    extract = view uncommitted
+
+    input :: Stream r (DoubleBuffer xs x) m xs x
+    input = Cursor.Stream (zoom unseen takeChunk)
 
     commit :: Positive Natural -> RST r (DoubleBuffer xs x) m AdvanceResult
     commit n = zoom uncommitted (dropN n)
 
-    extract :: RST r (DoubleBuffer xs x) m (Buffer xs x)
-    extract = get <&> view uncommitted
 
-takeChunk :: MonadState (Buffer xs x) m => m (Maybe (Nontrivial xs x))
+takeChunk :: Monad m => RST r (Buffer xs x) m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case
     Empty -> return Nothing
     y :<| ys -> assign chunks ys $> Just y
 
-dropN :: (MonadState (Buffer xs x) m, ListLike xs x) => Positive Natural -> m AdvanceResult
+dropN :: Monad m => ListLike xs x => Positive Natural -> RST r (Buffer xs x) m AdvanceResult
 dropN = fix \r n -> use chunks >>= \case
     Empty -> return YouCanNotAdvance{ shortfall = n }
     x :<| xs -> case Nontrivial.dropPositive n x of

@@ -82,7 +82,10 @@ common base
           )
       , data-default-class (Data.Default.Class as Default)
       , ListLike (Data.ListLike as ListLike)
-      , mmorph (Control.Monad.Trans.Compose as Functor.ComposeT)
+      , mmorph
+          ( Control.Monad.Morph as Morph
+          , Control.Monad.Trans.Compose as Functor.ComposeT
+          )
       , nat-optics
           ( NatOptics.Positive as Positive
           , NatOptics.Positive.Math as Positive.Math
