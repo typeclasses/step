@@ -1,7 +1,6 @@
 module Step.Cursor
   (
-    {- * Cursor -} Cursor (..), AdvanceResult (..), rebaseCursor, -- recurseCursor,
-        RST (..), mapRST, evalRST,
+    {- * Cursor -} Cursor (..), AdvanceResult (..), rebaseCursor,
     {- * Class -} Cursory (..),
     {- * Stream -} Stream, stream, next, StreamCompletion (..), rebaseStream, record, list, streamChoice,
     {- * Testing -} genChunks,
@@ -14,7 +13,7 @@ import Step.Cursor.AdvanceResult (AdvanceResult (..))
 import Step.Cursor.ChunkStream (Stream, stream, next, record, list)
 import Step.Cursor.Class (Cursory (..))
 import Step.Cursor.StreamCompletion (StreamCompletion (..))
-import Step.Cursor.Type (Cursor (..), RST (..), mapRST, evalRST)
+import Step.Cursor.Type (Cursor (..))
 import Step.Cursor.InputChunking (genChunks)
 
 import qualified Step.Cursor.Type as Cursor

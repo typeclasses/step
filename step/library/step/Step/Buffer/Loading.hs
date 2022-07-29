@@ -5,7 +5,9 @@ module Step.Buffer.Loading (loadingCursor) where
 import Step.Internal.Prelude hiding (fold)
 
 import qualified Step.Cursor as Cursor
-import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor), RST (..))
+import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor))
+
+import Step.RST (RST (..))
 
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))

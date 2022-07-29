@@ -8,8 +8,10 @@ import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.Drop as Drop
 
-import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor), RST (..), evalRST)
+import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor))
 import qualified Step.Cursor as Cursor
+
+import Step.RST (RST (..), evalRST)
 
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))

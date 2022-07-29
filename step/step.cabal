@@ -109,6 +109,7 @@ library
       , step-action-types
       , step-nontrivial
       , step-cursor
+      , step-rst
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Actions
@@ -152,7 +153,7 @@ library
 library step-cursor
     import: base
     hs-source-dirs: library/step-cursor
-    build-depends: step-internal, step-nontrivial
+    build-depends: step-internal, step-nontrivial, step-rst
     exposed-modules:
         Step.Cursor
     other-modules:
@@ -218,6 +219,12 @@ library step-internal
         Step.Internal.Positive
         Step.Internal.Times
         Step.Internal.While
+
+library step-rst
+    import: base
+    hs-source-dirs: library/step-rst
+    exposed-modules:
+        Step.RST
 
 test-suite test-step
     import: base

@@ -6,9 +6,11 @@ import Step.Internal.Prelude
 
 import Step.Input.CursorPosition (CursorPosition)
 
-import Step.Cursor (Cursor (Cursor), Stream, AdvanceResult, RST (..))
+import Step.Cursor (Cursor (Cursor), Stream, AdvanceResult)
 import qualified Step.Cursor as Cursor
 import qualified Step.Input.CursorPosition as CursorPosition
+
+import Step.RST (RST (..))
 
 import Optics
 
