@@ -1,6 +1,11 @@
 {-# language FlexibleContexts, FlexibleInstances, DerivingVia #-}
 
-module Step.Buffer.Loading (loadingCursor) where
+module Step.Buffer.Loading
+  (
+    loadingCursor,
+    bufferMore,
+  )
+  where
 
 import Step.Internal.Prelude hiding (fold)
 
@@ -37,12 +42,13 @@ loadingCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract
     commitBuffered n = Cursor.commit c n
     commitFresh n = bufferMore *> commitBuffered n
 
-    bufferMore :: RST (Stream () s m xs x) (s, DoubleBuffer xs x) m BufferResult
-    bufferMore =
-        ask >>= \upstream ->
-        zoom _1 (expandContextRST (\_ -> ()) $ Cursor.next upstream) >>= \case
-            Nothing -> return NothingToBuffer
-            Just x -> do
-                modifying (_2 % uncommitted % chunks) (:|> x)
-                modifying (_2 % unseen % chunks) (:|> x)
-                return BufferedMore
+bufferMore :: Monad m =>
+    RST (Stream () s m xs x) (s, DoubleBuffer xs x) m BufferResult
+bufferMore =
+    ask >>= \upstream ->
+    zoom _1 (expandContextRST (\_ -> ()) $ Cursor.next upstream) >>= \case
+        Nothing -> return NothingToBuffer
+        Just x -> do
+            modifying (_2 % uncommitted % chunks) (:|> x)
+            modifying (_2 % unseen % chunks) (:|> x)
+            return BufferedMore
