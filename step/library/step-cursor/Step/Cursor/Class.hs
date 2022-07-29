@@ -10,7 +10,7 @@ import Step.Internal.Prelude
 
 import Step.Cursor.Type (Cursor (..))
 
-import Step.Cursor.ChunkStream (Stream)
+import Step.Cursor.Stream (Stream)
 import Step.Cursor.AdvanceResult (AdvanceResult)
 
 class Cursory m

@@ -158,7 +158,6 @@ library step-cursor
         Step.Cursor
     other-modules:
         Step.Cursor.AdvanceResult
-        Step.Cursor.ChunkStream
         Step.Cursor.Class
         Step.Cursor.InputChunking
         Step.Cursor.Stream
@@ -223,6 +222,7 @@ library step-internal
 library step-rst
     import: base
     hs-source-dirs: library/step-rst
+    build-depends: step-internal
     exposed-modules:
         Step.RST
 

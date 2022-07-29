@@ -1,14 +1,14 @@
 module Step.Cursor.Type
   (
     Cursor (..),
-    rebase,
+    rebaseCursor,
   )
   where
 
 import Step.Internal.Prelude
 
-import Step.Cursor.ChunkStream (Stream)
-import qualified Step.Cursor.ChunkStream as Stream
+import Step.Cursor.Stream (Stream, rebaseStream)
+
 import Step.Cursor.AdvanceResult (AdvanceResult)
 
 import Step.RST
@@ -21,11 +21,11 @@ data Cursor xs x r s s' m =
     , extract :: RST r s m s'
     }
 
-rebase :: (forall a. m1 a -> m2 a) -> Cursor xs x r s s' m1 -> Cursor xs x r s s' m2
-rebase o Cursor{ init, commit, input, extract } =
+rebaseCursor :: (forall a. m1 a -> m2 a) -> Cursor xs x r s s' m1 -> Cursor xs x r s s' m2
+rebaseCursor o Cursor{ init, commit, input, extract } =
   Cursor
     { init = mapRST o init
     , commit = mapRST o . commit
-    , input = Stream.rebase (mapRST o) input
+    , input = rebaseStream (mapRST o) input
     , extract = mapRST o extract
     }
