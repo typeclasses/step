@@ -14,24 +14,28 @@ import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor), expandStateCurs
 
 import Step.RST (RST (..), contramapRST)
 
+import qualified Step.Buffer.BufferState as BufferState
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
-import Step.Buffer.DoubleBuffer (DoubleBuffer, unseen, uncommitted)
+import Step.Buffer.DoubleBuffer (DoubleBuffer, unseen, uncommitted, newDoubleBuffer)
 import Step.Buffer.BufferState (bufferStateCursor)
 
 import Optics
 
 loadingCursor :: forall xs x m s. ListLike xs x => Monad m =>
-    Cursor xs x (Stream () s m xs x) (s, DoubleBuffer xs x) (s, Buffer xs x) m
+    Cursor xs x (Stream () s m xs x) (s, Buffer xs x) m
 loadingCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
-    c :: Cursor xs x (Stream r s m xs x) (s, DoubleBuffer xs x) (s, Buffer xs x) m
-    c@Cursor{ Cursor.init, Cursor.extract } = expandStateCursor bufferStateCursor
+    init :: (s, Buffer xs x) -> (s, DoubleBuffer xs x)
+    init = over _2 newDoubleBuffer
+
+    extract :: (s, DoubleBuffer xs x) -> (s, Buffer xs x)
+    extract = over _2 (view uncommitted)
 
     input, bufferedInput, freshInput ::
         Stream (Stream () s m xs x) (s, DoubleBuffer xs x) m xs x
     input = Cursor.streamChoice bufferedInput freshInput
-    bufferedInput = Cursor.input c
+    bufferedInput = Cursor.Stream (zoom (_2 % unseen) BufferState.takeChunk)
     freshInput = Cursor.Stream (bufferMore *> Cursor.next bufferedInput)
 
     commit, commitBuffered, commitFresh :: Positive Natural
@@ -39,7 +43,7 @@ loadingCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract
     commit n = commitBuffered n >>= \case
         r@AdvanceSuccess -> return r
         YouCanNotAdvance n' -> commitFresh n'
-    commitBuffered n = Cursor.commit c n
+    commitBuffered n = zoom (_2 % uncommitted) (BufferState.dropN n)
     commitFresh n = bufferMore *> commitBuffered n
 
 bufferMore :: Monad m =>

@@ -70,7 +70,7 @@ data Context xs x m = Context Config (Stream () LineHistory m xs x)
 ---
 
 newtype DocumentParsing xs x m a =
-    DocumentParsing (RST Config (DocumentMemory xs x Buffer) m a)
+    DocumentParsing (RST Config (DocumentMemory xs x) m a)
     deriving newtype (Functor, Applicative, Monad, MonadTrans, MFunctor)
 
 -- instance (Monad m, ListLike xs x) => Cursory (DocumentParsing xs x m) where
@@ -83,7 +83,7 @@ newtype DocumentParsing xs x m a =
 --     curse = documentCursor
 
 documentCursor :: Monad m => ListLike xs x =>
-    Cursor xs x (Context xs x m) (DocumentMemory xs x DoubleBuffer) (DocumentMemory xs x Buffer) m
+    Cursor xs x (Context xs x m) (DocumentMemory xs x) m
 documentCursor = _
 
 -- instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
@@ -104,7 +104,7 @@ documentCursor = _
 
 parse :: Monad m => Action.Is kind Any =>
     Config -> kind (DocumentParsing xs x m) Error a
-    -> StateT (DocumentMemory xs x Buffer) m (Either Error a)
+    -> StateT (DocumentMemory xs x) m (Either Error a)
 parse config p =
     _
     -- p & Action.cast @Any & \(Any (DocumentParsing p')) -> runReaderT p' config >>= \case

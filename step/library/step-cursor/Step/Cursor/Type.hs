@@ -1,3 +1,5 @@
+{-# language GADTs #-}
+
 module Step.Cursor.Type
   (
     Cursor (..),
@@ -16,15 +18,15 @@ import Step.RST
 
 import Optics
 
-data Cursor xs x r s s' m =
-  Cursor
-    { init :: s' -> s
-    , extract :: s -> s'
-    , input :: Stream r s m xs x
-    , commit :: Positive Natural -> RST r s m AdvanceResult
+data Cursor xs x r s m =
+  forall s'. Cursor
+    { init :: s -> s'
+    , extract :: s' -> s
+    , input :: Stream r s' m xs x
+    , commit :: Positive Natural -> RST r s' m AdvanceResult
     }
 
-rebaseCursor :: Monad m1 => (forall a. m1 a -> m2 a) -> Cursor xs x r s s' m1 -> Cursor xs x r s s' m2
+rebaseCursor :: Monad m1 => (forall a. m1 a -> m2 a) -> Cursor xs x r s m1 -> Cursor xs x r s m2
 rebaseCursor o Cursor{ init, commit, input, extract } =
   Cursor
     { init = init
@@ -33,8 +35,8 @@ rebaseCursor o Cursor{ init, commit, input, extract } =
     , input = over streamRST (hoist o) input
     }
 
-expandStateCursor :: forall extra xs x r a b m. Monad m =>
-    Cursor xs x r a b m -> Cursor xs x r (extra, a) (extra, b) m
+expandStateCursor :: forall extra xs x r s m. Monad m =>
+    Cursor xs x r s m -> Cursor xs x r (extra, s) m
 expandStateCursor Cursor{ init, commit, input, extract } =
   Cursor
     { init = over _2 init

@@ -23,7 +23,7 @@ newtype BufferOnly xs x buffer m a = BufferOnly (StateT (buffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad, MonadState (buffer xs x), MonadTrans)
 
 bufferStateCursor :: forall xs x r m. (ListLike xs x, Monad m) =>
-    Cursor xs x r (DoubleBuffer xs x) (Buffer xs x) m
+    Cursor xs x r (Buffer xs x) m
 bufferStateCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
     init :: Buffer xs x -> DoubleBuffer xs x
@@ -37,7 +37,6 @@ bufferStateCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.ext
 
     commit :: Positive Natural -> RST r (DoubleBuffer xs x) m AdvanceResult
     commit n = zoom uncommitted (dropN n)
-
 
 takeChunk :: Monad m => RST r (Buffer xs x) m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case
