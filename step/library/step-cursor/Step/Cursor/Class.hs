@@ -20,5 +20,6 @@ class Cursory m
     type CursoryParam m :: Type
     type CursoryInternalState m :: Type
     type CursoryState m :: Type
+    type CursoryBase m :: Type -> Type
 
-    curse :: Cursor (CursoryText m) (CursoryChar m) (CursoryParam m) (CursoryInternalState m) (CursoryState m) m
+    curse :: Cursor (CursoryText m) (CursoryChar m) (CursoryParam m) (CursoryInternalState m) (CursoryState m) (CursoryBase m)

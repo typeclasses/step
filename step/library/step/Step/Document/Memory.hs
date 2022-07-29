@@ -32,11 +32,11 @@ import Step.Buffer.Buffer (Buffer)
 
 -- The type
 
-data DocumentMemory xs x =
+data DocumentMemory xs x buffer =
   DocumentMemory
     { lineHistory :: LineHistory
     , cursorPosition :: CursorPosition
-    , buffer :: Buffer xs x
+    , buffer :: buffer xs x
     }
 
 lineHistoryLens = lens lineHistory \x y -> x{ lineHistory = y }
