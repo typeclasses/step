@@ -220,6 +220,7 @@ library step-internal
         Step.Internal.Pair
         Step.Internal.Positive
         Step.Internal.Times
+        Step.Internal.TupleIso
         Step.Internal.While
 
 library step-rst

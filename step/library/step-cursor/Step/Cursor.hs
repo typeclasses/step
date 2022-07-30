@@ -1,11 +1,11 @@
 module Step.Cursor
   (
     {- * Cursor -} Cursor (..), AdvanceResult (..),
-        rebaseCursor, expandStateCursor,
+        rebaseCursor, expandStateCursor, expandStateCursor', contramapCursor, changeStateCursor,
     {- * Class -} Cursory (..),
     {- * Stream -}
         Stream (..), stream, streamRST, StreamCompletion (..),
-        -- record,
+        record,
         list, streamChoice,
     {- * Testing -} genChunks,
   )

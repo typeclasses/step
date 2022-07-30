@@ -4,6 +4,7 @@ module Step.Buffer.Loading
   (
     loadingCursor,
     bufferMore,
+    -- recordingCursor,
   )
   where
 
@@ -56,3 +57,27 @@ bufferMore =
             modifying (_2 % uncommitted % chunks) (:|> x)
             modifying (_2 % unseen % chunks) (:|> x)
             return BufferedMore
+
+-- | When input is loaded from the stream, it is recorded into the state @s@.
+-- recordingCursor :: forall xs x m s1 s2 rec. ListLike xs x => Monad m =>
+--     (xs -> StateT rec m ())
+--     -> Cursor xs x (Stream () s1 m xs x) s2 m
+--     -> Cursor xs x (Stream () s1 m xs x) (rec, s2) m
+-- recordingCursor record
+--     Cursor
+--       { Cursor.init = init' :: s2 -> s2'
+--       , Cursor.extract = extract' :: s2' -> s2
+--       , Cursor.input = input' :: Stream (Stream () s1 m xs x) s2' m xs x
+--       , Cursor.commit = commit' :: Positive Natural -> RST (Stream () s1 m xs x) s2' m AdvanceResult
+--       } =
+--     Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+--   where
+--     init :: (rec, s2) -> (rec, s2')
+--     init = over _2 init'
+
+--     extract :: (rec, s2') -> (rec, s2)
+--     extract = over _2 extract'
+
+--     commit n = _
+
+--     input = _

@@ -13,9 +13,9 @@ In addition to what is in this module, much of the functionality of 'RST' reside
 -}
 module Step.RST
   (
-    RST (..),
+    RST (..), rst,
     {- * Running -} evalRST, execRST,
-    {- * Modification -} contramapRST,
+    {- * Modification -} contramapRST, stateRST, changeStateRST,
   )
   where
 
@@ -43,9 +43,16 @@ execRST = runRST' (view _2)
 runRST' :: Functor f => ((a, s) -> b) -> RST r s f a -> r -> s -> f b
 runRST' f a r s = f <$> runRST a r s
 
+-- | Lifts a state action into an RST transformation that disregards the reader context
+stateRST :: StateT s m a -> RST r s m a
+stateRST (StateT f) = RST \_ -> f
+
 -- | Lifts a state transformation into an RST transformation that disregards the reader context
 restateRST :: (StateT s1 m1 a1 -> StateT s2 m2 a2) -> RST r s1 m1 a1 -> RST r s2 m2 a2
 restateRST f = mapRST (runStateT . f . StateT)
+
+changeStateRST :: Functor m => Iso' s1 s2 -> RST r s1 m a -> RST r s2 m a
+changeStateRST o = restateRST (\(StateT g) -> StateT \s -> g (review o s) <&> over _2 (view o))
 
 -- | Apply a change that ignores the reader context
 mapRST :: ((s1 -> m1 (a1, s1)) -> s2 -> m2 (a2, s2)) -> RST r2 s1 m1 a1 -> RST r2 s2 m2 a2

@@ -3,7 +3,7 @@
 module Step.Document.Memory
   (
     -- curse,
-    {- * The type -} DocumentMemory (..), lineHistoryLens, cursorPositionLens, bufferLens,
+    {- * The type -} DocumentMemory (..), lineHistoryLens, cursorPositionLens, bufferLens, streamStateLens,
     -- {- * Construction -} fromStream,
     -- {- * Cursor location -} position,
   )
@@ -32,11 +32,12 @@ import Step.Buffer.Buffer (Buffer)
 
 -- The type
 
-data DocumentMemory xs x =
+data DocumentMemory xs x s =
   DocumentMemory
-    { lineHistory :: LineHistory
-    , cursorPosition :: CursorPosition
+    { streamState :: s
     , buffer :: Buffer xs x
+    , lineHistory :: LineHistory
+    , cursorPosition :: CursorPosition
     }
 
 lineHistoryLens = lens lineHistory \x y -> x{ lineHistory = y }
@@ -44,6 +45,8 @@ lineHistoryLens = lens lineHistory \x y -> x{ lineHistory = y }
 cursorPositionLens = lens cursorPosition \x y -> x{ cursorPosition = y }
 
 bufferLens = lens buffer \x y -> x{ buffer = y }
+
+streamStateLens = lens streamState \x y -> x{ streamState = y }
 
 -- instance (ListLike text char, Monad m) => Locating (StateT (DocumentMemory text char m) m) where
 --     position = attempt1

@@ -99,7 +99,7 @@ instance Char Char.Char
     carriageReturn = '\r'
     lineFeed = '\n'
 
-record :: Monad m => Char char => ListLike text char => text -> StateT LineHistory m ()
+record :: Monad m => Char x => ListLike xs x => xs -> StateT LineHistory m ()
 record x = case Nontrivial.refine x of
     Nothing -> return ()
     Just x' -> recordNontrivial x'

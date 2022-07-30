@@ -32,53 +32,53 @@ bufferLens = lens buffer \x y -> x{ buffer = y }
 init :: While text char
 init = While{ completion = Cursor.MightBeMore, uncommitted = 0, buffer = [] }
 
-while :: forall m m' xs x. Monad m => Monad m' => ListLike xs x =>
-    Predicate x -> Cursor xs x m m' -> Cursor xs x m (StateT (While xs x) m')
-while ok
-  Cursor
-    { Cursor.run = runUpstream :: forall a. m' a -> m a
-    , Cursor.commit = commitUpstream
-    , Cursor.input = inputUpstream
-    } =
-      Cursor
-        { Cursor.run = \a -> runUpstream (evalStateT a init)
-        , Cursor.commit = commit ok commitUpstream
-        , Cursor.input = input ok inputUpstream
-        }
+-- while :: forall m m' xs x. Monad m => Monad m' => ListLike xs x =>
+--     Predicate x -> Cursor xs x m m' -> Cursor xs x m (StateT (While xs x) m')
+-- while ok
+--   Cursor
+--     { Cursor.run = runUpstream :: forall a. m' a -> m a
+--     , Cursor.commit = commitUpstream
+--     , Cursor.input = inputUpstream
+--     } =
+--       Cursor
+--         { Cursor.run = \a -> runUpstream (evalStateT a init)
+--         , Cursor.commit = commit ok commitUpstream
+--         , Cursor.input = input ok inputUpstream
+--         }
 
-run :: Monad m => StateT (While text char) m a -> m a
-run = _
+-- run :: Monad m => StateT (While text char) m a -> m a
+-- run = _
 
-input :: ListLike text char => Monad m =>
-    Predicate char
-    -> Stream m text char
-    -> Stream (StateT (While text char) m) text char
-input ok upstream = Cursor.stream do
-    xm <-
-        zoom bufferLens BufferState.takeChunk >>= \case
-            Just x -> return (Just x)
-            Nothing -> use completionLens >>= \case
-                Cursor.Done -> return Nothing
-                Cursor.MightBeMore -> lift (Cursor.next upstream) >>= \case
-                    Nothing -> assign completionLens Cursor.Done $> Nothing
-                    Just x -> return (Just x)
-    case xm of
-        Nothing -> return Nothing
-        Just x -> case Nontrivial.takeWhile ok x of
-            Nontrivial.TakeWhile.None -> do
-                assign completionLens Cursor.Done
-                return Nothing
-            Nontrivial.TakeWhile.All -> do
-                modifying uncommittedLens (+ Nontrivial.lengthInt x)
-                return (Just x)
-            Nontrivial.TakeWhile.Prefix y -> do
-                modifying uncommittedLens (+ Nontrivial.lengthInt y)
-                assign completionLens Cursor.Done
-                return (Just y)
+-- input :: ListLike text char => Monad m =>
+--     Predicate char
+--     -> Stream m text char
+--     -> Stream (StateT (While text char) m) text char
+-- input ok upstream = Cursor.stream do
+--     xm <-
+--         zoom bufferLens BufferState.takeChunk >>= \case
+--             Just x -> return (Just x)
+--             Nothing -> use completionLens >>= \case
+--                 Cursor.Done -> return Nothing
+--                 Cursor.MightBeMore -> lift (Cursor.next upstream) >>= \case
+--                     Nothing -> assign completionLens Cursor.Done $> Nothing
+--                     Just x -> return (Just x)
+--     case xm of
+--         Nothing -> return Nothing
+--         Just x -> case Nontrivial.takeWhile ok x of
+--             Nontrivial.TakeWhile.None -> do
+--                 assign completionLens Cursor.Done
+--                 return Nothing
+--             Nontrivial.TakeWhile.All -> do
+--                 modifying uncommittedLens (+ Nontrivial.lengthInt x)
+--                 return (Just x)
+--             Nontrivial.TakeWhile.Prefix y -> do
+--                 modifying uncommittedLens (+ Nontrivial.lengthInt y)
+--                 assign completionLens Cursor.Done
+--                 return (Just y)
 
-commit :: ListLike text char => Monad m =>
-    Predicate char
-    -> (Positive Natural -> m AdvanceResult)
-    -> Positive Natural
-    -> StateT (While text char) m AdvanceResult
-commit ok upstream n = _
+-- commit :: ListLike text char => Monad m =>
+--     Predicate char
+--     -> (Positive Natural -> m AdvanceResult)
+--     -> Positive Natural
+--     -> StateT (While text char) m AdvanceResult
+-- commit ok upstream n = _

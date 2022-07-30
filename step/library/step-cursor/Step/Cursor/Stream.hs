@@ -3,8 +3,9 @@ module Step.Cursor.Stream
     {- * Core -} Stream (..), stream, streamRST,
     {- * Extras -}
     while, untrivialize,
-    -- record,
+    record,
     list, streamChoice, mapMaybe,
+    contramapStream,
   )
   where
 
@@ -30,6 +31,10 @@ streamRST :: Iso
   (RST r2 s2 m2 (Maybe (Nontrivial xs2 x2)))
 streamRST = iso next Stream
 
+contramapStream :: Monad m2 =>
+    (r2 -> r1) -> Stream r1 s2 m2 xs2 x2 -> Stream r2 s2 m2 xs2 x2
+contramapStream f = over streamRST (contramapRST f)
+
 stream :: Monad m => m (Maybe (Nontrivial xs x)) -> Stream r s m xs x
 stream = Stream .  lift
 
@@ -45,11 +50,14 @@ mapMaybe ok xs = Stream $ fix \r ->
         Nothing -> return Nothing
         Just x -> case ok x of { Just y -> return (Just y); Nothing -> r }
 
--- record :: Monad m => (Nontrivial xs x -> StateT s m ()) -> Stream r s m xs x -> Stream r ateT s m) xs x
--- record add xs = Stream do
---     step <- lift (next xs)
---     traverse_ add step
---     return step
+record :: Monad m =>
+    (Nontrivial xs x -> RST r s m ())
+    -> Stream r s m xs x
+    -> Stream r s m xs x
+record add xs = Stream do
+    step <- next xs
+    traverse_ add step
+    return step
 
 while :: forall m xs x r s. Monad m => ListLike xs x =>
     Predicate x

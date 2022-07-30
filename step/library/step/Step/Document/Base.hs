@@ -3,11 +3,11 @@
 
 module Step.Document.Base
   (
-    curse,
     -- * Types
-    DocumentParsing, Config (..), Error (..),
+    -- DocumentParsing,
+    Config (..), Context (..), Error (..), documentCursor,
     -- * Running parsers
-    parse, parseOnly,
+    -- parse, parseOnly,
   )
   where
 
@@ -15,6 +15,7 @@ import Step.Internal.Prelude
 
 import Step.Document.Memory (DocumentMemory)
 import qualified Step.Document.Memory as DocumentMemory
+import qualified Step.Document.Memory as DM
 
 import Step.Document.Lines (Char)
 
@@ -23,7 +24,7 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import Text (Text)
 
-import Step.Cursor (Cursory, curse, Stream, Cursor (..))
+import Step.Cursor (Cursory, curse, Stream, Cursor (..), contramapCursor, streamRST, changeStateCursor)
 import qualified Step.Cursor as Cursor
 
 import Step.Document.Locating (Locating (..))
@@ -40,11 +41,16 @@ import Step.Buffer.Loading
 import Step.Input.CursorPosition (CursorPosition)
 
 import Step.Document.Lines (LineHistory)
+import qualified Step.Document.Lines as Lines
 
 import Step.Buffer.Buffer
 import Step.Buffer.DoubleBuffer
 
 import Step.RST
+
+import Optics
+
+import Step.Nontrivial (Nontrivial)
 
 ---
 
@@ -65,13 +71,21 @@ data Error = Error{ errorContext :: [Text] }
 
 ---
 
-data Context xs x m = Context Config (Stream () LineHistory m xs x)
+data Context xs x s m =
+  Context
+    { ctxConfig :: Config
+    , ctxStream :: Stream () s m xs x
+    }
+
+-- ctxConfigLens = lens ctxConfig \x y -> x{ ctxConfig = y }
+
+-- ctxStreamLens = lens ctxStream \x y -> x{ ctxStream = y }
 
 ---
 
-newtype DocumentParsing xs x m a =
-    DocumentParsing (RST Config (DocumentMemory xs x) m a)
-    deriving newtype (Functor, Applicative, Monad, MonadTrans, MFunctor)
+-- newtype DocumentParsing xs x s m a =
+--     DocumentParsing (RST (Context xs x s m) (DocumentMemory xs x) m a)
+--     deriving newtype (Functor, Applicative, Monad)
 
 -- instance (Monad m, ListLike xs x) => Cursory (DocumentParsing xs x m) where
 --     type CursoryText (DocumentParsing xs x m) = xs
@@ -82,9 +96,25 @@ newtype DocumentParsing xs x m a =
 --     type CursoryState (DocumentParsing xs x m) = DocumentMemory xs x Buffer
 --     curse = documentCursor
 
-documentCursor :: Monad m => ListLike xs x =>
-    Cursor xs x (Context xs x m) (DocumentMemory xs x) m
-documentCursor = _
+documentCursor :: forall m xs x s. Monad m => ListLike xs x => Lines.Char x =>
+    Cursor xs x (Context xs x s m) (DocumentMemory xs x s) m
+documentCursor =
+    loadingCursor
+        & contramapCursor
+          (
+            Cursor.record (\x -> stateRST (zoom _1 (Lines.recordNontrivial x)))
+            . over streamRST (zoom _2)
+            . ctxStream
+          )
+        & countingCursor
+        & Cursor.changeStateCursor
+          (
+            iso
+              (\(cursorPosition, ((lineHistory, streamState), buffer)) ->
+                  DM.DocumentMemory{ DM.cursorPosition, DM.lineHistory, DM.streamState, DM.buffer })
+              (\DM.DocumentMemory{ DM.cursorPosition, DM.lineHistory, DM.streamState, DM.buffer } ->
+                  (cursorPosition, ((lineHistory, streamState), buffer)))
+          )
 
 -- instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
 --     position = DocumentParsing position
@@ -102,17 +132,17 @@ documentCursor = _
 
 ---
 
-parse :: Monad m => Action.Is kind Any =>
-    Config -> kind (DocumentParsing xs x m) Error a
-    -> StateT (DocumentMemory xs x) m (Either Error a)
-parse config p =
-    _
+-- parse :: Monad m => Action.Is kind Any =>
+--     Config -> kind (DocumentParsing xs x s m) Error a
+--     -> StateT (DocumentMemory xs x) m (Either Error a)
+-- parse config p =
+--     _
     -- p & Action.cast @Any & \(Any (DocumentParsing p')) -> runReaderT p' config >>= \case
     --     Left (DocumentParsing errorMaker) -> Left <$> runReaderT errorMaker config
     --     Right x -> return (Right x)
 
-parseOnly :: forall m xs x kind value. Action.Is kind Any => Monad m => Char x => ListLike xs x =>
-    Config -> kind (DocumentParsing xs x m) Error value -> Stream () () m xs x -> m (Either Error value)
-parseOnly config p xs =
-    _
+-- parseOnly :: forall m xs x s kind value. Action.Is kind Any => Monad m => Char x => ListLike xs x =>
+--     Config -> kind (DocumentParsing xs x s m) Error value -> Stream () () m xs x -> m (Either Error value)
+-- parseOnly config p xs =
+--     _
     -- evalStateT (parse config p) (DocumentMemory.fromStream xs)
