@@ -15,28 +15,33 @@ import Step.RST (RST (..), evalRST)
 
 import Step.Buffer.Buffer (Buffer, chunks)
 import Step.Buffer.BufferResult (BufferResult (..))
-import Step.Buffer.DoubleBuffer (DoubleBuffer, uncommitted, unseen, newDoubleBuffer)
 
 import qualified Optics
 
 newtype BufferOnly xs x buffer m a = BufferOnly (StateT (buffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad, MonadState (buffer xs x), MonadTrans)
 
-bufferStateCursor :: forall xs x r m. (ListLike xs x, Monad m) =>
-    Cursor xs x r (Buffer xs x) m
-bufferStateCursor = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+bufferStateCursor :: forall xs x r s m. (ListLike xs x, Monad m) =>
+    Lens' s (Buffer xs x) -> Cursor xs x r s m
+bufferStateCursor bufferLens = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
-    init :: Buffer xs x -> DoubleBuffer xs x
-    init = newDoubleBuffer
+    unseenLens :: Lens' (Buffer xs x, s) (Buffer xs x)
+    unseenLens = Optics._1
 
-    extract :: DoubleBuffer xs x -> Buffer xs x
-    extract = view uncommitted
+    uncommittedLens :: Lens' (Buffer xs x, s) (Buffer xs x)
+    uncommittedLens = Optics._2 % bufferLens
 
-    input :: Stream r (DoubleBuffer xs x) m xs x
-    input = Cursor.Stream (zoom unseen takeChunk)
+    init :: s -> Buffer xs x
+    init = view bufferLens
 
-    commit :: Positive Natural -> RST r (DoubleBuffer xs x) m AdvanceResult
-    commit n = zoom uncommitted (dropN n)
+    extract :: Buffer xs x -> s -> s
+    extract _ = id
+
+    input :: Stream r (Buffer xs x, s) m xs x
+    input = Cursor.Stream (zoom unseenLens takeChunk)
+
+    commit :: Positive Natural -> RST r (Buffer xs x, s) m AdvanceResult
+    commit n = zoom uncommittedLens (dropN n)
 
 takeChunk :: Monad m => RST r (Buffer xs x) m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case

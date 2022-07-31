@@ -12,11 +12,13 @@ import qualified Step.Input.CursorPosition as CursorPosition
 
 import Step.RST (RST (..))
 
-import Optics
+import qualified Optics
 
 countingCursor :: forall xs x r s m. Monad m =>
-    Cursor xs x r s m -> Cursor xs x r (CursorPosition, s) m
-countingCursor
+    Lens' s CursorPosition
+    -> Cursor xs x r s m
+    -> Cursor xs x r s m
+countingCursor positionLens
     Cursor
       { Cursor.init = init' :: s -> s'
       , Cursor.extract = extract'
@@ -25,16 +27,11 @@ countingCursor
       } =
     Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
-    init :: (CursorPosition, s) -> (CursorPosition, s')
-    init = over _2 init'
+    init = init'
+    extract = extract'
+    input = input'
 
-    extract :: (CursorPosition, s') -> (CursorPosition, s)
-    extract = over _2 extract'
-
-    input :: Stream r (CursorPosition, s') m xs x
-    input = over streamRST (zoom _2) input'
-
-    commit :: Positive Natural -> RST r (CursorPosition, s') m AdvanceResult
+    commit :: Positive Natural -> RST r (s', s) m AdvanceResult
     commit n = do
-        modifying _1 (CursorPosition.strictlyIncrease n)
-        zoom _2 (commit' n)
+        modifying (Optics._2 % positionLens) (CursorPosition.strictlyIncrease n)
+        commit' n

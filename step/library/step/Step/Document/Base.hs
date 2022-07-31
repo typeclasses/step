@@ -24,7 +24,7 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import Text (Text)
 
-import Step.Cursor (Cursory, curse, Stream, Cursor (..), contramapCursor, streamRST, changeStateCursor)
+import Step.Cursor (Cursory, curse, Stream, Cursor (..), contramapCursor, streamRST)
 import qualified Step.Cursor as Cursor
 
 import Step.Document.Locating (Locating (..))
@@ -99,22 +99,14 @@ data Context xs x s m =
 documentCursor :: forall m xs x s. Monad m => ListLike xs x => Lines.Char x =>
     Cursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor =
-    loadingCursor
+    loadingCursor DM.bufferLens
+        & countingCursor DM.cursorPositionLens
         & contramapCursor
-          (
-            Cursor.record (\x -> stateRST (zoom _1 (Lines.recordNontrivial x)))
-            . over streamRST (zoom _2)
-            . ctxStream
-          )
-        & countingCursor
-        & Cursor.changeStateCursor
-          (
-            iso
-              (\(cursorPosition, ((lineHistory, streamState), buffer)) ->
-                  DM.DocumentMemory{ DM.cursorPosition, DM.lineHistory, DM.streamState, DM.buffer })
-              (\DM.DocumentMemory{ DM.cursorPosition, DM.lineHistory, DM.streamState, DM.buffer } ->
-                  (cursorPosition, ((lineHistory, streamState), buffer)))
-          )
+            (
+              Cursor.record (stateRST . zoom DM.lineHistoryLens . Lines.recordNontrivial)
+              . over streamRST (zoom DM.streamStateLens)
+              . ctxStream
+            )
 
 -- instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
 --     position = DocumentParsing position
