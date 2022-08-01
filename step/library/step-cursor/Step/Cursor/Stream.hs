@@ -31,8 +31,8 @@ streamRST :: Iso
   (RST r2 s2 m2 (Maybe (Nontrivial xs2 x2)))
 streamRST = iso next Stream
 
-contramapStream :: Monad m2 =>
-    (r2 -> r1) -> Stream r1 s2 m2 xs2 x2 -> Stream r2 s2 m2 xs2 x2
+contramapStream :: Monad m =>
+    (r2 -> r1) -> Stream r1 s m xs x -> Stream r2 s m xs x
 contramapStream f = over streamRST (contramapRST f)
 
 stream :: Monad m => m (Maybe (Nontrivial xs x)) -> Stream r s m xs x
