@@ -1,6 +1,6 @@
 {-# language GADTs #-}
 
-module Step.Cursor.Type
+module Step.Cursor.ReadWriteCursor
   (
     ReadWriteCursor (..),
     rebaseCursor,

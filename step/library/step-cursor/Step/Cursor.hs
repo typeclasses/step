@@ -20,5 +20,5 @@ import Step.Cursor.AdvanceResult
 import Step.Cursor.Stream
 import Step.Cursor.Class
 import Step.Cursor.StreamCompletion
-import Step.Cursor.Type
+import Step.Cursor.ReadWriteCursor
 import Step.Cursor.InputChunking

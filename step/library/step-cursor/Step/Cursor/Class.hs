@@ -8,7 +8,7 @@ module Step.Cursor.Class
 
 import Step.Internal.Prelude
 
-import Step.Cursor.Type (ReadWriteCursor (..))
+import Step.Cursor.ReadWriteCursor (ReadWriteCursor (..))
 
 import Step.Cursor.Stream (Stream)
 import Step.Cursor.AdvanceResult (AdvanceResult)

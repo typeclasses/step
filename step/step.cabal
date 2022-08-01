@@ -165,7 +165,7 @@ library step-cursor
         Step.Cursor.InputChunking
         Step.Cursor.Stream
         Step.Cursor.StreamCompletion
-        Step.Cursor.Type
+        Step.Cursor.ReadWriteCursor
 
 library step-nontrivial
     import: base
