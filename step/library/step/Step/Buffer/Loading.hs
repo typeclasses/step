@@ -11,7 +11,7 @@ import Step.Internal.Prelude hiding (fold)
 import qualified Step.Cursor as Cursor
 import Step.Cursor (Stream, AdvanceResult (..), ReadWriteCursor (ReadWriteCursor))
 
-import Step.RST (RST (..), contramapRST)
+import Step.RST (RST (..))
 
 import qualified Step.Buffer.BufferState as BufferState
 import Step.Buffer.Buffer (Buffer, chunks)
@@ -22,7 +22,7 @@ import qualified Optics
 
 import Step.Nontrivial (Nontrivial)
 
-loadingCursor :: forall xs x m s. ListLike xs x => Monad m =>
+loadingCursor :: forall s xs x m. ListLike xs x => Monad m =>
     Lens' s (Buffer xs x)
     -> ReadWriteCursor xs x (Stream () s m xs x) s m
 loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
@@ -49,4 +49,4 @@ loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.co
 
     next = ask >>= \upstream ->
         zoom Cursor.committedStateLens $
-            contramapRST (\_ -> ()) (Cursor.next upstream)
+            contramap (\_ -> ()) (Cursor.next upstream)

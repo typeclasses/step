@@ -2,6 +2,7 @@
 
 module Step.Internal.Prelude (module X) where
 
+import Step.Internal.Contravariant as X
 import Step.Internal.Dependencies as X
 import Step.Internal.Modify as X
 import Step.Internal.Positive as X

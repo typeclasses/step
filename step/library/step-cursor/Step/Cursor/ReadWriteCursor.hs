@@ -1,16 +1,16 @@
-{-# language GADTs #-}
+{-# language FlexibleInstances, FunctionalDependencies, GADTs #-}
 
 module Step.Cursor.ReadWriteCursor
   (
     ReadWriteCursor (..),
-    rebaseCursor, contramapCursor,
+    rebaseCursor,
     CursorState, ephemeralStateLens, committedStateLens,
   )
   where
 
 import Step.Internal.Prelude
 
-import Step.Cursor.Stream (Stream, streamRST, contramapStream)
+import Step.Cursor.Stream (Stream, streamRST)
 
 import Step.Cursor.AdvanceResult (AdvanceResult)
 
@@ -40,13 +40,10 @@ rebaseCursor o ReadWriteCursor{ init, commit, input } =
     , input = over streamRST (hoist o) input
     }
 
-contramapCursor :: forall xs x r r' s m. Monad m =>
-    (r' -> r)
-    -> ReadWriteCursor xs x r s m
-    -> ReadWriteCursor xs x r' s m
-contramapCursor f ReadWriteCursor{ init, commit, input } =
-  ReadWriteCursor
-    { init = contramapRST f init
-    , input = contramapStream f input
-    , commit = contramapRST f . commit
-    }
+instance Contravariant (ReadWriteCursor xs x r s m) (ReadWriteCursor xs x r' s m) r r' where
+    contramap f ReadWriteCursor{ init, commit, input } =
+      ReadWriteCursor
+        { init = contramap f init
+        , input = contramap f input
+        , commit = contramap f . commit
+        }

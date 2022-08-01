@@ -1,3 +1,5 @@
+{-# language FlexibleInstances, FunctionalDependencies #-}
+
 module Step.Cursor.Stream
   (
     {- * Core -} Stream (..), stream, streamRST,
@@ -5,7 +7,6 @@ module Step.Cursor.Stream
     while, untrivialize,
     record,
     list, streamChoice, mapMaybe,
-    contramapStream,
   )
   where
 
@@ -31,9 +32,8 @@ streamRST :: Iso
   (RST r2 s2 m2 (Maybe (Nontrivial xs2 x2)))
 streamRST = iso next Stream
 
-contramapStream :: Monad m =>
-    (r2 -> r1) -> Stream r1 s m xs x -> Stream r2 s m xs x
-contramapStream f = over streamRST (contramapRST f)
+instance Contravariant (Stream r1 s m xs x) (Stream r2 s m xs x) r1 r2 where
+    contramap f = over streamRST (contramap f)
 
 stream :: Monad m => m (Maybe (Nontrivial xs x)) -> Stream r s m xs x
 stream = Stream .  lift
@@ -50,7 +50,7 @@ mapMaybe ok xs = Stream $ fix \r ->
         Nothing -> return Nothing
         Just x -> case ok x of { Just y -> return (Just y); Nothing -> r }
 
-record :: Monad m =>
+record :: forall s xs x r m. Monad m =>
     (Nontrivial xs x -> RST r s m ())
     -> Stream r s m xs x
     -> Stream r s m xs x

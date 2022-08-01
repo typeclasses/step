@@ -15,7 +15,7 @@ module Step.RST
   (
     RST (..), rst,
     {- * Running -} evalRST, execRST,
-    {- * Modification -} contramapRST, stateRST, changeStateRST,
+    {- * Modification -} stateRST, changeStateRST,
   )
   where
 
@@ -58,9 +58,8 @@ changeStateRST o = restateRST (\(StateT g) -> StateT \s -> g (review o s) <&> ov
 mapRST :: ((s1 -> m1 (a1, s1)) -> s2 -> m2 (a2, s2)) -> RST r2 s1 m1 a1 -> RST r2 s2 m2 a2
 mapRST f = over rst (f .)
 
--- | Apply a change to the reader context
-contramapRST :: Monad m => (r' -> r) -> RST r s m a -> RST r' s m a
-contramapRST f = over rst (. f)
+instance Contravariant (RST r s m a) (RST r' s m a) r r' where
+    contramap f = over rst (. f)
 
 deriving stock instance Functor m => Functor (RST r s m)
 deriving via ReaderT r (StateT s m) instance Monad m => Applicative (RST r s m)

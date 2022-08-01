@@ -14,7 +14,7 @@ import Step.RST (RST (..))
 
 import qualified Optics
 
-countingCursor :: forall xs x r s m. Monad m =>
+countingCursor :: forall s xs x r m. Monad m =>
     Lens' s CursorPosition
     -> ReadWriteCursor xs x r s m
     -> ReadWriteCursor xs x r s m
