@@ -17,8 +17,6 @@ import Step.Document.Memory (DocumentMemory)
 import qualified Step.Document.Memory as DocumentMemory
 import qualified Step.Document.Memory as DM
 
-import Step.Document.Lines (Char)
-
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
 
@@ -51,16 +49,17 @@ import Optics
 
 import Step.Nontrivial (Nontrivial)
 
+import Char (Char)
+
 ---
 
-data Config = Config{ configContext :: [Text] }
-    deriving stock (Eq, Show)
+data Config x = Config{ configContext :: [Text], configLineTerminators :: Lines.Terminators x }
 
-instance Default Config
+instance Default (Config Char)
   where
-    def = Config{ configContext = [] }
+    def = Config{ configContext = [], configLineTerminators = Lines.charTerminators }
 
-instance HasContextStack Config where
+instance HasContextStack (Config x) where
     contextStackLens = lens configContext \x y -> x{ configContext = y }
 
 ---
@@ -72,13 +71,15 @@ data Error = Error{ errorContext :: [Text] }
 
 data Context xs x s m =
   Context
-    { ctxConfig :: Config
+    { ctxConfig :: Config x
     , ctxStream :: Stream () s m xs x
     }
 
--- ctxConfigLens = lens ctxConfig \x y -> x{ ctxConfig = y }
+ctxConfigLens = lens ctxConfig \x y -> x{ ctxConfig = y }
 
--- ctxStreamLens = lens ctxStream \x y -> x{ ctxStream = y }
+ctxStreamLens = lens ctxStream \x y -> x{ ctxStream = y }
+
+configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerminators = y }
 
 ---
 
@@ -95,17 +96,21 @@ data Context xs x s m =
 --     type CursoryState (DocumentParsing xs x m) = DocumentMemory xs x Buffer
 --     curse = documentCursor
 
-documentCursor :: forall m xs x s. Monad m => Lines.Char x =>
+documentCursor :: forall m xs x s. Monad m =>
     ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor =
-    loadingCursor @(DocumentMemory xs x s) DM.bufferLens
+    loadingCursor @(Context xs x s m) @(DocumentMemory xs x s) recordingStream DM.bufferLens
         & countingCursor @(DocumentMemory xs x s) DM.cursorPositionLens
-        & contramap
-            (
-              Cursor.record @(DocumentMemory xs x s) (zoom DM.lineHistoryLens . Lines.record @xs @x)
-              . over streamRST (zoom DM.streamStateLens)
-              . ctxStream
-            )
+
+recordingStream :: forall xs x s m. Monad m => Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
+recordingStream ctx =
+    Cursor.record @(DocumentMemory xs x s) (record ctx) $
+    over streamRST (zoom DM.streamStateLens) $ ctxStream ctx
+
+record :: forall xs x s m. Monad m => Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
+record ctx = contramap (\_ -> ts) . zoom DM.lineHistoryLens . Lines.record @xs @x
+  where
+    ts = configLineTerminators (ctxConfig ctx)
 
 -- instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
 --     position = DocumentParsing position

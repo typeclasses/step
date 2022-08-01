@@ -28,8 +28,10 @@ data ReadWriteCursor xs x r s m =
 data CursorState ephemeral committed =
     CursorState{ ephemeralState :: ephemeral, committedState :: committed }
 
+ephemeralStateLens :: Lens (CursorState ephemeral1 committed) (CursorState ephemeral2 committed) ephemeral1 ephemeral2
 ephemeralStateLens = lens ephemeralState \x y -> x{ ephemeralState = y }
 
+committedStateLens :: Lens (CursorState ephemeral committed1) (CursorState ephemeral committed2) committed1 committed2
 committedStateLens = lens committedState \x y -> x{ committedState = y }
 
 rebaseCursor :: Monad m1 => (forall a. m1 a -> m2 a) -> ReadWriteCursor xs x r s m1 -> ReadWriteCursor xs x r s m2

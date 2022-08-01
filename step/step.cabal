@@ -63,6 +63,7 @@ common base
           , Data.String as String
           , Data.Functor as Functor
           , Data.Functor.Identity as Identity
+          , Data.List as List
           , Data.Semigroup as Semigroup
           , Data.Monoid as Monoid
           , Data.Void as Void

@@ -1,11 +1,11 @@
 module Step.Document.Lines
   (
     {- * The type -} LineHistory (..),
+    {- * Terminators -} Terminators (..), charTerminators,
     {- * Optics -} cursorPositionLens, lineStartPositionLens, lineTrackerLens, afterCRLens,
     empty,
     {- * Finding location at a cursor -} CursorLocation (..), locateCursorInDocument,
     {- * Construction -} build,
-    {- * Char class -} Char (..),
     {- * Feeding input -} record, terminate,
   ) where
 
@@ -24,6 +24,8 @@ import qualified Loc
 
 import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
+
+import qualified List
 
 import Step.RST
 
@@ -86,32 +88,38 @@ empty =
     , terminated = False
     }
 
-build :: Char x => [Nontrivial xs x] -> LineHistory
-build xs = runIdentity $ execRST (traverse_ record xs) () empty
+build :: Terminators x -> [Nontrivial xs x] -> LineHistory
+build ts xs = runIdentity $ execRST (traverse_ record xs) ts empty
 
-class Eq a => Char a
-  where
-    carriageReturn :: a
-    lineFeed :: a
+data Terminators x = Terminators{ isCarriageReturn :: Predicate x, isLineFeed :: Predicate x }
 
-instance Char Char.Char
-  where
-    carriageReturn = '\r'
-    lineFeed = '\n'
+charTerminators :: Terminators Char.Char
+charTerminators = Terminators
+  { isCarriageReturn = Predicate $ (==) '\r'
+  , isLineFeed = Predicate $ (==) '\n'
+  }
 
-record :: forall xs x r m. Monad m => Char x => Nontrivial xs x -> RST r LineHistory m ()
-record x =
-  if Nontrivial.head x == carriageReturn then
-      recordCR *> traverse_ record (Nontrivial.tail x)
-  else if Nontrivial.head x == lineFeed then
-      recordLF *> traverse_ record (Nontrivial.tail x)
-  else
-    do
-      case Nontrivial.span x (Predicate \c -> not $ elem @[] c [carriageReturn, lineFeed]) of
-          Nontrivial.SpanNone -> error "Lines.record"
-          Nontrivial.SpanAll -> recordOther x
-          Nontrivial.SpanPart{ Nontrivial.spannedPart, Nontrivial.spanRemainder } ->
-              recordOther spannedPart *> record spanRemainder
+isTerminator :: Terminators x -> Predicate x
+isTerminator ts = Predicate \c ->
+    not $ List.any @[]
+        (\p -> getPredicate p c)
+        [isCarriageReturn ts, isLineFeed ts]
+
+record :: forall xs x m. Monad m => Nontrivial xs x -> RST (Terminators x) LineHistory m ()
+record x = ask >>= \ts ->
+  let
+    h = Nontrivial.head x
+    t = Nontrivial.tail x
+  in
+    if getPredicate (isCarriageReturn ts) h then recordCR *> traverse_ record t
+    else if getPredicate (isLineFeed ts) h then recordLF *> traverse_ record t
+    else
+      do
+        case Nontrivial.span x (isTerminator ts) of
+            Nontrivial.SpanNone -> error "Lines.record"
+            Nontrivial.SpanAll -> recordOther x
+            Nontrivial.SpanPart{ Nontrivial.spannedPart, Nontrivial.spanRemainder } ->
+                recordOther spannedPart *> record spanRemainder
 
 terminate :: Monad m => RST r LineHistory m ()
 terminate = modify' \x -> x{ terminated = True }
