@@ -29,7 +29,7 @@ import qualified Text as T
 import qualified Step.Nontrivial as Nontrivial
 import Step.Nontrivial (Nontrivial)
 
-import Step.Cursor (Cursor (..), CursoryText, CursoryChar, curse)
+import Step.Cursor (ReadWriteCursor (..), CursoryText, CursoryChar, curse)
 import qualified Step.Cursor as Cursor
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
@@ -54,25 +54,25 @@ type Cursory m = (ListLike (CursoryText m) (CursoryChar m), Eq (CursoryChar m), 
 
 takeCharMaybe :: Cursory m => Sure m e (Maybe (CursoryChar m))
 takeCharMaybe = Action.Unsafe.Sure $ case curse of
-    Cursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
+    ReadWriteCursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
         Nothing -> return Nothing
         Just x -> commit (PositiveUnsafe 1) $> Just (Nontrivial.head x)
 
 peekCharMaybe :: Cursory m => SureQuery m e (Maybe (CursoryChar m))
 peekCharMaybe = Action.Unsafe.SureQuery $ case curse of
-    Cursor{ init, extract, input } -> run $ Cursor.next input <&> \case
+    ReadWriteCursor{ init, extract, input } -> run $ Cursor.next input <&> \case
         Nothing -> Nothing
         Just x -> Just (Nontrivial.head x)
 
 satisfyJust :: Cursory m => (CursoryChar m -> Maybe a) -> AtomicMove m (Error m) a
 satisfyJust ok = Action.Unsafe.AtomicMove $ case curse of
-    Cursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
+    ReadWriteCursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
         Just (ok . Nontrivial.head -> Just x) -> commit (PositiveUnsafe 1) $> Right x
         _ -> return (Left F.failure)
 
 atEnd :: Cursory m => SureQuery m e Bool
 atEnd = Action.Unsafe.SureQuery $ case curse of
-    Cursor{ init, extract, input } -> run $ Cursor.next input <&> isNothing
+    ReadWriteCursor{ init, extract, input } -> run $ Cursor.next input <&> isNothing
 
 cursorPosition :: KnowsCursorPosition m => SureQuery m e CursorPosition
 cursorPosition = Action.Unsafe.SureQuery Counting.cursorPosition
@@ -85,7 +85,7 @@ failure = Action.Unsafe.Fail F.failure
 
 some :: Cursory m => AtomicMove m (Error m) (Nontrivial (CursoryText m) (CursoryChar m))
 some = Action.Unsafe.AtomicMove $ case curse of
-    Cursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
+    ReadWriteCursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
         Nothing -> return (Left F.failure)
         Just x -> commit (Nontrivial.length x) $> Right x
 
@@ -108,7 +108,7 @@ text :: Cursory m => Nontrivial (CursoryText m) (CursoryChar m) -> Move m (Error
 text = someOfNontrivialText A.>=> (maybe (return ()) (cast @Any . text) . Nontrivial.refine)
   where
     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
-        Cursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
+        ReadWriteCursor{ init, extract, input, commit } -> run $ Cursor.next input >>= \case
             Nothing -> return (Left F.failure)
             Just y ->
                 if x `Nontrivial.isPrefixOf` y

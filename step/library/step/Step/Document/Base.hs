@@ -24,7 +24,7 @@ import Step.ActionTypes.Unsafe (Any (Any))
 
 import Text (Text)
 
-import Step.Cursor (Cursory, curse, Stream, Cursor (..), contramapCursor, streamRST)
+import Step.Cursor (Cursory, curse, Stream, ReadWriteCursor (..), contramapCursor, streamRST)
 import qualified Step.Cursor as Cursor
 
 import Step.Document.Locating (Locating (..))
@@ -97,7 +97,7 @@ data Context xs x s m =
 --     curse = documentCursor
 
 documentCursor :: forall m xs x s. Monad m => ListLike xs x => Lines.Char x =>
-    Cursor xs x (Context xs x s m) (DocumentMemory xs x s) m
+    ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor =
     loadingCursor DM.bufferLens
         & countingCursor DM.cursorPositionLens

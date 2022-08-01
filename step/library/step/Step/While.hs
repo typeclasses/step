@@ -5,7 +5,7 @@ import Step.Internal.Prelude hiding (while)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
 
-import Step.Cursor (Cursor (Cursor), StreamCompletion, Stream, AdvanceResult (..))
+import Step.Cursor (ReadWriteCursor (ReadWriteCursor), StreamCompletion, Stream, AdvanceResult (..))
 import qualified Step.Cursor as Cursor
 
 import Step.Buffer.Buffer (Buffer, chunks)

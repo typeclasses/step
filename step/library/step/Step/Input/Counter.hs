@@ -11,7 +11,7 @@ import Step.Internal.Prelude
 import Step.Input.CursorPosition (CursorPosition)
 import qualified Step.Input.CursorPosition as CursorPosition
 
-import Step.Cursor (Cursor (..), AdvanceResult (..), Stream)
+import Step.Cursor (ReadWriteCursor (..), AdvanceResult (..), Stream)
 import qualified Step.Cursor as Cursor
 
 import qualified Positive

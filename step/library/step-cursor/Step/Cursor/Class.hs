@@ -8,7 +8,7 @@ module Step.Cursor.Class
 
 import Step.Internal.Prelude
 
-import Step.Cursor.Type (Cursor (..))
+import Step.Cursor.Type (ReadWriteCursor (..))
 
 import Step.Cursor.Stream (Stream)
 import Step.Cursor.AdvanceResult (AdvanceResult)
@@ -21,4 +21,4 @@ class Cursory m
     type CursoryState m :: Type
     type CursoryBase m :: Type -> Type
 
-    curse :: Cursor (CursoryText m) (CursoryChar m) (CursoryParam m) (CursoryState m) (CursoryBase m)
+    curse :: ReadWriteCursor (CursoryText m) (CursoryChar m) (CursoryParam m) (CursoryState m) (CursoryBase m)

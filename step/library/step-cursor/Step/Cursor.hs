@@ -1,6 +1,6 @@
 module Step.Cursor
   (
-    {- * Cursor -} Cursor (..), AdvanceResult (..),
+    {- * Cursor -} ReadWriteCursor (..), AdvanceResult (..),
         rebaseCursor,
         -- expandStateCursor, expandStateCursor',
         contramapCursor,

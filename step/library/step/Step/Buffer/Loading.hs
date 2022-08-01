@@ -9,7 +9,7 @@ module Step.Buffer.Loading
 import Step.Internal.Prelude hiding (fold)
 
 import qualified Step.Cursor as Cursor
-import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor))
+import Step.Cursor (Stream, AdvanceResult (..), ReadWriteCursor (ReadWriteCursor))
 
 import Step.RST (RST (..), contramapRST)
 
@@ -24,8 +24,8 @@ import Step.Nontrivial (Nontrivial)
 
 loadingCursor :: forall xs x m s. ListLike xs x => Monad m =>
     Lens' s (Buffer xs x)
-    -> Cursor xs x (Stream () s m xs x) s m
-loadingCursor bufferLens = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+    -> ReadWriteCursor xs x (Stream () s m xs x) s m
+loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
     unseen :: Lens' (Buffer xs x, s) (Buffer xs x)
     unseen = Optics._1

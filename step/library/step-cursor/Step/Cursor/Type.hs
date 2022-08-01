@@ -2,7 +2,7 @@
 
 module Step.Cursor.Type
   (
-    Cursor (..),
+    ReadWriteCursor (..),
     rebaseCursor,
     contramapCursor,
   )
@@ -18,17 +18,17 @@ import Step.RST
 
 import Optics
 
-data Cursor xs x r s m =
-  forall s'. Cursor
+data ReadWriteCursor xs x r s m =
+  forall s'. ReadWriteCursor
     { init :: s -> s'
     , extract :: s' -> s -> s
     , input :: Stream r (s', s) m xs x
     , commit :: Positive Natural -> RST r (s', s) m AdvanceResult
     }
 
-rebaseCursor :: Monad m1 => (forall a. m1 a -> m2 a) -> Cursor xs x r s m1 -> Cursor xs x r s m2
-rebaseCursor o Cursor{ init, commit, input, extract } =
-  Cursor
+rebaseCursor :: Monad m1 => (forall a. m1 a -> m2 a) -> ReadWriteCursor xs x r s m1 -> ReadWriteCursor xs x r s m2
+rebaseCursor o ReadWriteCursor{ init, commit, input, extract } =
+  ReadWriteCursor
     { init = init
     , extract = extract
     , commit = hoist o . commit
@@ -37,10 +37,10 @@ rebaseCursor o Cursor{ init, commit, input, extract } =
 
 contramapCursor :: forall xs x r r' s m. Monad m =>
     (r' -> r)
-    -> Cursor xs x r s m
-    -> Cursor xs x r' s m
-contramapCursor f Cursor{ init, commit, input, extract } =
-  Cursor
+    -> ReadWriteCursor xs x r s m
+    -> ReadWriteCursor xs x r' s m
+contramapCursor f ReadWriteCursor{ init, commit, input, extract } =
+  ReadWriteCursor
     { init = init
     , extract = extract
     , input = contramapStream f input

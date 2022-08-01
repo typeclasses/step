@@ -8,7 +8,7 @@ import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.Drop as Drop
 
-import Step.Cursor (Stream, AdvanceResult (..), Cursor (Cursor))
+import Step.Cursor (Stream, AdvanceResult (..), ReadWriteCursor (ReadWriteCursor))
 import qualified Step.Cursor as Cursor
 
 import Step.RST (RST (..), evalRST)
@@ -22,8 +22,8 @@ newtype BufferOnly xs x buffer m a = BufferOnly (StateT (buffer xs x) m a)
     deriving newtype (Functor, Applicative, Monad, MonadState (buffer xs x), MonadTrans)
 
 bufferStateCursor :: forall xs x r s m. (ListLike xs x, Monad m) =>
-    Lens' s (Buffer xs x) -> Cursor xs x r s m
-bufferStateCursor bufferLens = Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+    Lens' s (Buffer xs x) -> ReadWriteCursor xs x r s m
+bufferStateCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
     unseenLens :: Lens' (Buffer xs x, s) (Buffer xs x)
     unseenLens = Optics._1

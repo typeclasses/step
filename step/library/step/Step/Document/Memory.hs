@@ -17,7 +17,7 @@ import qualified Step.Document.Lines as Lines
 import Step.Input.Counter (KnowsCursorPosition)
 import qualified Step.Input.Counter as Counter
 
-import Step.Cursor (Cursor (..), Stream)
+import Step.Cursor (ReadWriteCursor (..), Stream)
 import qualified Step.Cursor as Cursor
 
 import Step.Document.Locating (Locating)

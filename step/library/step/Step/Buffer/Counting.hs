@@ -6,7 +6,7 @@ import Step.Internal.Prelude
 
 import Step.Input.CursorPosition (CursorPosition)
 
-import Step.Cursor (Cursor (Cursor), Stream, AdvanceResult, streamRST)
+import Step.Cursor (ReadWriteCursor (ReadWriteCursor), Stream, AdvanceResult, streamRST)
 import qualified Step.Cursor as Cursor
 import qualified Step.Input.CursorPosition as CursorPosition
 
@@ -16,16 +16,16 @@ import qualified Optics
 
 countingCursor :: forall xs x r s m. Monad m =>
     Lens' s CursorPosition
-    -> Cursor xs x r s m
-    -> Cursor xs x r s m
+    -> ReadWriteCursor xs x r s m
+    -> ReadWriteCursor xs x r s m
 countingCursor positionLens
-    Cursor
+    ReadWriteCursor
       { Cursor.init = init' :: s -> s'
       , Cursor.extract = extract'
       , Cursor.input = input'
       , Cursor.commit = commit'
       } =
-    Cursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+    ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
   where
     init = init'
     extract = extract'
