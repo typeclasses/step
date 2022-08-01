@@ -21,9 +21,10 @@ data Nontrivial xs x =
   NontrivialUnsafe
     { generalize :: !xs
     , length :: Positive Natural
-    , drop :: Positive Natural -> Drop xs x
     , head :: x
     , tail :: Maybe (Nontrivial xs x)
+
+    , drop :: Positive Natural -> Drop xs x
     , span :: Predicate x -> Span xs x
     }
 
