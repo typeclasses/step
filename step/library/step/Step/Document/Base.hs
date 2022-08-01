@@ -96,20 +96,19 @@ configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerm
 --     type CursoryState (DocumentParsing xs x m) = DocumentMemory xs x Buffer
 --     curse = documentCursor
 
-documentCursor :: forall m xs x s. Monad m =>
+documentCursor :: Monad m =>
     ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor =
-    loadingCursor @(DocumentMemory xs x s) DM.bufferLens
+    loadingCursor DM.bufferLens
         & contramap recordingStream
-        & countingCursor @(DocumentMemory xs x s) DM.cursorPositionLens
+        & countingCursor DM.cursorPositionLens
 
-recordingStream :: forall xs x s m. Monad m => Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
+recordingStream :: Monad m => Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
 recordingStream ctx =
-    Cursor.record @(DocumentMemory xs x s) (record ctx) $
-    over streamRST (zoom DM.streamStateLens) $ ctxStream ctx
+    Cursor.record (record ctx) $ over streamRST (zoom DM.streamStateLens) $ ctxStream ctx
 
-record :: forall xs x s m. Monad m => Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
-record ctx = contramap (\_ -> ts) . zoom DM.lineHistoryLens . Lines.record @xs @x
+record :: Monad m => Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
+record ctx = contramap (\_ -> ts) . zoom DM.lineHistoryLens . Lines.record
   where
     ts = configLineTerminators (ctxConfig ctx)
 
