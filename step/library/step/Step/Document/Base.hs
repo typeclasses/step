@@ -44,7 +44,6 @@ import Step.Document.Lines (LineHistory)
 import qualified Step.Document.Lines as Lines
 
 import Step.Buffer.Buffer
-import Step.Buffer.DoubleBuffer
 
 import Step.RST
 

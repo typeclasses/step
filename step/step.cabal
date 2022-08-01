@@ -127,10 +127,6 @@ library
         Step.Buffer.BufferResult
         Step.Buffer.BufferState
         Step.Buffer.Counting
-        Step.Buffer.DoubleBuffer
-        Step.Buffer.DoubleBuffer.Constructor
-        Step.Buffer.DoubleBuffer.Optics
-        Step.Buffer.DoubleBuffer.Extra
         Step.Buffer.Loading
 
         Step.Input.CursorPosition
