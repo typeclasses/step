@@ -99,7 +99,8 @@ configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerm
 documentCursor :: forall m xs x s. Monad m =>
     ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor =
-    loadingCursor @(Context xs x s m) @(DocumentMemory xs x s) recordingStream DM.bufferLens
+    loadingCursor @(DocumentMemory xs x s) DM.bufferLens
+        & contramap recordingStream
         & countingCursor @(DocumentMemory xs x s) DM.cursorPositionLens
 
 recordingStream :: forall xs x s m. Monad m => Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
