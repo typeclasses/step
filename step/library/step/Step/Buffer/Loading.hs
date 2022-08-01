@@ -25,7 +25,7 @@ import Step.Nontrivial (Nontrivial)
 loadingCursor :: forall xs x m s. ListLike xs x => Monad m =>
     Lens' s (Buffer xs x)
     -> ReadWriteCursor xs x (Stream () s m xs x) s m
-loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
     unseen :: Lens' (Buffer xs x, s) (Buffer xs x)
     unseen = Optics._1
@@ -35,9 +35,6 @@ loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.co
 
     init :: s -> Buffer xs x
     init = view bufferLens
-
-    extract :: Buffer xs x -> s -> s
-    extract _ = id
 
     input, bufferedInput, freshInput ::
         Stream (Stream () s m xs x) (Buffer xs x, s) m xs x

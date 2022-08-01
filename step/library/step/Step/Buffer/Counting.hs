@@ -21,14 +21,12 @@ countingCursor :: forall xs x r s m. Monad m =>
 countingCursor positionLens
     ReadWriteCursor
       { Cursor.init = init' :: s -> s'
-      , Cursor.extract = extract'
       , Cursor.input = input'
       , Cursor.commit = commit'
       } =
-    ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+    ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
     init = init'
-    extract = extract'
     input = input'
 
     commit :: Positive Natural -> RST r (s', s) m AdvanceResult

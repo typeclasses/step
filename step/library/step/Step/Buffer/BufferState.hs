@@ -23,7 +23,7 @@ newtype BufferOnly xs x buffer m a = BufferOnly (StateT (buffer xs x) m a)
 
 bufferStateCursor :: forall xs x r s m. (ListLike xs x, Monad m) =>
     Lens' s (Buffer xs x) -> ReadWriteCursor xs x r s m
-bufferStateCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit, Cursor.extract }
+bufferStateCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
     unseenLens :: Lens' (Buffer xs x, s) (Buffer xs x)
     unseenLens = Optics._1
@@ -33,9 +33,6 @@ bufferStateCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Curso
 
     init :: s -> Buffer xs x
     init = view bufferLens
-
-    extract :: Buffer xs x -> s -> s
-    extract _ = id
 
     input :: Stream r (Buffer xs x, s) m xs x
     input = Cursor.Stream (zoom unseenLens takeChunk)
