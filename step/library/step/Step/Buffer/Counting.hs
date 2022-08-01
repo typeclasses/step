@@ -20,7 +20,7 @@ countingCursor :: forall xs x r s m. Monad m =>
     -> ReadWriteCursor xs x r s m
 countingCursor positionLens
     ReadWriteCursor
-      { Cursor.init = init' :: s -> s'
+      { Cursor.init = init' :: RST r s m s'
       , Cursor.input = input'
       , Cursor.commit = commit'
       } =
@@ -29,7 +29,6 @@ countingCursor positionLens
     init = init'
     input = input'
 
-    commit :: Positive Natural -> RST r (s', s) m AdvanceResult
     commit n = do
-        modifying (Optics._2 % positionLens) (CursorPosition.strictlyIncrease n)
+        modifying (Cursor.committedStateLens % positionLens) (CursorPosition.strictlyIncrease n)
         commit' n

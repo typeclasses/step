@@ -25,20 +25,9 @@ bufferStateCursor :: forall xs x r s m. (ListLike xs x, Monad m) =>
     Lens' s (Buffer xs x) -> ReadWriteCursor xs x r s m
 bufferStateCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
-    unseenLens :: Lens' (Buffer xs x, s) (Buffer xs x)
-    unseenLens = Optics._1
-
-    uncommittedLens :: Lens' (Buffer xs x, s) (Buffer xs x)
-    uncommittedLens = Optics._2 % bufferLens
-
-    init :: s -> Buffer xs x
-    init = view bufferLens
-
-    input :: Stream r (Buffer xs x, s) m xs x
-    input = Cursor.Stream (zoom unseenLens takeChunk)
-
-    commit :: Positive Natural -> RST r (Buffer xs x, s) m AdvanceResult
-    commit n = zoom uncommittedLens (dropN n)
+    init = use bufferLens
+    input = Cursor.Stream (zoom Cursor.ephemeralStateLens takeChunk)
+    commit n = zoom (Cursor.committedStateLens % bufferLens) (dropN n)
 
 takeChunk :: Monad m => RST r (Buffer xs x) m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case

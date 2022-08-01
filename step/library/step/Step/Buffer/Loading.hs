@@ -27,38 +27,26 @@ loadingCursor :: forall xs x m s. ListLike xs x => Monad m =>
     -> ReadWriteCursor xs x (Stream () s m xs x) s m
 loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
-    unseen :: Lens' (Buffer xs x, s) (Buffer xs x)
-    unseen = Optics._1
+    init :: RST (Stream () s m xs x) s m (Buffer xs x)
+    init = use bufferLens
 
-    uncommitted :: Lens' (Buffer xs x, s) (Buffer xs x)
-    uncommitted = Optics._2 % bufferLens
-
-    init :: s -> Buffer xs x
-    init = view bufferLens
-
-    input, bufferedInput, freshInput ::
-        Stream (Stream () s m xs x) (Buffer xs x, s) m xs x
     input = Cursor.streamChoice bufferedInput freshInput
-    bufferedInput = Cursor.Stream (zoom unseen BufferState.takeChunk)
+    bufferedInput = Cursor.Stream (zoom Cursor.ephemeralStateLens BufferState.takeChunk)
     freshInput = Cursor.Stream (bufferMore *> Cursor.next bufferedInput)
 
-    commit, commitBuffered, commitFresh :: Positive Natural
-        -> RST (Stream () s m xs x) (Buffer xs x, s) m AdvanceResult
     commit n = commitBuffered n >>= \case
         r@AdvanceSuccess -> return r
         YouCanNotAdvance n' -> commitFresh n'
-    commitBuffered n = zoom uncommitted (BufferState.dropN n)
+    commitBuffered n = zoom (Cursor.committedStateLens % bufferLens) (BufferState.dropN n)
     commitFresh n = bufferMore *> commitBuffered n
 
-    bufferMore :: RST (Stream () s m xs x) (Buffer xs x, s) m BufferResult
     bufferMore = next >>= \case
         Nothing -> return NothingToBuffer
         Just x -> do
-            modifying (uncommitted % chunks) (:|> x)
-            modifying (unseen % chunks) (:|> x)
+            modifying (Cursor.committedStateLens % bufferLens % chunks) (:|> x)
+            modifying (Cursor.ephemeralStateLens % chunks) (:|> x)
             return BufferedMore
 
-    next :: RST (Stream () s m xs x) (Buffer xs x, s) m (Maybe (Nontrivial xs x))
     next = ask >>= \upstream ->
-        zoom Optics._2 $
+        zoom Cursor.committedStateLens $
             contramapRST (\_ -> ()) (Cursor.next upstream)
