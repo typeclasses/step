@@ -95,15 +95,14 @@ data Context xs x s m =
 --     type CursoryState (DocumentParsing xs x m) = DocumentMemory xs x Buffer
 --     curse = documentCursor
 
-documentCursor :: forall m xs x s. Monad m => ListLike xs x => Lines.Char x =>
+documentCursor :: forall m xs x s. Monad m => Lines.Char x =>
     ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor =
     loadingCursor @(DocumentMemory xs x s) DM.bufferLens
         & countingCursor @(DocumentMemory xs x s) DM.cursorPositionLens
         & contramap
             (
-              Cursor.record @(DocumentMemory xs x s)
-                  (stateRST . zoom DM.lineHistoryLens . Lines.recordNontrivial)
+              Cursor.record @(DocumentMemory xs x s) (zoom DM.lineHistoryLens . Lines.record @xs @x)
               . over streamRST (zoom DM.streamStateLens)
               . ctxStream
             )

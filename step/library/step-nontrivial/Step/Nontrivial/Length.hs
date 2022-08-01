@@ -11,17 +11,14 @@ module Step.Nontrivial.Length
 import Step.Internal.Prelude
 
 import Step.Nontrivial.Type (Nontrivial)
-import Step.Nontrivial.Refinement (generalize)
+import Step.Nontrivial.Constructor (generalize, length)
 
 import qualified ListLike
 import qualified Maybe
 import qualified Positive
 
-length :: ListLike xs x => Nontrivial xs x -> Positive Natural
-length = Maybe.fromJust . preview Positive.natPrism . fromIntegral . ListLike.length . generalize
-
-lengthNat :: ListLike xs x => Nontrivial xs x -> Natural
-lengthNat = fromIntegral . ListLike.length . generalize
+lengthNat :: Nontrivial xs x -> Natural
+lengthNat = review Positive.refine . length
 
 lengthInt :: ListLike xs x => Nontrivial xs x -> Integer
-lengthInt = fromIntegral . ListLike.length . generalize
+lengthInt = fromIntegral . lengthNat

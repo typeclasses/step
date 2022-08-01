@@ -22,9 +22,8 @@ import qualified Optics
 
 import Step.Nontrivial (Nontrivial)
 
-loadingCursor :: forall s xs x m. ListLike xs x => Monad m =>
-    Lens' s (Buffer xs x)
-    -> ReadWriteCursor xs x (Stream () s m xs x) s m
+loadingCursor :: forall s xs x m. Monad m =>
+    Lens' s (Buffer xs x) -> ReadWriteCursor xs x (Stream () s m xs x) s m
 loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
     init :: RST (Stream () s m xs x) s m (Buffer xs x)

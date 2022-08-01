@@ -7,7 +7,6 @@ import Step.Internal.Prelude
 import Step.Nontrivial (Nontrivial)
 
 newtype Buffer xs x = Buffer{ toSeq :: Seq (Nontrivial xs x) }
-    deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance IsList (Buffer xs x) where

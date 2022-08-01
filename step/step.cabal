@@ -173,7 +173,6 @@ library step-nontrivial
         Step.Nontrivial.Drop
         Step.Nontrivial.Length
         Step.Nontrivial.Refinement
-        Step.Nontrivial.Span
         Step.Nontrivial.SplitAt
         Step.Nontrivial.SplitAtPositive
         Step.Nontrivial.TakeWhile

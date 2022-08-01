@@ -9,7 +9,8 @@ module Step.Nontrivial.SplitAtPositive
 
 import Step.Internal.Prelude hiding (cons)
 
-import Step.Nontrivial.Unsafe (Nontrivial (..))
+import Step.Nontrivial.Type (Nontrivial)
+import Step.Nontrivial.Unsafe (nontrivialUnsafe)
 import Step.Nontrivial.Refinement (generalize)
 import qualified Step.Nontrivial.Length as Nontrivial
 
@@ -29,6 +30,6 @@ splitAtPositive n whole =
         Signed.Zero -> All
         Signed.Plus _ ->
             let (a, b) = ListLike.splitAt (fromIntegral (review Positive.refine n)) (generalize whole)
-            in Split (NontrivialUnsafe a) (NontrivialUnsafe b)
+            in Split (nontrivialUnsafe a) (nontrivialUnsafe b)
         Signed.Minus n' ->
             Insufficient n'

@@ -6,7 +6,7 @@ module Step.Document.Lines
     {- * Finding location at a cursor -} CursorLocation (..), locateCursorInDocument,
     {- * Construction -} build,
     {- * Char class -} Char (..),
-    {- * Feeding input -} record, recordNontrivial, terminate,
+    {- * Feeding input -} record, terminate,
   ) where
 
 import Step.Internal.Prelude
@@ -20,12 +20,12 @@ import qualified Step.Input.CursorPosition as CursorPosition
 
 import qualified Char
 
-import qualified ListLike
-
 import qualified Loc
 
 import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
+
+import Step.RST
 
 data LineHistory =
   LineHistory
@@ -86,8 +86,8 @@ empty =
     , terminated = False
     }
 
-build :: Char x => ListLike xs x => [Nontrivial xs x] -> LineHistory
-build xs = execState (traverse_ recordNontrivial xs) empty
+build :: Char x => [Nontrivial xs x] -> LineHistory
+build xs = runIdentity $ execRST (traverse_ record xs) () empty
 
 class Eq a => Char a
   where
@@ -99,28 +99,24 @@ instance Char Char.Char
     carriageReturn = '\r'
     lineFeed = '\n'
 
-record :: Monad m => Char x => ListLike xs x => xs -> StateT LineHistory m ()
-record x = case Nontrivial.refine x of
-    Nothing -> return ()
-    Just x' -> recordNontrivial x'
+record :: forall xs x r m. Monad m => Char x => Nontrivial xs x -> RST r LineHistory m ()
+record x =
+  if Nontrivial.head x == carriageReturn then
+      recordCR *> traverse_ record (Nontrivial.tail x)
+  else if Nontrivial.head x == lineFeed then
+      recordLF *> traverse_ record (Nontrivial.tail x)
+  else
+    do
+      case Nontrivial.span x (Predicate \c -> not $ elem @[] c [carriageReturn, lineFeed]) of
+          Nontrivial.SpanNone -> error "Lines.record"
+          Nontrivial.SpanAll -> recordOther x
+          Nontrivial.SpanPart{ Nontrivial.spannedPart, Nontrivial.spanRemainder } ->
+              recordOther spannedPart *> record spanRemainder
 
-recordNontrivial :: Monad m => Char char => ListLike text char => Nontrivial text char -> StateT LineHistory m ()
-recordNontrivial x = case Nontrivial.uncons x of
-    (c, x') | c == carriageReturn -> do
-        recordCR
-        record x'
-    (c, x') | c == lineFeed -> do
-        recordLF
-        record x'
-    _ -> do
-        let (a, b) = ListLike.break (\c -> elem @[] c [carriageReturn, lineFeed]) (Nontrivial.generalize x)
-        recordOther a
-        record b
-
-terminate :: Monad m => StateT LineHistory m ()
+terminate :: Monad m => RST r LineHistory m ()
 terminate = modify' \x -> x{ terminated = True }
 
-startNewLine :: Monad m => StateT LineHistory m ()
+startNewLine :: Monad m => RST r LineHistory m ()
 startNewLine = do
     l <- use lineTrackerLens
     let l' = l + 1
@@ -128,22 +124,22 @@ startNewLine = do
     modifying lineStartPositionLens (Map.insert cp (fromIntegral (Loc.toNat l')))
     assign lineTrackerLens l'
 
-recordCR :: Monad m => StateT LineHistory m ()
+recordCR :: Monad m => RST r LineHistory m ()
 recordCR = do
     acr <- use afterCRLens
     when acr startNewLine
     modifying cursorPositionLens (CursorPosition.increase 1)
     assign afterCRLens True
 
-recordLF :: Monad m => StateT LineHistory m ()
+recordLF :: Monad m => RST r LineHistory m ()
 recordLF = do
     modifying cursorPositionLens (CursorPosition.increase 1)
     startNewLine
     assign afterCRLens False
 
-recordOther :: Monad m => ListLike text char => text -> StateT LineHistory m ()
+recordOther :: Monad m => Nontrivial xs x -> RST r LineHistory m ()
 recordOther x = do
     acr <- use afterCRLens
     when acr startNewLine
-    modifying cursorPositionLens (CursorPosition.increase (fromIntegral (ListLike.length x)))
+    modifying cursorPositionLens (CursorPosition.strictlyIncrease (Nontrivial.length x))
     assign afterCRLens False
