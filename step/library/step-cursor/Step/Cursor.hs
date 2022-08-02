@@ -1,7 +1,6 @@
 module Step.Cursor
   (
     {- * Cursor -} ReadWriteCursor (..), AdvanceResult (..),
-        CursorState, ephemeralStateLens, committedStateLens,
         rebaseCursor,
     {- * Class -} Cursory (..),
     {- * Stream -}

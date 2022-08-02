@@ -17,6 +17,12 @@ data Span xs x =
   | SpanNone
   | SpanPart{ spannedPart :: Nontrivial xs x, spanRemainder :: Nontrivial xs x }
 
+newtype GeneralSpanOperation xs x =
+    GeneralSpanOperation{ generalSpan :: Nontrivial xs x -> Span xs x }
+
+generalizeSpan :: Predicate x -> SpanOperation xs x -> GeneralSpanOperation xs x
+generalizeSpan p SpanOperation{ span } = GeneralSpanOperation{ generalSpan = span p }
+
 newtype SplitOperation xs x =
     SplitOperation { split :: Positive Natural -> Nontrivial xs x -> Split xs x }
 
