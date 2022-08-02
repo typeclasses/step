@@ -69,7 +69,7 @@ bufferStateCursor :: forall xs x r s m. Monad m =>
     -> ReadWriteCursor xs x r s m
 bufferStateCursor dropOp bufferLens =
   ReadWriteCursor
-    { Cursor.init = get <&> \s -> (view bufferLens s, s) -- todo: could the state just be an Integer, like whileCursor does?
+    { Cursor.init = get <&> \s -> (view bufferLens s, s)
     , Cursor.visibleStateLens = _2
     , Cursor.input = Cursor.Stream (zoom _1 takeChunk)
     , Cursor.commit = zoom (_2 % bufferLens) . dropFromBuffer dropOp
