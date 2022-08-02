@@ -4,7 +4,7 @@ module Step.GeneralCursors (Buffer, chunks, takeChunk, dropN, bufferStateCursor,
 
 import Step.Internal.Prelude
 
-import Step.Nontrivial (Nontrivial)
+import Step.Nontrivial
 
 import qualified Step.Nontrivial as Nontrivial
 
@@ -15,6 +15,9 @@ import Step.RST (RST (..))
 
 import Step.Input.CursorPosition (CursorPosition)
 import qualified Step.Input.CursorPosition as CursorPosition
+
+
+-- Buffer type
 
 newtype Buffer xs x = Buffer{ toSeq :: Seq (Nontrivial xs x) }
     deriving newtype (Semigroup, Monoid)
@@ -27,13 +30,8 @@ instance IsList (Buffer xs x) where
 chunks :: Iso (Buffer xs x) (Buffer xs1 x1) (Seq (Nontrivial xs x)) (Seq (Nontrivial xs1 x1))
 chunks = iso toSeq Buffer
 
-bufferStateCursor :: forall xs x r s m. (Monad m) =>
-    Lens' s (Buffer xs x) -> ReadWriteCursor xs x r s m
-bufferStateCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
-  where
-    init = use bufferLens
-    input = Cursor.Stream (zoom Cursor.ephemeralStateLens takeChunk)
-    commit n = zoom (Cursor.committedStateLens % bufferLens) (dropN n)
+
+-- Buffer state operations
 
 takeChunk :: Monad m => RST r (Buffer xs x) m (Maybe (Nontrivial xs x))
 takeChunk = use chunks >>= \case
@@ -43,43 +41,43 @@ takeChunk = use chunks >>= \case
 dropN :: Monad m => Positive Natural -> RST r (Buffer xs x) m AdvanceResult
 dropN = fix \r n -> use chunks >>= \case
     Empty -> return YouCanNotAdvance{ shortfall = n }
-    x :<| xs -> case Nontrivial.drop x n of
-        Nontrivial.DroppedAll -> assign chunks xs $> AdvanceSuccess
-        Nontrivial.DroppedPart{ Nontrivial.dropRemainder } -> assign chunks (dropRemainder :<| xs) $> AdvanceSuccess
-        Nontrivial.InsufficientToDrop{ Nontrivial.dropShortfall } -> assign chunks xs *> r dropShortfall
+    x :<| xs -> case drop x n of
+        DroppedAll -> assign chunks xs $> AdvanceSuccess
+        DroppedPart{ dropRemainder } -> assign chunks (dropRemainder :<| xs) $> AdvanceSuccess
+        InsufficientToDrop{ dropShortfall } -> assign chunks xs *> r dropShortfall
 
-countingCursor :: forall s xs x r m. Monad m =>
-    Lens' s CursorPosition
+
+-- | Cursor that just walks through a pure buffer, no streaming of additional input
+--
+bufferStateCursor :: forall xs x r s m. Monad m =>
+    Lens' s (Buffer xs x)  -- ^ The field of state in which the buffer is stored
     -> ReadWriteCursor xs x r s m
-    -> ReadWriteCursor xs x r s m
-countingCursor positionLens
-    ReadWriteCursor
-      { Cursor.init = init' :: RST r s m s'
-      , Cursor.input = input'
-      , Cursor.commit = commit'
-      } =
-    ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
-  where
-    init = init'
-    input = input'
+bufferStateCursor bufferLens =
+  ReadWriteCursor
+    { Cursor.init = use bufferLens
+    , Cursor.input = Cursor.Stream (zoom Cursor.ephemeralStateLens takeChunk)
+    , Cursor.commit = zoom (Cursor.committedStateLens % bufferLens) . dropN
+    }
 
-    commit n = do
-        modifying (Cursor.committedStateLens % positionLens) (CursorPosition.strictlyIncrease n)
-        commit' n
-
+-- | Like 'bufferStateCursor', but fetches new input from a stream context when the buffer is empty
+--
 loadingCursor :: forall s xs x m. Monad m =>
-     Lens' s (Buffer xs x) -> ReadWriteCursor xs x (Stream () s m xs x) s m
-loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
+     Lens' s (Buffer xs x) -- ^ The field of state in which the buffer is stored
+     -> ReadWriteCursor xs x (Stream () s m xs x) s m
+loadingCursor bufferLens =
+    ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
     init :: RST r s m (Buffer xs x)
     init = use bufferLens
 
-    input, bufferedInput, freshInput :: Stream (Stream () s m xs x) (CursorState (Buffer xs x) s) m xs x
+    input, bufferedInput, freshInput ::
+        Stream (Stream () s m xs x) (CursorState (Buffer xs x) s) m xs x
     input = Cursor.streamChoice bufferedInput freshInput
     bufferedInput = Cursor.Stream (zoom Cursor.ephemeralStateLens takeChunk)
     freshInput = Cursor.Stream (bufferMore *> Cursor.next bufferedInput)
 
-    commit, commitBuffered, commitFresh :: Positive Natural -> RST (Stream () s m xs x) (CursorState (Buffer xs x) s) m AdvanceResult
+    commit, commitBuffered, commitFresh :: Positive Natural
+        -> RST (Stream () s m xs x) (CursorState (Buffer xs x) s) m AdvanceResult
     commit n = commitBuffered n >>= \case
         r@AdvanceSuccess -> return r
         YouCanNotAdvance n' -> commitFresh n'
@@ -97,3 +95,17 @@ loadingCursor bufferLens = ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.co
     next = ask >>= \upstream ->
         zoom Cursor.committedStateLens $
             contramap (\_ -> ()) (Cursor.next upstream)
+
+
+-- | Augments a cursor by keeping count of how many characters have been committed
+--
+countingCursor :: forall s xs x r m. Monad m =>
+    Lens' s CursorPosition -- ^ The field of state in which the count is stored
+    -> ReadWriteCursor xs x r s m
+    -> ReadWriteCursor xs x r s m
+countingCursor positionLens
+    ReadWriteCursor{ Cursor.init = init' :: RST r s m s', Cursor.input = input', Cursor.commit = commit' } =
+    ReadWriteCursor{ Cursor.init = init', Cursor.input = input', Cursor.commit = \n -> count n *> commit' n }
+  where
+    count :: Positive Natural -> RST r (CursorState s' s) m ()
+    count n = modifying (Cursor.committedStateLens % positionLens) (CursorPosition.strictlyIncrease n)
