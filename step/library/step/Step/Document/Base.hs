@@ -33,15 +33,12 @@ import qualified Step.Configuration as Config
 import Step.Failure (Fallible)
 import qualified Step.Failure as F
 
-import Step.Buffer.Counting
-import Step.Buffer.Loading
+import Step.GeneralCursors
 
 import Step.Input.CursorPosition (CursorPosition)
 
 import Step.Document.Lines (LineHistory)
 import qualified Step.Document.Lines as Lines
-
-import Step.Buffer.Buffer
 
 import Step.RST
 

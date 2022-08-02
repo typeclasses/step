@@ -124,11 +124,7 @@ library
 
         Step.Competitors.Attoparsec.Text
 
-        Step.Buffer.Buffer
-        Step.Buffer.BufferResult
-        Step.Buffer.BufferState
-        Step.Buffer.Counting
-        Step.Buffer.Loading
+        Step.GeneralCursors
 
         Step.Input.CursorPosition
         Step.Input.Counter

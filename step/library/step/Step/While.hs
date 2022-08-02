@@ -8,10 +8,7 @@ import qualified Step.Nontrivial.TakeWhile as Nontrivial.TakeWhile
 import Step.Cursor (ReadWriteCursor (ReadWriteCursor), StreamCompletion, Stream, AdvanceResult (..))
 import qualified Step.Cursor as Cursor
 
-import Step.Buffer.Buffer (Buffer, chunks)
-
-import qualified Step.Buffer.Buffer as Buffer
-import qualified Step.Buffer.BufferState as BufferState
+import Step.GeneralCursors (Buffer)
 
 data While text char =
   While

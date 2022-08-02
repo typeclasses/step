@@ -25,7 +25,7 @@ import qualified Step.Document.Locating as Locating
 
 import Step.Input.CursorPosition (CursorPosition)
 
-import Step.Buffer.Buffer (Buffer)
+import Step.GeneralCursors (Buffer)
 
 -- import Step.Buffer.Loading
 
