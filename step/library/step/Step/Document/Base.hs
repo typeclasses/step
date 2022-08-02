@@ -108,7 +108,7 @@ recordingStream spanOp ctx =
     Cursor.record (record spanOp ctx) $ over streamRST (zoom DM.streamStateLens) $ ctxStream ctx
 
 record :: Monad m => SpanOperation xs x -> Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
-record spanOp ctx = contramap (\_ -> ts) . zoom DM.lineHistoryLens . (Lines.record spanOp)
+record spanOp ctx = contraconst ts . zoom DM.lineHistoryLens . (Lines.record spanOp)
   where
     ts = configLineTerminators (ctxConfig ctx)
 

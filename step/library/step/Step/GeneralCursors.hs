@@ -102,9 +102,7 @@ loadingCursor dropOp bufferLens =
             modifying (Cursor.ephemeralStateLens % chunks) (:|> x)
 
     next :: RST (Stream () s m xs x) (CursorState ephemeral s) m (Maybe (Nontrivial xs x))
-    next = ask >>= \upstream ->
-        zoom Cursor.committedStateLens $
-            contramap (\_ -> ()) (Cursor.next upstream)
+    next = ask >>= \upstream -> zoom Cursor.committedStateLens $ contravoid (Cursor.next upstream)
 
 
 -- | Augments a cursor by keeping count of how many characters have been committed
