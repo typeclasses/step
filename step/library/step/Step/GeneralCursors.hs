@@ -1,6 +1,12 @@
 {-# language FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
-module Step.GeneralCursors (Buffer, chunks, takeChunk, dropFromBuffer, bufferStateCursor, loadingCursor, countingCursor, whileCursor) where
+module Step.GeneralCursors
+  (
+    {- * Buffer concept and operations -} Buffer, chunks, takeChunk, dropFromBuffer,
+    {- * Pure and loading cursors -} bufferStateCursor, loadingCursor,
+    {- * Cursor transformers -} countingCursor, whileCursor,
+  )
+  where
 
 import Step.Internal.Prelude
 
