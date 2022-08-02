@@ -45,6 +45,7 @@ import Step.RST
 import Optics
 
 import Step.Nontrivial (Nontrivial)
+import qualified Step.Nontrivial as Nontrivial
 
 import Char (Char)
 
@@ -93,10 +94,10 @@ configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerm
 --     type CursoryState (DocumentParsing xs x m) = DocumentMemory xs x Buffer
 --     curse = documentCursor
 
-documentCursor :: Monad m =>
+documentCursor :: ListLike xs x => Monad m =>
     ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor =
-    loadingCursor DM.bufferLens
+    loadingCursor Nontrivial.drop DM.bufferLens
         & contramap recordingStream
         & countingCursor DM.cursorPositionLens
 

@@ -4,7 +4,7 @@ module Step.Nontrivial.Constructor
   (
     {- * Type -} Nontrivial (..),
     {- * Creation -} refine, nontrivialUnsafe,
-    {- * Operation result types -} Drop (..), Span (..),
+    {- * Operation result types -} Span (..),
   )
   where
 
@@ -24,14 +24,8 @@ data Nontrivial xs x =
     , head :: x
     , tail :: Maybe (Nontrivial xs x)
 
-    , drop :: Positive Natural -> Drop xs x
     , span :: Predicate x -> Span xs x
     }
-
-data Drop xs x =
-    DroppedAll
-  | InsufficientToDrop{ dropShortfall :: Positive Natural }
-  | DroppedPart{ dropRemainder :: Nontrivial xs x }
 
 data Span xs x =
     SpanAll
@@ -43,7 +37,6 @@ nontrivialUnsafe x = fix \nt ->
     NontrivialUnsafe
       { generalize = x
       , length = (Positive.PositiveUnsafe . fromIntegral . ListLike.length) x
-      , drop = drop' nt
       , head = ListLike.head x
       , tail = refine (ListLike.tail x)
       , span = span' nt
@@ -56,19 +49,10 @@ refine x =
       NontrivialUnsafe
         { generalize = x
         , length = l
-        , drop = drop' nt
         , head = ListLike.head x
         , tail = refine (ListLike.tail x)
         , span = span' nt
         }
-
-drop' :: ListLike xs x => Nontrivial xs x -> Positive Natural -> Drop xs x
-drop' whole n =
-    case Positive.minus (length whole) n of
-        Signed.Zero -> DroppedAll
-        Signed.Plus _ -> DroppedPart{ dropRemainder = nontrivialUnsafe $
-            ListLike.drop (fromIntegral (review Positive.refine n)) (generalize whole) }
-        Signed.Minus dropShortfall -> InsufficientToDrop{ dropShortfall }
 
 span' :: ListLike xs x => Nontrivial xs x -> Predicate x -> Span xs x
 span' whole f = tupleSpan (ListLike.span (getPredicate f) (generalize whole))
