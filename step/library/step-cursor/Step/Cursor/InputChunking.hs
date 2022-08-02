@@ -16,12 +16,14 @@ import qualified Hedgehog.Range as Range
 import qualified ListLike
 
 import Step.Nontrivial (Nontrivial)
+import Step.Nontrivial.ListLike
+import Step.Nontrivial.Operations
 import qualified Step.Nontrivial as Nontrivial
 
 import qualified Maybe
 
 genChunks :: ListLike xs x => xs -> Gen [Nontrivial xs x]
-genChunks t = genChunks' t <&> Maybe.mapMaybe Nontrivial.refine
+genChunks t = genChunks' t <&> Maybe.mapMaybe (untrivialize untrivializeOperation)
 
 -- | Generates various ways of chunking a given input text. Shrinks toward the smallest number of chunks.
 genChunks' :: ListLike text char => text -> Gen [text]

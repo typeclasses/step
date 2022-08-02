@@ -1,16 +1,17 @@
-{-# language Unsafe #-}
+{-# language BangPatterns, GeneralizedNewtypeDeriving, Unsafe #-}
 
 module Step.Nontrivial.Unsafe
   (
-    Nontrivial (NontrivialUnsafe),
-    nontrivialUnsafe,
+    Nontrivial (..)
   )
   where
 
 import Step.Internal.Prelude
 
-import Step.Nontrivial.Constructor
-
-import Positive.Unsafe (Positive (PositiveUnsafe))
-
-import qualified ListLike
+data Nontrivial xs x =
+  NontrivialUnsafe
+    { generalize :: !xs
+    , length :: Positive Natural
+    , head :: x
+    , tail :: Maybe (Nontrivial xs x)
+    }

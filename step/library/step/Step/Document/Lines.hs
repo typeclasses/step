@@ -22,7 +22,7 @@ import qualified Char
 
 import qualified Loc
 
-import Step.Nontrivial (Nontrivial)
+import Step.Nontrivial (Nontrivial, Span (..), SpanOperation (..))
 import qualified Step.Nontrivial as Nontrivial
 
 import qualified List
@@ -88,8 +88,8 @@ empty =
     , terminated = False
     }
 
-build :: Terminators x -> [Nontrivial xs x] -> LineHistory
-build ts xs = runIdentity $ execRST (traverse_ record xs) ts empty
+build :: SpanOperation xs x -> Terminators x -> [Nontrivial xs x] -> LineHistory
+build spanOp ts xs = runIdentity $ execRST (traverse_ (record spanOp) xs) ts empty
 
 data Terminators x = Terminators{ isCarriageReturn :: Predicate x, isLineFeed :: Predicate x }
 
@@ -105,21 +105,22 @@ isTerminator ts = Predicate \c ->
         (\p -> getPredicate p c)
         [isCarriageReturn ts, isLineFeed ts]
 
-record :: forall xs x m. Monad m => Nontrivial xs x -> RST (Terminators x) LineHistory m ()
-record x = ask >>= \ts ->
+record :: forall xs x m. Monad m =>
+    SpanOperation xs x -> Nontrivial xs x -> RST (Terminators x) LineHistory m ()
+record SpanOperation{ span } = fix \r x -> ask >>= \ts ->
   let
     h = Nontrivial.head x
     t = Nontrivial.tail x
   in
-    if getPredicate (isCarriageReturn ts) h then recordCR *> traverse_ record t
-    else if getPredicate (isLineFeed ts) h then recordLF *> traverse_ record t
+    if getPredicate (isCarriageReturn ts) h then recordCR *> traverse_ r t
+    else if getPredicate (isLineFeed ts) h then recordLF *> traverse_ r t
     else
       do
-        case Nontrivial.span x (isTerminator ts) of
-            Nontrivial.SpanNone -> error "Lines.record"
-            Nontrivial.SpanAll -> recordOther x
-            Nontrivial.SpanPart{ Nontrivial.spannedPart, Nontrivial.spanRemainder } ->
-                recordOther spannedPart *> record spanRemainder
+        case span (isTerminator ts) x of
+            SpanNone -> error "Lines.record"
+            SpanAll -> recordOther x
+            SpanPart{ spannedPart, spanRemainder } ->
+                recordOther spannedPart *> r spanRemainder
 
 terminate :: Monad m => RST r LineHistory m ()
 terminate = modify' \x -> x{ terminated = True }

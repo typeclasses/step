@@ -162,17 +162,20 @@ library step-nontrivial
     import: base
     hs-source-dirs: library/step-nontrivial
     build-depends: step-internal
+
     exposed-modules:
         Step.Nontrivial
-        Step.Nontrivial.Constructor
-        Step.Nontrivial.Drop
-        Step.Nontrivial.Length
-        Step.Nontrivial.Refinement
-        Step.Nontrivial.SplitAt
-        Step.Nontrivial.SplitAtPositive
-        Step.Nontrivial.TakeWhile
-        Step.Nontrivial.Type
         Step.Nontrivial.Unsafe
+
+        Step.Nontrivial.ListLike
+        Step.Nontrivial.ListLike.Unsafe
+
+        Step.Nontrivial.Operations
+
+    other-modules:
+        Step.Nontrivial.ListLike.Construction
+        Step.Nontrivial.Misc
+        Step.Nontrivial.Type
 
 library step-action-types
     import: base

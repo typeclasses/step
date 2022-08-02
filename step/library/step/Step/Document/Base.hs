@@ -44,7 +44,7 @@ import Step.RST
 
 import Optics
 
-import Step.Nontrivial (Nontrivial)
+import Step.Nontrivial (Nontrivial, DropOperation, SpanOperation)
 import qualified Step.Nontrivial as Nontrivial
 
 import Char (Char)
@@ -94,19 +94,21 @@ configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerm
 --     type CursoryState (DocumentParsing xs x m) = DocumentMemory xs x Buffer
 --     curse = documentCursor
 
-documentCursor :: ListLike xs x => Monad m =>
-    ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
-documentCursor =
-    loadingCursor Nontrivial.drop DM.bufferLens
-        & contramap recordingStream
+documentCursor :: Monad m =>
+    DropOperation xs x -> SpanOperation xs x
+    -> ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
+documentCursor dropOp spanOp =
+    loadingCursor dropOp DM.bufferLens
+        & contramap (recordingStream spanOp)
         & countingCursor DM.cursorPositionLens
 
-recordingStream :: Monad m => Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
-recordingStream ctx =
-    Cursor.record (record ctx) $ over streamRST (zoom DM.streamStateLens) $ ctxStream ctx
+recordingStream :: Monad m =>
+    SpanOperation xs x -> Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
+recordingStream spanOp ctx =
+    Cursor.record (record spanOp ctx) $ over streamRST (zoom DM.streamStateLens) $ ctxStream ctx
 
-record :: Monad m => Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
-record ctx = contramap (\_ -> ts) . zoom DM.lineHistoryLens . Lines.record
+record :: Monad m => SpanOperation xs x -> Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
+record spanOp ctx = contramap (\_ -> ts) . zoom DM.lineHistoryLens . (Lines.record spanOp)
   where
     ts = configLineTerminators (ctxConfig ctx)
 

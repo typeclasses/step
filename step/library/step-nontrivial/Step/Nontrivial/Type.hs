@@ -3,7 +3,8 @@
 module Step.Nontrivial.Type
   (
     Nontrivial,
+    length, head, tail, generalize,
   )
   where
 
-import Step.Nontrivial.Constructor
+import Step.Nontrivial.Unsafe

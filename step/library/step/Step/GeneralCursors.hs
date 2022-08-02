@@ -4,8 +4,7 @@ module Step.GeneralCursors (Buffer, chunks, takeChunk, dropFromBuffer, bufferSta
 
 import Step.Internal.Prelude
 
-import Step.Nontrivial
-
+import Step.Nontrivial (Nontrivial, Drop (..), DropOperation (..))
 import qualified Step.Nontrivial as Nontrivial
 
 import Step.Cursor (Stream, AdvanceResult (..), ReadWriteCursor (ReadWriteCursor), CursorState, StreamCompletion (..))
@@ -39,37 +38,37 @@ takeChunk = use chunks >>= \case
     y :<| ys -> assign chunks ys $> Just y
 
 dropFromBuffer :: Monad m =>
-    (Positive Natural -> Nontrivial xs x -> Drop xs x)
+    DropOperation xs x
     -> Positive Natural
     -> RST r (Buffer xs x) m AdvanceResult
-dropFromBuffer drop = fix \r n -> use chunks >>= \case
+dropFromBuffer DropOperation{ drop } = fix \r n -> use chunks >>= \case
     Empty -> return YouCanNotAdvance{ shortfall = n }
     x :<| xs -> case drop n x of
-        DroppedAll -> assign chunks xs $> AdvanceSuccess
-        DroppedPart{ dropRemainder } -> assign chunks (dropRemainder :<| xs) $> AdvanceSuccess
-        InsufficientToDrop{ dropShortfall } -> assign chunks xs *> r dropShortfall
+        DropAll -> assign chunks xs $> AdvanceSuccess
+        DropPart{ dropRemainder } -> assign chunks (dropRemainder :<| xs) $> AdvanceSuccess
+        DropInsufficient{ dropShortfall } -> assign chunks xs *> r dropShortfall
 
 
 -- | Cursor that just walks through a pure buffer, no streaming of additional input
 --
 bufferStateCursor :: forall xs x r s m. Monad m =>
-    (Positive Natural -> Nontrivial xs x -> Drop xs x)
+    DropOperation xs x
     -> Lens' s (Buffer xs x)  -- ^ The field of state in which the buffer is stored
     -> ReadWriteCursor xs x r s m
-bufferStateCursor drop bufferLens =
+bufferStateCursor dropOp bufferLens =
   ReadWriteCursor
     { Cursor.init = use bufferLens
     , Cursor.input = Cursor.Stream (zoom Cursor.ephemeralStateLens takeChunk)
-    , Cursor.commit = zoom (Cursor.committedStateLens % bufferLens) . dropFromBuffer drop
+    , Cursor.commit = zoom (Cursor.committedStateLens % bufferLens) . dropFromBuffer dropOp
     }
 
 -- | Like 'bufferStateCursor', but fetches new input from a stream context when the buffer is empty
 --
 loadingCursor :: forall s xs x m. Monad m =>
-     (Positive Natural -> Nontrivial xs x -> Drop xs x)
+     DropOperation xs x
      -> Lens' s (Buffer xs x) -- ^ The field of state in which the buffer is stored
      -> ReadWriteCursor xs x (Stream () s m xs x) s m
-loadingCursor drop bufferLens =
+loadingCursor dropOp bufferLens =
     ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
   where
     init :: RST r s m (Buffer xs x)
@@ -86,7 +85,7 @@ loadingCursor drop bufferLens =
     commit n = commitBuffered n >>= \case
         r@AdvanceSuccess -> return r
         YouCanNotAdvance n' -> commitFresh n'
-    commitBuffered n = zoom (Cursor.committedStateLens % bufferLens) (dropFromBuffer drop n)
+    commitBuffered n = zoom (Cursor.committedStateLens % bufferLens) (dropFromBuffer dropOp n)
     commitFresh n = bufferMore *> commitBuffered n
 
     bufferMore :: RST (Stream () s m xs x) (CursorState (Buffer xs x) s) m ()

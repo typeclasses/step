@@ -16,7 +16,7 @@ import Step.Cursor.StreamCompletion (StreamCompletion (..))
 
 import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
-import qualified Step.Nontrivial.TakeWhile as TakeWhile
+import Step.Nontrivial.Operations (UntrivializeOperation (UntrivializeOperation), While (..), WhileOperation (WhileOperation))
 
 import Step.RST
 
@@ -38,11 +38,11 @@ instance Contravariant (Stream r1 s m xs x) (Stream r2 s m xs x) r1 r2 where
 stream :: Monad m => m (Maybe (Nontrivial xs x)) -> Stream r s m xs x
 stream = Stream .  lift
 
-untrivialize :: Monad m => ListLike xs x => m (Maybe xs) -> Stream r s m xs x
-untrivialize xs = Stream $ lift $ fix \r ->
+untrivialize :: Monad m => UntrivializeOperation xs x -> m (Maybe xs) -> Stream r s m xs x
+untrivialize u xs = Stream $ lift $ fix \r ->
     xs >>= \case
         Nothing -> return Nothing
-        Just x -> case Nontrivial.refine x of { Just y -> return (Just y); Nothing -> r }
+        Just x -> case Nontrivial.untrivialize u x of { Just y -> return (Just y); Nothing -> r }
 
 mapMaybe :: Monad m => (Nontrivial xs x -> Maybe (Nontrivial ys y)) -> Stream r s m xs x -> Stream r s m ys y
 mapMaybe ok xs = Stream $ fix \r ->
@@ -59,18 +59,19 @@ record add xs = Stream do
     traverse_ add step
     return step
 
-while :: forall m xs x r s. Monad m => ListLike xs x =>
-    Predicate x
+while :: forall m xs x r s. Monad m =>
+    WhileOperation xs x
+    -> Predicate x
     -> Stream r s m xs x
     -> Stream r (StreamCompletion, s) m xs x
-while ok xs = Stream $ use _1 >>= \case
+while w ok xs = Stream $ use _1 >>= \case
     Done -> return Nothing
     MightBeMore -> zoom _2 (next xs) >>= \case
         Nothing -> assign _1 Done $> Nothing
-        Just x -> case Nontrivial.takeWhile ok x of
-            TakeWhile.All -> return (Just x)
-            TakeWhile.None -> assign _1 Done $> Nothing
-            TakeWhile.Prefix y -> assign _1 Done $> Just y
+        Just x -> case Nontrivial.while w ok x of
+            WhileAll -> return (Just x)
+            WhileNone -> assign _1 Done $> Nothing
+            WhilePrefix y -> assign _1 Done $> Just y
 
 list :: Monad m => Stream r [Nontrivial xs x] m xs x
 list = Stream $ get >>= \case
