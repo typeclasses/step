@@ -1,6 +1,6 @@
 {-# language FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
-module Step.GeneralCursors (Buffer, chunks, takeChunk, dropN, bufferStateCursor, loadingCursor, countingCursor) where
+module Step.GeneralCursors (Buffer, chunks, takeChunk, dropN, bufferStateCursor, loadingCursor, countingCursor, whileCursor) where
 
 import Step.Internal.Prelude
 
@@ -8,7 +8,7 @@ import Step.Nontrivial
 
 import qualified Step.Nontrivial as Nontrivial
 
-import Step.Cursor (Stream, AdvanceResult (..), ReadWriteCursor (ReadWriteCursor), CursorState)
+import Step.Cursor (Stream, AdvanceResult (..), ReadWriteCursor (ReadWriteCursor), CursorState, StreamCompletion (..))
 import qualified Step.Cursor as Cursor
 
 import Step.RST (RST (..))
@@ -109,3 +109,34 @@ countingCursor positionLens
   where
     count :: Positive Natural -> RST r (CursorState s' s) m ()
     count n = modifying (Cursor.committedStateLens % positionLens) (CursorPosition.strictlyIncrease n)
+
+
+-- | Limits a cursor to only input matching the predicate
+--
+whileCursor :: Monad m => Predicate x -> ReadWriteCursor xs x r s m -> ReadWriteCursor xs x r s m
+whileCursor ok ReadWriteCursor{ Cursor.init = init' :: RST r s m s', Cursor.input = input', Cursor.commit = commit' } =
+    ReadWriteCursor{ Cursor.init, Cursor.input, Cursor.commit }
+  where
+    init = return While{ completion = MightBeMore, uncommitted = 0, buffer = [] }
+
+    input :: Stream r (CursorState (While xs x) s) m xs x
+    input = _
+
+    commit :: Positive Natural -> RST r (CursorState (While xs x) s) m AdvanceResult
+    commit n = _
+
+data While xs x =
+  While
+    { completion :: StreamCompletion -- ^ Should we read any more from upstream
+    , uncommitted :: Integer -- ^ How many characters have been sent downstream but not committed
+    , buffer :: Buffer xs x -- ^ Input that has been read from upstream but not seen downstream
+    }
+
+whileCompletionLens :: Lens (While text char) (While text char) StreamCompletion StreamCompletion
+whileCompletionLens = lens completion \x y -> x{ completion = y }
+
+whileUncommittedLens :: Lens (While text char) (While text char) Integer Integer
+whileUncommittedLens = lens uncommitted \x y -> x{ uncommitted = y }
+
+whileBufferLens :: Lens (While text1 char1) (While text2 char2) (Buffer text1 char1) (Buffer text2 char2)
+whileBufferLens = lens buffer \x y -> x{ buffer = y }

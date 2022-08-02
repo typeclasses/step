@@ -136,8 +136,6 @@ library
         Step.Document.Location
         Step.Document.Memory
 
-        Step.While
-
     reexported-modules:
         Step.ActionTypes
       , Step.ActionTypes.Types
