@@ -145,7 +145,6 @@ library step-cursor
         Step.Cursor
     other-modules:
         Step.Cursor.AdvanceResult
-        Step.Cursor.Class
         Step.Cursor.InputChunking
         Step.Cursor.Stream
         Step.Cursor.StreamCompletion
