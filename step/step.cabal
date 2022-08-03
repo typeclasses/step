@@ -204,7 +204,6 @@ library step-internal
         Step.Internal.LocOptics
         Step.Internal.Positive
         Step.Internal.Times
-        Step.Internal.TupleIso
 
 library step-rst
     import: base
