@@ -143,12 +143,13 @@ library step-cursor
     build-depends: step-internal, step-nontrivial, step-rst
     exposed-modules:
         Step.Cursor
+        Step.Cursor.CursorRW
+        Step.Cursor.RunCursorRW
     other-modules:
         Step.Cursor.AdvanceResult
         Step.Cursor.InputChunking
         Step.Cursor.Stream
         Step.Cursor.StreamCompletion
-        Step.Cursor.CursorRW
 
 library step-nontrivial
     import: base

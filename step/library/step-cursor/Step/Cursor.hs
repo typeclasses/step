@@ -2,8 +2,8 @@
 
 module Step.Cursor
   (
-    {- * Cursor -} CursorRW (..), AdvanceResult (..), pattern Run, inp, com, runn,
-        rebaseCursor, lookAhead_,
+    {- * Cursor -} CursorRW, AdvanceResult (..), RunCursorRW, runCursorRW,
+        rebaseCursor,
     {- * Stream -}
         Stream (..), stream, streamRST, StreamCompletion (..),
         record,
@@ -17,3 +17,4 @@ import Step.Cursor.Stream
 import Step.Cursor.StreamCompletion
 import Step.Cursor.CursorRW
 import Step.Cursor.InputChunking
+import Step.Cursor.RunCursorRW

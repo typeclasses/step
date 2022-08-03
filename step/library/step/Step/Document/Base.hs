@@ -18,7 +18,7 @@ import Step.Internal.Prelude
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
 
-import Step.Cursor (Stream, CursorRW (..), streamRST)
+import Step.Cursor (Stream, CursorRW, streamRST)
 import qualified Step.Cursor as Cursor
 
 import Step.RST

@@ -14,8 +14,9 @@ import Step.Internal.Prelude
 import Step.Nontrivial (Nontrivial, DropOperation (..), GeneralSpanOperation (..), Span (..))
 import qualified Step.Nontrivial as Nontrivial
 
-import Step.Cursor (Stream, AdvanceResult (..), CursorRW (CursorRW), StreamCompletion (..))
+import Step.Cursor (Stream, AdvanceResult (..), StreamCompletion (..))
 import qualified Step.Cursor as Cursor
+import Step.Cursor.CursorRW (CursorRW (..))
 
 import Step.RST (RST (..))
 
@@ -39,10 +40,10 @@ bufferStateCursor :: forall xs x r s m. Monad m =>
     -> CursorRW xs x r s m
 bufferStateCursor dropOp bufferLens =
   CursorRW
-    { Cursor.init = get <&> \s -> (view bufferLens s, s)
-    , Cursor.visibleStateLens = _2
-    , Cursor.input = Cursor.Stream (zoom _1 takeChunk)
-    , Cursor.commit = zoom (_2 % bufferLens) . dropFromBuffer dropOp
+    { init = get <&> \s -> (view bufferLens s, s)
+    , visibleStateLens = _2
+    , input = Cursor.Stream (zoom _1 takeChunk)
+    , commit = zoom (_2 % bufferLens) . dropFromBuffer dropOp
     }
 
 -- | Like 'bufferStateCursor', but fetches new input from a stream context when the buffer is empty
@@ -52,7 +53,7 @@ loadingCursor :: forall s xs x m. Monad m =>
      -> Lens' s (Buffer xs x) -- ^ The field of state in which the buffer is stored
      -> CursorRW xs x (Stream () s m xs x) s m
 loadingCursor dropOp bufferLens =
-    CursorRW{ Cursor.init, Cursor.input, Cursor.commit, Cursor.visibleStateLens }
+    CursorRW{ init, input, commit, visibleStateLens }
   where
     init :: RST r s m (Buffer xs x, s)
     init = get <&> \s -> (view bufferLens s, s)
@@ -91,8 +92,8 @@ countingCursor :: forall s xs x r m. Monad m =>
     -> CursorRW xs x r s m
     -> CursorRW xs x r s m
 countingCursor positionLens
-    CursorRW{ Cursor.init = init' :: RST r s m s', Cursor.input = input', Cursor.commit = commit', Cursor.visibleStateLens = visibleStateLens' } =
-    CursorRW{ Cursor.init = init', Cursor.input = input', Cursor.visibleStateLens = visibleStateLens', Cursor.commit = \n -> count n *> commit' n }
+    CursorRW{ init = init' :: RST r s m s', input = input', commit = commit', visibleStateLens = visibleStateLens' } =
+    CursorRW{ init = init', input = input', visibleStateLens = visibleStateLens', commit = \n -> count n *> commit' n }
   where
     count :: Positive Natural -> RST r s' m ()
     count n = modifying (visibleStateLens' % positionLens) (appEndo $ CursorPosition.strictlyIncrease n)
@@ -102,8 +103,8 @@ countingCursor positionLens
 whileCursor :: forall r s xs x m. Monad m =>
     GeneralSpanOperation xs x -> CursorRW xs x r s m -> CursorRW xs x r s m
 whileCursor GeneralSpanOperation{ generalSpan }
-    CursorRW{ Cursor.init = init' :: RST r s m s', Cursor.input = input', Cursor.commit = commit', Cursor.visibleStateLens = visibleStateLens' } =
-    CursorRW{ Cursor.init, Cursor.input, Cursor.commit, Cursor.visibleStateLens }
+    CursorRW{ init = init' :: RST r s m s', input = input', commit = commit', visibleStateLens = visibleStateLens' } =
+    CursorRW{ init, input, commit, visibleStateLens }
   where
     init :: RST r s m (While xs x, s')
     init = (,) While{ whileCompletion = MightBeMore, whileUncommitted = 0, whileBuffer = [] } <$> init'

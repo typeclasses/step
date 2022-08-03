@@ -1,11 +1,9 @@
-{-# language FlexibleInstances, FunctionalDependencies, GADTs, ViewPatterns, PatternSynonyms #-}
+{-# language FlexibleInstances, FunctionalDependencies, GADTs #-}
 
 module Step.Cursor.CursorRW
   (
     CursorRW (..),
     rebaseCursor,
-    lookAhead_,
-    pattern Run, inp, com, runn,
   )
   where
 
@@ -43,38 +41,3 @@ instance Contravariant (CursorRW xs x r s m) (CursorRW xs x r' s m) r r' where
         , input = contramap f input
         , commit = contramap f . commit
         }
-
-pattern Run :: Monad m =>
-  Stream r s' m xs x
-  -> (Positive Natural -> RST r s' m AdvanceResult)
-  -> (forall a. RST r s' m a -> RST r s m a)
-  -> CursorRW xs x r s m
-pattern Run{ inp, com, runn } <- (runCursor -> RunReadWriteCursor{ input' = inp, commit' = com, run = runn })
-
-data RunReadWriteCursor xs x r s m =
-    forall s'. RunReadWriteCursor
-      { input' :: Stream r s' m xs x
-      , commit' :: Positive Natural -> RST r s' m AdvanceResult
-      , run :: forall a. RST r s' m a -> RST r s m a
-      }
-
--- | Looks at some input and immediately discards it
---
--- For a buffering cursor, this ensures that there is something buffered.
---
-lookAhead_ :: Monad m => CursorRW xs x r s m -> RST r s m ()
-lookAhead_ (runCursor -> RunReadWriteCursor{ input', run }) =
-    run (void (Stream.next input'))
-
-runCursor :: Monad m => CursorRW xs x r s m -> RunReadWriteCursor xs x r s m
-runCursor CursorRW{ init, visibleStateLens, input, commit } =
-  RunReadWriteCursor
-    { input' = input
-    , commit' = commit
-    , run = \a -> do
-        r <- ask
-        s <- init
-        (x, s') <- lift (runRST a r s)
-        put (view visibleStateLens s')
-        return x
-    }
