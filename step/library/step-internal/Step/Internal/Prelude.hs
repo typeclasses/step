@@ -2,7 +2,6 @@
 
 module Step.Internal.Prelude (module X) where
 
-import Step.Internal.CombineState as X
 import Step.Internal.Contravariant as X
 import Step.Internal.Dependencies as X
 import Step.Internal.LocOptics as X

@@ -199,7 +199,6 @@ library step-internal
     exposed-modules:
         Step.Internal.Prelude
     other-modules:
-        Step.Internal.CombineState
         Step.Internal.Contravariant
         Step.Internal.Dependencies
         Step.Internal.LocOptics
