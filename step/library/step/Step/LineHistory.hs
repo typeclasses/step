@@ -134,19 +134,20 @@ startNewLine = do
     l <- use lineTrackerLens
     let l' = l + 1
     cp <- use cursorPositionLens
-    modifying lineStartPositionLens (Map.insert cp (fromIntegral (Loc.toNat l')))
+    modifying lineStartPositionLens $
+        Map.insert cp $ fromIntegral $ Loc.toNat l'
     assign lineTrackerLens l'
 
 recordCR :: Monad m => RST r LineHistory m ()
 recordCR = do
     acr <- use afterCRLens
     when acr startNewLine
-    endo cursorPositionLens (CursorPosition.increase 1)
+    modifying cursorPositionLens $ appEndo $ CursorPosition.increase 1
     assign afterCRLens True
 
 recordLF :: Monad m => RST r LineHistory m ()
 recordLF = do
-    endo cursorPositionLens (CursorPosition.increase 1)
+    modifying cursorPositionLens $ appEndo $ CursorPosition.increase 1
     startNewLine
     assign afterCRLens False
 
@@ -154,5 +155,6 @@ recordOther :: Monad m => Nontrivial xs x -> RST r LineHistory m ()
 recordOther x = do
     acr <- use afterCRLens
     when acr startNewLine
-    endo cursorPositionLens (CursorPosition.strictlyIncrease (Nontrivial.length x))
+    modifying cursorPositionLens $ appEndo $
+        CursorPosition.strictlyIncrease $ Nontrivial.length x
     assign afterCRLens False

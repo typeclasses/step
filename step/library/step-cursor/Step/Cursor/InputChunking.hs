@@ -31,7 +31,10 @@ genChunks' x =
     then Gen.integral (Range.linear 0 4) <&> \n -> ListLike.replicate n ListLike.empty
     else do
         numberOfChunks <- Gen.integral (Range.linear 1 (4 + ListLike.length x))
-        ListLike.toList <$> execStateT (replicateM (numberOfChunks - 1) (modifyM fragment)) (ListLike.singleton x)
+        ListLike.toList <$>
+            execStateT
+                (replicateM (numberOfChunks - 1) (get >>= (lift . fragment) >>= put))
+                (ListLike.singleton x)
 
 -- | From a list of chunks, pick one and divide it in some way
 fragment :: MonadGen m => ListLike text char => Seq text -> m (Seq text)
