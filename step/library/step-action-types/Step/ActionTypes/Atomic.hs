@@ -6,7 +6,7 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Types
 
-import Step.ActionTypes.Constructors (Any (..), Sure (..))
+import Step.ActionTypes.Constructors
 
 import qualified Step.ActionTypes.Coerce as Coerce
 
@@ -27,7 +27,10 @@ instance Atomic AtomicMove Sure
 
 instance Atomic Query SureQuery
   where
-    try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
+    try = tryQuery
 
 tryAnySure :: Functor m => Any xs x r s m a -> Sure xs x r s m (Maybe a)
 tryAnySure (Any p) = Sure \c -> p c <&> \case Left _ -> Nothing; Right x -> Just x
+
+tryQuery :: Functor m => Query xs x r s m a -> SureQuery xs x r s m (Maybe a)
+tryQuery (Query p) = SureQuery \c -> p c <&> \case Left _ -> Nothing; Right x -> Just x

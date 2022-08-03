@@ -183,8 +183,6 @@ library step-action-types
         Step.ActionTypes.Returnable
         Step.ActionTypes.Contravariant
         Step.ActionTypes.Coerce
-        Step.ActionTypes.CoerceAny
-        Step.ActionTypes.CoercedJoin
         Step.ActionTypes.Constructors
         Step.ActionTypes.Functorial
         Step.ActionTypes.Join

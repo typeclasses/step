@@ -1,6 +1,8 @@
 {-# language Unsafe #-}
 
 -- | The only properties guaranteed by construction are that /Sure/ always succeeds and /Fail/ never does. The rest of the properties are not enforced by constructors. This module is, therefore, unsafe.
+--
+-- todo: this comment is not correct anymore
 
 module Step.ActionTypes.Unsafe
   (
@@ -13,13 +15,7 @@ module Step.ActionTypes.Unsafe
     Query (..),
     Sure (..),
     SureQuery (..),
-
-    -- * Coercion
-    CoerceAny (anyIsoUnsafe),
-    toAny, fromAnyUnsafe,
-
   )
   where
 
-import Step.ActionTypes.CoerceAny
 import Step.ActionTypes.Constructors

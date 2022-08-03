@@ -114,7 +114,7 @@ parse (Action.cast -> Any p) =
     c :: Cursor xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
     c = documentCursor LL.dropOperation LL.spanOperation
   in
-    view rstState $ p (Cursor.cursorRW c) <&> \case
+    view rstState $ p c <&> \case
           Right x -> Right x
           Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
