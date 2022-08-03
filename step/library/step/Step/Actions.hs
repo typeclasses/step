@@ -24,9 +24,7 @@ import qualified Text as T
 import qualified Step.Nontrivial as Nontrivial
 import Step.Nontrivial (Nontrivial)
 
-import Step.Cursor (runCursorRW)
-import qualified Step.Cursor as Cursor
-import Step.Cursor.RunCursorRW (RunCursorRW (..))
+import Step.Cursor
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
@@ -38,26 +36,28 @@ import qualified Step.LineHistory as LineHistory
 import Step.ContextStack (ContextStack (..), contextStackSeq)
 
 takeCharMaybe :: Monad m => Sure xs x r s m (Maybe x)
-takeCharMaybe = Action.Unsafe.Sure \(runCursorRW -> RunCursorRW{ input, commit, run }) ->
-    run $ Cursor.next input >>= \case
+takeCharMaybe =
+    Action.Unsafe.Sure
+    \(runCursorRW -> RunCursorRW{ inputRunRW, commitRunRW, runRW }) ->
+    runRW $ next inputRunRW >>= \case
         Nothing -> return Nothing
-        Just x -> commit (PositiveUnsafe 1) $> Just (Nontrivial.head x)
+        Just x -> commitRunRW (PositiveUnsafe 1) $> Just (Nontrivial.head x)
 
 peekCharMaybe :: Monad m => SureQuery xs x r s m (Maybe x)
-peekCharMaybe = Action.Unsafe.SureQuery \(runCursorRW -> RunCursorRW{ input, run }) -> run $
-    Cursor.next input <&> \case
+peekCharMaybe = Action.Unsafe.SureQuery \(runCursorRW -> RunCursorRW{ inputRunRW, runRW }) -> runRW $
+    next inputRunRW <&> \case
         Nothing -> Nothing
         Just x -> Just (Nontrivial.head x)
 
 satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s m a
-satisfyJust ok = Action.Unsafe.AtomicMove \(runCursorRW -> RunCursorRW{ input, commit, run }) -> run $
-    Cursor.next input >>= \case
-        Just (ok . Nontrivial.head -> Just x) -> commit (PositiveUnsafe 1) $> Right x
+satisfyJust ok = Action.Unsafe.AtomicMove \(runCursorRW -> RunCursorRW{ inputRunRW, commitRunRW, runRW }) -> runRW $
+    next inputRunRW >>= \case
+        Just (ok . Nontrivial.head -> Just x) -> commitRunRW (PositiveUnsafe 1) $> Right x
         _ -> ask <&> Left
 
 atEnd :: Monad m => SureQuery xs x r s m Bool
-atEnd = Action.Unsafe.SureQuery \(runCursorRW -> RunCursorRW{ input, run }) -> run $
-    Cursor.next input <&> isNothing
+atEnd = Action.Unsafe.SureQuery \(runCursorRW -> RunCursorRW{ inputRunRW, runRW }) ->
+    runRW $ next inputRunRW <&> isNothing
 
 cursorPosition :: Monad m => Lens' s CursorPosition -> SureQuery xs x r s m CursorPosition
 cursorPosition o = Action.Unsafe.SureQuery \_ -> use o
@@ -71,8 +71,8 @@ position lineHistoryLens cursorPositionLens = Action.Unsafe.SureQuery \c -> do
         Just (LineHistory.CursorAt x) -> return x
         Just LineHistory.CursorLocationNeedsMoreInput -> do
             case c of
-                (runCursorRW -> RunCursorRW{ input, run }) ->
-                    run (void (Cursor.next input))
+                (runCursorRW -> RunCursorRW{ inputRunRW, runRW }) ->
+                    runRW (void (next inputRunRW))
             lh' <- use lineHistoryLens
             case LineHistory.locateCursorInDocument cp lh' of
                 Nothing -> error $ "LineHistory problem: " <> show lh <> " does not contain " <> show cp
@@ -84,10 +84,12 @@ failure :: Monad m => Fail xs x r s m a
 failure = Action.Unsafe.Fail \_ -> ask
 
 some :: Monad m => AtomicMove xs x r s m (Nontrivial xs x)
-some = Action.Unsafe.AtomicMove \(runCursorRW -> RunCursorRW{ input, commit, run }) -> run $
-    Cursor.next input >>= \case
+some =
+    Action.Unsafe.AtomicMove
+    \(runCursorRW -> RunCursorRW{ inputRunRW, commitRunRW, runRW }) ->
+    runRW $ next inputRunRW >>= \case
         Nothing -> ask <&> Left
-        Just x -> commit (Nontrivial.length x) $> Right x
+        Just x -> commitRunRW (Nontrivial.length x) $> Right x
 
 contextualize :: Monad m => ContravariantAction act =>
     Lens' r ContextStack -> T.Text -> act xs x r s m a -> act xs x r s m a
