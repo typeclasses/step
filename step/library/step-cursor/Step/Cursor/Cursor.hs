@@ -8,6 +8,9 @@ module Step.Cursor.Cursor
     -- * The user interface for running cursors
     CursorRunR (..), cursorRunR,
     CursorRunRW (..), cursorRunRW,
+
+    -- * Conversion
+    readOnly,
   )
   where
 
@@ -101,4 +104,12 @@ cursorRunRW CursorRW{ initRW, visibleStateLensRW, inputRW, commitRW } =
         (x, s') <- lift (runRST a r s)
         put (view visibleStateLensRW s')
         return x
+    }
+
+readOnly :: CursorRW xs x r s m -> CursorR xs x r s m
+readOnly CursorRW{ initRW, visibleStateLensRW, inputRW } =
+  CursorR
+    { initR = initRW
+    , visibleStateLensR = visibleStateLensRW
+    , inputR = inputRW
     }
