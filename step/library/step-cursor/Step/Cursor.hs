@@ -13,8 +13,6 @@ module Step.Cursor
   )
   where
 
-import Step.Internal.Prelude
-
 import Step.Cursor.AdvanceResult
 import Step.Cursor.Stream
 import Step.Cursor.Class

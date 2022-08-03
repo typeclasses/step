@@ -10,9 +10,6 @@ import Step.Internal.Prelude
 
 import Step.Cursor.ReadWriteCursor (ReadWriteCursor (..))
 
-import Step.Cursor.Stream (Stream)
-import Step.Cursor.AdvanceResult (AdvanceResult)
-
 class Cursory m
   where
     type CursoryText m :: Type

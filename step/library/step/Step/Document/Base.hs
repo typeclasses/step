@@ -18,37 +18,26 @@ import Step.Internal.Prelude
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
 
-import Text (Text)
-
-import Step.Cursor (Cursory, curse, Stream, ReadWriteCursor (..), streamRST)
+import Step.Cursor (Stream, ReadWriteCursor (..), streamRST)
 import qualified Step.Cursor as Cursor
 
 import Step.RST
 
 import Step.Nontrivial (Nontrivial, DropOperation, SpanOperation)
-import qualified Step.Nontrivial as Nontrivial
 import qualified Step.Nontrivial.ListLike as LL
 
 import Char (Char)
 
-import Step.Internal.Prelude
-
 import Step.LineHistory (LineHistory)
 import qualified Step.LineHistory as Lines
 
-import Step.Cursor (ReadWriteCursor (..), Stream)
-import qualified Step.Cursor as Cursor
-
 import Step.Buffer
-import Step.CursorPosition (CursorPosition)
 
 import Step.GeneralCursors
 
 import Step.ContextStack
 
 import Step.ActionTypes
-
-import qualified Step.Buffer as Buffer
 
 ---
 

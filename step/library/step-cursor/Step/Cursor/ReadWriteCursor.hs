@@ -18,8 +18,6 @@ import Step.Cursor.AdvanceResult (AdvanceResult)
 
 import Step.RST
 
-import Optics
-
 data ReadWriteCursor xs x r s m =
   forall s'. ReadWriteCursor
     { init :: RST r s m s'

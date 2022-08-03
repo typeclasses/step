@@ -15,18 +15,16 @@ module Step.Actions
 
 import Step.Internal.Prelude
 
-import Step.ActionTypes (cast, ContravariantAction, contramapAction)
+import Step.ActionTypes (ContravariantAction, contramapAction)
 import Step.ActionTypes.Types
 import qualified Step.ActionTypes.Unsafe as Action.Unsafe
-
-import qualified Step.ActionTypes.Do as A
 
 import qualified Text as T
 
 import qualified Step.Nontrivial as Nontrivial
 import Step.Nontrivial (Nontrivial)
 
-import Step.Cursor (ReadWriteCursor (..), CursoryText, CursoryChar, curse, visibleStateLens, pattern Run, inp, com, runn)
+import Step.Cursor (pattern Run, inp, com, runn)
 import qualified Step.Cursor as Cursor
 
 import Positive.Unsafe (Positive (PositiveUnsafe))

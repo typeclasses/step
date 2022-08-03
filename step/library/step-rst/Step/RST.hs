@@ -24,8 +24,6 @@ import Step.Internal.Prelude
 
 import Optics
 
-import Functor.Compose
-
 -- | Action with a read-only @r@ context, a mutable @s@ context, a base monad @m@, and a returned @a@
 newtype RST r s m a = RST{ runRST :: r -> s -> m (a, s) }
 

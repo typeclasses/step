@@ -12,8 +12,6 @@ import qualified ListLike
 
 import qualified Positive
 import qualified Positive.Unsafe as Positive
-import qualified Positive.Math as Positive
-import qualified Signed
 
 untrivializeOperation :: ListLike xs x => UntrivializeOperation xs x
 untrivializeOperation = UntrivializeOperation \x -> do

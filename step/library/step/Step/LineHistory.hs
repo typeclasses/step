@@ -12,7 +12,7 @@ module Step.LineHistory
 
 import Step.Internal.Prelude
 
-import Loc (Line, Loc, loc)
+import Loc (Line, loc)
 
 import qualified Map
 

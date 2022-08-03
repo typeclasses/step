@@ -11,7 +11,7 @@ module Step.GeneralCursors
 
 import Step.Internal.Prelude
 
-import Step.Nontrivial (Nontrivial, Drop (..), DropOperation (..), GeneralSpanOperation (..), Span (..))
+import Step.Nontrivial (Nontrivial, DropOperation (..), GeneralSpanOperation (..), Span (..))
 import qualified Step.Nontrivial as Nontrivial
 
 import Step.Cursor (Stream, AdvanceResult (..), ReadWriteCursor (ReadWriteCursor), StreamCompletion (..))

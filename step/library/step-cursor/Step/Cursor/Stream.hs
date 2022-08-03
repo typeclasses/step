@@ -16,7 +16,7 @@ import Step.Cursor.StreamCompletion (StreamCompletion (..))
 
 import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
-import Step.Nontrivial.Operations (UntrivializeOperation (UntrivializeOperation), While (..), WhileOperation (WhileOperation))
+import Step.Nontrivial.Operations (UntrivializeOperation, While (..), WhileOperation)
 
 import Step.RST
 

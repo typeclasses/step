@@ -3,7 +3,6 @@ module Step.ContextStack where
 import Step.Internal.Prelude
 
 import Text (Text)
-import Seq (Seq)
 
 import Optics
 

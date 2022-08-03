@@ -6,11 +6,6 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 
-import Step.Cursor (ReadWriteCursor (..))
-import Step.RST (RST (..))
-
-import Optics (_Left)
-
 class ContravariantAction (act :: Action) where
     contramapAction :: Monad m => (r -> r) -> act xs x r s m a -> act xs x r s m a
 

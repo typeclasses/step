@@ -21,7 +21,6 @@ import Step.Nontrivial.Type
 import qualified ListLike
 
 import qualified Positive
-import qualified Positive.Unsafe as Positive
 import qualified Positive.Math as Positive
 import qualified Signed
 

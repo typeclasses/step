@@ -18,7 +18,6 @@ import qualified ListLike
 import Step.Nontrivial (Nontrivial)
 import Step.Nontrivial.ListLike
 import Step.Nontrivial.Operations
-import qualified Step.Nontrivial as Nontrivial
 
 import qualified Maybe
 

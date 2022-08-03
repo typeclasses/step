@@ -20,8 +20,6 @@ import qualified Step.Nontrivial as Nontrivial
 
 import qualified Step.Document as Doc
 
-import Step.ActionTypes
-
 import qualified ListLike
 
 type Parser s m (act :: Action) a =
