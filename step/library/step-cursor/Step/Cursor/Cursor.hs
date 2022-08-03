@@ -8,8 +8,8 @@ module Step.Cursor.Cursor
     rebaseCursorR, rebaseCursorRW,
 
     -- * The user interface for running cursors
-    RunCursorR (..), runCursorR,
-    RunCursorRW (..), runCursorRW,
+    CursorRunR (..), cursorRunR,
+    CursorRunRW (..), cursorRunRW,
   )
   where
 
@@ -71,15 +71,15 @@ instance Contravariant (CursorRW xs x r s m) (CursorRW xs x r' s m) r r' where
         , commitRW = contramap f . commitRW
         }
 
-data RunCursorR xs x r s m =
-    forall s'. RunCursorR
+data CursorRunR xs x r s m =
+    forall s'. CursorRunR
       { inputRunR :: Stream r s' m xs x
       , runR :: forall a. RST r s' m a -> RST r s m a
       }
 
-runCursorR :: Monad m => CursorR xs x r s m -> RunCursorR xs x r s m
-runCursorR CursorR{ initR, visibleStateLensR, inputR } =
-  RunCursorR
+cursorRunR :: Monad m => CursorR xs x r s m -> CursorRunR xs x r s m
+cursorRunR CursorR{ initR, visibleStateLensR, inputR } =
+  CursorRunR
     { inputRunR = inputR
     , runR = \a -> do
         r <- ask
@@ -89,16 +89,16 @@ runCursorR CursorR{ initR, visibleStateLensR, inputR } =
         return x
     }
 
-data RunCursorRW xs x r s m =
-    forall s'. RunCursorRW
+data CursorRunRW xs x r s m =
+    forall s'. CursorRunRW
       { inputRunRW :: Stream r s' m xs x
       , commitRunRW :: Positive Natural -> RST r s' m AdvanceResult
       , runRW :: forall a. RST r s' m a -> RST r s m a
       }
 
-runCursorRW :: Monad m => CursorRW xs x r s m -> RunCursorRW xs x r s m
-runCursorRW CursorRW{ initRW, visibleStateLensRW, inputRW, commitRW } =
-  RunCursorRW
+cursorRunRW :: Monad m => CursorRW xs x r s m -> CursorRunRW xs x r s m
+cursorRunRW CursorRW{ initRW, visibleStateLensRW, inputRW, commitRW } =
+  CursorRunRW
     { inputRunRW = inputRW
     , commitRunRW = commitRW
     , runRW = \a -> do
