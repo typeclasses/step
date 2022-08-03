@@ -8,6 +8,7 @@ module Step.Cursor.Cursor
     rebaseCursorR, rebaseCursorRW,
 
     -- * The user interface for running cursors
+    RunCursorR (..), runCursorR,
     RunCursorRW (..), runCursorRW,
   )
   where
@@ -69,6 +70,24 @@ instance Contravariant (CursorRW xs x r s m) (CursorRW xs x r' s m) r r' where
         , inputRW = contramap f inputRW
         , commitRW = contramap f . commitRW
         }
+
+data RunCursorR xs x r s m =
+    forall s'. RunCursorR
+      { inputRunR :: Stream r s' m xs x
+      , runR :: forall a. RST r s' m a -> RST r s m a
+      }
+
+runCursorR :: Monad m => CursorR xs x r s m -> RunCursorR xs x r s m
+runCursorR CursorR{ initR, visibleStateLensR, inputR } =
+  RunCursorR
+    { inputRunR = inputR
+    , runR = \a -> do
+        r <- ask
+        s <- initR
+        (x, s') <- lift (runRST a r s)
+        put (view visibleStateLensR s')
+        return x
+    }
 
 data RunCursorRW xs x r s m =
     forall s'. RunCursorRW
