@@ -13,9 +13,9 @@ In addition to what is in this module, much of the functionality of 'RST' reside
 -}
 module Step.RST
   (
-    RST (..), rst,
+    RST (..),
     {- * Running -} evalRST, execRST, runRST_,
-    {- * Isomorphisms -} rstState,
+    {- * Isomorphisms -} rst, rstState,
     {- * Modification -} stateRST, changeStateRST,
   )
   where
