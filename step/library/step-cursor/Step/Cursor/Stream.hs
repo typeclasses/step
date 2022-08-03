@@ -10,7 +10,7 @@ module Step.Cursor.Stream
   )
   where
 
-import Step.Internal.Prelude hiding (while)
+import Step.Internal.Prelude
 
 import Step.Cursor.StreamCompletion (StreamCompletion (..))
 
