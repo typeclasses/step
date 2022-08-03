@@ -4,12 +4,12 @@ module Step.Document
     module Step.Actions,
     module Step.ActionTypes,
     module Step.ActionTypes.Do,
-    module Step.Input.CursorPosition,
+    CursorPosition (..),
   )
   where
 
 import Step.Document.Base
-import Step.ActionTypes
 import Step.Actions
+import Step.ActionTypes
 import Step.ActionTypes.Do
-import Step.Input.CursorPosition
+import Step.GeneralCursors

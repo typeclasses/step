@@ -10,7 +10,7 @@ import Step.ActionTypes.Functorial
 
 import Step.ActionTypes.Returnable
 
-class (FunctorialAction act, Returnable act, forall m e. Monad m => Monad (act m e)) =>
+class (FunctorialAction act, Returnable act, forall xs x r s m. Monad m => Monad (act xs x r s m)) =>
     MonadicAction (act :: Action)
 
 instance MonadicAction Any

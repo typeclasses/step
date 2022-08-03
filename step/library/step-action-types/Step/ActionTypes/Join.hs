@@ -15,7 +15,7 @@ import Step.ActionTypes.Functorial
 class (FunctorialAction act1, FunctorialAction act2, FunctorialAction (act1 >> act2)) =>
     Join (act1 :: Action) (act2 :: Action)
   where
-    join :: Monad m => act1 m e (act2 m e a) -> (act1 >> act2) m e a
+    join :: Monad m => act1 xs x r s m (act2 xs x r s m a) -> (act1 >> act2) xs x r s m a
 
 instance Join Any        Any        where join = Coerced.join
 instance Join Any        Atom       where join = Coerced.join

@@ -7,10 +7,10 @@ import Step.Internal.Prelude
 import Step.ActionTypes.Constructors
 
 class Returnable (act :: Action) where
-    trivial :: Monad m => a -> act m e a
+    trivial :: Monad m => a -> act xs x r s m a
 
-instance Returnable Any where trivial = Any . return . Right
-instance Returnable Query where trivial = Query . return . Right
-instance Returnable Atom where trivial = Atom . return . Right
-instance Returnable Sure where trivial = Sure . return
-instance Returnable SureQuery where trivial = SureQuery . return
+instance Returnable Any where trivial x = Any \_ -> return (Just x)
+instance Returnable Query where trivial x = Query \_ -> return (Just x)
+instance Returnable Atom where trivial x = Atom \_ -> return (Just x)
+instance Returnable Sure where trivial x = Sure \_ -> return x
+instance Returnable SureQuery where trivial x = SureQuery \_ -> return x

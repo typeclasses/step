@@ -6,7 +6,7 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Types
 
-class (forall m e. Functor m => Functor (act m e)) => FunctorialAction (act :: Action)
+class (forall xs x r s m. Functor m => Functor (act xs x r s m)) => FunctorialAction (act :: Action)
 
 instance FunctorialAction Any
 instance FunctorialAction Atom

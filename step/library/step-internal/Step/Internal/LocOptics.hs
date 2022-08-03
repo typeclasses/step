@@ -1,9 +1,16 @@
-module Step.Document.Location where
+{-# language Trustworthy #-}
 
-import Step.Internal.Prelude
+module Step.Internal.LocOptics
+  (
+    lineLens,
+    columnLens,
+  )
+  where
 
 import Loc (Line, Column, Loc)
 import qualified Loc
+
+import Optics
 
 lineLens :: Lens' Loc Line
 lineLens = lens Loc.locLine (\x y -> Loc.loc y (Loc.locColumn x))

@@ -1,4 +1,4 @@
-module Step.Document.Lines
+module Step.LineHistory
   (
     {- * The type -} LineHistory (..),
     {- * Terminators -} Terminators (..), charTerminators,
@@ -7,7 +7,8 @@ module Step.Document.Lines
     {- * Finding location at a cursor -} CursorLocation (..), locateCursorInDocument,
     {- * Construction -} build,
     {- * Feeding input -} record, terminate,
-  ) where
+  )
+  where
 
 import Step.Internal.Prelude
 
@@ -15,8 +16,8 @@ import Loc (Line, Loc, loc)
 
 import qualified Map
 
-import Step.Input.CursorPosition (CursorPosition)
-import qualified Step.Input.CursorPosition as CursorPosition
+import Step.CursorPosition (CursorPosition (..))
+import qualified Step.CursorPosition as CursorPosition
 
 import qualified Char
 
@@ -56,13 +57,16 @@ lineTrackerLens = lens lineTracker \x y -> x{ lineTracker = y }
 afterCRLens :: Lens' LineHistory Bool
 afterCRLens = lens afterCR \x y -> x{ afterCR = y }
 
+cursorDiff :: CursorPosition -> CursorPosition -> Natural
+cursorDiff (CursorPosition a) (CursorPosition b) = if a >= b then a - b else b - a
+
 locateCursorInDocument :: CursorPosition -> LineHistory -> Maybe CursorLocation
 
 locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh && terminated lh =
     Just $ CursorAt $ loc l c
   where
     l = 1 + lineTracker lh
-    c = fromIntegral $ 1 + CursorPosition.absoluteDifference cp (cursorPosition lh)
+    c = fromIntegral $ 1 + cursorDiff cp (cursorPosition lh)
 
 locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh =
     Just CursorLocationNeedsMoreInput
@@ -76,14 +80,14 @@ locateCursorInDocument cp lh =
             Nothing -> Nothing
             Just (cp', l) -> Just (CursorAt (loc l c))
               where
-                c = fromIntegral (1 + CursorPosition.absoluteDifference cp cp')
+                c = fromIntegral (1 + cursorDiff cp cp')
 
 empty :: LineHistory
 empty =
   LineHistory
     { lineStartPosition = Map.singleton 0 1
     , lineTracker = 1
-    , cursorPosition = CursorPosition.origin
+    , cursorPosition = 0
     , afterCR = False
     , terminated = False
     }
@@ -137,12 +141,12 @@ recordCR :: Monad m => RST r LineHistory m ()
 recordCR = do
     acr <- use afterCRLens
     when acr startNewLine
-    modifying cursorPositionLens (CursorPosition.increase 1)
+    endo cursorPositionLens (CursorPosition.increase 1)
     assign afterCRLens True
 
 recordLF :: Monad m => RST r LineHistory m ()
 recordLF = do
-    modifying cursorPositionLens (CursorPosition.increase 1)
+    endo cursorPositionLens (CursorPosition.increase 1)
     startNewLine
     assign afterCRLens False
 
@@ -150,5 +154,5 @@ recordOther :: Monad m => Nontrivial xs x -> RST r LineHistory m ()
 recordOther x = do
     acr <- use afterCRLens
     when acr startNewLine
-    modifying cursorPositionLens (CursorPosition.strictlyIncrease (Nontrivial.length x))
+    endo cursorPositionLens (CursorPosition.strictlyIncrease (Nontrivial.length x))
     assign afterCRLens False

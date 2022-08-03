@@ -21,20 +21,20 @@ import Coerce (coerce)
 
 
 class Is (act1 :: Action) (act2 :: Action) where
-    cast' :: Monad m => act1 m e a -> act2 m e a
+    cast' :: Monad m => act1 xs x r s m a -> act2 xs x r s m a
 
 
-cast :: forall act2 act1 m e a. (Monad m, Is act1 act2) => act1 m e a -> act2 m e a
+cast :: forall act2 act1 xs x r s m a. (Monad m, Is act1 act2) => act1 xs x r s m a -> act2 xs x r s m a
 cast = cast' @act1 @act2
 
 
 -- Functions used for defining instances below
 
-sureToAny :: Functor m => Sure m e a -> Any m e a
-sureToAny (Sure p) = Any $ p <&> Right
+sureToAny :: Functor m => Sure xs x r s m a -> Any xs x r s m a
+sureToAny (Sure p) = Any \c -> p c <&> Just
 
-failureAny :: Monad m => Fail m e a -> Any m e a
-failureAny (Fail f) = Any $ return (Left f)
+failureAny :: Monad m => Fail xs x r s m a -> Any xs x r s m a
+failureAny (Fail f) = Any \c -> f c $> Nothing
 
 
 -- Identity

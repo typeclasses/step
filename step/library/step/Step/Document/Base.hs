@@ -1,21 +1,19 @@
 {-# language DataKinds, FlexibleContexts, FlexibleInstances, KindSignatures, StandaloneKindSignatures #-}
 {-# language DerivingVia, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, ViewPatterns #-}
 
 module Step.Document.Base
   (
     -- * Types
     -- DocumentParsing,
-    Config (..), Context (..), Error (..), documentCursor,
+    Config (..), Context (..), Error (..), documentCursor, cursorPositionLens, lineHistoryLens, DocumentMemory,
     -- * Running parsers
-    -- parse, parseOnly,
+    parse, parseOnly, parseSimple,
+    configContextLens, ctxConfigLens,
   )
   where
 
 import Step.Internal.Prelude
-
-import Step.Document.Memory (DocumentMemory)
-import qualified Step.Document.Memory as DocumentMemory
-import qualified Step.Document.Memory as DM
 
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
@@ -25,44 +23,65 @@ import Text (Text)
 import Step.Cursor (Cursory, curse, Stream, ReadWriteCursor (..), streamRST)
 import qualified Step.Cursor as Cursor
 
-import Step.Document.Locating (Locating (..))
-
-import Step.Configuration (HasContextStack, contextStackLens, Configure, configure)
-import qualified Step.Configuration as Config
-
-import Step.Failure (Fallible)
-import qualified Step.Failure as F
-
-import Step.GeneralCursors
-
-import Step.Input.CursorPosition (CursorPosition)
-
-import Step.Document.Lines (LineHistory)
-import qualified Step.Document.Lines as Lines
-
 import Step.RST
-
-import Optics
 
 import Step.Nontrivial (Nontrivial, DropOperation, SpanOperation)
 import qualified Step.Nontrivial as Nontrivial
+import qualified Step.Nontrivial.ListLike as LL
 
 import Char (Char)
 
+import Step.Internal.Prelude
+
+import Step.LineHistory (LineHistory)
+import qualified Step.LineHistory as Lines
+
+import Step.Cursor (ReadWriteCursor (..), Stream)
+import qualified Step.Cursor as Cursor
+
+import Step.Buffer
+import Step.CursorPosition (CursorPosition)
+
+import Step.GeneralCursors
+
+import Step.ContextStack
+
+import Step.ActionTypes
+
+import qualified Step.Buffer as Buffer
+
 ---
 
-data Config x = Config{ configContext :: [Text], configLineTerminators :: Lines.Terminators x }
+data DocumentMemory xs x s =
+  DocumentMemory
+    { streamState :: s
+    , buffer :: Buffer xs x
+    , lineHistory :: LineHistory
+    , cursorPosition :: CursorPosition
+    }
+
+lineHistoryLens = lens lineHistory \x y -> x{ lineHistory = y }
+
+cursorPositionLens = lens cursorPosition \x y -> x{ cursorPosition = y }
+
+bufferLens = lens buffer \x y -> x{ buffer = y }
+
+streamStateLens = lens streamState \x y -> x{ streamState = y }
+
+---
+
+data Config x = Config{ configContext :: ContextStack, configLineTerminators :: Lines.Terminators x }
 
 instance Default (Config Char)
   where
-    def = Config{ configContext = [], configLineTerminators = Lines.charTerminators }
+    def = Config{ configContext = ContextStack Empty, configLineTerminators = Lines.charTerminators }
 
-instance HasContextStack (Config x) where
-    contextStackLens = lens configContext \x y -> x{ configContext = y }
+configContextLens :: Lens (Config x) (Config x) ContextStack ContextStack
+configContextLens = lens configContext \x y -> x{ configContext = y }
 
 ---
 
-data Error = Error{ errorContext :: [Text] }
+data Error = Error{ errorContext :: ContextStack }
     deriving stock (Eq, Show)
 
 ---
@@ -79,66 +98,47 @@ ctxStreamLens = lens ctxStream \x y -> x{ ctxStream = y }
 
 configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerminators = y }
 
----
-
--- newtype DocumentParsing xs x s m a =
---     DocumentParsing (RST (Context xs x s m) (DocumentMemory xs x) m a)
---     deriving newtype (Functor, Applicative, Monad)
-
--- instance (Monad m, ListLike xs x) => Cursory (DocumentParsing xs x m) where
---     type CursoryText (DocumentParsing xs x m) = xs
---     type CursoryChar (DocumentParsing xs x m) = x
---     type CursoryBase (DocumentParsing xs x m) = m
---     type CursoryParam (DocumentParsing xs x m) = Context xs x m
---     type CursoryInternalState (DocumentParsing xs x m) = DocumentMemory xs x DoubleBuffer
---     type CursoryState (DocumentParsing xs x m) = DocumentMemory xs x Buffer
---     curse = documentCursor
-
 documentCursor :: Monad m =>
     DropOperation xs x -> SpanOperation xs x
     -> ReadWriteCursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor dropOp spanOp =
-    loadingCursor dropOp DM.bufferLens
+    loadingCursor dropOp bufferLens
         & contramap (recordingStream spanOp)
-        & countingCursor DM.cursorPositionLens
+        & countingCursor cursorPositionLens
 
 recordingStream :: Monad m =>
     SpanOperation xs x -> Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
 recordingStream spanOp ctx =
-    Cursor.record (record spanOp ctx) $ over streamRST (zoom DM.streamStateLens) $ ctxStream ctx
+    Cursor.record (record spanOp ctx) $ over streamRST (zoom streamStateLens) $ ctxStream ctx
 
 record :: Monad m => SpanOperation xs x -> Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
-record spanOp ctx = contraconst ts . zoom DM.lineHistoryLens . (Lines.record spanOp)
+record spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanOp)
   where
     ts = configLineTerminators (ctxConfig ctx)
 
--- instance (ListLike text char, Monad m) => Locating (DocumentParsing text char m) where
---     position = DocumentParsing position
+parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
+    act xs x (Context xs x s m) (DocumentMemory xs x s) m a
+    -> Context xs x s m
+    -> StateT (DocumentMemory xs x s) m (Either Error a)
+parse (Action.cast -> Any p) =
+  let
+    c :: ReadWriteCursor xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
+    c = documentCursor LL.dropOperation LL.spanOperation
+  in
+    view rstState $ p c >>= \case
+          Just x -> return (Right x)
+          Nothing -> ask <&> \cont -> Left Error{ errorContext = cont & view (ctxConfigLens % configContextLens) }
 
--- instance (ListLike text char, Monad m) => Fallible (DocumentParsing text char m) where
---     type Error (DocumentParsing text char m) = Error
---     failure = DocumentParsing $ ReaderT \c -> return Error{ errorContext = configContext c }
+parseOnly :: (Is act Any, Monad m, ListLike xs x) =>
+    act xs x (Context xs x s m) (DocumentMemory xs x s) m a
+    -> Context xs x s m
+    -> s
+    -> m (Either Error a)
+parseOnly p c s =
+    evalStateT (parse p c) DocumentMemory{ buffer = [], lineHistory = Lines.empty, cursorPosition = 0, streamState = s }
 
--- instance (ListLike text char, Monad m) => Configure (DocumentParsing text char m) where
---     type Config (DocumentParsing text char m) = Config
---     configure f (DocumentParsing a) = DocumentParsing (configure f a)
-
--- instance (ListLike text char, Monad m) => Counting (DocumentParsing text char m) where
---     cursorPosition = DocumentParsing Counting.cursorPosition
-
----
-
--- parse :: Monad m => Action.Is kind Any =>
---     Config -> kind (DocumentParsing xs x s m) Error a
---     -> StateT (DocumentMemory xs x) m (Either Error a)
--- parse config p =
---     _
-    -- p & Action.cast @Any & \(Any (DocumentParsing p')) -> runReaderT p' config >>= \case
-    --     Left (DocumentParsing errorMaker) -> Left <$> runReaderT errorMaker config
-    --     Right x -> return (Right x)
-
--- parseOnly :: forall m xs x s kind value. Action.Is kind Any => Monad m => Char x => ListLike xs x =>
---     Config -> kind (DocumentParsing xs x s m) Error value -> Stream () () m xs x -> m (Either Error value)
--- parseOnly config p xs =
---     _
-    -- evalStateT (parse config p) (DocumentMemory.fromStream xs)
+parseSimple :: forall xs a act. (Is act Any, ListLike xs Char) =>
+    act xs Char (Context xs Char [Nontrivial xs Char] Identity) (DocumentMemory xs Char [Nontrivial xs Char]) Identity a
+    -> [Nontrivial xs Char]
+    -> Either Error a
+parseSimple p i = runIdentity (parseOnly p (Context def Cursor.list) i)

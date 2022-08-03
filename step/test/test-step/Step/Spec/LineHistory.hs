@@ -19,12 +19,15 @@ import Loc (loc)
 
 import qualified Map
 
-import qualified Step.Document.Lines as Lines
-import Step.Document.Lines (CursorLocation (..), locateCursorInDocument, LineHistory (..))
+import qualified Step.LineHistory as Lines
+import Step.LineHistory (CursorLocation (..), locateCursorInDocument, LineHistory (..))
 
 import Step.Nontrivial (Nontrivial)
+import qualified Step.Nontrivial.ListLike as NT
 
 import Char (Char)
+
+import Step.RST
 
 type TextChunks = [Nontrivial Text Char]
 
@@ -36,7 +39,7 @@ spec = describe "Line history" do
         input :: TextChunks <- forAll (genChunks "Move\r\nTwo\rThree")
 
         t <- forAll Gen.bool
-        let lh = Lines.build input & (if t then execState Lines.terminate else id)
+        let lh = Lines.build NT.spanOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
 
         locateCursorInDocument  0 lh === Just (CursorAt (loc 1 1))
         locateCursorInDocument  1 lh === Just (CursorAt (loc 1 2))
@@ -61,7 +64,7 @@ spec = describe "Line history" do
         input :: TextChunks <- forAll (genChunks "ab\r")
 
         t <- forAll Gen.bool
-        let lh = Lines.build input & (if t then execState Lines.terminate else id)
+        let lh = Lines.build NT.spanOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
 
         locateCursorInDocument  0 lh === Just (CursorAt (loc 1 1))
         locateCursorInDocument  1 lh === Just (CursorAt (loc 1 2))
@@ -86,7 +89,7 @@ spec = describe "Line history" do
 
         input :: TextChunks <- forAll (genChunks "abc")
 
-        let lh = Lines.build input
+        let lh = Lines.build NT.spanOperation Lines.charTerminators input
 
         lh === LineHistory
                   { lineStartPosition = Map.fromList [(0, 1)]

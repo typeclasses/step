@@ -100,6 +100,7 @@ common base
       , transformers
           ( Control.Monad.Trans.Class as MonadTrans
           , Control.Monad.Trans.Except as Except
+          , Control.Monad.Trans.Maybe as MaybeT
           )
       , loc (Data.Loc as Loc, Data.Loc.SpanOrLoc as SpanOrLoc)
       , optics (Optics)
@@ -117,24 +118,16 @@ library
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
         Step.Actions
-
-        Step.Failure
-
-        Step.Configuration
-
-        Step.Competitors.Attoparsec.Text
-
+        Step.Buffer
+        Step.ContextStack
+        Step.CursorPosition
         Step.GeneralCursors
-
-        Step.Input.CursorPosition
-        Step.Input.Counter
+        Step.LineHistory
 
         Step.Document
         Step.Document.Base
-        Step.Document.Lines
-        Step.Document.Locating
-        Step.Document.Location
-        Step.Document.Memory
+
+        Step.Competitors.Attoparsec.Text
 
     reexported-modules:
         Step.ActionTypes
@@ -180,7 +173,7 @@ library step-nontrivial
 library step-action-types
     import: base
     hs-source-dirs: library/step-action-types
-    build-depends: step-internal
+    build-depends: step-internal, step-cursor, step-nontrivial, step-rst
     exposed-modules:
         Step.ActionTypes
         Step.ActionTypes.Do
@@ -189,7 +182,7 @@ library step-action-types
     other-modules:
         Step.ActionTypes.Atomic
         Step.ActionTypes.Returnable
-        Step.ActionTypes.ChangeBase
+        Step.ActionTypes.Contravariant
         Step.ActionTypes.Coerce
         Step.ActionTypes.CoerceAny
         Step.ActionTypes.CoercedJoin
@@ -207,9 +200,10 @@ library step-internal
     exposed-modules:
         Step.Internal.Prelude
     other-modules:
-        Step.Internal.Contravariant
         Step.Internal.CombineState
+        Step.Internal.Contravariant
         Step.Internal.Dependencies
+        Step.Internal.LocOptics
         Step.Internal.Modify
         Step.Internal.Pair
         Step.Internal.Positive
@@ -229,7 +223,7 @@ test-suite test-step
     type: exitcode-stdio-1.0
     hs-source-dirs: test/test-step
     main-is: Main.hs
-    build-depends: step, step-internal, step-action-types, hspec, hspec-hedgehog, text
+    build-depends: step, step-internal, step-action-types, step-nontrivial, step-rst, hspec, hspec-hedgehog, text
     mixins:
         step-internal (Step.Internal.Prelude)
       , text (Data.Text as Text)

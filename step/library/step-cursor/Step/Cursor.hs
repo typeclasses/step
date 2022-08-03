@@ -1,7 +1,9 @@
+{-# language PatternSynonyms #-}
+
 module Step.Cursor
   (
-    {- * Cursor -} ReadWriteCursor (..), AdvanceResult (..),
-        rebaseCursor,
+    {- * Cursor -} ReadWriteCursor (..), AdvanceResult (..), pattern Run, inp, com, runn,
+        rebaseCursor, lookAhead_,
     {- * Class -} Cursory (..),
     {- * Stream -}
         Stream (..), stream, streamRST, StreamCompletion (..),

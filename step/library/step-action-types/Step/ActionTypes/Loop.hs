@@ -53,14 +53,14 @@ instance Loop1 SureQuery SureQuery
 
 ---
 
-count0 :: Monad m => Loop0 act1 act2 => Natural -> act1 m e a -> act2 m e [a]
+count0 :: Monad m => Loop0 act1 act2 => Natural -> act1 xs x r s m a -> act2 xs x r s m [a]
 count0 = \n a -> go a n
   where
     go a = fix \r -> \case
         0 -> trivial []
         n -> cast ((:) P.<$> a P.<*> (r (n - 1)))
 
-count1 :: Monad m => Loop1 act1 act2 => Positive Natural -> act1 m e a -> act2 m e (NonEmpty a)
+count1 :: Monad m => Loop1 act1 act2 => Positive Natural -> act1 xs x r s m a -> act2 xs x r s m (NonEmpty a)
 count1 = \n a -> go a n
   where
     go a = fix \r -> \p ->
@@ -68,14 +68,14 @@ count1 = \n a -> go a n
             Nothing -> (:| []) <$> cast a
             Just p' -> cast (NonEmpty.cons P.<$> a P.<*> r p')
 
-repetition0 :: Monad m => AtomicMove m e a -> Sure m e [a]
+repetition0 :: Monad m => AtomicMove xs x r s m a -> Sure xs x r s m [a]
 repetition0 p = fix \r -> P.do
     xm <- try p
     case xm of
         Nothing -> return []
         Just x -> (x :) <$> r
 
-repetition1 :: Monad m => AtomicMove m e a -> AtomicMove m e (NonEmpty a)
+repetition1 :: Monad m => AtomicMove xs x r s m a -> AtomicMove xs x r s m (NonEmpty a)
 repetition1 p = P.do
     x <- p
     xs <- repetition0 p

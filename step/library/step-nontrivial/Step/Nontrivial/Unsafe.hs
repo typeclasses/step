@@ -15,3 +15,4 @@ data Nontrivial xs x =
     , head :: x
     , tail :: Maybe (Nontrivial xs x)
     }
+  deriving stock (Eq, Ord, Show)

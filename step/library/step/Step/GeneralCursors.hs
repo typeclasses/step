@@ -2,9 +2,10 @@
 
 module Step.GeneralCursors
   (
-    {- * Buffer concept and operations -} Buffer, chunks, takeChunk, dropFromBuffer,
     {- * Pure and loading cursors -} bufferStateCursor, loadingCursor,
-    {- * Cursor transformers -} countingCursor, whileCursor,
+    {- * Cursor transformers -}
+    {- ** Counting -} countingCursor, CursorPosition (..),
+    {- ** While -} whileCursor,
   )
   where
 
@@ -18,47 +19,16 @@ import qualified Step.Cursor as Cursor
 
 import Step.RST (RST (..))
 
-import Step.Input.CursorPosition (CursorPosition)
-import qualified Step.Input.CursorPosition as CursorPosition
-
 import Optics (_1, _2)
+
+import Step.CursorPosition (CursorPosition)
+import qualified Step.CursorPosition as CursorPosition
 
 import qualified Signed
 import qualified Positive
 import qualified Positive.Math as Positive
 
-
--- Buffer type
-
-newtype Buffer xs x = Buffer{ toSeq :: Seq (Nontrivial xs x) }
-    deriving newtype (Semigroup, Monoid)
-
-instance IsList (Buffer xs x) where
-    type Item (Buffer xs x) = Nontrivial xs x
-    fromList = Buffer . fromList
-    toList = toList . toSeq
-
-chunks :: Iso (Buffer xs x) (Buffer xs1 x1) (Seq (Nontrivial xs x)) (Seq (Nontrivial xs1 x1))
-chunks = iso toSeq Buffer
-
-
--- Buffer state operations
-
-takeChunk :: Monad m => RST r (Buffer xs x) m (Maybe (Nontrivial xs x))
-takeChunk = use chunks >>= \case
-    Empty -> return Nothing
-    y :<| ys -> assign chunks ys $> Just y
-
-dropFromBuffer :: Monad m =>
-    DropOperation xs x
-    -> Positive Natural
-    -> RST r (Buffer xs x) m AdvanceResult
-dropFromBuffer DropOperation{ drop } = fix \r n -> use chunks >>= \case
-    Empty -> return YouCanNotAdvance{ shortfall = n }
-    x :<| xs -> case drop n x of
-        DropAll -> assign chunks xs $> AdvanceSuccess
-        DropPart{ dropRemainder } -> assign chunks (dropRemainder :<| xs) $> AdvanceSuccess
-        DropInsufficient{ dropShortfall } -> assign chunks xs *> r dropShortfall
+import Step.Buffer
 
 
 -- | Cursor that just walks through a pure buffer, no streaming of additional input
@@ -125,8 +95,7 @@ countingCursor positionLens
     ReadWriteCursor{ Cursor.init = init', Cursor.input = input', Cursor.visibleStateLens = visibleStateLens', Cursor.commit = \n -> count n *> commit' n }
   where
     count :: Positive Natural -> RST r s' m ()
-    count n = modifying (visibleStateLens' % positionLens) (CursorPosition.strictlyIncrease n)
-
+    count n = modifying (visibleStateLens' % positionLens) (appEndo $ CursorPosition.strictlyIncrease n)
 
 -- | Limits a cursor to only input within a given span
 --

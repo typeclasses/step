@@ -18,12 +18,8 @@ module Step.ActionTypes.Unsafe
     CoerceAny (anyIsoUnsafe),
     toAny, fromAnyUnsafe,
 
-    -- * Change base
-    ChangeBase, changeBase,
-
   )
   where
 
 import Step.ActionTypes.CoerceAny
 import Step.ActionTypes.Constructors
-import Step.ActionTypes.ChangeBase

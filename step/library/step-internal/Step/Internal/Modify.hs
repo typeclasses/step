@@ -9,3 +9,6 @@ modifyM f = do
     x <- get
     x' <- lift (f x)
     put x'
+
+endo :: MonadState s m => Lens' s s' -> Endo s' -> m ()
+endo o e = modifying o (appEndo e)
