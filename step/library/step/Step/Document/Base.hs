@@ -18,7 +18,7 @@ import Step.Internal.Prelude
 import qualified Step.ActionTypes as Action
 import Step.ActionTypes.Unsafe (Any (Any))
 
-import Step.Cursor (Stream, CursorRW, streamRST)
+import Step.Cursor
 import qualified Step.Cursor as Cursor
 
 import Step.RST
@@ -89,7 +89,7 @@ configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerm
 
 documentCursor :: Monad m =>
     DropOperation xs x -> SpanOperation xs x
-    -> CursorRW xs x (Context xs x s m) (DocumentMemory xs x s) m
+    -> Cursor xs x (Context xs x s m) (DocumentMemory xs x s) m
 documentCursor dropOp spanOp =
     loadingCursor dropOp bufferLens
         & contramap (recordingStream spanOp)
@@ -98,10 +98,10 @@ documentCursor dropOp spanOp =
 recordingStream :: Monad m =>
     SpanOperation xs x -> Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
 recordingStream spanOp ctx =
-    Cursor.record (record spanOp ctx) $ over streamRST (zoom streamStateLens) $ ctxStream ctx
+    Cursor.record (record' spanOp ctx) $ over streamRST (zoom streamStateLens) $ ctxStream ctx
 
-record :: Monad m => SpanOperation xs x -> Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
-record spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanOp)
+record' :: Monad m => SpanOperation xs x -> Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
+record' spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanOp)
   where
     ts = configLineTerminators (ctxConfig ctx)
 
@@ -111,10 +111,10 @@ parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
     -> StateT (DocumentMemory xs x s) m (Either Error a)
 parse (Action.cast -> Any p) =
   let
-    c :: CursorRW xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
+    c :: Cursor xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
     c = documentCursor LL.dropOperation LL.spanOperation
   in
-    view rstState $ p c <&> \case
+    view rstState $ p (Cursor.cursorRW c) <&> \case
           Right x -> Right x
           Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 

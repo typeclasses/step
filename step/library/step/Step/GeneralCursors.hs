@@ -15,6 +15,7 @@ import Step.Nontrivial (Nontrivial, DropOperation (..), GeneralSpanOperation (..
 import qualified Step.Nontrivial as Nontrivial
 
 import Step.Cursor
+import qualified Step.Cursor as Cursor
 
 import Step.RST (RST (..))
 
@@ -35,155 +36,168 @@ import Step.Buffer
 bufferStateCursor :: forall xs x r s m. Monad m =>
     DropOperation xs x
     -> Lens' s (Buffer xs x)  -- ^ The field of state in which the buffer is stored
-    -> CursorRW xs x r s m
-bufferStateCursor dropOp bufferLens =
-  CursorRW
-    { initRW = get <&> \s -> (view bufferLens s, s)
-    , visibleStateLensRW = _2
-    , inputRW = Stream (zoom _1 takeChunk)
-    , commitRW = zoom (_2 % bufferLens) . dropFromBuffer dropOp
-    }
+    -> Cursor xs x r s m
+bufferStateCursor dropOp bufferLens = Cursor{ cursorRW, cursorR }
+  where
+    cursorRW = CursorRW
+      { initRW = get <&> \s -> (view bufferLens s, s)
+      , visibleStateLensRW = _2
+      , inputRW = Stream (zoom _1 takeChunk)
+      , commitRW = zoom (_2 % bufferLens) . dropFromBuffer dropOp
+      }
+    cursorR = _
 
 -- | Like 'bufferStateCursor', but fetches new input from a stream context when the buffer is empty
 --
 loadingCursor :: forall s xs x m. Monad m =>
      DropOperation xs x
      -> Lens' s (Buffer xs x) -- ^ The field of state in which the buffer is stored
-     -> CursorRW xs x (Stream () s m xs x) s m
-loadingCursor dropOp bufferLens =
-    CursorRW{ initRW, inputRW, commitRW, visibleStateLensRW }
+     -> Cursor xs x (Stream () s m xs x) s m
+loadingCursor dropOp bufferLens = Cursor{ cursorRW, cursorR }
   where
-    initRW :: RST r s m (Buffer xs x, s)
-    initRW = get <&> \s -> (view bufferLens s, s)
+    cursorR = _
 
-    visibleStateLensRW = _2
+    cursorRW = CursorRW{ initRW, inputRW, commitRW, visibleStateLensRW }
+      where
+        initRW :: RST r s m (Buffer xs x, s)
+        initRW = get <&> \s -> (view bufferLens s, s)
 
-    inputRW, bufferedInput, freshInput ::
-        Stream (Stream () s m xs x) (Buffer xs x, s) m xs x
-    inputRW = streamChoice bufferedInput freshInput
-    bufferedInput = Stream (zoom _1 takeChunk)
-    freshInput = Stream (bufferMore *> next bufferedInput)
+        visibleStateLensRW = _2
 
-    commitRW, commitBuffered, commitFresh :: Positive Natural
-        -> RST (Stream () s m xs x) (Buffer xs x, s) m AdvanceResult
-    commitRW n = commitBuffered n >>= \case
-        r@AdvanceSuccess -> return r
-        YouCanNotAdvance n' -> commitFresh n'
-    commitBuffered n = zoom (_2 % bufferLens) (dropFromBuffer dropOp n)
-    commitFresh n = bufferMore *> commitBuffered n
+        inputRW, bufferedInput, freshInput ::
+            Stream (Stream () s m xs x) (Buffer xs x, s) m xs x
+        inputRW = streamChoice bufferedInput freshInput
+        bufferedInput = Stream (zoom _1 takeChunk)
+        freshInput = Stream (bufferMore *> next bufferedInput)
 
-    bufferMore :: RST (Stream () s m xs x) (Buffer xs x, s) m ()
-    bufferMore = next' >>= \case
-        Nothing -> return ()
-        Just x -> do
-            modifying (_2 % bufferLens % chunks) (:|> x)
-            modifying (_1 % chunks) (:|> x)
+        commitRW, commitBuffered, commitFresh :: Positive Natural
+            -> RST (Stream () s m xs x) (Buffer xs x, s) m AdvanceResult
+        commitRW n = commitBuffered n >>= \case
+            r@AdvanceSuccess -> return r
+            YouCanNotAdvance n' -> commitFresh n'
+        commitBuffered n = zoom (_2 % bufferLens) (dropFromBuffer dropOp n)
+        commitFresh n = bufferMore *> commitBuffered n
 
-    next' :: RST (Stream () s m xs x) (Buffer xs x, s) m (Maybe (Nontrivial xs x))
-    next' = ask >>= \upstream -> zoom _2 $ contravoid (next upstream)
+        bufferMore :: RST (Stream () s m xs x) (Buffer xs x, s) m ()
+        bufferMore = next' >>= \case
+            Nothing -> return ()
+            Just x -> do
+                modifying (_2 % bufferLens % chunks) (:|> x)
+                modifying (_1 % chunks) (:|> x)
+
+        next' :: RST (Stream () s m xs x) (Buffer xs x, s) m (Maybe (Nontrivial xs x))
+        next' = ask >>= \upstream -> zoom _2 $ contravoid (next upstream)
 
 
 -- | Augments a cursor by keeping count of how many characters have been committed
 --
 countingCursor :: forall s xs x r m. Monad m =>
     Lens' s CursorPosition -- ^ The field of state in which the count is stored
-    -> CursorRW xs x r s m
-    -> CursorRW xs x r s m
-countingCursor positionLens
-    CursorRW
-      { initRW = init' :: RST r s m s'
-      , inputRW = input'
-      , commitRW = commit'
-      , visibleStateLensRW = visibleStateLens'
-      } =
-    CursorRW
-      { initRW = init'
-      , inputRW = input'
-      , visibleStateLensRW = visibleStateLens'
-      , commitRW = \n -> count n *> commit' n
-      }
+    -> Cursor xs x r s m
+    -> Cursor xs x r s m
+countingCursor positionLens c = Cursor{ cursorRW, cursorR }
   where
-    count :: Positive Natural -> RST r s' m ()
-    count n = modifying (visibleStateLens' % positionLens) $
-        appEndo $ CursorPosition.strictlyIncrease n
+    cursorR = _
+    cursorRW = case Cursor.cursorRW c of
+      CursorRW
+        { initRW = init' :: RST r s m s'
+        , inputRW = input'
+        , commitRW = commit'
+        , visibleStateLensRW = visibleStateLens'
+        } ->
+          CursorRW
+            { initRW = init'
+            , inputRW = input'
+            , visibleStateLensRW = visibleStateLens'
+            , commitRW = \n -> count n *> commit' n
+            }
+        where
+          count :: Positive Natural -> RST r s' m ()
+          count n = modifying (visibleStateLens' % positionLens) $
+              appEndo $ CursorPosition.strictlyIncrease n
 
 -- | Limits a cursor to only input within a given span
 --
 whileCursor :: forall r s xs x m. Monad m =>
-    GeneralSpanOperation xs x -> CursorRW xs x r s m -> CursorRW xs x r s m
-whileCursor GeneralSpanOperation{ generalSpan }
-    CursorRW
-      { initRW = init' :: RST r s m s'
-      , inputRW = input'
-      , commitRW = commit'
-      , visibleStateLensRW = visibleStateLens'
-      } =
-    CursorRW
-      { initRW
-      , inputRW
-      , commitRW
-      , visibleStateLensRW
-      }
+    GeneralSpanOperation xs x
+    -> Cursor xs x r s m
+    -> Cursor xs x r s m
+whileCursor GeneralSpanOperation{ generalSpan } c = Cursor{ cursorR, cursorRW }
   where
-    initRW :: RST r s m (While xs x, s')
-    initRW = (,) While{ whileCompletion = MightBeMore, whileUncommitted = 0, whileBuffer = [] } <$> init'
+    cursorR = _
+    cursorRW = case Cursor.cursorRW c of
+      CursorRW
+        { initRW = init' :: RST r s m s'
+        , inputRW = input'
+        , commitRW = commit'
+        , visibleStateLensRW = visibleStateLens'
+        } ->
+          CursorRW
+            { initRW
+            , inputRW
+            , commitRW
+            , visibleStateLensRW
+            }
+        where
+          initRW :: RST r s m (While xs x, s')
+          initRW = (,) While{ whileCompletion = MightBeMore, whileUncommitted = 0, whileBuffer = [] } <$> init'
 
-    visibleStateLensRW = _2 % visibleStateLens'
+          visibleStateLensRW = _2 % visibleStateLens'
 
-    inputRW, bufferedInput, freshInput :: Stream r (While xs x, s') m xs x
-    inputRW = streamChoice bufferedInput freshInput
-    bufferedInput = Stream do
-        xm <- zoom (_1 % whileBufferLens) takeChunk
-        traverse_ (\x -> modifying (_1 % whileUncommittedLens) (+ Nontrivial.lengthInt x)) xm
-        return xm
-    freshInput = Stream $ use (_1 % whileCompletionLens) >>= \case
-        Done -> return Nothing
-        MightBeMore -> zoom _2 (next input') >>= \case
-            Nothing -> assign (_1 % whileCompletionLens) Done $> Nothing
-            Just x -> case generalSpan x of
-                SpanAll -> do
-                    modifying (_1 % whileUncommittedLens) (+ Nontrivial.lengthInt x)
-                    return (Just x)
-                SpanNone -> do
-                    assign (_1 % whileCompletionLens) Done
-                    return Nothing
-                SpanPart{ spannedPart } -> do
-                    modifying (_1 % whileUncommittedLens) (+ Nontrivial.lengthInt spannedPart)
-                    assign (_1 % whileCompletionLens) Done
-                    return (Just spannedPart)
+          inputRW, bufferedInput, freshInput :: Stream r (While xs x, s') m xs x
+          inputRW = streamChoice bufferedInput freshInput
+          bufferedInput = Stream do
+              xm <- zoom (_1 % whileBufferLens) takeChunk
+              traverse_ (\x -> modifying (_1 % whileUncommittedLens) (+ Nontrivial.lengthInt x)) xm
+              return xm
+          freshInput = Stream $ use (_1 % whileCompletionLens) >>= \case
+              Done -> return Nothing
+              MightBeMore -> zoom _2 (next input') >>= \case
+                  Nothing -> assign (_1 % whileCompletionLens) Done $> Nothing
+                  Just x -> case generalSpan x of
+                      SpanAll -> do
+                          modifying (_1 % whileUncommittedLens) (+ Nontrivial.lengthInt x)
+                          return (Just x)
+                      SpanNone -> do
+                          assign (_1 % whileCompletionLens) Done
+                          return Nothing
+                      SpanPart{ spannedPart } -> do
+                          modifying (_1 % whileUncommittedLens) (+ Nontrivial.lengthInt spannedPart)
+                          assign (_1 % whileCompletionLens) Done
+                          return (Just spannedPart)
 
-    commitRW, commitBuffered, commitFresh :: Positive Natural -> RST r (While xs x, s') m AdvanceResult
-    commitRW n = commitBuffered n >>= \case
-        r@AdvanceSuccess -> return r
-        YouCanNotAdvance n' -> commitFresh n'
-    commitBuffered n = preuse (_1 % whileUncommittedLens % Positive.intPrism) >>= \case
-        Nothing -> commitFresh n
-        Just u -> case Positive.minus u n of
-            Signed.Zero -> do
-                assign (_1 % whileUncommittedLens) 0
-                zoom _2 (commit' n)
-            Signed.Plus p -> do
-                assign (_1 % whileUncommittedLens) (review Positive.intPrism p)
-                zoom _2 (commit' n)
-            Signed.Minus p -> do
-                assign (_1 % whileUncommittedLens) 0
-                zoom _2 (commit' u) >>= \case AdvanceSuccess -> return (); _ -> error "whileCursor commit"
-                commitRW p
-    commitFresh n = use (_1 % whileCompletionLens) >>= \case
-        Done -> return (YouCanNotAdvance n)
-        MightBeMore -> zoom _2 (next input') >>= \case
-            Nothing -> assign (_1 % whileCompletionLens) Done $> YouCanNotAdvance n
-            Just x -> case generalSpan x of
-                SpanAll -> do
-                    modifying (_1 % whileBufferLens % chunks) (:|> x)
-                    commitBuffered n
-                SpanNone -> do
-                    assign (_1 % whileCompletionLens) Done
-                    return (YouCanNotAdvance n)
-                SpanPart{ spannedPart } -> do
-                    modifying (_1 % whileBufferLens % chunks) (:|> spannedPart)
-                    assign (_1 % whileCompletionLens) Done
-                    commitBuffered n
+          commitRW, commitBuffered, commitFresh :: Positive Natural -> RST r (While xs x, s') m AdvanceResult
+          commitRW n = commitBuffered n >>= \case
+              r@AdvanceSuccess -> return r
+              YouCanNotAdvance n' -> commitFresh n'
+          commitBuffered n = preuse (_1 % whileUncommittedLens % Positive.intPrism) >>= \case
+              Nothing -> commitFresh n
+              Just u -> case Positive.minus u n of
+                  Signed.Zero -> do
+                      assign (_1 % whileUncommittedLens) 0
+                      zoom _2 (commit' n)
+                  Signed.Plus p -> do
+                      assign (_1 % whileUncommittedLens) (review Positive.intPrism p)
+                      zoom _2 (commit' n)
+                  Signed.Minus p -> do
+                      assign (_1 % whileUncommittedLens) 0
+                      zoom _2 (commit' u) >>= \case AdvanceSuccess -> return (); _ -> error "whileCursor commit"
+                      commitRW p
+          commitFresh n = use (_1 % whileCompletionLens) >>= \case
+              Done -> return (YouCanNotAdvance n)
+              MightBeMore -> zoom _2 (next input') >>= \case
+                  Nothing -> assign (_1 % whileCompletionLens) Done $> YouCanNotAdvance n
+                  Just x -> case generalSpan x of
+                      SpanAll -> do
+                          modifying (_1 % whileBufferLens % chunks) (:|> x)
+                          commitBuffered n
+                      SpanNone -> do
+                          assign (_1 % whileCompletionLens) Done
+                          return (YouCanNotAdvance n)
+                      SpanPart{ spannedPart } -> do
+                          modifying (_1 % whileBufferLens % chunks) (:|> spannedPart)
+                          assign (_1 % whileCompletionLens) Done
+                          commitBuffered n
 
 data While xs x =
   While
