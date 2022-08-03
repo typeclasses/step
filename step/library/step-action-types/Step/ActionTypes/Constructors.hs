@@ -9,7 +9,7 @@ module Step.ActionTypes.Constructors where
 import Step.Internal.Prelude
 
 import Step.RST (RST (..))
-import Step.Cursor (CursorRW (..))
+import Step.Cursor (CursorRW)
 
 -- | The kind of all the action types in "Step.Action.Types"
 type Action =
