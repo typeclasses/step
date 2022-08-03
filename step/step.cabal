@@ -204,7 +204,6 @@ library step-internal
         Step.Internal.Dependencies
         Step.Internal.LocOptics
         Step.Internal.Modify
-        Step.Internal.Pair
         Step.Internal.Positive
         Step.Internal.Times
         Step.Internal.TupleIso
