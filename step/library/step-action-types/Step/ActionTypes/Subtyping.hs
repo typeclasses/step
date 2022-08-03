@@ -31,10 +31,10 @@ cast = cast' @act1 @act2
 -- Functions used for defining instances below
 
 sureToAny :: Functor m => Sure xs x r s m a -> Any xs x r s m a
-sureToAny (Sure p) = Any \c -> p c <&> Just
+sureToAny (Sure p) = Any \c -> p c <&> Right
 
 failureAny :: Monad m => Fail xs x r s m a -> Any xs x r s m a
-failureAny (Fail f) = Any \c -> f c $> Nothing
+failureAny (Fail f) = Any \c -> f c *> (ask <&> Left)
 
 
 -- Identity

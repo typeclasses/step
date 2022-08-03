@@ -125,9 +125,9 @@ parse (Action.cast -> Any p) =
     c :: ReadWriteCursor xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
     c = documentCursor LL.dropOperation LL.spanOperation
   in
-    view rstState $ p c >>= \case
-          Just x -> return (Right x)
-          Nothing -> ask <&> \cont -> Left Error{ errorContext = cont & view (ctxConfigLens % configContextLens) }
+    view rstState $ p c <&> \case
+          Right x -> Right x
+          Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
 parseOnly :: (Is act Any, Monad m, ListLike xs x) =>
     act xs x (Context xs x s m) (DocumentMemory xs x s) m a

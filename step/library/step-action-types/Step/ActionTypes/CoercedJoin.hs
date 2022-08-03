@@ -40,8 +40,8 @@ instance CoercedJoin Any Sure Any
     join =
         Coerce.from @Any
         . (\(Any p) -> Any \c -> p c >>= \case
-              Nothing -> return Nothing
-              Just (Sure p') -> Just <$> p' c)
+              Left e -> return (Left e)
+              Right (Sure p') -> Right <$> p' c)
         . fmap (Coerce.to @Sure) . Coerce.to @Any
 
 instance CoercedJoin Sure Any Any
@@ -56,8 +56,8 @@ instance CoercedJoin Any Fail Any
     join =
         Coerce.from @Any
         . (\(Any p) -> Any \c -> p c >>= \case
-              Nothing -> return Nothing
-              Just (Fail p') -> p' c $> Nothing)
+              Left e -> return (Left e)
+              Right (Fail p') -> p' c <&> Left)
         . fmap (Coerce.to @Fail) . Coerce.to @Any
 
 instance CoercedJoin Any Fail Fail
@@ -65,15 +65,15 @@ instance CoercedJoin Any Fail Fail
     join =
         Coerce.from @Fail
         . (\(Any p) -> Fail \c -> p c >>= \case
-              Nothing -> return ()
-              Just (Fail p') -> p' c)
+              Left e -> return e
+              Right (Fail p') -> p' c)
         . fmap (Coerce.to @Fail) . Coerce.to @Any
 
 instance CoercedJoin Sure Fail Any
   where
     join =
         Coerce.from @Any
-        . (\(Sure p) -> Any \c -> p c >>= \(Fail p') -> p' c $> Nothing)
+        . (\(Sure p) -> Any \c -> p c >>= \(Fail p') -> p' c <&> Left)
         . fmap (Coerce.to @Fail) . Coerce.to @Sure
 
 instance CoercedJoin Sure Fail Fail

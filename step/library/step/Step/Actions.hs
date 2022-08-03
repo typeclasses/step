@@ -53,8 +53,8 @@ peekCharMaybe = Action.Unsafe.SureQuery \Run{ inp, com, runn } -> runn $
 satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s m a
 satisfyJust ok = Action.Unsafe.AtomicMove \Run{ inp, com, runn } -> runn $
     Cursor.next inp >>= \case
-        Just (ok . Nontrivial.head -> Just x) -> com (PositiveUnsafe 1) $> Just x
-        _ -> return Nothing
+        Just (ok . Nontrivial.head -> Just x) -> com (PositiveUnsafe 1) $> Right x
+        _ -> ask <&> Left
 
 atEnd :: Monad m => SureQuery xs x r s m Bool
 atEnd = Action.Unsafe.SureQuery \Run{ inp, runn } -> runn $
@@ -80,13 +80,13 @@ position lineHistoryLens cursorPositionLens = Action.Unsafe.SureQuery \c -> do
                     error "LineHistory problem: after buffering more, should not need more input to determine position"
 
 failure :: Monad m => Fail xs x r s m a
-failure = Action.Unsafe.Fail \_ -> return ()
+failure = Action.Unsafe.Fail \_ -> ask
 
 some :: Monad m => AtomicMove xs x r s m (Nontrivial xs x)
 some = Action.Unsafe.AtomicMove \Run{ inp, com, runn } -> runn $
     Cursor.next inp >>= \case
-        Nothing -> return Nothing
-        Just x -> com (Nontrivial.length x) $> Just x
+        Nothing -> ask <&> Left
+        Just x -> com (Nontrivial.length x) $> Right x
 
 contextualize :: Monad m => ContravariantAction act =>
     Lens' r ContextStack -> T.Text -> act xs x r s m a -> act xs x r s m a

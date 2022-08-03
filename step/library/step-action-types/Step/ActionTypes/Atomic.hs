@@ -30,4 +30,4 @@ instance Atomic Query SureQuery
     try = Coerce.from @Sure . tryAnySure . Coerce.to @Any
 
 tryAnySure :: Functor m => Any xs x r s m a -> Sure xs x r s m (Maybe a)
-tryAnySure (Any p) = Sure p
+tryAnySure (Any p) = Sure \c -> p c <&> \case Left _ -> Nothing; Right x -> Just x

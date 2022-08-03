@@ -32,19 +32,19 @@ type SureQuery  :: Action
 
 -- | No known properties
 
-newtype Any xs x r s m a = Any (ReadWriteCursor xs x r s m -> RST r s m (Maybe a))
-    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (MaybeT (RST r s m)))
+newtype Any xs x r s m a = Any (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
+    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (ExceptT r (RST r s m)))
 
 -- | Does not move the cursor
 
-newtype Query xs x r s m a = Query (ReadWriteCursor xs x r s m -> RST r s m (Maybe a))
-    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (MaybeT (RST r s m)))
+newtype Query xs x r s m a = Query (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
+    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (ExceptT r (RST r s m)))
 
 -- | Always moves the cursor
 --
 -- No 'Applicative' or 'Monad' instance here because 'pure' and 'return' don't move the cursor
 
-newtype Move xs x r s m a = Move (ReadWriteCursor xs x r s m -> RST r s m (Maybe a))
+newtype Move xs x r s m a = Move (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Fails noncommittally
@@ -52,7 +52,7 @@ newtype Move xs x r s m a = Move (ReadWriteCursor xs x r s m -> RST r s m (Maybe
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity
 
 newtype Atom xs x r s m a =
-    Atom (ReadWriteCursor xs x r s m -> RST r s m (Maybe a))
+    Atom (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Always moves the cursor, is atomic
@@ -60,7 +60,7 @@ newtype Atom xs x r s m a =
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity, and because 'pure' and 'return' don't move the cursor
 
 newtype AtomicMove xs x r s m a =
-    AtomicMove (ReadWriteCursor xs x r s m -> RST r s m (Maybe a))
+    AtomicMove (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Always succeeds
@@ -77,5 +77,5 @@ newtype SureQuery xs x r s m a =
 
 -- | Never succeeds and never moves the cursor
 
-newtype Fail xs x r s m a = Fail (ReadWriteCursor xs x r s m -> RST r s m ())
+newtype Fail xs x r s m a = Fail (ReadWriteCursor xs x r s m -> RST r s m r)
     deriving stock Functor

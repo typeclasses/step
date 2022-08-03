@@ -10,7 +10,7 @@ import Step.ActionTypes.Constructors
 
 import qualified Step.ActionTypes.Coerce as Action
 
-import qualified Maybe
+import qualified Either
 
 class CoerceAny (act :: Action) where
     anyIsoUnsafe :: (Monad m1, Monad m2) =>
@@ -31,8 +31,8 @@ instance CoerceAny AtomicMove where anyIsoUnsafe = Optics.coerced
 instance CoerceAny Sure where
   anyIsoUnsafe = iso f g
     where
-      f (Sure a) = Any \c -> a c <&> Just
-      g (Any a) = Sure \c -> a c <&> Maybe.fromJust (error "Any to Sure coerce failed")
+      f (Sure a) = Any \c -> a c <&> Right
+      g (Any a) = Sure \c -> a c <&> Either.fromRight (error "Any to Sure coerce failed")
 
 instance CoerceAny SureQuery where
   anyIsoUnsafe = re (Action.coerced @Sure @SureQuery) % anyIsoUnsafe
@@ -40,5 +40,5 @@ instance CoerceAny SureQuery where
 instance CoerceAny Fail where
   anyIsoUnsafe = iso f g
     where
-      f (Fail a) = Any \c -> a c $> Nothing
-      g (Any a) = Fail \c -> a c $> ()
+      f (Fail a) = Any \c -> a c *> (ask <&> Left)
+      g (Any a) = Fail \c -> a c *> ask
