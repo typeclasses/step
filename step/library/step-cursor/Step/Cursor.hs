@@ -2,7 +2,7 @@
 
 module Step.Cursor
   (
-    {- * Cursor -} ReadWriteCursor (..), AdvanceResult (..), pattern Run, inp, com, runn,
+    {- * Cursor -} CursorRW (..), AdvanceResult (..), pattern Run, inp, com, runn,
         rebaseCursor, lookAhead_,
     {- * Stream -}
         Stream (..), stream, streamRST, StreamCompletion (..),
@@ -15,5 +15,5 @@ module Step.Cursor
 import Step.Cursor.AdvanceResult
 import Step.Cursor.Stream
 import Step.Cursor.StreamCompletion
-import Step.Cursor.ReadWriteCursor
+import Step.Cursor.CursorRW
 import Step.Cursor.InputChunking

@@ -96,7 +96,7 @@ contextualize contextStackLens n = contramapAction (over (contextStackLens % con
 -- text = someOfNontrivialText A.>=> (maybe (return ()) (cast @Any . text) . Nontrivial.refine)
 --   where
 --     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
---         ReadWriteCursor{ init, input, commit } -> run $ Cursor.next input >>= \case
+--         CursorRW{ init, input, commit } -> run $ Cursor.next input >>= \case
 --             Nothing -> return (Left F.failure)
 --             Just y ->
 --                 if x `Nontrivial.isPrefixOf` y

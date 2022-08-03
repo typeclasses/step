@@ -1,8 +1,8 @@
 {-# language FlexibleInstances, FunctionalDependencies, GADTs, ViewPatterns, PatternSynonyms #-}
 
-module Step.Cursor.ReadWriteCursor
+module Step.Cursor.CursorRW
   (
-    ReadWriteCursor (..),
+    CursorRW (..),
     rebaseCursor,
     lookAhead_,
     pattern Run, inp, com, runn,
@@ -18,26 +18,26 @@ import Step.Cursor.AdvanceResult (AdvanceResult)
 
 import Step.RST
 
-data ReadWriteCursor xs x r s m =
-  forall s'. ReadWriteCursor
+data CursorRW xs x r s m =
+  forall s'. CursorRW
     { init :: RST r s m s'
     , visibleStateLens :: Lens' s' s
     , input :: Stream r s' m xs x
     , commit :: Positive Natural -> RST r s' m AdvanceResult
     }
 
-rebaseCursor :: Monad m1 => (forall a. m1 a -> m2 a) -> ReadWriteCursor xs x r s m1 -> ReadWriteCursor xs x r s m2
-rebaseCursor o ReadWriteCursor{ init, commit, input, visibleStateLens } =
-  ReadWriteCursor
+rebaseCursor :: Monad m1 => (forall a. m1 a -> m2 a) -> CursorRW xs x r s m1 -> CursorRW xs x r s m2
+rebaseCursor o CursorRW{ init, commit, input, visibleStateLens } =
+  CursorRW
     { init = hoist o init
     , visibleStateLens
     , commit = hoist o . commit
     , input = over streamRST (hoist o) input
     }
 
-instance Contravariant (ReadWriteCursor xs x r s m) (ReadWriteCursor xs x r' s m) r r' where
-    contramap f ReadWriteCursor{ init, commit, input, visibleStateLens } =
-      ReadWriteCursor
+instance Contravariant (CursorRW xs x r s m) (CursorRW xs x r' s m) r r' where
+    contramap f CursorRW{ init, commit, input, visibleStateLens } =
+      CursorRW
         { init = contramap f init
         , visibleStateLens
         , input = contramap f input
@@ -48,7 +48,7 @@ pattern Run :: Monad m =>
   Stream r s' m xs x
   -> (Positive Natural -> RST r s' m AdvanceResult)
   -> (forall a. RST r s' m a -> RST r s m a)
-  -> ReadWriteCursor xs x r s m
+  -> CursorRW xs x r s m
 pattern Run{ inp, com, runn } <- (runCursor -> RunReadWriteCursor{ input' = inp, commit' = com, run = runn })
 
 data RunReadWriteCursor xs x r s m =
@@ -62,12 +62,12 @@ data RunReadWriteCursor xs x r s m =
 --
 -- For a buffering cursor, this ensures that there is something buffered.
 --
-lookAhead_ :: Monad m => ReadWriteCursor xs x r s m -> RST r s m ()
+lookAhead_ :: Monad m => CursorRW xs x r s m -> RST r s m ()
 lookAhead_ (runCursor -> RunReadWriteCursor{ input', run }) =
     run (void (Stream.next input'))
 
-runCursor :: Monad m => ReadWriteCursor xs x r s m -> RunReadWriteCursor xs x r s m
-runCursor ReadWriteCursor{ init, visibleStateLens, input, commit } =
+runCursor :: Monad m => CursorRW xs x r s m -> RunReadWriteCursor xs x r s m
+runCursor CursorRW{ init, visibleStateLens, input, commit } =
   RunReadWriteCursor
     { input' = input
     , commit' = commit

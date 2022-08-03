@@ -9,7 +9,7 @@ module Step.ActionTypes.Constructors where
 import Step.Internal.Prelude
 
 import Step.RST (RST (..))
-import Step.Cursor (ReadWriteCursor (..))
+import Step.Cursor (CursorRW (..))
 
 -- | The kind of all the action types in "Step.Action.Types"
 type Action =
@@ -32,19 +32,19 @@ type SureQuery  :: Action
 
 -- | No known properties
 
-newtype Any xs x r s m a = Any (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
-    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (ExceptT r (RST r s m)))
+newtype Any xs x r s m a = Any (CursorRW xs x r s m -> RST r s m (Either r a))
+    deriving (Functor, Applicative, Monad) via (ReaderT (CursorRW xs x r s m) (ExceptT r (RST r s m)))
 
 -- | Does not move the cursor
 
-newtype Query xs x r s m a = Query (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
-    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (ExceptT r (RST r s m)))
+newtype Query xs x r s m a = Query (CursorRW xs x r s m -> RST r s m (Either r a))
+    deriving (Functor, Applicative, Monad) via (ReaderT (CursorRW xs x r s m) (ExceptT r (RST r s m)))
 
 -- | Always moves the cursor
 --
 -- No 'Applicative' or 'Monad' instance here because 'pure' and 'return' don't move the cursor
 
-newtype Move xs x r s m a = Move (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
+newtype Move xs x r s m a = Move (CursorRW xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Fails noncommittally
@@ -52,7 +52,7 @@ newtype Move xs x r s m a = Move (ReadWriteCursor xs x r s m -> RST r s m (Eithe
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity
 
 newtype Atom xs x r s m a =
-    Atom (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
+    Atom (CursorRW xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Always moves the cursor, is atomic
@@ -60,22 +60,22 @@ newtype Atom xs x r s m a =
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity, and because 'pure' and 'return' don't move the cursor
 
 newtype AtomicMove xs x r s m a =
-    AtomicMove (ReadWriteCursor xs x r s m -> RST r s m (Either r a))
+    AtomicMove (CursorRW xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Always succeeds
 
 newtype Sure xs x r s m a =
-    Sure (ReadWriteCursor xs x r s m -> RST r s m a)
-    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (RST r s m))
+    Sure (CursorRW xs x r s m -> RST r s m a)
+    deriving (Functor, Applicative, Monad) via (ReaderT (CursorRW xs x r s m) (RST r s m))
 
 -- | Always succeeds, does not move the cursor
 
 newtype SureQuery xs x r s m a =
-    SureQuery (ReadWriteCursor xs x r s m -> RST r s m a)
-    deriving (Functor, Applicative, Monad) via (ReaderT (ReadWriteCursor xs x r s m) (RST r s m))
+    SureQuery (CursorRW xs x r s m -> RST r s m a)
+    deriving (Functor, Applicative, Monad) via (ReaderT (CursorRW xs x r s m) (RST r s m))
 
 -- | Never succeeds and never moves the cursor
 
-newtype Fail xs x r s m a = Fail (ReadWriteCursor xs x r s m -> RST r s m r)
+newtype Fail xs x r s m a = Fail (CursorRW xs x r s m -> RST r s m r)
     deriving stock Functor
