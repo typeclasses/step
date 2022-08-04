@@ -23,6 +23,8 @@ module Step.ActionTypes
     Loop0, Loop1, count0, count1, repetition0, repetition1,
     -- ** Contramap
     ContravariantAction (..),
+    -- ** Loss of movement
+    LossOfMovement,
   )
   where
 
@@ -32,6 +34,7 @@ import Step.ActionTypes.Functorial
 import Step.ActionTypes.Join
 import Step.ActionTypes.KindJoin
 import Step.ActionTypes.Loop
+import Step.ActionTypes.LossOfMovement
 import Step.ActionTypes.Monadic
 import Step.ActionTypes.Returnable
 import Step.ActionTypes.Subtyping

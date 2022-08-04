@@ -188,6 +188,7 @@ library step-action-types
         Step.ActionTypes.Join
         Step.ActionTypes.KindJoin
         Step.ActionTypes.Loop
+        Step.ActionTypes.LossOfMovement
         Step.ActionTypes.Monadic
         Step.ActionTypes.Subtyping
 

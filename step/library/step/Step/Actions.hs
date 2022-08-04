@@ -15,7 +15,7 @@ module Step.Actions
 
 import Step.Internal.Prelude
 
-import Step.ActionTypes (ContravariantAction, contramapAction)
+import Step.ActionTypes (ContravariantAction, contramapAction, LossOfMovement)
 import Step.ActionTypes.Types
 import qualified Step.ActionTypes.Unsafe as Action.Unsafe
 
@@ -95,6 +95,9 @@ contextualize :: Monad m => ContravariantAction act =>
     Lens' r ContextStack -> T.Text -> act xs x r s m a -> act xs x r s m a
 contextualize contextStackLens n = contramapAction (over (contextStackLens % contextStackSeq) (n :<|))
 
+while :: Monad m => LossOfMovement act1 act2 => Nontrivial.GeneralSpanOperation xs x
+    -> act1 xs x r s m a -> act2 xs x r s m a
+while = _
 -- todo: add an atomic version of 'text'
 
 -- text :: Nontrivial xs x -> Move xs x r s m ()
