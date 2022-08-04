@@ -106,10 +106,10 @@ instance Is Sure Atom where cast' = Coerce.from @Any . cast @Any
 
 
 -- | Fail casts to anything that isn't Sure
-instance Is Fail Any where cast' (Fail p) = Any \c -> p (cursorR c) <&> Left
+instance Is Fail Any where cast' Fail = Any \_ -> ask <&> Left
 
 -- | Fail casts to anything that isn't Sure
-instance Is Fail Query where cast' (Fail p) = Query \c -> p c <&> Left
+instance Is Fail Query where cast' Fail = Query \_ -> ask <&> Left
 
 -- | Fail casts to anything that isn't Sure
 instance Is Fail Move where cast' = Coerce.from @Any . cast @Any

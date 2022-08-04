@@ -11,6 +11,16 @@ import Step.ActionTypes.Types
 type family (act1 :: Action) >> (act2 :: Action) :: Action
   where
 
+    -- When failure is first, the second step is irrelevant.
+    Fail >> k = Fail
+
+    -- When failure is second, sureness and atomicity are lost.
+    Sure >> Fail = Any
+    SureQuery >> Fail = Query
+    Atom >> Fail = Any
+    AtomicMove >> Fail = Move
+    k >> Fail = k
+
     -- Joining with SureQuery has no effect on the type
     SureQuery >> k = k
     k >> SureQuery = k
@@ -23,14 +33,12 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
     -- When an atomic step is followed by an infallible step, atomicity is preserved.
     Atom >> Sure = Atom
     AtomicMove >> Sure = AtomicMove
-    Fail >> k = Fail -- k never fails because it is never reached
     -- (>> SureQuery) has already been covered above.
 
     -- When an atomic step is preceded by a query, atomicity is preserved.
     Query >> Atom = Atom
     Query >> Sure = Atom
     Query >> AtomicMove = AtomicMove
-    Query >> Fail = Fail
     -- (SureQuery >>) has already been covered above.
 
     -- Movement of a part implies movement of the whole.

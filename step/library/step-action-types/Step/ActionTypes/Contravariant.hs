@@ -45,6 +45,4 @@ instance ContravariantAction SureQuery where
             contramap f (a (contraconst r c))
 
 instance ContravariantAction Fail where
-    contramapAction f (Fail a) =
-        Fail \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction _ Fail = Fail

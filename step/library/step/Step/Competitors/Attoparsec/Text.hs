@@ -47,7 +47,7 @@ peekChar :: Monad m => Parser s m SureQuery (Maybe Char)
 peekChar = P.peekCharMaybe
 
 peekChar' :: Monad m => Parser s m Query Char
-peekChar' = (P.peekCharMaybe P.>>= maybe (cast P.failure) return) <?> "peekChar'"
+peekChar' = (P.peekCharMaybe P.>>= maybe (cast @Query P.failure) return) <?> "peekChar'"
 
 digit :: Monad m => Parser s m AtomicMove Char
 digit = P.satisfyJust (\x -> if Char.isDigit x then Just x else Nothing) <?> "digit"
@@ -171,7 +171,7 @@ many1' p = many1 P.do{ x <- p; P.return $! x }
 -- match :: Parser a -> Parser (Text, a)
 
 endOfInput :: Monad m => Parser s m Query ()
-endOfInput = (P.atEnd P.>>= \case{ True -> cast (P.return ()); False -> cast P.failure }) <?> "endOfInput"
+endOfInput = (P.atEnd P.>>= \case{ True -> cast (P.return ()); False -> cast @Query P.failure }) <?> "endOfInput"
 
 atEnd :: Monad m => Parser s m SureQuery Bool
 atEnd = P.atEnd

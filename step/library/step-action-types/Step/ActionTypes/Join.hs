@@ -75,21 +75,21 @@ instance Join AtomicMove Sure where
     join = coerce . join @Any @Any . cast @Any . fmap (cast @Any)
 
 instance Join Fail Any where
-    join (Fail p) = Fail p
+    join Fail = Fail
 instance Join Fail Atom where
-    join (Fail p) = Fail p
+    join Fail = Fail
 instance Join Fail AtomicMove where
-    join (Fail p) = Fail p
+    join Fail = Fail
 instance Join Fail Fail where
-    join (Fail p) = Fail p
+    join Fail = Fail
 instance Join Fail Move where
-    join (Fail p) = Fail p
+    join Fail = Fail
 instance Join Fail Query where
-    join (Fail p) = Fail p
+    join Fail = Fail
 instance Join Fail Sure where
-    join (Fail p) = Fail p
+    join Fail = Fail
 instance Join Fail SureQuery where
-    join (Fail p) = Fail p
+    join Fail = Fail
 
 instance Join Move Any where
     join = coerce . join @Any @Any . cast @Any
@@ -115,9 +115,7 @@ instance Join Query Atom where
 instance Join Query AtomicMove where
     join = coerce . join @Any @Any . cast @Any . fmap (cast @Any)
 instance Join Query Fail where
-    join (Query p) = Fail \c -> p c >>= \case
-        Left e -> return e
-        Right (Fail p') -> p' c
+    join = join @Query @Query . fmap (cast @Query)
 instance Join Query Move where
     join = coerce . join @Any @Any . cast @Any . fmap (cast @Any)
 instance Join Query Query where

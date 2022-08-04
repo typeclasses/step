@@ -78,8 +78,7 @@ newtype SureQuery xs x r s m a =
     SureQuery (CursorR xs x r s m -> RST r s m a)
     deriving (Functor, Applicative, Monad) via (ReaderT (CursorR xs x r s m) (RST r s m))
 
--- | Never succeeds and never moves the cursor
+-- | Never succeeds, never moves the cursor, never does anything at all
 
-newtype Fail xs x r s m a =
-    Fail (CursorR xs x r s m -> RST r s m r)
+data Fail xs x r s m a = Fail
     deriving stock Functor

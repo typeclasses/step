@@ -81,7 +81,7 @@ position lineHistoryLens cursorPositionLens = Action.Unsafe.SureQuery \c -> do
                     error "LineHistory problem: after buffering more, should not need more input to determine position"
 
 failure :: Monad m => Fail xs x r s m a
-failure = Action.Unsafe.Fail \_ -> ask
+failure = Action.Unsafe.Fail
 
 some :: Monad m => AtomicMove xs x r s m (Nontrivial xs x)
 some =
@@ -98,6 +98,8 @@ contextualize contextStackLens n = contramapAction (over (contextStackLens % con
 while :: Monad m => LossOfMovement act1 act2 => Nontrivial.GeneralSpanOperation xs x
     -> act1 xs x r s m a -> act2 xs x r s m a
 while = _
+
+
 -- todo: add an atomic version of 'text'
 
 -- text :: Nontrivial xs x -> Move xs x r s m ()
