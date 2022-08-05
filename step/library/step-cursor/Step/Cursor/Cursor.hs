@@ -41,6 +41,7 @@ data CursorR xs x r s m =
     { initR :: RST r s m s'
     , visibleStateLensR :: Lens' s' s
     , inputR :: Stream r s' m xs x
+    -- , resetR :: RST r s' m () -- ^ Repositions the input stream to the point of the last commit
     }
 
 instance Contravariant (CursorR xs x r s m) (CursorR xs x r' s m) r r' where
@@ -57,6 +58,7 @@ data CursorRW xs x r s m =
     , visibleStateLensRW :: Lens' s' s
     , inputRW :: Stream r s' m xs x
     , commitRW :: Positive Natural -> RST r s' m AdvanceResult
+    -- , resetRW :: RST r s' m () -- ^ Repositions the input stream to the point of the last commit
     }
 
 instance Contravariant (CursorRW xs x r s m) (CursorRW xs x r' s m) r r' where
