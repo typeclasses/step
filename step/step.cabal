@@ -36,6 +36,7 @@ common base
       , hedgehog
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
+      , list-transformer
       , mmorph
       , mtl
       , transformers
@@ -83,6 +84,7 @@ common base
           )
       , data-default-class (Data.Default.Class as Default)
       , ListLike (Data.ListLike as ListLike)
+      , list-transformer (List.Transformer as ListT)
       , mmorph
           ( Control.Monad.Morph as Morph
           , Control.Monad.Trans.Compose as Functor.ComposeT
@@ -200,6 +202,7 @@ library step-internal
     other-modules:
         Step.Internal.Contravariant
         Step.Internal.Dependencies
+        Step.Internal.HoistListT
         Step.Internal.LocOptics
         Step.Internal.Positive
         Step.Internal.Times
