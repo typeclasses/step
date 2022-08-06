@@ -1,16 +1,28 @@
 {-# language FlexibleInstances, FunctionalDependencies, GADTs #-}
 
+{-
+
+"reset" operation repositions the input stream to the point of the last commit.
+
+-}
+
 module Step.Cursor.Cursor
   (
+    -- * Two states
+    CursorState (..), commitLens, sessionLens,
+
     -- * The backend interface for building cursors
-    Cursor (..), CursorR (..), CursorRW (..),
+    -- Cursor (..),
+    CursorR (..), CursorRW (..),
+    -- Cursor' (..),
+    CursorR' (..), CursorRW' (..),
 
     -- * The user interface for running cursors
     CursorRunR (..), cursorRunR,
     CursorRunRW (..), cursorRunRW,
 
     -- * Conversion
-    readOnly,
+    readOnly, readOnly'
   )
   where
 
@@ -23,95 +35,136 @@ import Step.Cursor.AdvanceResult (AdvanceResult)
 
 import Step.RST
 
-data Cursor xs x r s m =
-  Cursor
-    { cursorR  :: CursorR  xs x r s m
-    , cursorRW :: CursorRW xs x r s m
+data CursorState s s' =
+  CursorState
+    { commitState :: s
+    , sessionState :: s'
     }
 
-instance Contravariant (Cursor xs x r s m) (Cursor xs x r' s m) r r' where
-  contramap f Cursor{ cursorR, cursorRW } =
-    Cursor
-      { cursorR = contramap f cursorR
-      , cursorRW = contramap f cursorRW
-      }
+commitLens :: Lens (CursorState s1 s') (CursorState s2 s') s1 s2
+commitLens = lens commitState \x y -> x{ commitState = y }
 
-data CursorR xs x r s m =
-  forall s'. CursorR
+sessionLens :: Lens (CursorState s s'1) (CursorState s s'2) s'1 s'2
+sessionLens = lens sessionState \x y -> x{ sessionState = y }
+
+-- data Cursor' xs x r s m =
+--   Cursor'
+--     { cursorR' :: CursorR' xs x r s m
+--     , cursorRW' :: CursorRW' xs x r s m
+--     }
+
+data CursorR' xs x r s m =
+  forall s'. CursorR' (CursorR xs x r s s' m)
+
+data CursorRW' xs x r s m =
+  forall s'. CursorRW' (CursorRW xs x r s s' m)
+
+instance Contravariant (CursorR' xs x r s m) (CursorR' xs x r' s m) r r' where
+  contramap f (CursorR' a) = CursorR' (contramap f a)
+
+instance Contravariant (CursorRW' xs x r s m) (CursorRW' xs x r' s m) r r' where
+  contramap f (CursorRW' a) = CursorRW' (contramap f a)
+
+-- instance Contravariant (Cursor' xs x r s m) (Cursor' xs x r' s m) r r' where
+--   contramap f (Cursor' a b) = Cursor' (contramap f a) (contramap f b)
+
+-- data Cursor xs x r s sr srw m =
+--   Cursor
+--     { cursorR  :: CursorR  xs x r s sr  m
+--     , cursorRW :: CursorRW xs x r s srw m
+--     }
+
+-- instance Contravariant (Cursor xs x r s sr srw m) (Cursor xs x r' s sr srw m) r r' where
+--   contramap f Cursor{ cursorR, cursorRW } =
+--     Cursor
+--       { cursorR = contramap f cursorR
+--       , cursorRW = contramap f cursorRW
+--       }
+
+data CursorR xs x r s s' m =
+  CursorR
     { initR :: RST r s m s'
-    , visibleStateLensR :: Lens' s' s
-    , inputR :: Stream r s' m xs x
-    -- , resetR :: RST r s' m () -- ^ Repositions the input stream to the point of the last commit
+    , inputR :: Stream r (CursorState s s') m xs x
+    , resetR :: RST r (CursorState s s') m ()
     }
 
-instance Contravariant (CursorR xs x r s m) (CursorR xs x r' s m) r r' where
-    contramap f CursorR{ initR, inputR, visibleStateLensR } =
+instance Contravariant (CursorR xs x r s s' m) (CursorR xs x r' s s' m) r r' where
+    contramap f c =
       CursorR
-        { initR = contramap f initR
-        , visibleStateLensR
-        , inputR = contramap f inputR
+        { initR = contramap f (initR c)
+        , inputR = contramap f (inputR c)
+        , resetR = contramap f (resetR c)
         }
 
-data CursorRW xs x r s m =
-  forall s'. CursorRW
+data CursorRW xs x r s s' m =
+  CursorRW
     { initRW :: RST r s m s'
-    , visibleStateLensRW :: Lens' s' s
-    , inputRW :: Stream r s' m xs x
-    , commitRW :: Positive Natural -> RST r s' m AdvanceResult
-    -- , resetRW :: RST r s' m () -- ^ Repositions the input stream to the point of the last commit
+    , inputRW :: Stream r (CursorState s s') m xs x
+    , commitRW :: Positive Natural -> RST r (CursorState s s') m AdvanceResult
+    , resetRW :: RST r (CursorState s s') m ()
     }
 
-instance Contravariant (CursorRW xs x r s m) (CursorRW xs x r' s m) r r' where
-    contramap f CursorRW{ initRW, commitRW, inputRW, visibleStateLensRW } =
+instance Contravariant (CursorRW xs x r s s' m) (CursorRW xs x r' s s' m) r r' where
+    contramap f c =
       CursorRW
-        { initRW = contramap f initRW
-        , visibleStateLensRW
-        , inputRW = contramap f inputRW
-        , commitRW = contramap f . commitRW
+        { initRW = contramap f (initRW c)
+        , inputRW = contramap f (inputRW c)
+        , commitRW = contramap f . (commitRW c)
+        , resetRW = contramap f (resetRW c)
         }
 
-data CursorRunR xs x r s m =
-    forall s'. CursorRunR
-      { inputRunR :: Stream r s' m xs x
-      , runR :: forall a. RST r s' m a -> RST r s m a
+data CursorRunR xs x r s s' m =
+    CursorRunR
+      { inputRunR :: Stream r (CursorState s s') m xs x
+      , runR :: forall a. RST r (CursorState s s') m a -> RST r s m a
       }
 
-cursorRunR :: Monad m => CursorR xs x r s m -> CursorRunR xs x r s m
-cursorRunR CursorR{ initR, visibleStateLensR, inputR } =
+cursorRunR :: Monad m => CursorR xs x r s s' m -> CursorRunR xs x r s s' m
+cursorRunR CursorR{ initR, inputR } =
   CursorRunR
     { inputRunR = inputR
     , runR = \a -> do
         r <- ask
-        s <- initR
-        (x, s') <- lift (runRST a r s)
-        put (view visibleStateLensR s')
+        s <- get
+        s' <- initR
+        (x, ss) <- lift (runRST a r (CursorState s s'))
+        put (view commitLens ss)
         return x
     }
 
-data CursorRunRW xs x r s m =
-    forall s'. CursorRunRW
-      { inputRunRW :: Stream r s' m xs x
-      , commitRunRW :: Positive Natural -> RST r s' m AdvanceResult
-      , runRW :: forall a. RST r s' m a -> RST r s m a
+data CursorRunRW xs x r s s' m =
+    CursorRunRW
+      { inputRunRW :: Stream r (CursorState s s') m xs x
+      , commitRunRW :: Positive Natural -> RST r (CursorState s s') m AdvanceResult
+      , runRW :: forall a. RST r (CursorState s s') m a -> RST r s m a
       }
 
-cursorRunRW :: Monad m => CursorRW xs x r s m -> CursorRunRW xs x r s m
-cursorRunRW CursorRW{ initRW, visibleStateLensRW, inputRW, commitRW } =
+cursorRunRW :: Monad m => CursorRW xs x r s s' m -> CursorRunRW xs x r s s' m
+cursorRunRW CursorRW{ initRW, inputRW, commitRW } =
   CursorRunRW
     { inputRunRW = inputRW
     , commitRunRW = commitRW
     , runRW = \a -> do
         r <- ask
-        s <- initRW
-        (x, s') <- lift (runRST a r s)
-        put (view visibleStateLensRW s')
+        s <- get
+        s' <- initRW
+        (x, ss) <- lift (runRST a r (CursorState s s'))
+        put (view commitLens ss)
         return x
     }
 
-readOnly :: CursorRW xs x r s m -> CursorR xs x r s m
-readOnly CursorRW{ initRW, visibleStateLensRW, inputRW } =
+readOnly :: CursorRW xs x r s s' m -> CursorR xs x r s s' m
+readOnly c =
   CursorR
-    { initR = initRW
-    , visibleStateLensR = visibleStateLensRW
-    , inputR = inputRW
+    { initR = initRW c
+    , inputR = inputRW c
+    , resetR = resetRW c
+    }
+
+readOnly' :: CursorRW' xs x r s m -> CursorR' xs x r s m
+readOnly' (CursorRW' c) =
+  CursorR' CursorR
+    { initR = initRW c
+    , inputR = inputRW c
+    , resetR = resetRW c
     }

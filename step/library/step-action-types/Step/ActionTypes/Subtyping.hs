@@ -19,7 +19,7 @@ import qualified Step.ActionTypes.Coerce as Coerce
 
 import Coerce (coerce)
 
-import Step.Cursor (cursorR)
+import Step.Cursor (readOnly')
 
 
 class Is (act1 :: Action) (act2 :: Action) where
@@ -90,7 +90,7 @@ instance Is AtomicMove Atom where cast' = coerce
 -- Sure + Query = SureQuery
 
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
-instance Is SureQuery Sure where cast' (SureQuery p) = Sure \c -> p (cursorR c)
+instance Is SureQuery Sure where cast' (SureQuery p) = Sure \c -> p (readOnly' c)
 
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
 instance Is SureQuery Query where cast' (SureQuery p) = Query \c -> p c <&> Right
@@ -99,7 +99,7 @@ instance Is SureQuery Query where cast' (SureQuery p) = Query \c -> p c <&> Righ
 -- Trivial subtypes of Atom
 
 -- | A Query is trivially atomic because it never moves the cursor, therefore it cannot move and fail
-instance Is Query Atom where cast' (Query p) = Atom \c -> p (cursorR c)
+instance Is Query Atom where cast' (Query p) = Atom \c -> p (readOnly' c)
 
 -- | A Sure action is trivially atomic because it never fails, therefore it cannot move and fail
 instance Is Sure Atom where cast' = Coerce.from @Any . cast @Any

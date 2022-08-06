@@ -38,25 +38,25 @@ import Step.ContextStack (ContextStack (..), contextStackSeq)
 takeCharMaybe :: Monad m => Sure xs x r s m (Maybe x)
 takeCharMaybe =
     Action.Unsafe.Sure
-    \(cursorRunRW . cursorRW -> CursorRunRW{ inputRunRW, commitRunRW, runRW }) ->
+    \(CursorRW' (cursorRunRW -> CursorRunRW{ inputRunRW, commitRunRW, runRW })) ->
     runRW $ next inputRunRW >>= \case
         Nothing -> return Nothing
         Just x -> commitRunRW (PositiveUnsafe 1) $> Just (Nontrivial.head x)
 
 peekCharMaybe :: Monad m => SureQuery xs x r s m (Maybe x)
-peekCharMaybe = Action.Unsafe.SureQuery \(cursorRunR -> CursorRunR{ inputRunR, runR }) -> runR $
+peekCharMaybe = Action.Unsafe.SureQuery \(CursorR' (cursorRunR -> CursorRunR{ inputRunR, runR })) -> runR $
     next inputRunR <&> \case
         Nothing -> Nothing
         Just x -> Just (Nontrivial.head x)
 
 satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s m a
-satisfyJust ok = Action.Unsafe.AtomicMove \(cursorRunRW . cursorRW -> CursorRunRW{ inputRunRW, commitRunRW, runRW }) -> runRW $
+satisfyJust ok = Action.Unsafe.AtomicMove \(CursorRW' (cursorRunRW -> CursorRunRW{ inputRunRW, commitRunRW, runRW })) -> runRW $
     next inputRunRW >>= \case
         Just (ok . Nontrivial.head -> Just x) -> commitRunRW (PositiveUnsafe 1) $> Right x
         _ -> ask <&> Left
 
 atEnd :: Monad m => SureQuery xs x r s m Bool
-atEnd = Action.Unsafe.SureQuery \(cursorRunR -> CursorRunR{ inputRunR, runR }) ->
+atEnd = Action.Unsafe.SureQuery \(CursorR' (cursorRunR -> CursorRunR{ inputRunR, runR })) ->
     runR $ next inputRunR <&> isNothing
 
 cursorPosition :: Monad m => Lens' s CursorPosition -> SureQuery xs x r s m CursorPosition
@@ -71,7 +71,7 @@ position lineHistoryLens cursorPositionLens = Action.Unsafe.SureQuery \c -> do
         Just (LineHistory.CursorAt x) -> return x
         Just LineHistory.CursorLocationNeedsMoreInput -> do
             case c of
-                (cursorRunR -> CursorRunR{ inputRunR, runR }) ->
+                (CursorR' (cursorRunR -> CursorRunR{ inputRunR, runR })) ->
                     runR (void (next inputRunR))
             lh' <- use lineHistoryLens
             case LineHistory.locateCursorInDocument cp lh' of
@@ -86,7 +86,7 @@ failure = Action.Unsafe.Fail
 some :: Monad m => AtomicMove xs x r s m (Nontrivial xs x)
 some =
     Action.Unsafe.AtomicMove
-    \(cursorRunRW . cursorRW -> CursorRunRW{ inputRunRW, commitRunRW, runRW }) ->
+    \(CursorRW' (cursorRunRW -> CursorRunRW{ inputRunRW, commitRunRW, runRW })) ->
     runRW $ next inputRunRW >>= \case
         Nothing -> ask <&> Left
         Just x -> commitRunRW (Nontrivial.length x) $> Right x

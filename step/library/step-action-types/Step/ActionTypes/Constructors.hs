@@ -9,7 +9,7 @@ module Step.ActionTypes.Constructors where
 import Step.Internal.Prelude
 
 import Step.RST (RST (..))
-import Step.Cursor (Cursor, CursorR)
+import Step.Cursor (CursorRW', CursorR')
 
 -- | The kind of all the action types in "Step.Action.Types"
 type Action =
@@ -33,21 +33,23 @@ type SureQuery  :: Action
 -- | No known properties
 
 newtype Any xs x r s m a =
-    Any (Cursor xs x r s m -> RST r s m (Either r a))
-    deriving (Functor, Applicative, Monad) via (ReaderT (Cursor xs x r s m) (ExceptT r (RST r s m)))
+    Any (CursorRW' xs x r s m -> RST r s m (Either r a))
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT (CursorRW' xs x r s m) (ExceptT r (RST r s m)))
 
 -- | Does not move the cursor
 
 newtype Query xs x r s m a =
-    Query (CursorR xs x r s m -> RST r s m (Either r a))
-    deriving (Functor, Applicative, Monad) via (ReaderT (CursorR xs x r s m) (ExceptT r (RST r s m)))
+    Query (CursorR' xs x r s m -> RST r s m (Either r a))
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT (CursorR' xs x r s m) (ExceptT r (RST r s m)))
 
 -- | Always moves the cursor
 --
 -- No 'Applicative' or 'Monad' instance here because 'pure' and 'return' don't move the cursor
 
 newtype Move xs x r s m a =
-    Move (Cursor xs x r s m -> RST r s m (Either r a))
+    Move (CursorRW' xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Fails noncommittally
@@ -55,7 +57,7 @@ newtype Move xs x r s m a =
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity
 
 newtype Atom xs x r s m a =
-    Atom (Cursor xs x r s m -> RST r s m (Either r a))
+    Atom (CursorRW' xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Always moves the cursor, is atomic
@@ -63,20 +65,22 @@ newtype Atom xs x r s m a =
 -- No 'Applicative' or 'Monad' instance here because sequencing does not preserve atomicity, and because 'pure' and 'return' don't move the cursor
 
 newtype AtomicMove xs x r s m a =
-    AtomicMove (Cursor xs x r s m -> RST r s m (Either r a))
+    AtomicMove (CursorRW' xs x r s m -> RST r s m (Either r a))
     deriving stock Functor
 
 -- | Always succeeds
 
 newtype Sure xs x r s m a =
-    Sure (Cursor xs x r s m -> RST r s m a)
-    deriving (Functor, Applicative, Monad) via (ReaderT (Cursor xs x r s m) (RST r s m))
+    Sure (CursorRW' xs x r s m -> RST r s m a)
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT (CursorRW' xs x r s m) (RST r s m))
 
 -- | Always succeeds, does not move the cursor
 
 newtype SureQuery xs x r s m a =
-    SureQuery (CursorR xs x r s m -> RST r s m a)
-    deriving (Functor, Applicative, Monad) via (ReaderT (CursorR xs x r s m) (RST r s m))
+    SureQuery (CursorR' xs x r s m -> RST r s m a)
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT (CursorR' xs x r s m) (RST r s m))
 
 -- | Never succeeds, never moves the cursor, never does anything at all
 

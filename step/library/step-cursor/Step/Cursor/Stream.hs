@@ -22,6 +22,7 @@ import Step.RST
 
 import Optics
 
+-- todo: reorder type args to: xs x r s m
 newtype Stream r s m xs x =
     Stream{ next :: RST r s m (Maybe (Nontrivial xs x)) }
 

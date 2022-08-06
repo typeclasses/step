@@ -89,7 +89,7 @@ configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerm
 
 documentCursor :: Monad m =>
     DropOperation xs x -> SpanOperation xs x
-    -> Cursor xs x (Context xs x s m) (DocumentMemory xs x s) m
+    -> CursorRW xs x (Context xs x s m) (DocumentMemory xs x s) (Buffer xs x) m
 documentCursor dropOp spanOp =
     loadingCursor dropOp bufferLens
         & contramap (recordingStream spanOp)
@@ -111,8 +111,8 @@ parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
     -> StateT (DocumentMemory xs x s) m (Either Error a)
 parse (Action.cast -> Any p) =
   let
-    c :: Cursor xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
-    c = documentCursor LL.dropOperation LL.spanOperation
+    c :: CursorRW' xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
+    c = CursorRW' $ documentCursor LL.dropOperation LL.spanOperation
   in
     view rstState $ p c <&> \case
           Right x -> Right x
