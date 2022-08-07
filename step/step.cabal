@@ -187,6 +187,7 @@ library step-action-types
         Step.ActionTypes.Contravariant
         Step.ActionTypes.Constructors
         Step.ActionTypes.Functorial
+        Step.ActionTypes.GeneralActions
         Step.ActionTypes.Join
         Step.ActionTypes.KindJoin
         Step.ActionTypes.Loop

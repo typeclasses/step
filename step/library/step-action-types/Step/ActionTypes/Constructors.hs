@@ -36,7 +36,7 @@ data Any xs x r s m a =
     Any_Lift (m a)
   | Any_Ask (r -> a)
   | Any_Get (s -> a)
-  | Any_Next (Nontrivial xs x -> a)
+  | Any_Next (Maybe (Nontrivial xs x) -> a)
   | Any_Commit (Positive Natural) a
   | Any_Join (Any xs x r s m (Any xs x r s m a))
   | Any_Fail (r -> r)
@@ -57,7 +57,7 @@ data Query xs x r s m a =
     Query_Lift (m a)
   | Query_Ask (r -> a)
   | Query_Get (s -> a)
-  | Query_Next (Nontrivial xs x -> a)
+  | Query_Next (Maybe (Nontrivial xs x) -> a)
   | Query_Join (Query xs x r s m (Query xs x r s m a))
   | Query_Fail (r -> r)
   deriving stock Functor
@@ -103,7 +103,7 @@ data Sure xs x r s m a =
     Sure_Lift (m a)
   | Sure_Ask (r -> a)
   | Sure_Get (s -> a)
-  | Sure_Next (Nontrivial xs x -> a)
+  | Sure_Next (Maybe (Nontrivial xs x) -> a)
   | Sure_Commit (Positive Natural) a
   | Sure_Join (Sure xs x r s m (Sure xs x r s m a))
   deriving stock Functor
@@ -123,7 +123,7 @@ data SureQuery xs x r s m a =
     SureQuery_Lift (m a)
   | SureQuery_Ask (r -> a)
   | SureQuery_Get (s -> a)
-  | SureQuery_Next (Nontrivial xs x -> a)
+  | SureQuery_Next (Maybe (Nontrivial xs x) -> a)
   | SureQuery_Join (SureQuery xs x r s m (SureQuery xs x r s m a))
   deriving stock Functor
 
