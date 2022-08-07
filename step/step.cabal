@@ -174,7 +174,7 @@ library step-nontrivial
 library step-action-types
     import: base
     hs-source-dirs: library/step-action-types
-    build-depends: step-internal, step-cursor, step-nontrivial, step-rst
+    build-depends: step-internal, step-nontrivial
     exposed-modules:
         Step.ActionTypes
         Step.ActionTypes.Do

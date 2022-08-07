@@ -8,8 +8,6 @@ module Step.ActionTypes.Constructors where
 
 import Step.Internal.Prelude
 
-import Step.RST (RST (..))
-import Step.Cursor (CursorRW', CursorR', AdvanceResult)
 import Step.Nontrivial
 
 -- | The kind of all the action types in "Step.Action.Types"
@@ -39,7 +37,7 @@ data Any xs x r s m a =
   | Any_Ask (r -> a)
   | Any_Get (s -> a)
   | Any_Next (Nontrivial xs x -> a)
-  | Any_Commit (Positive Natural) (AdvanceResult -> a)
+  | Any_Commit (Positive Natural) a
   | Any_Join (Any xs x r s m (Any xs x r s m a))
   | Any_Fail (r -> r)
   deriving stock Functor
@@ -106,7 +104,7 @@ data Sure xs x r s m a =
   | Sure_Ask (r -> a)
   | Sure_Get (s -> a)
   | Sure_Next (Nontrivial xs x -> a)
-  | Sure_Commit (Positive Natural) (AdvanceResult -> a)
+  | Sure_Commit (Positive Natural) a
   | Sure_Join (Sure xs x r s m (Sure xs x r s m a))
   deriving stock Functor
 

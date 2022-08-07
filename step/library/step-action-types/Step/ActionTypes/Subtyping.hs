@@ -17,8 +17,6 @@ import Step.ActionTypes.Constructors
 
 import Coerce (coerce)
 
-import Step.Cursor (readOnly')
-
 
 class Is (act1 :: Action) (act2 :: Action) where
     cast' :: Monad m => act1 xs x r s m a -> act2 xs x r s m a
