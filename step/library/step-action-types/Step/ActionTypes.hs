@@ -25,9 +25,12 @@ module Step.ActionTypes
     ContravariantAction (..),
     -- ** Loss of movement
     LossOfMovement,
+    -- ** ...
+    module Step.ActionTypes.GeneralActions,
   )
   where
 
+import Step.ActionTypes.GeneralActions
 import Step.ActionTypes.Atomic
 import Step.ActionTypes.Contravariant
 import Step.ActionTypes.Functorial

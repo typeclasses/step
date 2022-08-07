@@ -36,11 +36,10 @@ spec = describe "Document parsing" do
 
     describe "p = char, char, char" do
         let p = P.do{ a <- P.satisfyJust Just; b <- P.satisfyJust Just; c <- P.satisfyJust Just; P.return (a, b, c) }
-        let end = P.atEnd P.>>= \case{ True -> P.cast @P.Query (P.return ()); False -> P.cast @P.Query P.failure }
 
         specify "(p <* end) parses \"abc\"" $ hedgehog do
             input :: TextChunks <- forAll (genChunks "abc")
-            let x = P.parseSimple (p P.<* end) input
+            let x = P.parseSimple (p P.<* P.end) input
             x === Right ('a', 'b', 'c')
 
         specify "p parses \"abcd\"" $ hedgehog do
@@ -50,11 +49,11 @@ spec = describe "Document parsing" do
 
         specify "(p <* end) fails on \"abcd\"" $ hedgehog do
             input :: TextChunks <- forAll (genChunks "abcd")
-            let x = P.parseSimple (p P.<* end) input
+            let x = P.parseSimple (p P.<* P.end) input
             x === Left (P.Error [])
 
     describe "p = contextualize \"Digit\" (require (satisfy isDigit))" do
-        let p = P.contextualize (P.ctxConfigLens % P.configContextLens) "Digit" (P.satisfyJust \x -> if Char.isDigit x then Just x else Nothing)
+        let p = P.contextualize "Digit" (P.satisfyJust \x -> if Char.isDigit x then Just x else Nothing)
 
         specify "p parses \"2\"" $ hedgehog do
             input :: TextChunks <- forAll (genChunks "2")
@@ -96,14 +95,14 @@ spec = describe "Document parsing" do
 
         specify "starts at 0" $ hedgehog do
             input :: TextChunks <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
-            let p = P.cursorPosition P.cursorPositionLens
+            let p = P.cursorPosition
             let x = P.parseSimple p input
             x === Right 0
 
         specify "increases" $ hedgehog do
             input :: TextChunks <- forAll (genChunks (ListLike.replicate 10 'a'))
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.cursorPosition P.cursorPositionLens }
+            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.cursorPosition }
             let x = P.parseSimple p input
             x === Right (P.CursorPosition n)
 
@@ -111,7 +110,7 @@ spec = describe "Document parsing" do
             input :: TextChunks <- forAll (genChunks (ListLike.replicate 10 'a'))
             n1 :: Natural <- forAll (Gen.integral (Range.linear 0 5))
             n2 :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = P.do{ _ <- P.count0 n1 (P.satisfyJust Just); _ <- P.count0 n2 (P.satisfyJust Just); P.cursorPosition P.cursorPositionLens }
+            let p = P.do{ _ <- P.count0 n1 (P.satisfyJust Just); _ <- P.count0 n2 (P.satisfyJust Just); P.cursorPosition }
             let x = P.parseSimple p input
             x === Right (P.CursorPosition (n1 + n2))
 
@@ -119,20 +118,20 @@ spec = describe "Document parsing" do
 
         specify "starts at 1:1" $ hedgehog do
             input :: TextChunks <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
-            let p = P.position P.lineHistoryLens P.cursorPositionLens
+            let p = P.position
             let x = P.parseSimple p input
             x === Right (Loc.loc 1 1)
 
         specify "column is incremented by char when input contains no line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.position P.lineHistoryLens P.cursorPositionLens }
+            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.position }
             input :: TextChunks <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
             let x = P.parseSimple p input
             x === Right (Loc.loc 1 (fromIntegral $ n + 1))
 
         specify "line is incremented by char when input is line breaks" $ hedgehog do
             n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.position P.lineHistoryLens P.cursorPositionLens }
+            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.position }
             input :: TextChunks <- forAll (genChunks (ListLike.replicate 50 '\n'))
             let x = P.parseSimple p input
             x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
@@ -141,7 +140,7 @@ spec = describe "Document parsing" do
             let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
             input :: TextChunks <- forAll (genChunks =<< times 10 genInputLine)
             n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
-            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.position P.lineHistoryLens P.cursorPositionLens }
+            let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.position }
             let x = P.parseSimple p input
             let (a, b) = n `quotRem` 20
             let l = Loc.loc (fromIntegral $ 1 + a) (fromIntegral $ 1 + b)

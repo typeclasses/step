@@ -1,12 +1,13 @@
-{-# language FlexibleContexts, QualifiedDo #-}
+{-# language FlexibleContexts, QualifiedDo, Trustworthy #-}
 
 module Step.ActionTypes.GeneralActions
   (
-    {- * Character -} takeCharMaybe, takeChar, nextChar, nextCharMaybe,
-    {- * Chunk -} next, nextMaybe,
+    {- * Character -} takeCharMaybe, takeChar, nextChar, nextCharMaybe, satisfyJust,
+    {- * Chunk -} next, nextMaybe, takeNext, takeNextMaybe,
     {- * End -} atEnd, end,
     {- * Commit -} commit,
     {- * General -} actionState, actionContext,
+    {- * Fail -} fail,
   )
   where
 
@@ -44,8 +45,17 @@ nextMaybe = SureQuery_Next id
 next :: Monad m => Query xs x r s m (Nontrivial xs x)
 next = nextMaybe A.>>= maybe (cast @Query fail) return
 
+takeNext :: Monad m => AtomicMove xs x r s m (Nontrivial xs x)
+takeNext = next A.>>= \xs -> commit (Nontrivial.length xs) $> xs
+
+takeNextMaybe :: Monad m => Sure xs x r s m (Maybe (Nontrivial xs x))
+takeNextMaybe = try takeNext
+
 nextCharMaybe :: Monad m => SureQuery xs x r s m (Maybe x)
 nextCharMaybe = nextMaybe A.<&> fmap @Maybe Nontrivial.head
+
+satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s m a
+satisfyJust ok = nextCharMaybe A.>>= \x -> case x >>= ok of Nothing -> cast fail; Just y -> commit one $> y
 
 atEnd :: Monad m => SureQuery xs x r s m Bool
 atEnd = SureQuery_Next isNothing
@@ -61,3 +71,30 @@ actionContext = SureQuery_Ask id
 
 one :: Positive Natural
 one = PositiveUnsafe 1
+
+-- while :: Monad m => LossOfMovement act1 act2 => Nontrivial.GeneralSpanOperation xs x
+--     -> act1 xs x r s m a -> act2 xs x r s m a
+-- while = _
+
+
+-- todo: add an atomic version of 'text'
+
+-- text :: Nontrivial xs x -> Move xs x r s m ()
+-- text = someOfNontrivialText A.>=> (maybe (return ()) (cast @Any . text) . Nontrivial.refine)
+--   where
+--     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
+--         CursorRW{ init, input, commit } -> run $ Cursor.next input >>= \case
+--             Nothing -> return (Left F.failure)
+--             Just y ->
+--                 if x `Nontrivial.isPrefixOf` y
+--                 then commit (Nontrivial.length x) $> Right ListLike.empty
+--                 else
+--                 if y `Nontrivial.isPrefixOf` x
+--                 then commit (Nontrivial.length y) $>
+--                       Right
+--                         (
+--                           ListLike.drop
+--                               (ListLike.length (Nontrivial.generalize y))
+--                               (Nontrivial.generalize x)
+--                         )
+--                 else return (Left F.failure)

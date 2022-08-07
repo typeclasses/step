@@ -119,14 +119,15 @@ library
       , step-rst
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
-        Step.Actions
         Step.Buffer
         Step.ContextStack
         Step.CursorPosition
         Step.GeneralCursors
         Step.LineHistory
+        Step.RunAction
 
         Step.Document
+        Step.Document.Actions
         Step.Document.Base
 
         Step.Competitors.Attoparsec.Text

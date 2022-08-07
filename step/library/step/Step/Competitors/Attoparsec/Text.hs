@@ -44,10 +44,10 @@ skip :: Monad m => (Char -> Bool) -> Parser s m AtomicMove ()
 skip f = P.satisfyJust (\x -> if f x then Just () else Nothing) <?> "skip"
 
 peekChar :: Monad m => Parser s m SureQuery (Maybe Char)
-peekChar = P.peekCharMaybe
+peekChar = P.nextCharMaybe
 
 peekChar' :: Monad m => Parser s m Query Char
-peekChar' = (P.peekCharMaybe P.>>= maybe (cast @Query P.failure) return) <?> "peekChar'"
+peekChar' = (P.nextCharMaybe P.>>= maybe (cast @Query P.fail) return) <?> "peekChar'"
 
 digit :: Monad m => Parser s m AtomicMove Char
 digit = P.satisfyJust (\x -> if Char.isDigit x then Just x else Nothing) <?> "digit"
@@ -95,7 +95,7 @@ letter = P.satisfyJust (\x -> if Char.isAlpha x then Just x else Nothing) <?> "l
 -- takeTill :: (Char -> Bool) -> Parser Text
 
 takeText :: Monad m => Parser s m Sure Text
-takeText = repetition0 P.some <&> ListLike.foldMap Nontrivial.generalize
+takeText = repetition0 P.takeNext <&> ListLike.foldMap Nontrivial.generalize
 
 -- todo
 -- takeLazyText :: Parser Text
@@ -126,7 +126,7 @@ takeText = repetition0 P.some <&> ListLike.foldMap Nontrivial.generalize
 
 infix 0 <?>
 (<?>) :: Monad m => ContravariantAction k => Parser s m k a -> Text -> Parser s m k a
-p <?> c = P.contextualize (Doc.ctxConfigLens % Doc.configContextLens) c p
+p <?> c = P.contextualize c p
 
 -- todo
 -- choice :: ListLike list (Parser a) => list -> Parser a
@@ -171,7 +171,7 @@ many1' p = many1 P.do{ x <- p; P.return $! x }
 -- match :: Parser a -> Parser (Text, a)
 
 endOfInput :: Monad m => Parser s m Query ()
-endOfInput = (P.atEnd P.>>= \case{ True -> cast (P.return ()); False -> cast @Query P.failure }) <?> "endOfInput"
+endOfInput = (P.atEnd P.>>= \case{ True -> cast (P.return ()); False -> cast @Query P.fail }) <?> "endOfInput"
 
 atEnd :: Monad m => Parser s m SureQuery Bool
 atEnd = P.atEnd

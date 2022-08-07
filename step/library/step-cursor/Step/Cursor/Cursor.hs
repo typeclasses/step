@@ -116,13 +116,15 @@ instance Contravariant (CursorRW xs x r s s' m) (CursorRW xs x r' s s' m) r r' w
 data CursorRunR xs x r s s' m =
     CursorRunR
       { inputRunR :: Stream r (CursorState s s') m xs x
+      , resetRunR :: RST r (CursorState s s') m ()
       , runR :: forall a. RST r (CursorState s s') m a -> RST r s m a
       }
 
 cursorRunR :: Monad m => CursorR xs x r s s' m -> CursorRunR xs x r s s' m
-cursorRunR CursorR{ initR, inputR } =
+cursorRunR CursorR{ initR, inputR, resetR } =
   CursorRunR
     { inputRunR = inputR
+    , resetRunR = resetR
     , runR = \a -> do
         r <- ask
         s <- get
@@ -136,14 +138,16 @@ data CursorRunRW xs x r s s' m =
     CursorRunRW
       { inputRunRW :: Stream r (CursorState s s') m xs x
       , commitRunRW :: Positive Natural -> RST r (CursorState s s') m AdvanceResult
+      , resetRunRW :: RST r (CursorState s s') m ()
       , runRW :: forall a. RST r (CursorState s s') m a -> RST r s m a
       }
 
 cursorRunRW :: Monad m => CursorRW xs x r s s' m -> CursorRunRW xs x r s s' m
-cursorRunRW CursorRW{ initRW, inputRW, commitRW } =
+cursorRunRW CursorRW{ initRW, inputRW, commitRW, resetRW } =
   CursorRunRW
     { inputRunRW = inputRW
     , commitRunRW = commitRW
+    , resetRunRW = resetRW
     , runRW = \a -> do
         r <- ask
         s <- get

@@ -6,7 +6,7 @@ module Step.Document.Base
   (
     -- * Types
     -- DocumentParsing,
-    Config (..), Context (..), Error (..), documentCursor, cursorPositionLens, lineHistoryLens, DocumentMemory,
+    Config (..), Context (..), Error (..), documentCursor, cursorPositionLens, lineHistoryLens, DocumentMemory (..),
     -- * Running parsers
     parse, parseOnly, parseSimple,
     configContextLens, ctxConfigLens,
@@ -16,7 +16,7 @@ module Step.Document.Base
 import Step.Internal.Prelude
 
 import qualified Step.ActionTypes as Action
-import Step.ActionTypes.Unsafe (Any (Any))
+import Step.ActionTypes.Unsafe (Any)
 
 import Step.Cursor
 import qualified Step.Cursor as Cursor
@@ -38,6 +38,8 @@ import Step.GeneralCursors
 import Step.ContextStack
 
 import Step.ActionTypes
+
+import Step.RunAction
 
 ---
 
@@ -81,10 +83,21 @@ data Context xs x s m =
     , ctxStream :: Stream () s m xs x
     }
 
+ctxConfigLens :: Lens (Context xs x s m) (Context xs x s m) (Config x) (Config x)
 ctxConfigLens = lens ctxConfig \x y -> x{ ctxConfig = y }
 
+ctxStreamLens :: Lens
+  (Context xs1 x s1 m1)
+  (Context xs2 x s2 m2)
+  (Stream () s1 m1 xs1 x)
+  (Stream () s2 m2 xs2 x)
 ctxStreamLens = lens ctxStream \x y -> x{ ctxStream = y }
 
+configLineTerminatorsLens :: Lens
+  (Config x1)
+  (Config x2)
+  (Lines.Terminators x1)
+  (Lines.Terminators x2)
 configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerminators = y }
 
 documentCursor :: Monad m =>
@@ -109,12 +122,14 @@ parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
     act xs x (Context xs x s m) (DocumentMemory xs x s) m a
     -> Context xs x s m
     -> StateT (DocumentMemory xs x s) m (Either Error a)
-parse (Action.cast -> Any p) =
+parse a =
   let
-    c :: CursorRW' xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
-    c = CursorRW' $ documentCursor LL.dropOperation LL.spanOperation
+    -- c :: CursorRW' xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
+    c =
+        -- CursorRW' $
+        documentCursor LL.dropOperation LL.spanOperation
   in
-    view rstState $ p c <&> \case
+    view rstState $ runAny (cursorRunRW c) (Action.cast @Any a) <&> \case
           Right x -> Right x
           Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
