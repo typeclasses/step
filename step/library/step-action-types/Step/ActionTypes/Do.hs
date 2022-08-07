@@ -7,7 +7,7 @@ module Step.ActionTypes.Do
   (
     {- * Monad -} join, (>>=), (>=>), (>>), return,
     {- * Applicative -} (<*), (*>), (<*>), pure,
-    {- * Functor -} fmap, (<$>),
+    {- * Functor -} fmap, (<$>), (<&>),
   )
   where
 
@@ -45,3 +45,5 @@ return :: Monad m => a -> SureQuery xs x r s m a
 return = BasePrelude.return
 
 pure = return
+
+x <&> f = f <$> x
