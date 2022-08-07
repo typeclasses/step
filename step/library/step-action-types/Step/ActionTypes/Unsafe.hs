@@ -19,3 +19,4 @@ module Step.ActionTypes.Unsafe
   where
 
 import Step.ActionTypes.Constructors
+import Step.ActionTypes.Assume

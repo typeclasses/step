@@ -181,10 +181,10 @@ library step-action-types
         Step.ActionTypes.Types
         Step.ActionTypes.Unsafe
     other-modules:
+        Step.ActionTypes.Assume
         Step.ActionTypes.Atomic
         Step.ActionTypes.Returnable
         Step.ActionTypes.Contravariant
-        Step.ActionTypes.Coerce
         Step.ActionTypes.Constructors
         Step.ActionTypes.Functorial
         Step.ActionTypes.Join

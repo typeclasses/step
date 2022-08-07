@@ -6,43 +6,39 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 
+import Coerce
+
 class ContravariantAction (act :: Action) where
     contramapAction :: Monad m => (r -> r) -> act xs x r s m a -> act xs x r s m a
 
 instance ContravariantAction Any where
-    contramapAction f (Any a) =
-        Any \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction f = \case
+        Any_Ask g -> Any_Ask (g . f)
+        x -> x
 
 instance ContravariantAction Query where
-    contramapAction f (Query a) =
-        Query \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction f = \case
+        Query_Ask g -> Query_Ask (g . f)
+        x -> x
 
 instance ContravariantAction Move where
-    contramapAction f (Move a) =
-        Move \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction f = coerce . contramapAction @Any f . coerce
 
 instance ContravariantAction Atom where
-    contramapAction f (Atom a) =
-        Atom \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction f (Atom a) = Atom (contramapAction f (fmap (contramapAction f) a))
 
 instance ContravariantAction AtomicMove where
-    contramapAction f (AtomicMove a) =
-        AtomicMove \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction f = coerce . contramapAction @Atom f . coerce
 
 instance ContravariantAction Sure where
-    contramapAction f (Sure a) =
-        Sure \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction f = \case
+        Sure_Ask g -> Sure_Ask (g . f)
+        x -> x
 
 instance ContravariantAction SureQuery where
-    contramapAction f (SureQuery a) =
-        SureQuery \c -> ask >>= \r ->
-            contramap f (a (contraconst r c))
+    contramapAction f = \case
+        SureQuery_Ask g -> SureQuery_Ask (g . f)
+        x -> x
 
 instance ContravariantAction Fail where
     contramapAction _ Fail = Fail
