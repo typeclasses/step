@@ -56,7 +56,14 @@ instance Is Fail Fail where cast' = id
 -- Any supertypes everything else
 
 -- | Everything lifts to Any
-instance Is Query Any where cast' = cast @Any . cast @Atom
+instance Is Query Any where
+  cast' = \case
+    Query_Lift x -> Any_Lift x
+    Query_Ask f -> Any_Ask f
+    Query_Get f -> Any_Get f
+    Query_Next f -> Any_Next f
+    Query_Join x -> Any_Join (cast $ fmap cast x)
+    Query_Fail f -> Any_Fail f
 
 -- | Everything lifts to Any
 instance Is Move Any where cast' = coerce
@@ -79,7 +86,13 @@ instance Is Sure Any where
         Sure_Join x -> Any_Join (r (fmap r x))
 
 -- | Everything lifts to Any
-instance Is SureQuery Any where cast' = cast @Any . cast @Query
+instance Is SureQuery Any where
+  cast' = \case
+    SureQuery_Lift x -> Any_Lift x
+    SureQuery_Ask f -> Any_Ask f
+    SureQuery_Get f -> Any_Get f
+    SureQuery_Next f -> Any_Next f
+    SureQuery_Join x -> Any_Join (cast $ fmap cast x)
 
 -- | Everything lifts to Any
 instance Is Atom Any where
