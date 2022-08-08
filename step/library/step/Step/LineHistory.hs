@@ -103,8 +103,8 @@ charTerminators = Terminators
   , isLineFeed = Predicate $ (==) '\n'
   }
 
-isTerminator :: Terminators x -> Predicate x
-isTerminator ts = Predicate \c ->
+notTerminator :: Terminators x -> Predicate x
+notTerminator ts = Predicate \c ->
     not $ List.any @[]
         (\p -> getPredicate p c)
         [isCarriageReturn ts, isLineFeed ts]
@@ -120,7 +120,7 @@ record SpanOperation{ span } = fix \r x -> ask >>= \ts ->
     else if getPredicate (isLineFeed ts) h then recordLF *> traverse_ r t
     else
       do
-        case span (isTerminator ts) x of
+        case span (notTerminator ts) x of
             SpanNone -> error "Lines.record"
             SpanAll -> recordOther x
             SpanPart{ spannedPart, spanRemainder } ->
