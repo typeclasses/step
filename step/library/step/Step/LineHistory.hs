@@ -95,7 +95,11 @@ empty =
 build :: SpanOperation xs x -> Terminators x -> [Nontrivial xs x] -> LineHistory
 build spanOp ts xs = runIdentity $ execRST (traverse_ (record spanOp) xs) ts empty
 
-data Terminators x = Terminators{ isCarriageReturn :: Predicate x, isLineFeed :: Predicate x }
+data Terminators x =
+  Terminators
+    { isCarriageReturn :: !(Predicate x)
+    , isLineFeed :: !(Predicate x)
+    }
 
 charTerminators :: Terminators Char.Char
 charTerminators = Terminators
