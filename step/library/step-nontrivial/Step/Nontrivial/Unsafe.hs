@@ -8,6 +8,10 @@ module Step.Nontrivial.Unsafe
 
 import Step.Internal.Prelude
 
+import Function (on)
+
+import Show
+
 data Nontrivial xs x =
   NontrivialUnsafe
     { generalize :: !xs
@@ -15,4 +19,12 @@ data Nontrivial xs x =
     , head :: x
     , tail :: Maybe (Nontrivial xs x)
     }
-  deriving stock (Eq, Ord, Show)
+
+instance Eq xs => Eq (Nontrivial xs x) where
+    (==) = (==) `on` generalize
+
+instance Ord xs => Ord (Nontrivial xs x) where
+    compare = compare `on` generalize
+
+instance Show xs => Show (Nontrivial xs x) where
+    showsPrec p = showsPrec p . generalize

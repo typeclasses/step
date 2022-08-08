@@ -27,8 +27,7 @@ newtype SplitOperation xs x =
     SplitOperation { split :: Positive Natural -> Nontrivial xs x -> Split xs x }
 
 data Split xs x =
-    SplitAll
-  | SplitInsufficient{ splitShortfall :: Positive Natural }
+    SplitInsufficient
   | Split (Nontrivial xs x) (Nontrivial xs x)
 
 newtype DropOperation xs x =
@@ -38,9 +37,6 @@ data Drop xs x =
     DropAll
   | DropInsufficient{ dropShortfall :: Positive Natural }
   | DropPart{ dropRemainder :: Nontrivial xs x }
-
--- dropNat :: ListLike xs x => Natural -> Nontrivial xs x -> Drop xs x
--- dropNat = maybe DroppedPart drop . preview Positive.refine
 
 newtype WhileOperation xs x =
     WhileOperation{ while :: Predicate x -> Nontrivial xs x -> While xs x }

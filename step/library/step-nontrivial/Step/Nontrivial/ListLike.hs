@@ -60,11 +60,9 @@ whileOperation = WhileOperation \f x ->
 splitOperation :: ListLike xs x => SplitOperation xs x
 splitOperation = SplitOperation \n whole ->
     case Positive.minus (length whole) n of
-        Signed.Minus n' -> SplitInsufficient{ splitShortfall = n' }
-        Signed.Zero -> SplitAll
-        Signed.Plus _ ->
-            let
-                (a, b) = ListLike.splitAt
-                    (fromIntegral (review Positive.refine n))
-                    (generalize whole)
-            in Split (nontrivialUnsafe a) (nontrivialUnsafe b)
+        Signed.Plus _ -> Split (nontrivialUnsafe a) (nontrivialUnsafe b)
+          where
+            (a, b) = ListLike.splitAt
+                (fromIntegral (review Positive.refine n))
+                (generalize whole)
+        _ -> SplitInsufficient
