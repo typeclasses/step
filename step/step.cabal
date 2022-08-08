@@ -218,10 +218,13 @@ test-suite test-step
     type: exitcode-stdio-1.0
     hs-source-dirs: test/test-step
     main-is: Main.hs
-    build-depends: step, step-internal, step-action-types, step-nontrivial, step-rst, tasty, tasty-hedgehog, text
+    build-depends:
+        step, step-internal, step-action-types, step-nontrivial, step-rst
+      , tasty, tasty-hedgehog, tasty-hunit, text
     mixins:
         step-internal (Step.Internal.Prelude)
       , text (Data.Text as Text)
     other-modules:
         Step.Spec.DocumentParsing
         Step.Spec.LineHistory
+        Step.Spec.Nontrivial

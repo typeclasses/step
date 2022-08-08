@@ -25,7 +25,7 @@ import qualified Maybe
 
 import qualified Seq
 
-import Positive.Unsafe (Positive (PositiveUnsafe))
+import qualified Positive
 
 genChunks :: ListLike xs x => xs -> Gen [Nontrivial xs x]
 genChunks x = case untrivialize x of
@@ -39,7 +39,7 @@ genChunks' x = Gen.recursive Gen.choice [return (Seq.singleton x)] [genChunks'' 
 
 genChunks'' :: ListLike xs x => Nontrivial xs x -> Gen (Seq (Nontrivial xs x))
 genChunks'' x = if Nontrivial.lengthNat x == 1 then return (Seq.singleton x) else do
-    i <- PositiveUnsafe <$> Gen.integral (Range.constant 1 (Nontrivial.lengthNat x - 1))
+    Just i <- preview Positive.refine <$> Gen.integral (Range.constant 1 (Nontrivial.lengthNat x - 1))
     case split i x of
         SplitInsufficient -> error "genChunks: SplitInsufficient"
         Split a b -> (<>) <$> genChunks' a <*> genChunks' b

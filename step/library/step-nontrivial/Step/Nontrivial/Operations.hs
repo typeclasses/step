@@ -16,6 +16,7 @@ data Span xs x =
     SpanAll
   | SpanNone
   | SpanPart{ spannedPart :: Nontrivial xs x, spanRemainder :: Nontrivial xs x }
+  deriving stock (Eq, Ord, Show)
 
 newtype GeneralSpanOperation xs x =
     GeneralSpanOperation{ generalSpan :: Nontrivial xs x -> Span xs x }
@@ -29,6 +30,7 @@ newtype SplitOperation xs x =
 data Split xs x =
     SplitInsufficient
   | Split (Nontrivial xs x) (Nontrivial xs x)
+  deriving stock (Eq, Ord, Show)
 
 newtype DropOperation xs x =
     DropOperation{ drop :: Positive Natural -> Nontrivial xs x -> Drop xs x }
@@ -37,6 +39,7 @@ data Drop xs x =
     DropAll
   | DropInsufficient{ dropShortfall :: Positive Natural }
   | DropPart{ dropRemainder :: Nontrivial xs x }
+  deriving stock (Eq, Ord, Show)
 
 newtype WhileOperation xs x =
     WhileOperation{ while :: Predicate x -> Nontrivial xs x -> While xs x }

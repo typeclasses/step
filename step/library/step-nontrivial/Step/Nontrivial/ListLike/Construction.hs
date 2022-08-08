@@ -1,4 +1,4 @@
-{-# language Unsafe #-}
+{-# language FlexibleContexts, Unsafe #-}
 
 module Step.Nontrivial.ListLike.Construction where
 
@@ -26,9 +26,12 @@ untrivializeOperation = UntrivializeOperation \x -> do
 
 nontrivialUnsafe :: ListLike xs x => xs -> Nontrivial xs x
 nontrivialUnsafe x =
-    NontrivialUnsafe
-      { generalize = x
-      , length = (Positive.PositiveUnsafe . fromIntegral . ListLike.length) x
-      , head = ListLike.head x
-      , tail = untrivialize untrivializeOperation (ListLike.tail x)
-      }
+    let UntrivializeOperation{ untrivialize } = untrivializeOperation in
+    fromMaybe (error "nontrivialUnsafe") (untrivialize x)
+
+    -- NontrivialUnsafe
+    --   { generalize = x
+    --   , length = (Positive.PositiveUnsafe . fromIntegral . ListLike.length) x
+    --   , head = ListLike.head x
+    --   , tail = untrivialize untrivializeOperation (ListLike.tail x)
+    --   }

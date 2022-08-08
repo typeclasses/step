@@ -4,6 +4,7 @@ module Step.ActionTypes.GeneralActions
   (
     {- * Character -} takeCharMaybe, takeChar, nextChar, nextCharMaybe, satisfyJust,
     {- * Chunk -} next, nextMaybe, takeNext, takeNextMaybe,
+    {- * Misc. -} skip0, skip1,
     {- * End -} atEnd, end,
     {- * Commit -} commit,
     {- * General -} actionState, actionContext,
@@ -23,6 +24,11 @@ import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as Nontrivial
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
+import qualified Positive
+import qualified Positive.Math as Positive
+import qualified Signed
+
+import Step.ActionTypes.Assume
 
 commit :: Monad m => Positive Natural -> AtomicMove xs x r s e m ()
 commit n = AtomicMove (Atom (return (Sure (Any_Commit n ()))))
@@ -56,6 +62,18 @@ nextCharMaybe = nextMaybe A.<&> fmap @Maybe Nontrivial.head
 
 satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s r m a
 satisfyJust ok = nextCharMaybe A.>>= \x -> case x >>= ok of Nothing -> cast fail; Just y -> commit one $> y
+
+skip0 :: Monad m => Natural -> Any xs x r s r m ()
+skip0 = maybe (return ()) (cast @Any . skip1)  . preview Positive.refine
+
+skip1 :: Monad m => Positive Natural -> Move xs x r s r m ()
+skip1 n = A.do
+    x <- next
+    case Positive.minus (Nontrivial.length x) n of
+        Signed.Minus n' -> A.do
+            commit (Nontrivial.length x)
+            skip1 n'
+        _ -> cast @Move (commit n)
 
 atEnd :: Monad m => SureQuery xs x r s e m Bool
 atEnd = SureQuery (Query_Next isNothing)

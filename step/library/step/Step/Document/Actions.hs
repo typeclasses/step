@@ -16,8 +16,6 @@ import Step.Nontrivial (Nontrivial)
 
 import Step.Cursor
 
-import Positive.Unsafe (Positive (PositiveUnsafe))
-
 import Step.GeneralCursors (CursorPosition)
 
 import Step.LineHistory (LineHistory)
@@ -26,6 +24,8 @@ import qualified Step.LineHistory as LineHistory
 import Step.ContextStack (ContextStack (..), contextStackSeq)
 
 import Step.ContextStack
+
+import qualified Loc
 
 contextualize :: Monad m => ContravariantAction act => Text -> act xs x (Context xs x s m) s' e m a -> act xs x (Context xs x s m) s' e m a
 contextualize n = contramapAction (over (Doc.ctxConfigLens % Doc.configContextLens % contextStackSeq) (n :<|))
