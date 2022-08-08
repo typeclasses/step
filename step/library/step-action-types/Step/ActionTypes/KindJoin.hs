@@ -1,8 +1,8 @@
-{-# language DataKinds, Safe, TypeOperators #-}
+{-# language DataKinds, TypeOperators #-}
 
 module Step.ActionTypes.KindJoin where
 
-import Step.ActionTypes.Types
+import Step.ActionTypes.Constructors
 
 -- | The type @a >> b@ is type of the expression @a >> b@.
 --

@@ -8,7 +8,6 @@ import qualified Step.Cursor as Cursor
 import Step.RST
 
 import Step.ActionTypes
-import Step.ActionTypes.Unsafe
 
 runQuery :: forall xs x r s s' m a. Monad m => CursorRunR xs x r s s' m -> Query xs x r s m a -> RST r s m (Either r a)
 runQuery CursorRunR{ inputRunR, runR, resetRunR } = runR . r

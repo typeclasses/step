@@ -1,12 +1,12 @@
-{-# language ExplicitNamespaces, Safe #-}
+{-# language ExplicitNamespaces #-}
 
 module Step.ActionTypes
   (
     -- * The types
     Action,
     -- $types
-    Any, Query, Move, Atom, AtomicMove,
-    Sure, SureQuery, Fail,
+    Any (..), Query (..), Move (..), Atom (..), AtomicMove (..),
+    Sure (..), SureQuery (..), Fail (..),
     -- * Subtype relationships
     -- $subtypes
     Is, cast,
@@ -30,10 +30,11 @@ module Step.ActionTypes
   )
   where
 
-import Step.ActionTypes.GeneralActions
 import Step.ActionTypes.Atomic
+import Step.ActionTypes.Constructors
 import Step.ActionTypes.Contravariant
 import Step.ActionTypes.Functorial
+import Step.ActionTypes.GeneralActions
 import Step.ActionTypes.Join
 import Step.ActionTypes.KindJoin
 import Step.ActionTypes.Loop
@@ -41,7 +42,6 @@ import Step.ActionTypes.LossOfMovement
 import Step.ActionTypes.Monadic
 import Step.ActionTypes.Returnable
 import Step.ActionTypes.Subtyping
-import Step.ActionTypes.Types
 
 {- $types
 

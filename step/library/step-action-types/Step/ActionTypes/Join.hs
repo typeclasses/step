@@ -1,4 +1,4 @@
-{-# language DataKinds, FlexibleContexts, MultiParamTypeClasses, KindSignatures, Trustworthy, TypeOperators #-}
+{-# language DataKinds, FlexibleContexts, MultiParamTypeClasses, KindSignatures, TypeOperators #-}
 
 module Step.ActionTypes.Join
   (

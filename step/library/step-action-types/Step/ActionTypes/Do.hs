@@ -1,5 +1,5 @@
 {-# options_ghc -fno-warn-missing-signatures #-}
-{-# language FlexibleContexts, Safe, TypeOperators #-}
+{-# language FlexibleContexts, TypeOperators #-}
 
 -- | This module is for use with the QualifiedDo language extension.
 
@@ -16,7 +16,7 @@ import BasePrelude (fmap, (<$>), Monad)
 
 import Step.ActionTypes.Join (Join, join)
 import Step.ActionTypes.KindJoin (type (>>))
-import Step.ActionTypes.Types (SureQuery)
+import Step.ActionTypes.Constructors
 
 infixl 1 >>=
 (>>=) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x r s m a -> (a -> act2 xs x r s m b) -> act3 xs x r s m b

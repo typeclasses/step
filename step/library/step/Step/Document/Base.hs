@@ -15,8 +15,8 @@ module Step.Document.Base
 
 import Step.Internal.Prelude
 
+import Step.ActionTypes
 import qualified Step.ActionTypes as Action
-import Step.ActionTypes.Unsafe (Any)
 
 import Step.Cursor
 import qualified Step.Cursor as Cursor

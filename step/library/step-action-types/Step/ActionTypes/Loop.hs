@@ -1,11 +1,11 @@
-{-# language FlexibleContexts, FunctionalDependencies, QualifiedDo, Safe, TypeOperators #-}
+{-# language FlexibleContexts, FunctionalDependencies, QualifiedDo, TypeOperators #-}
 
 module Step.ActionTypes.Loop where
 
 import Step.Internal.Prelude
 
 import Step.ActionTypes.Returnable
-import Step.ActionTypes.Types
+import Step.ActionTypes.Constructors
 import Step.ActionTypes.Join
 import Step.ActionTypes.KindJoin
 import Step.ActionTypes.Subtyping

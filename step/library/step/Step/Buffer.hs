@@ -1,4 +1,4 @@
-{-# language GeneralizedNewtypeDeriving, Trustworthy #-}
+{-# language GeneralizedNewtypeDeriving #-}
 
 module Step.Buffer
   (

@@ -1,10 +1,10 @@
-{-# language DataKinds, KindSignatures, QuantifiedConstraints, Safe #-}
+{-# language DataKinds, KindSignatures, QuantifiedConstraints #-}
 
 module Step.ActionTypes.Monadic where
 
 import Step.Internal.Prelude
 
-import Step.ActionTypes.Types
+import Step.ActionTypes.Constructors
 
 import Step.ActionTypes.Functorial
 

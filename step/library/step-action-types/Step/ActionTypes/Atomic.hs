@@ -1,10 +1,9 @@
-{-# language DataKinds, FlexibleContexts, FunctionalDependencies, InstanceSigs, KindSignatures, Trustworthy #-}
+{-# language DataKinds, FlexibleContexts, FunctionalDependencies, InstanceSigs, KindSignatures #-}
 
 module Step.ActionTypes.Atomic where
 
 import Step.Internal.Prelude
 
-import Step.ActionTypes.Types
 import Step.ActionTypes.Constructors
 import Step.ActionTypes.Functorial
 import Step.ActionTypes.Join

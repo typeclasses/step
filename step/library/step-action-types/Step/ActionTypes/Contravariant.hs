@@ -1,4 +1,4 @@
-{-# language DataKinds, KindSignatures, Trustworthy #-}
+{-# language DataKinds, KindSignatures #-}
 
 module Step.ActionTypes.Contravariant where
 

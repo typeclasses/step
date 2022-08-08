@@ -1,4 +1,4 @@
-{-# language DataKinds, KindSignatures, FunctionalDependencies, Trustworthy #-}
+{-# language DataKinds, KindSignatures, FunctionalDependencies #-}
 
 module Step.ActionTypes.LossOfMovement where
 

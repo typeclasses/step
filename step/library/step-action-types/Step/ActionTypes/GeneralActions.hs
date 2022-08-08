@@ -1,4 +1,4 @@
-{-# language FlexibleContexts, QualifiedDo, Trustworthy #-}
+{-# language FlexibleContexts, QualifiedDo #-}
 
 module Step.ActionTypes.GeneralActions
   (

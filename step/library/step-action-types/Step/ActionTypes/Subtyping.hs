@@ -1,4 +1,4 @@
-{-# language DataKinds, InstanceSigs, KindSignatures, MultiParamTypeClasses, Trustworthy #-}
+{-# language DataKinds, InstanceSigs, KindSignatures, MultiParamTypeClasses #-}
 
 module Step.ActionTypes.Subtyping
   (

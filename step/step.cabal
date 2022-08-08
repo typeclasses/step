@@ -134,8 +134,6 @@ library
 
     reexported-modules:
         Step.ActionTypes
-      , Step.ActionTypes.Types
-      , Step.ActionTypes.Unsafe
       , Step.Cursor
       , Step.Nontrivial
       , Step.Nontrivial.Unsafe
@@ -179,8 +177,6 @@ library step-action-types
     exposed-modules:
         Step.ActionTypes
         Step.ActionTypes.Do
-        Step.ActionTypes.Types
-        Step.ActionTypes.Unsafe
     other-modules:
         Step.ActionTypes.Assume
         Step.ActionTypes.Atomic
