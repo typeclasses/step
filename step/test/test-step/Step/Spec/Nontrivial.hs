@@ -18,13 +18,14 @@ import qualified Map
 
 import Step.Nontrivial
 import qualified Step.Nontrivial.ListLike as LL
-import qualified Step.Nontrivial.ListLike.Construction as LL
 
 import Char (Char)
 
 import Step.RST
 
 import Positive.Unsafe
+
+import Maybe (fromJust)
 
 tests :: TestTree
 tests = testGroup "Nontrivial"
@@ -33,8 +34,16 @@ tests = testGroup "Nontrivial"
 
 dropTests :: TestTree
 dropTests = testGroup "drop"
-  [ testCase "all" (drop (PositiveUnsafe 1) (LL.nontrivialUnsafe ("abc" :: Text))
-      @?= DropPart{ dropRemainder = LL.nontrivialUnsafe "bc" })
+  [ testCase "part" $
+      drop (PositiveUnsafe 1) (fromJust (untrivialize ("abc" :: Text)))
+        @?= DropPart{ dropRemainder = fromJust (untrivialize "bc") }
+  , testCase "all" $
+      drop (PositiveUnsafe 3) (fromJust (untrivialize ("abc" :: Text)))
+        @?= DropAll
+  , testCase "insufficient" $
+      drop (PositiveUnsafe 4) (fromJust (untrivialize ("abc" :: Text)))
+        @?= DropInsufficient{ dropShortfall = PositiveUnsafe 1 }
   ]
   where
     DropOperation{ drop } = LL.dropOperation
+    UntrivializeOperation{ untrivialize } = LL.untrivializeOperation

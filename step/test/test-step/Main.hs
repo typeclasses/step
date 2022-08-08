@@ -11,4 +11,8 @@ import qualified Step.Spec.Nontrivial as Nontrivial
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Step tests" [LineHistory.tests, DocumentParsing.tests, Nontrivial.tests]
+tests = testGroup "Step tests"
+  [ Nontrivial.tests
+  , LineHistory.tests
+  , DocumentParsing.tests
+  ]
