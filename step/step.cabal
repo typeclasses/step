@@ -40,7 +40,7 @@ common base
       , mmorph
       , mtl
       , transformers
-      , nat-optics ^>= 1.0.0.4
+      , nat-optics ^>= 1.0.1.0
       , optics ^>= 0.4
       , text
     mixins:
