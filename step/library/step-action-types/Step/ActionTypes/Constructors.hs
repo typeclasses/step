@@ -138,5 +138,5 @@ instance Monad m => Monad (SureQuery xs x r s m) where
 
 -- | Never succeeds, never moves the cursor, never does anything at all
 
-data Fail xs x r s m a = Fail
+data Fail xs x r s m a = Fail (r -> r)
     deriving stock Functor

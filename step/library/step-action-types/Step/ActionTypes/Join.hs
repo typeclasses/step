@@ -84,21 +84,21 @@ instance Join AtomicMove Sure where
     join = assumeMovement . join . cast @Atom
 
 instance Join Fail Any where
-    join Fail = Fail
+    join (Fail f) = Fail f
 instance Join Fail Atom where
-    join Fail = Fail
+    join (Fail f) = Fail f
 instance Join Fail AtomicMove where
-    join Fail = Fail
+    join (Fail f) = Fail f
 instance Join Fail Fail where
-    join Fail = Fail
+    join (Fail f) = Fail f
 instance Join Fail Move where
-    join Fail = Fail
+    join (Fail f) = Fail f
 instance Join Fail Query where
-    join Fail = Fail
+    join (Fail f) = Fail f
 instance Join Fail Sure where
-    join Fail = Fail
+    join (Fail f) = Fail f
 instance Join Fail SureQuery where
-    join Fail = Fail
+    join (Fail f) = Fail f
 
 instance Join Move Any where
     join = assumeMovement . join . cast @Any

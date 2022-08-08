@@ -14,11 +14,15 @@ class ContravariantAction (act :: Action) where
 instance ContravariantAction Any where
     contramapAction f = \case
         Any_Ask g -> Any_Ask (g . f)
+        Any_Fail g -> Any_Fail (g . f)
+        Any_Join x -> Any_Join (contramapAction f (fmap (contramapAction f) x))
         x -> x
 
 instance ContravariantAction Query where
     contramapAction f = \case
         Query_Ask g -> Query_Ask (g . f)
+        Query_Fail g -> Query_Fail (g . f)
+        Query_Join x -> Query_Join (contramapAction f (fmap (contramapAction f) x))
         x -> x
 
 instance ContravariantAction Move where
@@ -33,12 +37,14 @@ instance ContravariantAction AtomicMove where
 instance ContravariantAction Sure where
     contramapAction f = \case
         Sure_Ask g -> Sure_Ask (g . f)
+        Sure_Join x -> Sure_Join (contramapAction f (fmap (contramapAction f) x))
         x -> x
 
 instance ContravariantAction SureQuery where
     contramapAction f = \case
         SureQuery_Ask g -> SureQuery_Ask (g . f)
+        SureQuery_Join x -> SureQuery_Join (contramapAction f (fmap (contramapAction f) x))
         x -> x
 
 instance ContravariantAction Fail where
-    contramapAction _ Fail = Fail
+    contramapAction f (Fail g) = Fail (g . f)

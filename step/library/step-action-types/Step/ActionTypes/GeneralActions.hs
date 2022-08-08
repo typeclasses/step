@@ -28,7 +28,7 @@ commit :: Monad m => Positive Natural -> AtomicMove xs x r s m ()
 commit n = AtomicMove (Atom (return (Sure_Commit n ())))
 
 fail :: Fail xs x r s m a
-fail = Fail
+fail = Fail id
 
 takeCharMaybe :: Monad m => Sure xs x r s m (Maybe x)
 takeCharMaybe = try takeChar

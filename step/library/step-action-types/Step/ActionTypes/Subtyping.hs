@@ -57,13 +57,13 @@ instance Is Fail Fail where cast' = id
 
 -- | Everything lifts to Any
 instance Is Query Any where
-  cast' = \case
-    Query_Lift x -> Any_Lift x
-    Query_Ask f -> Any_Ask f
-    Query_Get f -> Any_Get f
-    Query_Next f -> Any_Next f
-    Query_Join x -> Any_Join (cast $ fmap cast x)
-    Query_Fail f -> Any_Fail f
+    cast' = \case
+        Query_Lift x -> Any_Lift x
+        Query_Ask f -> Any_Ask f
+        Query_Get f -> Any_Get f
+        Query_Next f -> Any_Next f
+        Query_Join x -> Any_Join (cast $ fmap cast x)
+        Query_Fail f -> Any_Fail f
 
 -- | Everything lifts to Any
 instance Is Move Any where cast' = coerce
@@ -73,40 +73,41 @@ instance Is AtomicMove Any where cast' = cast' @Atom @Any . coerce
 
 -- | Everything lifts to Any
 instance Is Sure Any where
-  cast' :: forall xs x r s m a. Monad m => Sure xs x r s m a -> Any xs x r s m a
-  cast' = r
-    where
-      r :: forall a'. Sure xs x r s m a' -> Any xs x r s m a'
-      r = \case
-        Sure_Lift x -> Any_Lift x
-        Sure_Ask f -> Any_Ask f
-        Sure_Get f -> Any_Get f
-        Sure_Next f -> Any_Next f
-        Sure_Commit n f -> Any_Commit n f
-        Sure_Join x -> Any_Join (r (fmap r x))
+    cast' :: forall xs x r s m a. Monad m => Sure xs x r s m a -> Any xs x r s m a
+    cast' = r
+      where
+        r :: forall a'. Sure xs x r s m a' -> Any xs x r s m a'
+        r = \case
+            Sure_Lift x -> Any_Lift x
+            Sure_Ask f -> Any_Ask f
+            Sure_Get f -> Any_Get f
+            Sure_Next f -> Any_Next f
+            Sure_Commit n f -> Any_Commit n f
+            Sure_Join x -> Any_Join (r (fmap r x))
 
 -- | Everything lifts to Any
 instance Is SureQuery Any where
-  cast' = \case
-    SureQuery_Lift x -> Any_Lift x
-    SureQuery_Ask f -> Any_Ask f
-    SureQuery_Get f -> Any_Get f
-    SureQuery_Next f -> Any_Next f
-    SureQuery_Join x -> Any_Join (cast $ fmap cast x)
+    cast' = \case
+        SureQuery_Lift x -> Any_Lift x
+        SureQuery_Ask f -> Any_Ask f
+        SureQuery_Get f -> Any_Get f
+        SureQuery_Next f -> Any_Next f
+        SureQuery_Join x -> Any_Join (cast $ fmap cast x)
 
 -- | Everything lifts to Any
 instance Is Atom Any where
-  cast' (Atom q) = Any_Join (cast @Any (fmap (cast @Any) q))
+    cast' (Atom q) = Any_Join (cast @Any (fmap (cast @Any) q))
 
 
 -- Atom + Move = AtomicMove
 
 -- | AtomicMove gets its name from the fact that it has the properties of both Atom and Move
 instance Is AtomicMove Move where
-  cast' = coerce . cast' @Atom @Any . coerce
+    cast' = coerce . cast' @Atom @Any . coerce
 
 -- | AtomicMove gets its name from the fact that it has the properties of both Atom and Move
-instance Is AtomicMove Atom where cast' = coerce
+instance Is AtomicMove Atom where
+    cast' = coerce
 
 
 -- Sure + Query = SureQuery
@@ -143,23 +144,29 @@ instance Is SureQuery Query where
 
 -- | A Query is trivially atomic because it never moves the cursor, therefore it cannot move and fail
 instance Is Query Atom where
-  cast' = Atom . fmap return
+    cast' = Atom . fmap return
 
 -- | A Sure action is trivially atomic because it never fails, therefore it cannot move and fail
-instance Is Sure Atom where cast' = Atom . return
+instance Is Sure Atom where
+    cast' = Atom . return
 
 
 -- | Fail casts to anything that isn't Sure
-instance Is Fail Any where cast' Fail = Any_Fail id
+instance Is Fail Any where
+    cast' (Fail f) = Any_Fail f
 
 -- | Fail casts to anything that isn't Sure
-instance Is Fail Query where cast' Fail = Query_Fail id
+instance Is Fail Query where
+    cast' (Fail f) = Query_Fail f
 
 -- | Fail casts to anything that isn't Sure
-instance Is Fail Move where cast' Fail = Move (Any_Fail id)
+instance Is Fail Move where
+    cast' (Fail f) = Move (Any_Fail f)
 
 -- | Fail casts to anything that isn't Sure
-instance Is Fail Atom where cast' Fail = Atom (Query_Fail id)
+instance Is Fail Atom where
+    cast' (Fail f) = Atom (Query_Fail f)
 
 -- | Fail casts to anything that isn't Sure
-instance Is Fail AtomicMove where cast' Fail = AtomicMove (Atom (Query_Fail id))
+instance Is Fail AtomicMove where
+    cast' (Fail f) = AtomicMove (Atom (Query_Fail f))
