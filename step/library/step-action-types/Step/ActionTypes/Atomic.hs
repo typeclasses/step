@@ -12,7 +12,7 @@ import Step.ActionTypes.Subtyping
 class (FunctorialAction act, FunctorialAction try) =>
     Atomic (act :: Action) (try :: Action) | act -> try
   where
-    try :: Monad m => act xs x r s m a -> try xs x r s m (Maybe a)
+    try :: Monad m => act xs x r s e m a -> try xs x r s e' m (Maybe a)
 
 instance Atomic Atom Sure
   where
@@ -24,11 +24,11 @@ instance Atomic AtomicMove Sure
 
 instance Atomic Query SureQuery
   where
-    try :: forall xs x r s m a. Monad m =>
-        Query xs x r s m a -> SureQuery xs x r s m (Maybe a)
+    try :: forall xs x r s e m a. Monad m =>
+        Query xs x r s e m a -> SureQuery xs x r s e m (Maybe a)
     try = r
       where
-        r :: forall a'. Query xs x r s m a' -> SureQuery xs x r s m (Maybe a')
+        r :: forall a'. Query xs x r s e m a' -> SureQuery xs x r s e m (Maybe a')
         r = \case
             Query_Lift x -> Just <$> SureQuery_Lift x
             Query_Ask f -> Just <$> SureQuery_Ask f

@@ -15,14 +15,16 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 
+import Step.ActionTypes.Fallible
+
 import Coerce (coerce)
 
 
 class Is (act1 :: Action) (act2 :: Action) where
-    cast' :: Monad m => act1 xs x r s m a -> act2 xs x r s m a
+    cast' :: Monad m => act1 xs x r s e m a -> act2 xs x r s e m a
 
 
-cast :: forall act2 act1 xs x r s m a. (Monad m, Is act1 act2) => act1 xs x r s m a -> act2 xs x r s m a
+cast :: forall act2 act1 xs x r s e m a. (Monad m, Is act1 act2) => act1 xs x r s e m a -> act2 xs x r s e m a
 cast = cast' @act1 @act2
 
 
@@ -73,26 +75,12 @@ instance Is AtomicMove Any where cast' = cast' @Atom @Any . coerce
 
 -- | Everything lifts to Any
 instance Is Sure Any where
-    cast' :: forall xs x r s m a. Monad m => Sure xs x r s m a -> Any xs x r s m a
-    cast' = r
-      where
-        r :: forall a'. Sure xs x r s m a' -> Any xs x r s m a'
-        r = \case
-            Sure_Lift x -> Any_Lift x
-            Sure_Ask f -> Any_Ask f
-            Sure_Get f -> Any_Get f
-            Sure_Next f -> Any_Next f
-            Sure_Commit n f -> Any_Commit n f
-            Sure_Join x -> Any_Join (r (fmap r x))
+    cast' :: forall xs x r s e m a. Monad m => Sure xs x r s e m a -> Any xs x r s e m a
+    cast' (Sure x) = mapError absurd x
 
 -- | Everything lifts to Any
 instance Is SureQuery Any where
-    cast' = \case
-        SureQuery_Lift x -> Any_Lift x
-        SureQuery_Ask f -> Any_Ask f
-        SureQuery_Get f -> Any_Get f
-        SureQuery_Next f -> Any_Next f
-        SureQuery_Join x -> Any_Join (cast $ fmap cast x)
+    cast' (SureQuery x) = cast (mapError absurd x)
 
 -- | Everything lifts to Any
 instance Is Atom Any where
@@ -114,30 +102,23 @@ instance Is AtomicMove Atom where
 
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
 instance Is SureQuery Sure where
-  cast' :: forall xs x r s m a. Monad m => SureQuery xs x r s m a -> Sure xs x r s m a
-  cast' = r
+  cast' :: forall xs x r s e m a. Monad m => SureQuery xs x r s e m a -> Sure xs x r s e m a
+  cast' = go
     where
-      r :: forall a'. SureQuery xs x r s m a' -> Sure xs x r s m a'
-      r = \case
-        SureQuery_Lift x -> Sure_Lift x
-        SureQuery_Ask f -> Sure_Ask f
-        SureQuery_Get f -> Sure_Get f
-        SureQuery_Next f -> Sure_Next f
-        SureQuery_Join x -> Sure_Join (r (fmap r x))
+      go :: forall a'. SureQuery xs x r s e m a' -> Sure xs x r s e m a'
+      go = \case
+        SureQuery (Query_Lift x) -> Sure (Any_Lift x)
+        SureQuery (Query_Ask f) -> Sure (Any_Ask f)
+        SureQuery (Query_Get f) -> Sure (Any_Get f)
+        SureQuery (Query_Next f) -> Sure (Any_Next f)
+        SureQuery (Query_Join x) -> Sure (Any_Join (cast (fmap cast x)))
+        SureQuery (Query_Fail x) -> Sure (Any_Fail \r s -> x r s)
 
 
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
 instance Is SureQuery Query where
-  cast' :: forall xs x r s m a. Monad m => SureQuery xs x r s m a -> Query xs x r s m a
-  cast' = r
-    where
-      r :: forall a'. SureQuery xs x r s m a' -> Query xs x r s m a'
-      r = \case
-        SureQuery_Lift x -> Query_Lift x
-        SureQuery_Ask f -> Query_Ask f
-        SureQuery_Get f -> Query_Get f
-        SureQuery_Next f -> Query_Next f
-        SureQuery_Join x -> Query_Join (r (fmap r x))
+  cast' :: forall xs x r s e m a. Monad m => SureQuery xs x r s e m a -> Query xs x r s e m a
+  cast' (SureQuery q) = mapError absurd q
 
 
 -- Trivial subtypes of Atom

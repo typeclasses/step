@@ -24,12 +24,12 @@ class (FunctorialAction act1, FunctorialAction act2, FunctorialAction (act1 >> a
     Join (act1 :: Action) (act2 :: Action)
   where
     join :: Monad m =>
-        act1 xs x r s m (act2 xs x r s m a)
-        -> (act1 >> act2) xs x r s m a
+        act1 xs x r s e m (act2 xs x r s e m a)
+        -> (act1 >> act2) xs x r s e m a
 
-cast2 :: forall act2 act1 m f xs x r s a.
+cast2 :: forall act2 act1 f xs x r s e m a.
     (Is act1 act2, Monad m, Functor f) =>
-    f (act1 xs x r s m a) -> f (act2 xs x r s m a)
+    f (act1 xs x r s e m a) -> f (act2 xs x r s e m a)
 cast2 = fmap cast
 
 instance Join Any Any where

@@ -183,6 +183,7 @@ library step-action-types
         Step.ActionTypes.Returnable
         Step.ActionTypes.Contravariant
         Step.ActionTypes.Constructors
+        Step.ActionTypes.Fallible
         Step.ActionTypes.Functorial
         Step.ActionTypes.GeneralActions
         Step.ActionTypes.Join

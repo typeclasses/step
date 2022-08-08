@@ -7,7 +7,7 @@ import Step.Internal.Prelude
 import Step.ActionTypes.Constructors
 
 class Returnable (act :: Action) where
-    trivial :: Monad m => a -> act xs x r s m a
+    trivial :: Monad m => a -> act xs x r s e m a
 
 instance Returnable Any where trivial = Any_Lift . return
 instance Returnable Query where trivial = Query_Lift . return
