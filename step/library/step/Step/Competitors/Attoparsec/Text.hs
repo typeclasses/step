@@ -7,8 +7,10 @@ module Step.Competitors.Attoparsec.Text where
 import Step.Internal.Prelude
 
 import Step.ActionTypes
+import qualified Step.ActionTypes as A
 
 import qualified Step.Document as P
+import Step.Document (Error)
 
 import Char (Char)
 import qualified Char
@@ -22,8 +24,18 @@ import qualified Step.Document as Doc
 
 import qualified ListLike
 
+import Step.ContextStack
+
+import Step.Nontrivial
+
+import Optics
+
 type Parser s m (act :: Action) a =
-    act Text Char (Doc.Context Text Char s m) (Doc.DocumentMemory Text Char s) m a
+    act Text Char
+        (Doc.Context Text Char [Nontrivial Text Char] m)
+        (Doc.DocumentMemory Text Char s)
+        (Doc.Context Text Char [Nontrivial Text Char] m)
+        m a
 
 char :: Monad m => Char -> Parser s m AtomicMove Char
 char x = P.satisfyJust (\y -> if y == x then Just y else Nothing) <?> "char " <> Text.pack (show x)

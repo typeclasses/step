@@ -25,27 +25,27 @@ import qualified Step.Nontrivial as Nontrivial
 import Positive.Unsafe (Positive (PositiveUnsafe))
 
 commit :: Monad m => Positive Natural -> AtomicMove xs x r s e m ()
-commit n = AtomicMove (Atom (return (Sure_Commit n ())))
+commit n = AtomicMove (Atom (return (Sure (Any_Commit n ()))))
 
-fail :: Fail xs x r s (r, s) m a
-fail = Fail (,)
+fail :: Fail xs x r s r m a
+fail = Fail id
 
 takeCharMaybe :: Monad m => Sure xs x r s e m (Maybe x)
 takeCharMaybe = try takeChar
 
-takeChar :: Monad m => AtomicMove xs x r s (r, s) m x
+takeChar :: Monad m => AtomicMove xs x r s r m x
 takeChar = nextChar A.<* commit one
 
-nextChar :: Monad m => Query xs x r s (r, s) m x
+nextChar :: Monad m => Query xs x r s r m x
 nextChar = nextCharMaybe A.>>= maybe (cast @Query fail) return
 
 nextMaybe :: Monad m => SureQuery xs x r s e m (Maybe (Nontrivial xs x))
-nextMaybe = SureQuery_Next id
+nextMaybe = SureQuery (Query_Next id)
 
-next :: Monad m => Query xs x r s e m (Nontrivial xs x)
+next :: Monad m => Query xs x r s r m (Nontrivial xs x)
 next = nextMaybe A.>>= maybe (cast @Query fail) return
 
-takeNext :: Monad m => AtomicMove xs x r s e m (Nontrivial xs x)
+takeNext :: Monad m => AtomicMove xs x r s r m (Nontrivial xs x)
 takeNext = next A.>>= \xs -> commit (Nontrivial.length xs) $> xs
 
 takeNextMaybe :: Monad m => Sure xs x r s e m (Maybe (Nontrivial xs x))
@@ -54,20 +54,20 @@ takeNextMaybe = try takeNext
 nextCharMaybe :: Monad m => SureQuery xs x r s e m (Maybe x)
 nextCharMaybe = nextMaybe A.<&> fmap @Maybe Nontrivial.head
 
-satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s e m a
+satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s r m a
 satisfyJust ok = nextCharMaybe A.>>= \x -> case x >>= ok of Nothing -> cast fail; Just y -> commit one $> y
 
 atEnd :: Monad m => SureQuery xs x r s e m Bool
-atEnd = SureQuery_Next isNothing
+atEnd = SureQuery (Query_Next isNothing)
 
-end :: Monad m => Query xs x r s e m ()
-end = atEnd A.>>= \case{ True -> return (); False -> Query_Fail id }
+end :: Monad m => Query xs x r s r m ()
+end = atEnd A.>>= \case{ True -> return (); False -> cast @Query fail }
 
 actionState :: SureQuery xs x r s e m s
-actionState = SureQuery_Get id
+actionState = SureQuery (Query_Get id)
 
 actionContext :: SureQuery xs x r s e m r
-actionContext = SureQuery_Ask id
+actionContext = SureQuery (Query_Ask id)
 
 one :: Positive Natural
 one = PositiveUnsafe 1

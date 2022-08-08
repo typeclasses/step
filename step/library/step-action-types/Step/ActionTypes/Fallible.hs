@@ -24,7 +24,7 @@ instance Fallible Any where
       where
         go :: forall a'. Any xs x r s e m a' -> Any xs x r s e' m a'
         go = \case
-            Any_Fail g -> Any_Fail \r s -> f (g r s)
+            Any_Fail g -> Any_Fail \r -> f (g r)
             Any_Join x -> Any_Join (go (fmap go x))
             Any_Lift x -> Any_Lift x
             Any_Ask x -> Any_Ask x
@@ -39,7 +39,7 @@ instance Fallible Query where
       where
         go :: forall a'. Query xs x r s e m a' -> Query xs x r s e' m a'
         go = \case
-            Query_Fail g -> Query_Fail \r s -> f (g r s)
+            Query_Fail g -> Query_Fail \r -> f (g r)
             Query_Join x -> Query_Join (go (fmap go x))
             Query_Lift x -> Query_Lift x
             Query_Ask x -> Query_Ask x
@@ -50,7 +50,7 @@ instance Fallible Atom where
     mapError f (Atom q) = Atom (mapError f (fmap mapError' q))
 
 instance Fallible Fail where
-    mapError f (Fail x) = Fail \r s -> f (x r s)
+    mapError f (Fail x) = Fail \r -> f (x r)
 
 deriving newtype instance Fallible Move
 

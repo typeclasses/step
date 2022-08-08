@@ -27,16 +27,16 @@ import Step.ContextStack (ContextStack (..), contextStackSeq)
 
 import Step.ContextStack
 
-contextualize :: Monad m => ContravariantAction act => Text -> act xs x (Context xs x s m) s' m a -> act xs x (Context xs x s m) s' m a
+contextualize :: Monad m => ContravariantAction act => Text -> act xs x (Context xs x s m) s' e m a -> act xs x (Context xs x s m) s' e m a
 contextualize n = contramapAction (over (Doc.ctxConfigLens % Doc.configContextLens % contextStackSeq) (n :<|))
 
-cursorPosition :: Monad m => SureQuery xs x r (DocumentMemory xs x s) m CursorPosition
+cursorPosition :: Monad m => SureQuery xs x r (DocumentMemory xs x s) e m CursorPosition
 cursorPosition = actionState <&> Doc.cursorPosition
 
-lineHistory :: Monad m => SureQuery xs x r (DocumentMemory xs x s) m LineHistory
+lineHistory :: Monad m => SureQuery xs x r (DocumentMemory xs x s) e m LineHistory
 lineHistory = actionState <&> Doc.lineHistory
 
-position :: Monad m => SureQuery xs x (Context xs x s m) (DocumentMemory xs x s) m Loc
+position :: Monad m => SureQuery xs x (Context xs x s m) (DocumentMemory xs x s) e m Loc
 position = do
     lh <- lineHistory
     cp <- cursorPosition

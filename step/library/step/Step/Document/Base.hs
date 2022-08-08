@@ -119,7 +119,7 @@ record' spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanO
     ts = configLineTerminators (ctxConfig ctx)
 
 parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
-    act xs x (Context xs x s m) (DocumentMemory xs x s) m a
+    act xs x (Context xs x s m) (DocumentMemory xs x s) (Context xs x s m) m a
     -> Context xs x s m
     -> StateT (DocumentMemory xs x s) m (Either Error a)
 parse a =
@@ -134,7 +134,7 @@ parse a =
           Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
 parseOnly :: (Is act Any, Monad m, ListLike xs x) =>
-    act xs x (Context xs x s m) (DocumentMemory xs x s) m a
+    act xs x (Context xs x s m) (DocumentMemory xs x s) (Context xs x s m) m a
     -> Context xs x s m
     -> s
     -> m (Either Error a)
@@ -142,7 +142,10 @@ parseOnly p c s =
     evalStateT (parse p c) DocumentMemory{ buffer = [], lineHistory = Lines.empty, cursorPosition = 0, streamState = s }
 
 parseSimple :: forall xs a act. (Is act Any, ListLike xs Char) =>
-    act xs Char (Context xs Char [Nontrivial xs Char] Identity) (DocumentMemory xs Char [Nontrivial xs Char]) Identity a
+    act xs Char
+        (Context xs Char [Nontrivial xs Char] Identity)
+        (DocumentMemory xs Char [Nontrivial xs Char])
+        (Context xs Char [Nontrivial xs Char] Identity) Identity a
     -> [Nontrivial xs Char]
     -> Either Error a
 parseSimple p i = runIdentity (parseOnly p (Context def Cursor.list) i)

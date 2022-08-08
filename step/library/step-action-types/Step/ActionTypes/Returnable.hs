@@ -12,5 +12,5 @@ class Returnable (act :: Action) where
 instance Returnable Any where trivial = Any_Lift . return
 instance Returnable Query where trivial = Query_Lift . return
 instance Returnable Atom where trivial = Atom . return . return
-instance Returnable Sure where trivial = Sure_Lift . return
-instance Returnable SureQuery where trivial = SureQuery_Lift . return
+instance Returnable Sure where trivial = Sure . return
+instance Returnable SureQuery where trivial = SureQuery . return

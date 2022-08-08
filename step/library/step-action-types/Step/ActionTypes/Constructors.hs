@@ -40,7 +40,7 @@ data Any xs x r s e m a =
   | Any_Next (Maybe (Nontrivial xs x) -> a)
   | Any_Commit (Positive Natural) a
   | Any_Join (Any xs x r s e m (Any xs x r s e m a))
-  | Any_Fail (r -> s -> e)
+  | Any_Fail (r -> e)
   deriving stock Functor
 
 instance Monad m => Applicative (Any xs x r s e m) where
@@ -60,7 +60,7 @@ data Query xs x r s e m a =
   | Query_Get (s -> a)
   | Query_Next (Maybe (Nontrivial xs x) -> a)
   | Query_Join (Query xs x r s e m (Query xs x r s e m a))
-  | Query_Fail (r -> s -> e)
+  | Query_Fail (r -> e)
   deriving stock Functor
 
 instance Monad m => Applicative (Query xs x r s e m) where
@@ -114,5 +114,5 @@ newtype SureQuery xs x r s e m a =
 
 -- | Never succeeds, never moves the cursor, never does anything at all
 
-data Fail xs x r s e m a = Fail (r -> s -> e)
+data Fail xs x r s e m a = Fail (r -> e)
     deriving stock Functor

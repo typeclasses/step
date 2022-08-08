@@ -112,7 +112,7 @@ instance Is SureQuery Sure where
         SureQuery (Query_Get f) -> Sure (Any_Get f)
         SureQuery (Query_Next f) -> Sure (Any_Next f)
         SureQuery (Query_Join x) -> Sure (Any_Join (cast (fmap cast x)))
-        SureQuery (Query_Fail x) -> Sure (Any_Fail \r s -> x r s)
+        SureQuery (Query_Fail x) -> Sure (Any_Fail \r -> x r)
 
 
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
