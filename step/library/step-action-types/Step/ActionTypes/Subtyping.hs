@@ -1,5 +1,5 @@
 {-# language DataKinds, KindSignatures, FunctionalDependencies, InstanceSigs #-}
-{-# language DataKinds, InstanceSigs, KindSignatures, MultiParamTypeClasses #-}
+{-# language DataKinds, InstanceSigs, KindSignatures, MultiParamTypeClasses, FlexibleInstances #-}
 
 module Step.ActionTypes.Subtyping
   (
@@ -24,6 +24,13 @@ castTo :: forall act2 act1 xs x r s e m a. (Monad m, Is act1 act2) =>
     act1 xs x r s e m a -> act2 xs x r s e m a
 castTo = cast @act1 @act2
 
+joiningCast :: Is act1 act2 => (Monad m, FunctorialAction act1) => Joining act1 xs x r s e m a -> Joining act2 xs x r s e m a
+joiningCast = \case
+    Plain x -> Plain (cast x)
+    Join x -> Join $ joiningCast (fmap joiningCast x)
+
+instance Is act (Joining act) where cast = Plain
+
 -- Everything is itself
 instance Is Any Any where cast = id
 instance Is Base Base where cast = id
@@ -40,25 +47,30 @@ instance Is Fail Fail where cast = id
 instance Is SureBase Any where cast = castTo @Any . castTo @Base
 instance Is SureBase Base where cast = mapError absurd . (\(SureBase x) -> x)
 instance Is SureBase Query where cast = castTo @Query . castTo @Base
-instance Is SureBase Atom where cast (SureBase x) = mapError absurd $ Atom (Query_Base (fmap trivial x))
+instance Is SureBase Atom where cast (SureBase x) = mapError absurd $ Atom (cast (fmap trivial x))
 instance Is SureBase Sure where cast = Sure . castTo @Any . mapError'
-instance Is SureBase SureQuery where cast (SureBase x) = SureQuery (Query_Base x)
+instance Is SureBase SureQuery where cast (SureBase x) = SureQuery (cast x)
 
 -- Base is everything but Sure Move, Fail
-instance Is Base Any where cast = Any_Base
-instance Is Base Query where cast = Query_Base
-instance Is Base Atom where cast = Atom . Query_Base . fmap trivial
+instance Is Base Any where cast = Any . cast . cast @Base @BaseRW
+instance Is Base Query where cast = Query . cast
+instance Is Base Atom where cast = Atom . cast . fmap trivial
+instance Is Base BaseRW where cast = _
 
 -- Everything is Any
 instance Is Move Any where cast = coerce
 instance Is AtomicMove Any where cast = cast @Atom @Any . coerce
 instance Is Sure Any where cast (Sure x) = mapError absurd x
 instance Is SureQuery Any where cast (SureQuery x) = castTo @Any (mapError absurd x)
-instance Is Atom Any where cast (Atom q) = Any_Join (castTo @Any (fmap (castTo @Any) q))
-instance Is Query Any where
-    cast = \case
-        Query_Base x -> Any_Base x
-        Query_Join x -> Any_Join (castTo @Any $ fmap (castTo @Any) x)
+instance Is Query Any where cast (Query x) = Any (joiningCast x)
+instance Is Atom Any where
+    cast =
+        Any
+        . Join
+        . fmap (mapError absurd . (\(Any x) -> x) . (\(Sure x) -> x))
+        . joiningCast @Base @BaseRW
+        . (\(Query q) -> q)
+        . (\(Atom q) -> q)
 
 -- Atom + Move = AtomicMove
 instance Is AtomicMove Move where cast = coerce . cast @Atom @Any . coerce
@@ -79,7 +91,7 @@ instance Is Fail Any where cast = castTo @Any . castTo @Base
 instance Is Fail Query where cast = castTo @Query . castTo @Base
 instance Is Fail Move where cast = Move . castTo @Any . castTo @Base
 instance Is Fail Atom where cast = castTo @Atom . castTo @Base
-instance Is Fail AtomicMove where cast = AtomicMove . Atom . Query_Base . (\(Fail f) -> Base_Fail f)
+instance Is Fail AtomicMove where cast = AtomicMove . cast
 
 class Is act1 act2 => LossOfMovement act1 act2 | act1 -> act2
 
