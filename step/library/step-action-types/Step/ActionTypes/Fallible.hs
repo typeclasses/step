@@ -24,14 +24,9 @@ instance Fallible Any where
       where
         go :: forall a'. Any xs x r s e m a' -> Any xs x r s e' m a'
         go = \case
-            Any_Fail g -> Any_Fail \r -> f (g r)
             Any_Join x -> Any_Join (go (fmap go x))
-            Any_Lift x -> Any_Lift x
-            Any_Ask x -> Any_Ask x
-            Any_Get x -> Any_Get x
-            Any_Next x -> Any_Next x
+            Any_Base x -> Any_Base (mapError f x)
             Any_Commit n x -> Any_Commit n x
-            Any_Reset x -> Any_Reset x
 
 instance Fallible Query where
     mapError :: forall e e' xs x r s m a. Functor m =>
@@ -40,13 +35,17 @@ instance Fallible Query where
       where
         go :: forall a'. Query xs x r s e m a' -> Query xs x r s e' m a'
         go = \case
-            Query_Fail g -> Query_Fail \r -> f (g r)
             Query_Join x -> Query_Join (go (fmap go x))
-            Query_Lift x -> Query_Lift x
-            Query_Ask x -> Query_Ask x
-            Query_Get x -> Query_Get x
-            Query_Next x -> Query_Next x
-            Query_Reset x -> Query_Reset x
+            Query_Base x -> Query_Base (mapError f x)
+
+instance Fallible Base where
+    mapError f = \case
+        Base_Fail g -> Base_Fail (f . g)
+        Base_Lift x -> Base_Lift x
+        Base_Ask x -> Base_Ask x
+        Base_Get x -> Base_Get x
+        Base_Reset x -> Base_Reset x
+        Base_Next x -> Base_Next x
 
 instance Fallible Atom where
     mapError f (Atom q) = Atom (mapError f (fmap mapError' q))
@@ -63,3 +62,6 @@ instance Infallible Sure where
 
 instance Infallible SureQuery where
     mapError' (SureQuery x) = SureQuery (mapError absurd x)
+
+instance Infallible SureBase where
+    mapError' (SureBase x) = SureBase (mapError absurd x)

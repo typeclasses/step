@@ -31,10 +31,15 @@ instance Atomic Query SureQuery
       where
         r :: forall a'. Query xs x r s e m a' -> SureQuery xs x r s e' m (Maybe a')
         r = \case
-            Query_Lift x -> SureQuery (Query_Lift (Just <$> x))
-            Query_Ask f -> SureQuery (Query_Ask (Just . f))
-            Query_Get f -> SureQuery (Query_Get (Just . f))
-            Query_Next f -> SureQuery (Query_Next (Just . f))
-            Query_Reset x -> SureQuery (Query_Reset (Just x))
+            Query_Base x -> SureQuery (let SureBase y = try x in cast @Base @Query y)
             Query_Join x -> r x >>= maybe (return Nothing) r
-            Query_Fail _ -> return Nothing
+
+instance Atomic Base SureBase
+  where
+    try = \case
+      Base_Fail _ -> SureBase (Base_Lift (return Nothing))
+      Base_Lift x -> SureBase (Base_Lift (Just <$> x))
+      Base_Ask x -> SureBase (Base_Ask (Just . x))
+      Base_Get x -> SureBase (Base_Get (Just . x))
+      Base_Reset x -> SureBase (Base_Reset (Just x))
+      Base_Next x -> SureBase (Base_Next (Just . x))

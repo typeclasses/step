@@ -24,24 +24,35 @@ type Action =
 type Any        :: Action
 type Atom       :: Action
 type AtomicMove :: Action
+type Base       :: Action
 type Fail       :: Action
 type Move       :: Action
 type Query      :: Action
 type Sure       :: Action
+type SureBase   :: Action
 type SureQuery  :: Action
+
+
+data Base xs x r s e m a =
+    Base_Lift (m a)
+  | Base_Ask (r -> a)
+  | Base_Get (s -> a)
+  | Base_Reset a
+  | Base_Next (Maybe (Nontrivial xs x) -> a)
+  | Base_Fail (r -> e)
+  deriving stock Functor
+
+newtype SureBase xs x r s e m a =
+    SureBase (Base xs x r s Void m a)
+    deriving stock Functor
 
 
 -- | No known properties
 
 data Any xs x r s e m a =
-    Any_Lift (m a)
-  | Any_Ask (r -> a)
-  | Any_Get (s -> a)
-  | Any_Next (Maybe (Nontrivial xs x) -> a)
+    Any_Base (Base xs x r s e m a)
   | Any_Commit (Positive Natural) a
   | Any_Join (Any xs x r s e m (Any xs x r s e m a))
-  | Any_Fail (r -> e)
-  | Any_Reset a
   deriving stock Functor
 
 instance Monad m => Applicative (Any xs x r s e m) where
@@ -49,20 +60,15 @@ instance Monad m => Applicative (Any xs x r s e m) where
     (<*>) = ap
 
 instance Monad m => Monad (Any xs x r s e m) where
-    return = Any_Lift . return
+    return = Any_Base . Base_Lift . return
     a >>= f = Any_Join (fmap f a)
 
 
 -- | Does not move the cursor
 
 data Query xs x r s e m a =
-    Query_Lift (m a)
-  | Query_Ask (r -> a)
-  | Query_Get (s -> a)
-  | Query_Next (Maybe (Nontrivial xs x) -> a)
+    Query_Base (Base xs x r s e m a)
   | Query_Join (Query xs x r s e m (Query xs x r s e m a))
-  | Query_Fail (r -> e)
-  | Query_Reset a
   deriving stock Functor
 
 instance Monad m => Applicative (Query xs x r s e m) where
@@ -70,7 +76,7 @@ instance Monad m => Applicative (Query xs x r s e m) where
     (<*>) = ap
 
 instance Monad m => Monad (Query xs x r s e m) where
-    return = Query_Lift . return
+    return = Query_Base . Base_Lift . return
     a >>= f = Query_Join (fmap f a)
 
 

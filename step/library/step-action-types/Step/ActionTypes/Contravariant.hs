@@ -11,19 +11,22 @@ import Coerce
 class ContravariantAction (act :: Action) where
     contramapAction :: Monad m => (r -> r) -> act xs x r s e m a -> act xs x r s e m a
 
+instance ContravariantAction Base where
+    contramapAction f = \case
+        Base_Ask g -> Base_Ask (g . f)
+        Base_Fail g -> Base_Fail (g . f)
+        x -> x
+
 instance ContravariantAction Any where
     contramapAction f = \case
-        Any_Ask g -> Any_Ask (g . f)
-        Any_Fail g -> Any_Fail (g . f)
+        Any_Base x -> Any_Base (contramapAction f x)
         Any_Join x -> Any_Join (contramapAction f (fmap (contramapAction f) x))
         x -> x
 
 instance ContravariantAction Query where
     contramapAction f = \case
-        Query_Ask g -> Query_Ask (g . f)
-        Query_Fail g -> Query_Fail (g . f)
+        Query_Base x -> Query_Base (contramapAction f x)
         Query_Join x -> Query_Join (contramapAction f (fmap (contramapAction f) x))
-        x -> x
 
 instance ContravariantAction Move where
     contramapAction f = coerce . contramapAction @Any f . coerce
