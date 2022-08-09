@@ -31,6 +31,7 @@ instance Fallible Any where
             Any_Get x -> Any_Get x
             Any_Next x -> Any_Next x
             Any_Commit n x -> Any_Commit n x
+            Any_Reset x -> Any_Reset x
 
 instance Fallible Query where
     mapError :: forall e e' xs x r s m a. Functor m =>
@@ -45,6 +46,7 @@ instance Fallible Query where
             Query_Ask x -> Query_Ask x
             Query_Get x -> Query_Get x
             Query_Next x -> Query_Next x
+            Query_Reset x -> Query_Reset x
 
 instance Fallible Atom where
     mapError f (Atom q) = Atom (mapError f (fmap mapError' q))

@@ -66,6 +66,7 @@ instance Is Query Any where
         Query_Next f -> Any_Next f
         Query_Join x -> Any_Join (cast $ fmap cast x)
         Query_Fail f -> Any_Fail f
+        Query_Reset x -> Any_Reset x
 
 -- | Everything lifts to Any
 instance Is Move Any where cast' = coerce
@@ -103,17 +104,7 @@ instance Is AtomicMove Atom where
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
 instance Is SureQuery Sure where
   cast' :: forall xs x r s e m a. Monad m => SureQuery xs x r s e m a -> Sure xs x r s e m a
-  cast' = go
-    where
-      go :: forall a'. SureQuery xs x r s e m a' -> Sure xs x r s e m a'
-      go = \case
-        SureQuery (Query_Lift x) -> Sure (Any_Lift x)
-        SureQuery (Query_Ask f) -> Sure (Any_Ask f)
-        SureQuery (Query_Get f) -> Sure (Any_Get f)
-        SureQuery (Query_Next f) -> Sure (Any_Next f)
-        SureQuery (Query_Join x) -> Sure (Any_Join (cast (fmap cast x)))
-        SureQuery (Query_Fail x) -> Sure (Any_Fail \r -> x r)
-
+  cast' (SureQuery q) = Sure (cast' q)
 
 -- | SureQuery gets its name from the fact that it has the properties of both Sure and Query
 instance Is SureQuery Query where
@@ -130,6 +121,9 @@ instance Is Query Atom where
 -- | A Sure action is trivially atomic because it never fails, therefore it cannot move and fail
 instance Is Sure Atom where
     cast' = Atom . return
+
+instance Is SureQuery Atom where
+    cast' (SureQuery q) = Atom $ fmap return $ mapError absurd q
 
 
 -- | Fail casts to anything that isn't Sure

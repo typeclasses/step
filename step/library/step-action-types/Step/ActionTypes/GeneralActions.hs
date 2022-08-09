@@ -4,7 +4,7 @@ module Step.ActionTypes.GeneralActions
   (
     {- * Character -} takeCharMaybe, takeChar, nextChar, nextCharMaybe, satisfyJust,
     {- * Chunk -} next, nextMaybe, takeNext, takeNextMaybe,
-    {- * Misc. -} skip0, skip1,
+    {- * Misc. -} skip, skip0, skipAtomically, skipAtomically0,
     {- * End -} atEnd, end,
     {- * Commit -} commit,
     {- * General -} actionState, actionContext,
@@ -46,10 +46,18 @@ nextChar :: Monad m => Query xs x r s r m x
 nextChar = nextCharMaybe A.>>= maybe (cast @Query fail) return
 
 nextMaybe :: Monad m => SureQuery xs x r s e m (Maybe (Nontrivial xs x))
-nextMaybe = SureQuery (Query_Next id)
+nextMaybe = A.do{ reset; nextMaybe' }
+
+-- | Like 'nextMaybe', but doesn't reset first
+nextMaybe' :: SureQuery xs x r s e m (Maybe (Nontrivial xs x))
+nextMaybe' = SureQuery (Query_Next id)
 
 next :: Monad m => Query xs x r s r m (Nontrivial xs x)
 next = nextMaybe A.>>= maybe (cast @Query fail) return
+
+-- | Like 'next', but doesn't reset first
+next' :: Monad m => Query xs x r s r m (Nontrivial xs x)
+next' = nextMaybe' A.>>= maybe (cast @Query fail) return
 
 takeNext :: Monad m => AtomicMove xs x r s r m (Nontrivial xs x)
 takeNext = next A.>>= \xs -> commit (Nontrivial.length xs) $> xs
@@ -64,22 +72,41 @@ satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s r m a
 satisfyJust ok = nextCharMaybe A.>>= \x -> case x >>= ok of Nothing -> cast fail; Just y -> commit one $> y
 
 skip0 :: Monad m => Natural -> Any xs x r s r m ()
-skip0 = maybe (return ()) (cast @Any . skip1)  . preview Positive.refine
+skip0 = maybe (return ()) (cast @Any . skip)  . preview Positive.refine
 
-skip1 :: Monad m => Positive Natural -> Move xs x r s r m ()
-skip1 n = A.do
+skip :: Monad m => Positive Natural -> Move xs x r s r m ()
+skip n = A.do
     x <- next
     case Positive.minus (Nontrivial.length x) n of
         Signed.Minus n' -> A.do
             commit (Nontrivial.length x)
-            skip1 n'
+            skip n'
         _ -> cast @Move (commit n)
 
+skipAtomically0 :: Monad m => Natural -> Atom xs x r s r m ()
+skipAtomically0 = maybe (cast @Atom $ A.return ()) (cast @Atom . skipAtomically)  . preview Positive.refine
+
+skipAtomically :: Monad m => Positive Natural -> AtomicMove xs x r s r m ()
+skipAtomically n = A.do{ ensureAtLeast n; commit n }
+
+ensureAtLeast :: Monad m => Positive Natural -> Query xs x r s r m ()
+ensureAtLeast = \n -> A.do{ Query_Reset (); go n }
+  where
+    go :: Monad m => Positive Natural -> Query xs x r s r m ()
+    go n = A.do
+        x <- next'
+        case Positive.minus n (Nontrivial.length x) of
+            Signed.Plus n' -> go n'
+            _ -> return ()
+
 atEnd :: Monad m => SureQuery xs x r s e m Bool
-atEnd = SureQuery (Query_Next isNothing)
+atEnd = A.do{ reset; SureQuery (Query_Next isNothing) }
 
 end :: Monad m => Query xs x r s r m ()
-end = atEnd A.>>= \case{ True -> return (); False -> cast @Query fail }
+end = A.do{ e <- atEnd; if e then return () else cast @Query fail }
+
+reset :: Monad m => SureQuery xs x r s e m ()
+reset = SureQuery (Query_Reset ())
 
 actionState :: SureQuery xs x r s e m s
 actionState = SureQuery (Query_Get id)

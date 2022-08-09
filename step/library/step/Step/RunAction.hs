@@ -18,8 +18,9 @@ runQuery CursorRunR{ inputRunR, runR, resetRunR } = runR . r
         Query_Ask f -> Right . f <$> ask
         Query_Get f -> Right . f <$> use commitLens
         Query_Next f -> Right . f <$> Cursor.next inputRunR
-        Query_Join x -> r x >>= either (return . Left) (\y -> resetRunR *> r y)
+        Query_Join x -> r x >>= either (return . Left) r
         Query_Fail f -> Left . f <$> ask
+        Query_Reset x -> Right x <$ resetRunR
 
 runAny :: forall xs x r s s' e m a. Monad m => CursorRunRW xs x r s s' m -> Any xs x r s e m a -> RST r s m (Either e a)
 runAny CursorRunRW{ inputRunRW, runRW, commitRunRW, resetRunRW } = runRW . r
@@ -30,6 +31,7 @@ runAny CursorRunRW{ inputRunRW, runRW, commitRunRW, resetRunRW } = runRW . r
         Any_Ask f -> Right . f <$> ask
         Any_Get f -> Right . f <$> use commitLens
         Any_Next f -> Right . f <$> Cursor.next inputRunRW
-        Any_Join x -> r x >>= either (return . Left) (\y -> resetRunRW *> r y)
+        Any_Join x -> r x >>= either (return . Left) r
         Any_Fail f -> Left . f <$> ask
         Any_Commit n x -> Right x <$ commitRunRW n
+        Any_Reset x -> Right x <$ resetRunRW

@@ -41,6 +41,7 @@ data Any xs x r s e m a =
   | Any_Commit (Positive Natural) a
   | Any_Join (Any xs x r s e m (Any xs x r s e m a))
   | Any_Fail (r -> e)
+  | Any_Reset a
   deriving stock Functor
 
 instance Monad m => Applicative (Any xs x r s e m) where
@@ -61,6 +62,7 @@ data Query xs x r s e m a =
   | Query_Next (Maybe (Nontrivial xs x) -> a)
   | Query_Join (Query xs x r s e m (Query xs x r s e m a))
   | Query_Fail (r -> e)
+  | Query_Reset a
   deriving stock Functor
 
 instance Monad m => Applicative (Query xs x r s e m) where

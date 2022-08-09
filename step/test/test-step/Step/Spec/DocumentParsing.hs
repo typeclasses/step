@@ -153,14 +153,20 @@ prop_linePosition_origin = property do
 
 prop_linePosition_oneLine = property do
     n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-    let p = P.do{ P.skip0 n; P.position }
+    atomic <- forAll Gen.bool
+    let p = if atomic
+        then P.cast @P.Any P.do{ P.skipAtomically0 n; P.position }
+        else P.do{ P.skip0 n; P.position }
     input :: TextChunks <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
     let x = P.parseSimple p input
     x === Right (Loc.loc 1 (fromIntegral $ n + 1))
 
 prop_linePosition_oneColumn = property do
     n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
-    let p = P.do{ P.skip0 n; P.position }
+    atomic <- forAll Gen.bool
+    let p = if atomic
+            then P.cast @P.Any P.do{ P.skipAtomically0 n; P.position }
+            else P.do{ P.skip0 n; P.position }
     input :: TextChunks <- forAll (genChunks (ListLike.replicate 50 '\n'))
     let x = P.parseSimple p input
     x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
@@ -169,7 +175,10 @@ prop_linePosition_both = property do
     let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
     input :: TextChunks <- forAll (genChunks =<< times 10 genInputLine)
     n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
-    let p = P.do{ P.skip0 n; P.position }
+    atomic <- forAll Gen.bool
+    let p = if atomic
+            then P.cast @P.Any P.do{ P.skipAtomically0 n; P.position }
+            else P.do{ P.skip0 n; P.position }
     let x = P.parseSimple p input
     let (a, b) = n `quotRem` 20
     let l = Loc.loc (fromIntegral $ 1 + a) (fromIntegral $ 1 + b)

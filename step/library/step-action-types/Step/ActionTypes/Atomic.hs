@@ -35,5 +35,6 @@ instance Atomic Query SureQuery
             Query_Ask f -> SureQuery (Query_Ask (Just . f))
             Query_Get f -> SureQuery (Query_Get (Just . f))
             Query_Next f -> SureQuery (Query_Next (Just . f))
+            Query_Reset x -> SureQuery (Query_Reset (Just x))
             Query_Join x -> r x >>= maybe (return Nothing) r
             Query_Fail _ -> return Nothing
