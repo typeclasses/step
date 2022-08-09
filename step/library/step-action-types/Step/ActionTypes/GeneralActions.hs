@@ -43,7 +43,7 @@ takeChar :: Monad m => AtomicMove xs x r s r m x
 takeChar = nextChar A.<* commit one
 
 nextChar :: Monad m => Query xs x r s r m x
-nextChar = nextCharMaybe A.>>= maybe (cast @Query fail) return
+nextChar = nextCharMaybe A.>>= maybe (castTo @Query fail) return
 
 nextMaybe :: Monad m => SureQuery xs x r s e m (Maybe (Nontrivial xs x))
 nextMaybe = A.do{ reset; nextMaybe' }
@@ -53,11 +53,11 @@ nextMaybe' :: SureQuery xs x r s e m (Maybe (Nontrivial xs x))
 nextMaybe' = SureQuery (Query_Next id)
 
 next :: Monad m => Query xs x r s r m (Nontrivial xs x)
-next = nextMaybe A.>>= maybe (cast @Query fail) return
+next = nextMaybe A.>>= maybe (castTo @Query fail) return
 
 -- | Like 'next', but doesn't reset first
 next' :: Monad m => Query xs x r s r m (Nontrivial xs x)
-next' = nextMaybe' A.>>= maybe (cast @Query fail) return
+next' = nextMaybe' A.>>= maybe (castTo @Query fail) return
 
 takeNext :: Monad m => AtomicMove xs x r s r m (Nontrivial xs x)
 takeNext = next A.>>= \xs -> commit (Nontrivial.length xs) $> xs
@@ -69,10 +69,10 @@ nextCharMaybe :: Monad m => SureQuery xs x r s e m (Maybe x)
 nextCharMaybe = nextMaybe A.<&> fmap @Maybe Nontrivial.head
 
 satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r s r m a
-satisfyJust ok = nextCharMaybe A.>>= \x -> case x >>= ok of Nothing -> cast fail; Just y -> commit one $> y
+satisfyJust ok = nextCharMaybe A.>>= \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
 
 skip0 :: Monad m => Natural -> Any xs x r s r m ()
-skip0 = maybe (return ()) (cast @Any . skip)  . preview Positive.refine
+skip0 = maybe (return ()) (castTo @Any . skip)  . preview Positive.refine
 
 skip :: Monad m => Positive Natural -> Move xs x r s r m ()
 skip n = A.do
@@ -81,10 +81,10 @@ skip n = A.do
         Signed.Minus n' -> A.do
             commit (Nontrivial.length x)
             skip n'
-        _ -> cast @Move (commit n)
+        _ -> castTo @Move (commit n)
 
 skipAtomically0 :: Monad m => Natural -> Atom xs x r s r m ()
-skipAtomically0 = maybe (cast @Atom $ A.return ()) (cast @Atom . skipAtomically)  . preview Positive.refine
+skipAtomically0 = maybe (castTo @Atom $ A.return ()) (castTo @Atom . skipAtomically)  . preview Positive.refine
 
 skipAtomically :: Monad m => Positive Natural -> AtomicMove xs x r s r m ()
 skipAtomically n = A.do{ ensureAtLeast n; commit n }
@@ -103,7 +103,7 @@ atEnd :: Monad m => SureQuery xs x r s e m Bool
 atEnd = A.do{ reset; SureQuery (Query_Next isNothing) }
 
 end :: Monad m => Query xs x r s r m ()
-end = A.do{ e <- atEnd; if e then return () else cast @Query fail }
+end = A.do{ e <- atEnd; if e then return () else castTo @Query fail }
 
 reset :: Monad m => SureQuery xs x r s e m ()
 reset = SureQuery (Query_Reset ())
@@ -125,7 +125,7 @@ one = PositiveUnsafe 1
 -- todo: add an atomic version of 'text'
 
 -- text :: Nontrivial xs x -> Move xs x r s m ()
--- text = someOfNontrivialText A.>=> (maybe (return ()) (cast @Any . text) . Nontrivial.refine)
+-- text = someOfNontrivialText A.>=> (maybe (return ()) (castTo @Any . text) . Nontrivial.refine)
 --   where
 --     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
 --         CursorRW{ init, input, commit } -> run $ Cursor.next input >>= \case

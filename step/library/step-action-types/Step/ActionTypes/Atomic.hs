@@ -17,11 +17,11 @@ class (FunctorialAction act, FunctorialAction try) =>
 
 instance Atomic Atom Sure
   where
-    try (Atom x) = cast @Sure (try @Query x) >>= maybe (return Nothing) (mapError' . fmap Just)
+    try (Atom x) = castTo @Sure (try @Query x) >>= maybe (return Nothing) (mapError' . fmap Just)
 
 instance Atomic AtomicMove Sure
   where
-    try = try @Atom . cast @Atom
+    try = try @Atom . castTo @Atom
 
 instance Atomic Query SureQuery
   where

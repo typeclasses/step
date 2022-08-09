@@ -9,7 +9,7 @@ module Step.ActionTypes
     Sure (..), SureQuery (..), Fail (..),
     -- * Subtype relationships
     -- $subtypes
-    Is, cast,
+    Is, castTo,
     -- * Monadic-style join
     Join, join, type (>>),
     -- * Miscellaneous classes

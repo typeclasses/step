@@ -129,7 +129,7 @@ parse a =
         -- CursorRW' $
         documentCursor LL.dropOperation LL.spanOperation
   in
-    view rstState $ runAny (cursorRunRW c) (Action.cast @Any a) <&> \case
+    view rstState $ runAny (cursorRunRW c) (Action.castTo @Any a) <&> \case
           Right x -> Right x
           Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
