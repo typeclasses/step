@@ -28,8 +28,6 @@ import qualified Positive
 import qualified Positive.Math as Positive
 import qualified Signed
 
-import Step.ActionTypes.Assume
-
 commit :: Monad m => Positive Natural -> AtomicMove xs x r s e m ()
 commit n = AtomicMove (Atom (return (Sure (Any_Commit n ()))))
 

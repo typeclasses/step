@@ -1,9 +1,13 @@
+{-# language DataKinds, KindSignatures, FunctionalDependencies, InstanceSigs #-}
 {-# language DataKinds, InstanceSigs, KindSignatures, MultiParamTypeClasses #-}
 
 module Step.ActionTypes.Subtyping
   (
     Is (..),
     castTo,
+    LossOfMovement,
+    AssumeSurity (..),
+    AssumeMovement (..),
   )
   where
 
@@ -11,11 +15,7 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 
-import Step.ActionTypes.Fallible
-
 import Coerce (coerce)
-
-import Step.ActionTypes.Returnable
 
 class Is (act1 :: Action) (act2 :: Action) where
     cast :: Monad m => act1 xs x r s e m a -> act2 xs x r s e m a
@@ -80,3 +80,29 @@ instance Is Fail Query where cast = castTo @Query . castTo @Base
 instance Is Fail Move where cast = Move . castTo @Any . castTo @Base
 instance Is Fail Atom where cast = castTo @Atom . castTo @Base
 instance Is Fail AtomicMove where cast = AtomicMove . Atom . Query_Base . (\(Fail f) -> Base_Fail f)
+
+class Is act1 act2 => LossOfMovement act1 act2 | act1 -> act2
+
+instance LossOfMovement Any Any
+instance LossOfMovement Atom Atom
+instance LossOfMovement Sure Sure
+instance LossOfMovement Query Query
+instance LossOfMovement Move Any
+instance LossOfMovement AtomicMove Atom
+instance LossOfMovement Fail Fail
+instance LossOfMovement SureQuery SureQuery
+
+class Is act2 act1 => AssumeMovement act1 act2 | act1 -> act2 where
+    assumeMovement :: act1 xs x r s e m a -> act2 xs x r s e m a
+
+instance AssumeMovement Any Move where assumeMovement = Move
+instance AssumeMovement Atom AtomicMove where assumeMovement = AtomicMove
+
+class Is act2 act1 => AssumeSurity act1 act2 | act1 -> act2 where
+    assumeSurity :: Monad m => act1 xs x r s e m a -> act2 xs x r s e m a
+
+instance AssumeSurity Any Sure where
+    assumeSurity = Sure . mapError (\_ -> error "assumeSurity: assumption failed")
+
+instance AssumeSurity Query SureQuery where
+    assumeSurity = SureQuery . mapError (\_ -> error "assumeSurity: assumption failed")

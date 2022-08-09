@@ -176,19 +176,11 @@ library step-action-types
         Step.ActionTypes
         Step.ActionTypes.Do
     other-modules:
-        Step.ActionTypes.Assume
         Step.ActionTypes.Atomic
-        Step.ActionTypes.Returnable
-        Step.ActionTypes.Contravariant
         Step.ActionTypes.Constructors
-        Step.ActionTypes.Fallible
-        Step.ActionTypes.Functorial
         Step.ActionTypes.GeneralActions
         Step.ActionTypes.Join
-        Step.ActionTypes.KindJoin
         Step.ActionTypes.Loop
-        Step.ActionTypes.LossOfMovement
-        Step.ActionTypes.Monadic
         Step.ActionTypes.Subtyping
 
 library step-internal

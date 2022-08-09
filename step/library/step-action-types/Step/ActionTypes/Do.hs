@@ -14,8 +14,7 @@ module Step.ActionTypes.Do
 import qualified BasePrelude
 import BasePrelude (fmap, (<$>), Monad)
 
-import Step.ActionTypes.Join (Join, join)
-import Step.ActionTypes.KindJoin (type (>>))
+import Step.ActionTypes.Join (Join, join, type (>>))
 import Step.ActionTypes.Constructors
 
 infixl 1 >>=

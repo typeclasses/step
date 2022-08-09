@@ -34,16 +34,9 @@ module Step.ActionTypes
 
 import Step.ActionTypes.Atomic
 import Step.ActionTypes.Constructors
-import Step.ActionTypes.Contravariant
-import Step.ActionTypes.Fallible
-import Step.ActionTypes.Functorial
 import Step.ActionTypes.GeneralActions
 import Step.ActionTypes.Join
-import Step.ActionTypes.KindJoin
 import Step.ActionTypes.Loop
-import Step.ActionTypes.LossOfMovement
-import Step.ActionTypes.Monadic
-import Step.ActionTypes.Returnable
 import Step.ActionTypes.Subtyping
 
 {- $types

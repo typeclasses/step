@@ -5,10 +5,8 @@ module Step.ActionTypes.Atomic where
 import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
-import Step.ActionTypes.Functorial
 import Step.ActionTypes.Join
 import Step.ActionTypes.Subtyping
-import Step.ActionTypes.Fallible
 
 class (FunctorialAction act, FunctorialAction try) =>
     Atomic (act :: Action) (try :: Action) | act -> try
