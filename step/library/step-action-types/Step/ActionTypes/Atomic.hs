@@ -28,9 +28,11 @@ instance Atomic Query SureQuery
     try = r
       where
         r :: forall a'. Query xs x r s e m a' -> SureQuery xs x r s e' m (Maybe a')
-        r = \case
-            Query_Base x -> SureQuery (let SureBase y = try x in cast @Base @Query y)
-            Query_Join x -> r x >>= maybe (return Nothing) r
+        r = SureQuery . Query . _ . (\(Query q) -> q)
+
+        -- \case
+        --     Query_Base x -> SureQuery (let SureBase y = try x in cast @Base @Query y)
+        --     Query_Join x -> r x >>= maybe (return Nothing) r
 
 instance Atomic Base SureBase
   where

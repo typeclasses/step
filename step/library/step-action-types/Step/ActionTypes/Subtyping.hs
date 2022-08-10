@@ -24,11 +24,6 @@ castTo :: forall act2 act1 xs x r s e m a. (Monad m, Is act1 act2) =>
     act1 xs x r s e m a -> act2 xs x r s e m a
 castTo = cast @act1 @act2
 
-joiningCast :: Is act1 act2 => (Monad m, FunctorialAction act1) => Joining act1 xs x r s e m a -> Joining act2 xs x r s e m a
-joiningCast = \case
-    Plain x -> Plain (cast x)
-    Join x -> Join $ joiningCast (fmap joiningCast x)
-
 instance Is act (Joining act) where cast = Plain
 
 -- Everything is itself
@@ -47,9 +42,9 @@ instance Is Fail Fail where cast = id
 instance Is SureBase Any where cast = castTo @Any . castTo @Base
 instance Is SureBase Base where cast = mapError absurd . (\(SureBase x) -> x)
 instance Is SureBase Query where cast = castTo @Query . castTo @Base
-instance Is SureBase Atom where cast (SureBase x) = mapError absurd $ Atom (cast (fmap trivial x))
+instance Is SureBase Atom where cast = mapError absurd . Atom . cast . fmap trivial . (\(SureBase x) -> x)
 instance Is SureBase Sure where cast = Sure . castTo @Any . mapError'
-instance Is SureBase SureQuery where cast (SureBase x) = SureQuery (cast x)
+instance Is SureBase SureQuery where cast = SureQuery . Plain
 
 -- Base is everything but Sure Move, Fail
 instance Is Base Any where cast = Any . cast . cast @Base @BaseRW
@@ -61,14 +56,14 @@ instance Is Base BaseRW where cast = _
 instance Is Move Any where cast = coerce
 instance Is AtomicMove Any where cast = cast @Atom @Any . coerce
 instance Is Sure Any where cast (Sure x) = mapError absurd x
-instance Is SureQuery Any where cast (SureQuery x) = castTo @Any (mapError absurd x)
-instance Is Query Any where cast (Query x) = Any (joiningCast x)
+instance Is SureQuery Any where cast = castTo @Any . castTo @Query
+instance Is Query Any where cast (Query x) = Any (joiningActionHoist cast x)
 instance Is Atom Any where
     cast =
         Any
         . Join
         . fmap (mapError absurd . (\(Any x) -> x) . (\(Sure x) -> x))
-        . joiningCast @Base @BaseRW
+        . joiningActionHoist (cast @Base @BaseRW)
         . (\(Query q) -> q)
         . (\(Atom q) -> q)
 
@@ -77,13 +72,13 @@ instance Is AtomicMove Move where cast = coerce . cast @Atom @Any . coerce
 instance Is AtomicMove Atom where cast = coerce
 
 -- Sure + Query = SureQuery
-instance Is SureQuery Sure where cast (SureQuery q) = Sure (cast q)
-instance Is SureQuery Query where cast (SureQuery q) = mapError absurd q
+instance Is SureQuery Sure where cast = Sure . Any . joiningActionHoist (cast @Base @BaseRW . (\(SureBase x) -> x)) . (\(SureQuery q) -> q)
+instance Is SureQuery Query where cast = Query . joiningActionHoist cast . (\(SureQuery q) -> q)
 
 -- Trivial subtypes of Atom
 instance Is Query Atom where cast = Atom . fmap return
 instance Is Sure Atom where cast = Atom . return
-instance Is SureQuery Atom where cast (SureQuery q) = Atom $ fmap return $ mapError absurd q
+instance Is SureQuery Atom where cast = castTo @Atom . castTo @Query
 
 -- Fail is anything but Sure
 instance Is Fail Base where cast (Fail f) = Base_Fail f
@@ -117,4 +112,4 @@ instance AssumeSurity Any Sure where
     assumeSurity = Sure . mapError (\_ -> error "assumeSurity: assumption failed")
 
 instance AssumeSurity Query SureQuery where
-    assumeSurity = SureQuery . mapError (\_ -> error "assumeSurity: assumption failed")
+    assumeSurity = SureQuery . joiningActionHoist (SureBase . mapError (\_ -> error "assumeSurity: assumption failed")) . (\(Query q) -> q)

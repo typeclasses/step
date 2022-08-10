@@ -29,7 +29,7 @@ common base
         TypeApplications
         TypeFamilies
     build-depends:
-        base
+        base ^>= 4.15
       , bytestring
       , containers
       , data-default-class
@@ -70,6 +70,7 @@ common base
           , Data.List.NonEmpty as NonEmpty
           , GHC.Exts
           , GHC.Generics as Generic
+          , GHC.TypeLits as TypeLits
           )
       , bytestring
           ( Data.ByteString as ByteString
