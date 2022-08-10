@@ -23,16 +23,12 @@ instance Atomic AtomicMove Sure
 
 instance Atomic Query SureQuery
   where
-    try :: forall xs x r s e e' m a. Monad m =>
-        Query xs x r s e m a -> SureQuery xs x r s e' m (Maybe a)
-    try = r
+    try = SureQuery . go . (\(Query q) -> q)
       where
-        r :: forall a'. Query xs x r s e m a' -> SureQuery xs x r s e' m (Maybe a')
-        r = SureQuery . Query . _ . (\(Query q) -> q)
-
-        -- \case
-        --     Query_Base x -> SureQuery (let SureBase y = try x in cast @Base @Query y)
-        --     Query_Join x -> r x >>= maybe (return Nothing) r
+        go :: Monad m => Joining Base xs x r s e m a -> Joining SureBase xs x r s e' m (Maybe a)
+        go = \case
+            Plain x -> Plain (try x)
+            Join x -> Join $ fmap (fromMaybe (return Nothing)) (go (fmap go x))
 
 instance Atomic Base SureBase
   where

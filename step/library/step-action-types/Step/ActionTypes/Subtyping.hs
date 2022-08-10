@@ -29,12 +29,14 @@ instance Is act (Joining act) where cast = Plain
 -- Everything is itself
 instance Is Any Any where cast = id
 instance Is Base Base where cast = id
+instance Is BaseRW BaseRW where cast = id
 instance Is Query Query where cast = id
 instance Is Move Move where cast = id
 instance Is Atom Atom where cast = id
 instance Is AtomicMove AtomicMove where cast = id
 instance Is Sure Sure where cast = id
 instance Is SureBase SureBase where cast = id
+instance Is SureBaseRW SureBaseRW where cast = id
 instance Is SureQuery SureQuery where cast = id
 instance Is Fail Fail where cast = id
 
@@ -46,11 +48,25 @@ instance Is SureBase Atom where cast = mapError absurd . Atom . cast . fmap triv
 instance Is SureBase Sure where cast = Sure . castTo @Any . mapError'
 instance Is SureBase SureQuery where cast = SureQuery . Plain
 
--- Base is everything but Sure Move, Fail
+-- Base is everything but Sure, Move, Fail
 instance Is Base Any where cast = Any . cast . cast @Base @BaseRW
 instance Is Base Query where cast = Query . cast
 instance Is Base Atom where cast = Atom . cast . fmap trivial
-instance Is Base BaseRW where cast = _
+instance Is Base BaseRW where cast = BaseRW_Base
+
+-- BaseRW is...
+instance Is BaseRW Atom where
+  cast = Atom . \case
+      BaseRW_Commit n x -> Query $ Plain $ trivial $ Sure $ Any $ Plain $ BaseRW_Commit n x
+      BaseRW_Base b -> case b of
+          Base_Lift x -> Query $ Plain $ trivial $ Sure $ Any $ Plain $ BaseRW_Base $ Base_Lift x
+          Base_Ask x -> Query $ Plain $ trivial $ Sure $ Any $ Plain $ BaseRW_Base $ Base_Ask x
+          Base_Get x -> Query $ Plain $ trivial $ Sure $ Any $ Plain $ BaseRW_Base $ Base_Get x
+          Base_Reset x -> Query $ Plain $ trivial $ Sure $ Any $ Plain $ BaseRW_Base $ Base_Reset x
+          Base_Next x -> Query $ Plain $ trivial $ Sure $ Any $ Plain $ BaseRW_Base $ Base_Next x
+          Base_Fail x -> Query $ Plain $ Base_Fail x
+instance Is BaseRW Any where
+  cast = cast . castTo @Atom
 
 -- Everything is Any
 instance Is Move Any where cast = coerce

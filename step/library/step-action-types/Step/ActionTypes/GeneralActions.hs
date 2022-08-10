@@ -29,7 +29,7 @@ import qualified Positive.Math as Positive
 import qualified Signed
 
 commit :: Monad m => Positive Natural -> AtomicMove xs x r s e m ()
-commit n = AtomicMove (Atom (return (Sure (Any_Commit n ()))))
+commit n = assumeMovement $ castTo @Atom $ BaseRW_Commit n ()
 
 fail :: Fail xs x r s r m a
 fail = Fail id
@@ -48,7 +48,7 @@ nextMaybe = A.do{ reset; nextMaybe' }
 
 -- | Like 'nextMaybe', but doesn't reset first
 nextMaybe' :: SureQuery xs x r s e m (Maybe (Nontrivial xs x))
-nextMaybe' = SureQuery (Query_Base (Base_Next id))
+nextMaybe' = SureQuery $ Plain $ SureBase $ Base_Next id
 
 next :: Monad m => Query xs x r s r m (Nontrivial xs x)
 next = nextMaybe A.>>= maybe (castTo @Query fail) return
@@ -88,7 +88,7 @@ skipAtomically :: Monad m => Positive Natural -> AtomicMove xs x r s r m ()
 skipAtomically n = A.do{ ensureAtLeast n; commit n }
 
 ensureAtLeast :: Monad m => Positive Natural -> Query xs x r s r m ()
-ensureAtLeast = \n -> A.do{ Query_Base (Base_Reset ()); go n }
+ensureAtLeast = \n -> A.do{ castTo @Query reset; go n }
   where
     go :: Monad m => Positive Natural -> Query xs x r s r m ()
     go n = A.do
@@ -98,19 +98,19 @@ ensureAtLeast = \n -> A.do{ Query_Base (Base_Reset ()); go n }
             _ -> return ()
 
 atEnd :: Monad m => SureQuery xs x r s e m Bool
-atEnd = A.do{ reset; SureQuery (Query_Base (Base_Next isNothing)) }
+atEnd = A.do{ reset; x <- nextMaybe'; A.return (isNothing x) }
 
 end :: Monad m => Query xs x r s r m ()
 end = A.do{ e <- atEnd; if e then return () else castTo @Query fail }
 
 reset :: Monad m => SureQuery xs x r s e m ()
-reset = SureQuery (Query_Base (Base_Reset ()))
+reset = SureQuery $ Plain $ SureBase $ Base_Reset ()
 
 actionState :: SureQuery xs x r s e m s
-actionState = SureQuery (Query_Base (Base_Get id))
+actionState = SureQuery $ Plain $ SureBase $ Base_Get id
 
 actionContext :: SureQuery xs x r s e m r
-actionContext = SureQuery (Query_Base (Base_Ask id))
+actionContext = SureQuery $ Plain $ SureBase $ Base_Ask id
 
 one :: Positive Natural
 one = PositiveUnsafe 1

@@ -6,7 +6,7 @@ module Step.ActionTypes
     Action,
     -- $types
     Any (..), Query (..), Move (..), Atom (..), AtomicMove (..),
-    Sure (..), SureQuery (..), Fail (..), Base (..), SureBase (..),
+    Sure (..), SureQuery (..), Fail (..), Base (..), SureBase (..), BaseRW (..), SureBaseRW (..), Joining (..),
     -- * Subtype relationships
     -- $subtypes
     Is, castTo,
