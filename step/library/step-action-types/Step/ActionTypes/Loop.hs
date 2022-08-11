@@ -6,7 +6,6 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 import Step.ActionTypes.Join
-import Step.ActionTypes.Subtyping
 import Step.ActionTypes.Atomic
 
 import qualified Step.ActionTypes.Do as P

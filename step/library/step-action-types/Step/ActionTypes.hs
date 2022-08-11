@@ -6,7 +6,7 @@ module Step.ActionTypes
     Action,
     -- $types
     Any (..), Query (..), Move (..), Atom (..), AtomicMove (..),
-    Sure (..), SureQuery (..), Fail (..), Base (..), SureBase (..), BaseRW (..), SureBaseRW (..), Joining (..),
+    Sure (..), SureQuery (..), Fail (..), Base (..), SureBase (..), BaseRW (..), SureBaseRW (..), FreeAction (..),
     -- * Subtype relationships
     -- $subtypes
     Is, castTo,
@@ -37,7 +37,6 @@ import Step.ActionTypes.Constructors
 import Step.ActionTypes.GeneralActions
 import Step.ActionTypes.Join
 import Step.ActionTypes.Loop
-import Step.ActionTypes.Subtyping
 
 {- $types
 

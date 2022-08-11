@@ -16,7 +16,6 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 import Step.ActionTypes.Atomic
-import Step.ActionTypes.Subtyping
 
 import qualified Step.ActionTypes.Do as A
 
@@ -35,7 +34,7 @@ fail :: Fail xs x r s r m a
 fail = Fail id
 
 takeCharMaybe :: Monad m => Sure xs x r s e m (Maybe x)
-takeCharMaybe = try takeChar
+takeCharMaybe = mapError' $ try takeChar
 
 takeChar :: Monad m => AtomicMove xs x r s r m x
 takeChar = nextChar A.<* commit one
@@ -47,8 +46,8 @@ nextMaybe :: Monad m => SureQuery xs x r s e m (Maybe (Nontrivial xs x))
 nextMaybe = A.do{ reset; nextMaybe' }
 
 -- | Like 'nextMaybe', but doesn't reset first
-nextMaybe' :: SureQuery xs x r s e m (Maybe (Nontrivial xs x))
-nextMaybe' = SureQuery $ Plain $ SureBase $ Base_Next id
+nextMaybe' :: Functor m => SureQuery xs x r s e m (Maybe (Nontrivial xs x))
+nextMaybe' = cast $ SureBase $ Base_Next id
 
 next :: Monad m => Query xs x r s r m (Nontrivial xs x)
 next = nextMaybe A.>>= maybe (castTo @Query fail) return
@@ -61,7 +60,7 @@ takeNext :: Monad m => AtomicMove xs x r s r m (Nontrivial xs x)
 takeNext = next A.>>= \xs -> commit (Nontrivial.length xs) $> xs
 
 takeNextMaybe :: Monad m => Sure xs x r s e m (Maybe (Nontrivial xs x))
-takeNextMaybe = try takeNext
+takeNextMaybe = mapError' $ try takeNext
 
 nextCharMaybe :: Monad m => SureQuery xs x r s e m (Maybe x)
 nextCharMaybe = nextMaybe A.<&> fmap @Maybe Nontrivial.head
@@ -104,13 +103,13 @@ end :: Monad m => Query xs x r s r m ()
 end = A.do{ e <- atEnd; if e then return () else castTo @Query fail }
 
 reset :: Monad m => SureQuery xs x r s e m ()
-reset = SureQuery $ Plain $ SureBase $ Base_Reset ()
+reset = cast $ SureBase $ Base_Reset ()
 
-actionState :: SureQuery xs x r s e m s
-actionState = SureQuery $ Plain $ SureBase $ Base_Get id
+actionState :: Monad m => SureQuery xs x r s e m s
+actionState = cast $ SureBase $ Base_RST get
 
-actionContext :: SureQuery xs x r s e m r
-actionContext = SureQuery $ Plain $ SureBase $ Base_Ask id
+actionContext :: Monad m => SureQuery xs x r s e m r
+actionContext = cast $ SureBase $ Base_RST ask
 
 one :: Positive Natural
 one = PositiveUnsafe 1

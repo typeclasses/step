@@ -33,6 +33,7 @@ common base
       , bytestring
       , containers
       , data-default-class
+      , free
       , hedgehog
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
@@ -83,6 +84,7 @@ common base
           , Data.IntMap.Strict as IntMap
           )
       , data-default-class (Data.Default.Class as Default)
+      , free (Control.Monad.Free as Monad.Free)
       , ListLike (Data.ListLike as ListLike)
       , mmorph
           ( Control.Monad.Morph as Morph
@@ -172,7 +174,7 @@ library step-nontrivial
 library step-action-types
     import: base
     hs-source-dirs: library/step-action-types
-    build-depends: step-internal, step-nontrivial
+    build-depends: step-internal, step-nontrivial, step-rst
     exposed-modules:
         Step.ActionTypes
         Step.ActionTypes.Do
@@ -182,7 +184,6 @@ library step-action-types
         Step.ActionTypes.GeneralActions
         Step.ActionTypes.Join
         Step.ActionTypes.Loop
-        Step.ActionTypes.Subtyping
 
 library step-internal
     import: base

@@ -11,8 +11,6 @@ import Step.Internal.Prelude
 
 import Step.ActionTypes.Constructors
 
-import Step.ActionTypes.Subtyping
-
 import qualified Monad
 
 -- | The type @a >> b@ is type of the expression @a >> b@.

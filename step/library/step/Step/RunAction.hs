@@ -10,31 +10,27 @@ import Step.RST
 import Step.ActionTypes
 
 runQuery :: forall xs x r s s' m a. Monad m => CursorRunR xs x r s s' m -> Query xs x r s r m a -> RST r s m (Either r a)
-runQuery CursorRunR{ inputRunR, runR, resetRunR } = runR . r . (\(Query q) -> q)
-  where
-    r :: forall a'. Joining Base xs x r s r m a' -> RST r (CursorState s s') m (Either r a')
-    r = \case
-        Join x -> r x >>= either (return . Left) r
-        Plain b -> case b of
-            Base_Lift x -> Right <$> lift x
-            Base_Ask f -> Right . f <$> ask
-            Base_Get f -> Right . f <$> use commitLens
-            Base_Next f -> Right . f <$> Cursor.next inputRunR
-            Base_Fail f -> Left . f <$> ask
-            Base_Reset x -> Right x <$ resetRunR
+runQuery CursorRunR{ inputRunR, runR, resetRunR } (Query (FreeAction a)) = runR (runFree a)
+    where
+    runFree :: forall a'. Free (Base xs x r s r m) a' -> RST r (CursorState s s') m (Either r a')
+    runFree = \case
+        Pure x -> return (Right x)
+        Free b -> case b of
+            Base_RST x -> zoom commitLens x >>= runFree
+            Base_Reset x -> resetRunR *> runFree x
+            Base_Fail (Fail x) -> ask <&> Left . x
+            Base_Next f -> Cursor.next inputRunR >>= runFree . f
 
-runAny :: forall xs x r s s' e m a. Monad m => CursorRunRW xs x r s s' m -> Any xs x r s e m a -> RST r s m (Either e a)
-runAny CursorRunRW{ inputRunRW, runRW, commitRunRW, resetRunRW } = runRW . r . (\(Any a) -> a)
-  where
-    r :: forall a'. Joining BaseRW xs x r s e m a' -> RST r (CursorState s s') m (Either e a')
-    r = \case
-        Join x -> r x >>= either (return . Left) r
-        Plain b -> case b of
-            BaseRW_Commit n x -> Right x <$ commitRunRW n
-            BaseRW_Base c -> case c of
-                Base_Lift x -> Right <$> lift x
-                Base_Ask f -> Right . f <$> ask
-                Base_Get f -> Right . f <$> use commitLens
-                Base_Next f -> Right . f <$> Cursor.next inputRunRW
-                Base_Fail f -> Left . f <$> ask
-                Base_Reset x -> Right x <$ resetRunRW
+runAny :: forall xs x r s s' m a. Monad m => CursorRunRW xs x r s s' m -> Any xs x r s r m a -> RST r s m (Either r a)
+runAny CursorRunRW{ inputRunRW, runRW, resetRunRW, commitRunRW } (Any (FreeAction a)) = runRW (runFree a)
+    where
+    runFree :: forall a'. Free (BaseRW xs x r s r m) a' -> RST r (CursorState s s') m (Either r a')
+    runFree = \case
+        Pure x -> return (Right x)
+        Free b -> case b of
+            BaseRW_Commit n x -> commitRunRW n *> runFree x
+            BaseRW_Base b' -> case b' of
+                Base_RST x -> zoom commitLens x >>= runFree
+                Base_Reset x -> resetRunRW *> runFree x
+                Base_Fail (Fail x) -> ask <&> Left . x
+                Base_Next f -> Cursor.next inputRunRW >>= runFree . f
