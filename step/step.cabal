@@ -33,7 +33,6 @@ common base
       , bytestring
       , containers
       , data-default-class
-      , effectful ^>= 1.2
       , hedgehog
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
