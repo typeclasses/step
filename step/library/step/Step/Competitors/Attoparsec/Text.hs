@@ -6,8 +6,8 @@ module Step.Competitors.Attoparsec.Text where
 
 import Step.Internal.Prelude
 
-import Step.ActionTypes
-import qualified Step.ActionTypes as A
+import Step.Action
+import qualified Step.Action as A
 
 import qualified Step.Document as P
 import Step.Document (Error)

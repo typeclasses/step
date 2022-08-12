@@ -2,7 +2,7 @@ module Step.Document.Actions where
 
 import Step.Internal.Prelude
 
-import Step.ActionTypes
+import Step.Action
 
 import Step.Document.Base (DocumentMemory, Context)
 import qualified Step.Document.Base as Doc

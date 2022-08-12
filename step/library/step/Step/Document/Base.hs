@@ -15,8 +15,8 @@ module Step.Document.Base
 
 import Step.Internal.Prelude
 
-import Step.ActionTypes
-import qualified Step.ActionTypes as Action
+import Step.Action
+import qualified Step.Action as Action
 
 import Step.Cursor
 import qualified Step.Cursor as Cursor
@@ -36,8 +36,6 @@ import Step.Buffer
 import Step.GeneralCursors
 
 import Step.ContextStack
-
-import Step.ActionTypes
 
 import Step.RunAction
 

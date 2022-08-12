@@ -3,7 +3,7 @@
 
 -- | This module is for use with the QualifiedDo language extension.
 
-module Step.ActionTypes.Do
+module Step.Action.Do
   (
     {- * Monad -} join, (>>=), (>=>), (>>), return,
     {- * Applicative -} (<*), (*>), (<*>), pure,
@@ -14,7 +14,7 @@ module Step.ActionTypes.Do
 import qualified BasePrelude
 import BasePrelude (fmap, (<$>), Monad)
 
-import Step.ActionTypes
+import Step.Action
 
 infixl 1 >>=
 (>>=) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x r s e m a -> (a -> act2 xs x r s e m b) -> act3 xs x r s e m b

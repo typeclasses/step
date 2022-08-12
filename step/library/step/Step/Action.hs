@@ -4,7 +4,7 @@
 {-# language DataKinds, StandaloneKindSignatures, FunctionalDependencies, FlexibleInstances #-}
 {-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving #-}
 
-module Step.ActionTypes where
+module Step.Action where
 
 import Step.Internal.Prelude
 

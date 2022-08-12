@@ -114,12 +114,14 @@ library
     hs-source-dirs: library/step
     build-depends:
         step-internal
-      , step-action-types
       , step-nontrivial
       , step-cursor
       , step-rst
     mixins: step-internal (Step.Internal.Prelude)
     exposed-modules:
+        Step.Action
+        Step.Action.Do
+
         Step.Buffer
         Step.ContextStack
         Step.CursorPosition
@@ -134,8 +136,7 @@ library
         Step.Competitors.Attoparsec.Text
 
     reexported-modules:
-        Step.ActionTypes
-      , Step.Cursor
+        Step.Cursor
       , Step.Nontrivial
       , Step.Nontrivial.Unsafe
 
@@ -171,14 +172,6 @@ library step-nontrivial
         Step.Nontrivial.Misc
         Step.Nontrivial.Type
 
-library step-action-types
-    import: base
-    hs-source-dirs: library/step-action-types
-    build-depends: step-internal, step-nontrivial, step-rst
-    exposed-modules:
-        Step.ActionTypes
-        Step.ActionTypes.Do
-
 library step-internal
     import: base
     hs-source-dirs: library/step-internal
@@ -204,7 +197,7 @@ test-suite test-step
     hs-source-dirs: test/test-step
     main-is: Main.hs
     build-depends:
-        step, step-internal, step-action-types, step-nontrivial, step-rst
+        step, step-internal, step-nontrivial, step-rst
       , tasty, tasty-hedgehog, tasty-hunit, text
     mixins:
         step-internal (Step.Internal.Prelude)
