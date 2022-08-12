@@ -20,7 +20,7 @@ module Step.ActionTypes
     -- ** Returnable
     Returnable (trivial),
     -- ** Loop
-    Loop0, Loop1, count0, count1, repetition0, repetition1,
+    Loop0, Loop1,
     -- ** Contramap
     ContravariantAction (..),
     -- ** Loss of movement
@@ -32,11 +32,8 @@ module Step.ActionTypes
   )
   where
 
-import Step.ActionTypes.Atomic
 import Step.ActionTypes.Constructors
 import Step.ActionTypes.GeneralActions
-import Step.ActionTypes.Join
-import Step.ActionTypes.Loop
 
 {- $types
 

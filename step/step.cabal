@@ -179,11 +179,8 @@ library step-action-types
         Step.ActionTypes
         Step.ActionTypes.Do
     other-modules:
-        Step.ActionTypes.Atomic
         Step.ActionTypes.Constructors
         Step.ActionTypes.GeneralActions
-        Step.ActionTypes.Join
-        Step.ActionTypes.Loop
 
 library step-internal
     import: base
