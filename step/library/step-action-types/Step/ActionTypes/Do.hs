@@ -14,11 +14,11 @@ module Step.ActionTypes.Do
 import qualified BasePrelude
 import BasePrelude (fmap, (<$>), Monad)
 
-import Step.ActionTypes.Constructors
+import Step.ActionTypes
 
 infixl 1 >>=
 (>>=) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x r s e m a -> (a -> act2 xs x r s e m b) -> act3 xs x r s e m b
-x >>= f = join (fmap f x)
+(>>=) = bindAction
 
 infixr 1 >=>
 (>=>) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => (a -> act1 xs x r s e m b) -> (b -> act2 xs x r s e m c) -> a -> act3 xs x r s e m c

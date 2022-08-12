@@ -178,9 +178,6 @@ library step-action-types
     exposed-modules:
         Step.ActionTypes
         Step.ActionTypes.Do
-    other-modules:
-        Step.ActionTypes.Constructors
-        Step.ActionTypes.GeneralActions
 
 library step-internal
     import: base
