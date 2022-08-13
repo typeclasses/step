@@ -6,6 +6,8 @@
 
 module Step.Action where
 
+-- ⭕
+
 import Step.Internal.Prelude
 
 import Step.Nontrivial
@@ -28,6 +30,8 @@ import qualified Positive.Math as Positive
 import qualified Signed
 
 import qualified NonEmpty
+
+-- ⭕
 
 {- $types
 
@@ -54,6 +58,8 @@ import qualified NonEmpty
 
 -}
 
+-- ⭕
+
 {- $subtypes
 
 Arrows in the graph below indicate permitted use of 'cast'. (Not pictured: 'Fail')
@@ -62,7 +68,7 @@ Arrows in the graph below indicate permitted use of 'cast'. (Not pictured: 'Fail
 
 -}
 
-
+-- ⭕
 
 -- | The kind of all the action types
 type Action =
@@ -95,7 +101,7 @@ class Infallible (act :: Action) where
 -- class IsFree (base :: Action) (act :: Action) | act -> base where
 --     freeIso :: Iso (act xs x r s e m a) (act xs x r s e' m a) (Free (base xs x r s e m) a) (Free (base xs x r s e' m) a)
 
-
+-- ⭕
 
 data Mode = ReadWrite | ReadOnly
 
@@ -107,17 +113,17 @@ data instance Commit 'ReadOnly a
 data instance Commit 'ReadWrite a = Commit (Positive Natural) a
     deriving stock Functor
 
-
+-- ⭕
 
 data Perfection = Perfect | Imperfect
 
-type family Error (p :: Perfection) (e :: Type) :: Type
+type family Imperfection (p :: Perfection) (e :: Type) :: Type
 
-type instance Error 'Perfect e = Void
+type instance Imperfection 'Perfect e = Void
 
-type instance Error 'Imperfect e = e
+type instance Imperfection 'Imperfect e = e
 
-
+-- ⭕
 
 type Base :: Mode -> Perfection -> Action
 
@@ -125,7 +131,7 @@ data Base (mo :: Mode) (p :: Perfection) xs x r s e m a =
     Base_RST (RST r s m a)
   | Base_Reset a
   | Base_Next (Maybe (Nontrivial xs x) -> a)
-  | Base_Fail (Error p (Fail xs x r s e m a))
+  | Base_Fail (Imperfection p (Fail xs x r s e m a))
   | Base_Commit (Commit mo a)
 
 instance Functor m => Functor (Base 'ReadOnly 'Perfect xs x r s e m) where
@@ -165,13 +171,17 @@ instance FunctorialAction (Base 'ReadOnly 'Imperfect)
 instance FunctorialAction (Base 'ReadWrite 'Perfect)
 instance FunctorialAction (Base 'ReadWrite 'Imperfect)
 
-instance ContravariantAction (Base 'ReadOnly 'Perfect)
+instance ContravariantAction (Base mo 'Perfect) where
+    contramapAction f = \case
+        Base_Fail x -> case x of {}
+        Base_RST x -> Base_RST (contramap f x)
+        x -> x
 
-instance ContravariantAction (Base 'ReadOnly 'Imperfect)
-
-instance ContravariantAction (Base 'ReadWrite 'Perfect)
-
-instance ContravariantAction (Base 'ReadWrite 'Imperfect)
+instance ContravariantAction (Base mo 'Imperfect) where
+    contramapAction f = \case
+        Base_Fail x -> Base_Fail (contramapAction f x)
+        Base_RST x -> Base_RST (contramap f x)
+        x -> x
 
 -- instance Fallible (Base mo p) where
 --     mapError f = \case
@@ -180,11 +190,11 @@ instance ContravariantAction (Base 'ReadWrite 'Imperfect)
 --         Base_Reset x -> Base_Reset x
 --         Base_Next x -> Base_Next x
 
-
+-- ⭕
 
 type BaseM :: Mode -> Perfection -> Action
 
-newtype BaseM mo p xs x r s e m a = BaseM (Free (Base mo p xs x r s e m) a)
+newtype BaseM mo p xs x r s e m a = BaseM{ unBaseM :: Free (Base mo p xs x r s e m) a }
 
 deriving newtype instance Functor m => Functor (BaseM 'ReadWrite 'Perfect xs x r s e m)
 deriving newtype instance Functor m => Functor (BaseM 'ReadWrite 'Imperfect xs x r s e m)
@@ -217,10 +227,17 @@ instance MonadicAction (BaseM 'ReadOnly 'Imperfect)
 instance Returnable (BaseM mo p) where
     trivial = BaseM . Pure
 
-instance ContravariantAction (BaseM 'ReadWrite 'Perfect)
-instance ContravariantAction (BaseM 'ReadWrite 'Imperfect)
-instance ContravariantAction (BaseM 'ReadOnly 'Perfect)
-instance ContravariantAction (BaseM 'ReadOnly 'Imperfect)
+instance ContravariantAction (BaseM 'ReadWrite 'Perfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
+
+instance ContravariantAction (BaseM 'ReadWrite 'Imperfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
+
+instance ContravariantAction (BaseM 'ReadOnly 'Perfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
+
+instance ContravariantAction (BaseM 'ReadOnly 'Imperfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
 
     -- contramapAction f (BaseM x) = BaseM (hoistFree (contramapAction f) x)
 
@@ -230,32 +247,32 @@ instance ContravariantAction (BaseM 'ReadOnly 'Imperfect)
 -- instance (FunctorialAction act, Infallible act) => Infallible (BaseM mo p) where
 --     mapError' = over freeIso $ hoistFree mapError'
 
-
+-- ⭕
 
 type Any :: Action
 
 -- | The most general of the actions; a monadic combination of 'BaseRW'
-newtype Any xs x r s e m a = Any (BaseM 'ReadWrite 'Imperfect xs x r s e m a)
+newtype Any xs x r s e m a = Any{ unAny :: BaseM 'ReadWrite 'Imperfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, Returnable, ContravariantAction, FunctorialAction, MonadicAction)
 
 -- instance IsFree (Base 'ReadWrite 'Imperfect) Any where freeIso = coerced
 
-
+-- ⭕
 
 type Query :: Action
 
 -- | Like 'Any', but cannot move the cursor; a monadic combination of 'Base'
-newtype Query xs x r s e m a = Query (BaseM 'ReadOnly 'Imperfect xs x r s e m a)
+newtype Query xs x r s e m a = Query{ unQuery :: BaseM 'ReadOnly 'Imperfect xs x r s e m a }
     deriving newtype (FunctorialAction, MonadicAction, Returnable, Functor, Applicative, Monad, ContravariantAction)
 
 -- instance IsFree BaseR Query where freeIso = coerced
 
-
+-- ⭕
 
 type Move :: Action
 
 -- | Always moves the cursor
-newtype Move xs x r s e m a = Move (Any xs x r s e m a)
+newtype Move xs x r s e m a = Move{ unMove :: Any xs x r s e m a }
     deriving newtype (Functor, FunctorialAction, ContravariantAction)
 
 instance (Functor m, TypeError ('Text "Move cannot be Applicative because 'pure' would not move the cursor")) =>
@@ -264,12 +281,12 @@ instance (Functor m, TypeError ('Text "Move cannot be Applicative because 'pure'
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
-
+-- ⭕
 
 type Atom :: Action
 
 -- | Fails noncommittally; see 'try'
-newtype Atom xs x r s e m a = Atom (Query xs x r s e m (Sure xs x r s e m a))
+newtype Atom xs x r s e m a = Atom{ unAtom :: Query xs x r s e m (Sure xs x r s e m a) }
     deriving stock Functor
     deriving anyclass FunctorialAction
 
@@ -286,12 +303,12 @@ instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) 
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
-
+-- ⭕
 
 type AtomicMove :: Action
 
 -- | Always moves the cursor, is atomic
-newtype AtomicMove xs x r s e m a = AtomicMove (Atom xs x r s e m a)
+newtype AtomicMove xs x r s e m a = AtomicMove{ unAtomicMove :: Atom xs x r s e m a }
     deriving stock Functor
     deriving anyclass FunctorialAction
     -- deriving newtype Fallible
@@ -302,39 +319,45 @@ instance (Functor m, TypeError ('Text "AtomicMove cannot be Applicative because 
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
-
+-- ⭕
 
 type Sure :: Action
 
 -- | Always succeeds
-newtype Sure xs x r s e m a = Sure (BaseM 'ReadWrite 'Perfect xs x r s e m a)
+newtype Sure xs x r s e m a = Sure{ unSure :: BaseM 'ReadWrite 'Perfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, Returnable, ContravariantAction, FunctorialAction, MonadicAction)
 
 -- instance IsFree SureBaseRW Sure where freeIso = coerced
 
-
+-- ⭕
 
 type SureQuery :: Action
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery xs x r s e m a = SureQuery (BaseM 'ReadOnly 'Perfect xs x r s e m a)
+newtype SureQuery xs x r s e m a = SureQuery{ unSureQuery :: BaseM 'ReadOnly 'Perfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, ContravariantAction, FunctorialAction, MonadicAction, Returnable)
 
 -- instance IsFree SureBaseR SureQuery where freeIso = coerced
 
-
+-- ⭕
 
 type Fail :: Action
 
 -- | Never succeeds, never moves the cursor, never does anything at all
-data Fail xs x r s e m a = Fail (r -> e)
+data Fail xs x r s e m a = Fail{ unFail :: r -> e }
     deriving stock Functor
     deriving anyclass FunctorialAction
 
-instance ContravariantAction Fail where contramapAction f (Fail g) = Fail (g . f)
-instance Fallible Fail where mapError f (Fail x) = Fail \r -> f (x r)
+instance ContravariantAction Fail where
+    contramapAction f (Fail g) = Fail (g . f)
 
+instance Fallible Fail where
+    mapError f (Fail x) = Fail \r -> f (x r)
 
+reFail :: Fail xs x r s e m a -> Fail xs x r s e m a'
+reFail (Fail x) = Fail x
+
+-- ⭕
 
 class Is (act1 :: Action) (act2 :: Action) where
     cast :: Functor m => act1 xs x r s e m a -> act2 xs x r s e m a
@@ -348,135 +371,90 @@ castTo = cast @act1 @act2
 -- castBaseM :: Is (Base mo1 p1) (Base mo2 p2) => Functor m => BaseM mo1 p1 xs x r s e m a -> BaseM mo2 p2 xs x r s e m a
 -- castBaseM (BaseM x) = BaseM (hoistFree cast x)
 
--- Everything is itself
+-- ⭕ Everything is itself
 
-instance Is Any Any where
+instance {-# overlappable #-} Is a a where
     cast = id
 
-instance Is (Base mo p) (Base mo p) where
-    cast = id
+-- ⭕ Casting between types of Base
 
-instance Is Query Query where
-    cast = id
+instance Is (Base 'ReadOnly p) (Base 'ReadWrite p) where
+    cast = \case
+        Base_Commit x -> case x of {}
+        Base_RST x -> Base_RST x
+        Base_Next x -> Base_Next x
+        Base_Reset x -> Base_Reset x
+        Base_Fail x -> Base_Fail x
 
-instance Is Move Move where
-    cast = id
-
-instance Is Atom Atom where
-    cast = id
-
-instance Is AtomicMove AtomicMove where
-    cast = id
-
-instance Is Sure Sure where
-    cast = id
-
-instance Is SureQuery SureQuery where
-    cast = id
-
-instance Is Fail Fail where
-    cast = id
-
--- SureBaseR is everything but Move, Fail
-
-instance Is (Base 'ReadOnly 'Perfect) Any where
-    -- cast = Any . FreeAction . liftF . castTo @BaseRW
-
-instance Is (Base 'ReadOnly 'Perfect) (Base 'ReadOnly 'Imperfect) where
-    -- cast = mapError absurd . (\(SureBaseRW x) -> x)
-
-instance Is (Base 'ReadOnly 'Perfect) Query where
-    -- cast = castTo @Query . castTo @Base
-
-instance Is (Base 'ReadOnly 'Perfect) Atom where
-    -- cast a = Atom (castTo @Query (castTo @Base a) <&> return)
-
-instance Is (Base 'ReadOnly 'Perfect) Sure where
-    -- cast = Sure . FreeAction . liftF . castTo @SureBaseRW
-
-instance Is (Base 'ReadOnly 'Perfect) SureQuery where
-    -- cast = SureQuery . cast
+instance Is (Base mo 'Perfect) (Base mo 'Imperfect) where
+    cast = \case
+        Base_Fail x -> case x of {}
+        Base_RST x -> Base_RST x
+        Base_Next x -> Base_Next x
+        Base_Reset x -> Base_Reset x
+        Base_Commit x -> Base_Commit x
 
 instance Is (Base 'ReadOnly 'Perfect) (Base 'ReadWrite 'Imperfect) where
-    -- cast = cast . castTo @SureBaseRW
+    cast = \case
+        Base_Fail x -> case x of {}
+        Base_Commit x -> case x of {}
+        Base_RST x -> Base_RST x
+        Base_Next x -> Base_Next x
+        Base_Reset x -> Base_Reset x
 
-instance Is (Base 'ReadOnly 'Perfect) (Base 'ReadWrite 'Perfect) where
-    -- cast (SureBaseRW x) = SureBaseRW (cast x)
+-- ⭕ Straightforward casting from Base to BaseM via lifting into Free
 
--- BaseR is everything but Sure, Move, Fail
-
-instance Is (Base 'ReadOnly 'Imperfect) Any where
-    cast = Any . BaseM . liftF . castTo @(Base 'ReadWrite 'Imperfect)
+instance Is (Base 'ReadOnly 'Perfect) SureQuery where
+    cast = SureQuery . BaseM . liftF
 
 instance Is (Base 'ReadOnly 'Imperfect) Query where
     cast = Query . BaseM . liftF
 
-instance Is (Base 'ReadOnly 'Imperfect) Atom where
-    cast a = Atom (Query (BaseM (liftF a)) <&> return)
-
-instance Is (Base 'ReadOnly 'Imperfect) (Base 'ReadWrite 'Imperfect) where
-    -- cast = BaseRW_Base
-
--- BaseRW is...
-
-instance Is (Base 'ReadWrite 'Imperfect) Atom where
-    -- cast x = \case
-    --     -- BaseRW_Commit n x -> Atom $ return $ Sure $ FreeAction $ liftF $ SureBaseRW (BaseRW_Commit n x)
-    --     BaseRW x -> Atom $ Query $ FreeAction (liftF x) <&> return
+instance Is (Base 'ReadWrite 'Perfect) Sure where
+    cast = Sure . BaseM . liftF
 
 instance Is (Base 'ReadWrite 'Imperfect) Any where
     cast = Any . BaseM . liftF
 
--- SureBaseRW is...
+-- ⭕ Two-step casts that involve casting between Base types and then into Free
 
-instance Is (Base 'ReadWrite 'Perfect) (Base 'ReadWrite 'Imperfect) where
-    -- cast (SureBaseRW x) = mapError absurd x
+instance Is (Base 'ReadOnly 'Perfect) Sure where
+    cast = Sure . BaseM . liftF . cast
 
-instance Is (Base 'ReadWrite 'Perfect) Atom where
-    -- cast = cast . castTo @(Base 'ReadWrite 'Imperfect)
+instance Is (Base 'ReadOnly 'Perfect) Query where
+    cast = Query . BaseM . liftF . cast
+
+instance Is (Base 'ReadOnly 'Imperfect) Any where
+    cast = Any . BaseM . liftF . cast
 
 instance Is (Base 'ReadWrite 'Perfect) Any where
-    -- cast = cast . castTo @(Base 'ReadWrite 'Imperfect)
+    cast = Any . BaseM . liftF . cast
 
--- Everything is Any
-
-instance Is Move Any where
-    cast (Move x) = x
-
-instance Is AtomicMove Any where
-    cast (AtomicMove x) = cast x
-
-instance Is Sure Any where
-    -- cast (Sure x) = Any (castFreeBase @SureBaseRW @BaseRW x)
-
-instance Is SureQuery Any where
-    -- cast (SureQuery x) = Any (castFreeBase @SureBaseR @BaseRW x)
-
-instance Is Query Any where
-    -- cast (Query x) = Any (castFreeBase @Base @BaseRW x)
-
-instance Is Atom Any where
-    -- cast (Atom (Query q)) = Any do
-    --     Sure x <- castFreeBase @Base @BaseRW q
-    --     castFreeBase @SureBaseRW @BaseRW x
-
--- Atom + Move = AtomicMove
-
-instance Is AtomicMove Move where
-    cast (AtomicMove x) = Move (cast @Atom @Any x)
-
-instance Is AtomicMove Atom where
-    cast (AtomicMove x) = x
-
--- Sure + Query = SureQuery
+-- ⭕ Casting out of read-only
 
 instance Is SureQuery Sure where
-    -- cast (SureQuery x) = Sure (castFreeBase @SureBaseR @SureBaseRW x)
+    cast = Sure . BaseM . hoistFree cast . unBaseM . unSureQuery
+
+instance Is Query Any where
+    cast = Any . BaseM . hoistFree cast . unBaseM . unQuery
+
+-- ⭕ Casting out of sureness
 
 instance Is SureQuery Query where
-    -- cast (SureQuery x) = Query (castFreeBase @SureBaseR @Base x)
+    cast = Query . BaseM . hoistFree cast . unBaseM . unSureQuery
 
--- Trivial subtypes of Atom
+instance Is Sure Any where
+    cast = Any . BaseM . hoistFree cast . unBaseM . unSure
+
+-- ⭕ Casting out of both read-only and sureness
+
+instance Is SureQuery Any where
+    cast = Any . BaseM . hoistFree cast . unBaseM . unSureQuery
+
+-- ⭕ Casting to Atom
+
+instance Is SureQuery Atom where
+    cast = Atom . fmap return . castTo @Query
 
 instance Is Query Atom where
     cast = Atom . fmap return
@@ -484,30 +462,45 @@ instance Is Query Atom where
 instance Is Sure Atom where
     cast = Atom . return
 
-instance Is SureQuery Atom where
-    cast = castTo @Atom . castTo @Query
+-- ⭕ Casting out of atomicity
 
--- Fail is anything but Sure
+instance Is Atom Any where
+    cast = Monad.join . fmap (cast @Sure @Any) . cast @Query @Any . unAtom
 
-instance Is Fail (Base 'ReadOnly 'Imperfect) where
-    cast = Base_Fail
+instance Is AtomicMove Move where
+    cast = Move . cast @Atom @Any . unAtomicMove
+
+-- ⭕ Casting out of movement
+
+instance Is Move Any where
+    cast = unMove
+
+instance Is AtomicMove Atom where
+    cast = unAtomicMove
+
+-- ⭕ Casting out of both atomicity and movement
+
+instance Is AtomicMove Any where
+    cast = cast . castTo @Move
+
+-- ⭕ Casting out of fail
 
 instance Is Fail Any where
-    -- cast = castTo @Any . castTo @(Base)
+    cast = Any . BaseM . liftF . Base_Fail
 
 instance Is Fail Query where
-    -- cast = castTo @Query . castTo @Base
+    cast = Query . BaseM . liftF . Base_Fail
 
 instance Is Fail Move where
-    -- cast = Move . castTo @Any . castTo @Base
+    cast = Move . Any . BaseM . liftF . Base_Fail
 
 instance Is Fail Atom where
-    -- cast = castTo @Atom . castTo @Base
+    cast = Atom . Query . BaseM . liftF . Base_Fail . reFail
 
 instance Is Fail AtomicMove where
-    cast = AtomicMove . castTo @Atom
+    cast = AtomicMove . Atom . Query . BaseM . liftF . Base_Fail . reFail
 
-
+-- ⭕
 
 class Is act1 act2 => LossOfMovement act1 act2 | act1 -> act2
 
@@ -527,7 +520,7 @@ instance LossOfMovement Fail Fail
 
 instance LossOfMovement SureQuery SureQuery
 
-
+-- ⭕
 
 class Is act2 act1 => AssumeMovement act1 act2 | act1 -> act2 where
     assumeMovement :: act1 xs x r s e m a -> act2 xs x r s e m a
@@ -544,16 +537,26 @@ instance AssumeMovement Move Move where
 instance AssumeMovement AtomicMove AtomicMove where
     assumeMovement = id
 
-
+-- ⭕
 
 class Is act2 act1 => AssumeSuccess act1 act2 | act1 -> act2 where
     assumeSuccess :: Monad m => act1 xs x r s e m a -> act2 xs x r s e m a
 
 instance AssumeSuccess (Base 'ReadOnly 'Imperfect) (Base 'ReadOnly 'Perfect) where
-    -- assumeSuccess = SureBase . mapError (\_ -> error "assumeSuccess: assumption failed")
+    assumeSuccess = \case
+        Base_Commit x -> case x of {}
+        Base_RST x -> Base_RST x
+        Base_Next x -> Base_Next x
+        Base_Reset x -> Base_Reset x
+        Base_Fail _ -> error "assumeSuccess: assumption failed"
 
 instance AssumeSuccess (Base 'ReadWrite 'Imperfect) (Base 'ReadWrite 'Perfect) where
-    -- assumeSuccess = SureBaseRW . mapError (\_ -> error "assumeSuccess: assumption failed")
+    assumeSuccess = \case
+        Base_Commit x -> Base_Commit x
+        Base_RST x -> Base_RST x
+        Base_Next x -> Base_Next x
+        Base_Reset x -> Base_Reset x
+        Base_Fail _ -> error "assumeSuccess: assumption failed"
 
 instance AssumeSuccess Any Sure where
     assumeSuccess (Any (BaseM x)) = Sure (BaseM (hoistFree assumeSuccess x))
@@ -561,7 +564,7 @@ instance AssumeSuccess Any Sure where
 instance AssumeSuccess Query SureQuery where
     assumeSuccess (Query (BaseM x)) = SureQuery (BaseM (hoistFree assumeSuccess x))
 
-
+-- ⭕
 
 class (FunctorialAction act, FunctorialAction try) =>
     Atomic (act :: Action) (try :: Action) | act -> try
@@ -591,7 +594,7 @@ freeTryR = \case
         Base_Next x -> liftF (Base_Next x) >>= freeTryR
         Base_Commit x -> case x of {}
 
-
+-- ⭕
 
 -- | Loop0 act1 act2 means that a repetition of 0 or more act1 actions results in an act2 action.
 class (Join act1 act2, Returnable act2, Is (act1 >> act2) act2) =>
@@ -610,7 +613,7 @@ instance Loop0 Sure Sure
 instance Loop0 SureQuery SureQuery
 instance Loop0 Query Query
 
-
+-- ⭕
 
 -- | Loop1 act1 act2 means that a repetition of 1 or more act1 actions results in an act2 action.
 class (Join act1 act2, Is act1 act2, Is (act1 >> act2) act2) =>
@@ -629,7 +632,7 @@ instance Loop1 Move Move
 instance Loop1 Sure Sure
 instance Loop1 SureQuery SureQuery
 
-
+-- ⭕
 
 -- | The type @a >> b@ is type of the expression @a >> b@.
 --
@@ -679,7 +682,7 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
     -- All other combinations degrade to Any.
     _ >> _ = Any
 
-
+-- ⭕
 
 class (FunctorialAction act1, FunctorialAction act2, FunctorialAction (act1 >> act2)) =>
     Join (act1 :: Action) (act2 :: Action)
@@ -693,7 +696,7 @@ cast2 :: forall act2 act1 f xs x r s e m a.
     f (act1 xs x r s e m a) -> f (act2 xs x r s e m a)
 cast2 = fmap castTo
 
-
+-- ⭕
 
 instance Join Any Any where
     join = Monad.join
@@ -831,16 +834,16 @@ instance Join SureQuery Sure where
 instance Join SureQuery SureQuery where
     join = Monad.join
 
-
+-- ⭕
 
 infixl 1 `bindAction`
 bindAction :: Functor m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x r s e m a -> (a -> act2 xs x r s e m b) -> act3 xs x r s e m b
 bindAction x f = join (fmap f x)
 
-
+-- ⭕
 
 commit :: Monad m => Positive Natural -> AtomicMove xs x r s e m ()
-commit n = assumeMovement $ castTo @Atom $ Base_Commit @'ReadWrite @'Perfect (Commit n ())
+commit n = AtomicMove $ Atom $ Query $ return $ Sure $ BaseM $ liftF $ Base_Commit $ Commit n ()
 
 fail :: Fail xs x r s r m a
 fail = Fail id
