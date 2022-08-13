@@ -98,9 +98,6 @@ class Fallible (act :: Action) where
 class Infallible (act :: Action) where
     mapError' :: Functor m => act xs x r s e m a -> act xs x r s e' m a
 
--- class IsFree (base :: Action) (act :: Action) | act -> base where
---     freeIso :: Iso (act xs x r s e m a) (act xs x r s e' m a) (Free (base xs x r s e m) a) (Free (base xs x r s e' m) a)
-
 -- ⭕
 
 data Mode = ReadWrite | ReadOnly
@@ -183,13 +180,6 @@ instance ContravariantAction (Base mo 'Imperfect) where
         Base_RST x -> Base_RST (contramap f x)
         x -> x
 
--- instance Fallible (Base mo p) where
---     mapError f = \case
---         Base_Fail g -> Base_Fail (mapError f g)
---         Base_RST x -> Base_RST x
---         Base_Reset x -> Base_Reset x
---         Base_Next x -> Base_Next x
-
 -- ⭕
 
 type BaseM :: Mode -> Perfection -> Action
@@ -210,9 +200,6 @@ deriving newtype instance Functor m => Monad (BaseM 'ReadWrite 'Perfect xs x r s
 deriving newtype instance Functor m => Monad (BaseM 'ReadWrite 'Imperfect xs x r s e m)
 deriving newtype instance Functor m => Monad (BaseM 'ReadOnly 'Perfect xs x r s e m)
 deriving newtype instance Functor m => Monad (BaseM 'ReadOnly 'Imperfect xs x r s e m)
-
--- instance IsFree act (BaseM act) where
---     freeIso = coerced
 
 instance FunctorialAction (BaseM 'ReadWrite 'Perfect)
 instance FunctorialAction (BaseM 'ReadWrite 'Imperfect)
@@ -239,14 +226,6 @@ instance ContravariantAction (BaseM 'ReadOnly 'Perfect) where
 instance ContravariantAction (BaseM 'ReadOnly 'Imperfect) where
     contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
 
-    -- contramapAction f (BaseM x) = BaseM (hoistFree (contramapAction f) x)
-
--- instance (FunctorialAction act, Fallible act) => Fallible (BaseM mo p) where
---     mapError f = over freeIso $ hoistFree $ mapError f
-
--- instance (FunctorialAction act, Infallible act) => Infallible (BaseM mo p) where
---     mapError' = over freeIso $ hoistFree mapError'
-
 -- ⭕
 
 type Any :: Action
@@ -255,8 +234,6 @@ type Any :: Action
 newtype Any xs x r s e m a = Any{ unAny :: BaseM 'ReadWrite 'Imperfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, Returnable, ContravariantAction, FunctorialAction, MonadicAction)
 
--- instance IsFree (Base 'ReadWrite 'Imperfect) Any where freeIso = coerced
-
 -- ⭕
 
 type Query :: Action
@@ -264,8 +241,6 @@ type Query :: Action
 -- | Like 'Any', but cannot move the cursor; a monadic combination of 'Base'
 newtype Query xs x r s e m a = Query{ unQuery :: BaseM 'ReadOnly 'Imperfect xs x r s e m a }
     deriving newtype (FunctorialAction, MonadicAction, Returnable, Functor, Applicative, Monad, ContravariantAction)
-
--- instance IsFree BaseR Query where freeIso = coerced
 
 -- ⭕
 
@@ -296,9 +271,6 @@ instance Returnable Atom where
 instance ContravariantAction Atom where
     contramapAction f (Atom a) = Atom (contramapAction f (fmap (contramapAction f) a))
 
--- instance Fallible Atom where
---     mapError f (Atom q) = Atom (fmap mapError' $ mapError f q)
-
 instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x r s e m) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
@@ -311,7 +283,6 @@ type AtomicMove :: Action
 newtype AtomicMove xs x r s e m a = AtomicMove{ unAtomicMove :: Atom xs x r s e m a }
     deriving stock Functor
     deriving anyclass FunctorialAction
-    -- deriving newtype Fallible
 
 instance ContravariantAction AtomicMove where contramapAction f (AtomicMove a) = AtomicMove (contramapAction @Atom f a)
 
@@ -327,8 +298,6 @@ type Sure :: Action
 newtype Sure xs x r s e m a = Sure{ unSure :: BaseM 'ReadWrite 'Perfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, Returnable, ContravariantAction, FunctorialAction, MonadicAction)
 
--- instance IsFree SureBaseRW Sure where freeIso = coerced
-
 -- ⭕
 
 type SureQuery :: Action
@@ -336,8 +305,6 @@ type SureQuery :: Action
 -- | Always succeeds, does not move the cursor
 newtype SureQuery xs x r s e m a = SureQuery{ unSureQuery :: BaseM 'ReadOnly 'Perfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, ContravariantAction, FunctorialAction, MonadicAction, Returnable)
-
--- instance IsFree SureBaseR SureQuery where freeIso = coerced
 
 -- ⭕
 
@@ -365,11 +332,6 @@ class Is (act1 :: Action) (act2 :: Action) where
 castTo :: forall act2 act1 xs x r s e m a. (Functor m, Is act1 act2) =>
     act1 xs x r s e m a -> act2 xs x r s e m a
 castTo = cast @act1 @act2
-
--- instance FunctorialAction act => Is act (FreeAction act) where cast = FreeAction . liftF
-
--- castBaseM :: Is (Base mo1 p1) (Base mo2 p2) => Functor m => BaseM mo1 p1 xs x r s e m a -> BaseM mo2 p2 xs x r s e m a
--- castBaseM (BaseM x) = BaseM (hoistFree cast x)
 
 -- ⭕ Everything is itself
 
