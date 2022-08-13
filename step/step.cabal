@@ -124,7 +124,6 @@ library
 
         Step.Buffer
         Step.ContextStack
-        Step.CursorPosition
         Step.GeneralCursors
         Step.LineHistory
         Step.RunAction

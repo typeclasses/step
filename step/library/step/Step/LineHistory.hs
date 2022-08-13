@@ -16,9 +16,6 @@ import Loc (Line, loc)
 
 import qualified Map
 
-import Step.CursorPosition (CursorPosition (..))
-import qualified Step.CursorPosition as CursorPosition
-
 import qualified Char
 
 import qualified Loc
@@ -29,6 +26,8 @@ import qualified Step.Nontrivial as Nontrivial
 import qualified List
 
 import Step.RST
+
+import Step.Action
 
 data LineHistory =
   LineHistory
@@ -146,12 +145,12 @@ recordCR :: Monad m => RST r LineHistory m ()
 recordCR = do
     acr <- use afterCRLens
     when acr startNewLine
-    modifying cursorPositionLens $ appEndo $ CursorPosition.increase 1
+    modifying cursorPositionLens $ appEndo $ increaseCursorPosition 1
     assign afterCRLens True
 
 recordLF :: Monad m => RST r LineHistory m ()
 recordLF = do
-    modifying cursorPositionLens $ appEndo $ CursorPosition.increase 1
+    modifying cursorPositionLens $ appEndo $ increaseCursorPosition 1
     startNewLine
     assign afterCRLens False
 
@@ -160,5 +159,5 @@ recordOther x = do
     acr <- use afterCRLens
     when acr startNewLine
     modifying cursorPositionLens $ appEndo $
-        CursorPosition.strictlyIncrease $ Nontrivial.length x
+        strictlyIncreaseCursorPosition $ Nontrivial.length x
     assign afterCRLens False

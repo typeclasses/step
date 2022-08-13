@@ -4,7 +4,6 @@ module Step.Document
     module Step.Document.Base,
     module Step.Action,
     module Step.Action.Do,
-    module Step.CursorPosition,
   )
   where
 
@@ -12,4 +11,3 @@ import Step.Document.Actions
 import Step.Document.Base hiding (cursorPosition, lineHistory)
 import Step.Action
 import Step.Action.Do
-import Step.CursorPosition

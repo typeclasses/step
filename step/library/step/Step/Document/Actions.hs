@@ -7,8 +7,6 @@ import Step.Action
 import Step.Document.Base (DocumentMemory, Context)
 import qualified Step.Document.Base as Doc
 
-import Step.CursorPosition
-
 import Text (Text)
 
 import qualified Step.Nontrivial as Nontrivial

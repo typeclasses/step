@@ -942,3 +942,14 @@ repetition0 p = fix \r ->
 
 repetition1 :: Monad m => AtomicMove xs x r s e m a -> AtomicMove xs x r s e m (NonEmpty a)
 repetition1 p = p `bindAction` \x -> repetition0 p <&> \xs -> x :| xs
+
+-- ⭕
+
+newtype CursorPosition = CursorPosition{ cursorPositionNatural :: Natural }
+    deriving newtype (Eq, Ord, Show, Num)
+
+strictlyIncreaseCursorPosition :: Positive Natural -> Endo CursorPosition
+strictlyIncreaseCursorPosition = increaseCursorPosition . review Positive.refine
+
+increaseCursorPosition :: Natural -> Endo CursorPosition
+increaseCursorPosition x = Endo $ CursorPosition . (+ x) . cursorPositionNatural

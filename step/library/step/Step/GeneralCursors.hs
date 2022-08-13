@@ -19,14 +19,13 @@ import qualified Step.Cursor as Cursor
 
 import Step.RST (RST (..))
 
-import Step.CursorPosition (CursorPosition)
-import qualified Step.CursorPosition as CursorPosition
-
 import qualified Signed
 import qualified Positive
 import qualified Positive.Math as Positive
 
 import Step.Buffer
+
+import Step.Action hiding (next)
 
 
 -- | Cursor that just walks through a pure buffer, no streaming of additional input
@@ -95,7 +94,7 @@ countingCursor positionLens c = CursorRW{ initRW, inputRW, commitRW, resetRW }
 
     count :: Positive Natural -> RST r (CursorState s srw) m ()
     count n = modifying (commitLens % positionLens) $
-        appEndo $ CursorPosition.strictlyIncrease n
+        appEndo $ strictlyIncreaseCursorPosition n
 
 -- todo: While state needs to be redesigned in light of "reset"
 
