@@ -155,14 +155,11 @@ type Walk :: Mode -> Perfection -> Action
 
 newtype Walk mo p xs x e m a = Walk{ unWalk :: Free (Step mo p xs x e m) a }
 
-deriving newtype instance (Functor m, Functor (Commit mo)) => Functor (Walk mo 'Perfect xs x e m)
-deriving newtype instance (Functor m, Functor (Commit mo)) => Functor (Walk mo 'Imperfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Functor (Walk mo p xs x e m)
 
-deriving newtype instance (Functor m, Functor (Commit mo)) => Applicative (Walk mo 'Perfect xs x e m)
-deriving newtype instance (Functor m, Functor (Commit mo)) => Applicative (Walk mo 'Imperfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Applicative (Walk mo p xs x e m)
 
-deriving newtype instance (Functor m, Functor (Commit mo)) => Monad (Walk mo 'Perfect xs x e m)
-deriving newtype instance (Functor m, Functor (Commit mo)) => Monad (Walk mo 'Imperfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Monad (Walk mo p xs x e m)
 
 instance Possible (Walk mo p) where
     success = Walk . Pure
