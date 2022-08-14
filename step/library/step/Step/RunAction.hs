@@ -24,9 +24,9 @@ import Step.Action
 --             Base_Next f -> Cursor.next inputRunR >>= runFree . f
 
 runAny :: forall xs x r s s' m a. Monad m => CursorRunRW xs x r s s' m -> Any xs x r s r m a -> RST r s m (Either r a)
-runAny CursorRunRW{ inputRunRW, runRW, resetRunRW, commitRunRW } (Any (BaseM a)) = runRW (runFree a)
+runAny CursorRunRW{ inputRunRW, runRW, resetRunRW, commitRunRW } (Any (Walk a)) = runRW (runFree a)
     where
-    runFree :: forall a'. Free (Base 'ReadWrite 'Imperfect xs x r s r m) a' -> RST r (CursorState s s') m (Either r a')
+    runFree :: forall a'. Free (Step 'ReadWrite 'Imperfect xs x r s r m) a' -> RST r (CursorState s s') m (Either r a')
     runFree = \case
         Pure x -> return (Right x)
         Free b -> case b of
