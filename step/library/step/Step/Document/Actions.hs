@@ -25,8 +25,11 @@ import Step.ContextStack
 
 import qualified Loc
 
-contextualize :: Monad m => BasicAction act => Text -> act xs x (Context xs x s m) s' e m a -> act xs x (Context xs x s m) s' e m a
-contextualize n = contramapAction (over (Doc.ctxConfigLens % Doc.configContextLens % contextStackSeq) (n :<|))
+contextualize :: forall act xs x s s' e m a. Monad m => BasicAction act => Text -> act xs x (Context xs x s m) s' e m a -> act xs x (Context xs x s m) s' e m a
+contextualize n = contramap f
+  where
+    f :: Context xs x s m -> Context xs x s m
+    f = over (Doc.ctxConfigLens % Doc.configContextLens % contextStackSeq) (n :<|)
 
 cursorPosition :: Monad m => SureQuery xs x r (DocumentMemory xs x s) e m CursorPosition
 cursorPosition = actionState <&> Doc.cursorPosition
