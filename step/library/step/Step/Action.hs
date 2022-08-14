@@ -86,14 +86,8 @@ type Action =
 class Possible (act :: Action) where
     success :: a -> act xs x r s e m a
 
-class (IsWalk act, Possible act, forall xs x r s e m. Functor m => Monad (act xs x r s e m)) =>
-    MonadicAction (act :: Action)
-
 class Fallible (act :: Action) where
     mapError :: Functor m => (e -> e') -> act xs x r s e m a -> act xs x r s e' m a
-
-class Infallible (act :: Action) where
-    mapError' :: Functor m => act xs x r s e m a -> act xs x r s e' m a
 
 -- ⭕
 
@@ -203,22 +197,11 @@ instance Functor m => Contravariant (Step 'ReadWrite 'Imperfect xs x r s e m a) 
         Base_Next x -> Base_Next x
         Base_Commit x -> Base_Commit x
 
--- ⭕
+-- ⭕ Walk
 
 type Walk :: Mode -> Perfection -> Action
 
 newtype Walk mo p xs x r s e m a = Walk{ unWalk :: Free (Step mo p xs x r s e m) a }
-
-class
-    ( forall xs x r s e m. Functor m => Functor (act xs x r s e m)
-    , forall xs x r r' s e m a. Functor m => Contravariant (act xs x r s e m a) (act xs x r' s e m a) r r'
-    ) =>
-    IsWalk (act :: Action)
-
-instance IsWalk (Walk 'ReadWrite 'Perfect)
-instance IsWalk (Walk 'ReadWrite 'Imperfect)
-instance IsWalk (Walk 'ReadOnly 'Perfect)
-instance IsWalk (Walk 'ReadOnly 'Imperfect)
 
 deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Perfect xs x r s e m)
 deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Imperfect xs x r s e m)
@@ -247,13 +230,37 @@ instance Functor m => Contravariant (Walk 'ReadOnly 'Perfect xs x r s e m a) (Wa
 instance Functor m => Contravariant (Walk 'ReadOnly 'Imperfect xs x r s e m a) (Walk 'ReadOnly 'Imperfect xs x r' s e m a) r r' where
     contramap f (Walk a) = Walk $ hoistFree (contramap f) a
 
-instance MonadicAction (Walk 'ReadWrite 'Perfect)
-instance MonadicAction (Walk 'ReadWrite 'Imperfect)
-instance MonadicAction (Walk 'ReadOnly 'Perfect)
-instance MonadicAction (Walk 'ReadOnly 'Imperfect)
-
 instance Possible (Walk mo p) where
     success = Walk . Pure
+
+-- ⭕ IsWalk
+
+class
+    ( forall xs x r s e m. Functor m =>
+          Functor (act xs x r s e m)
+    , forall xs x r r' s e m a. Functor m =>
+          Contravariant (act xs x r s e m a) (act xs x r' s e m a) r r'
+    ) =>
+    IsWalk (act :: Action)
+
+instance IsWalk (Walk 'ReadWrite 'Perfect)
+instance IsWalk (Walk 'ReadWrite 'Imperfect)
+instance IsWalk (Walk 'ReadOnly 'Perfect)
+instance IsWalk (Walk 'ReadOnly 'Imperfect)
+
+-- ⭕ MonadicWalk
+
+-- | Walks that are closed under sequencing
+class
+    ( IsWalk act, Possible act, forall xs x r s e m. Functor m =>
+          Monad (act xs x r s e m)
+    ) =>
+    MonadicWalk (act :: Action)
+
+instance MonadicWalk (Walk 'ReadWrite 'Perfect)
+instance MonadicWalk (Walk 'ReadWrite 'Imperfect)
+instance MonadicWalk (Walk 'ReadOnly 'Perfect)
+instance MonadicWalk (Walk 'ReadOnly 'Imperfect)
 
 -- ⭕
 
@@ -261,7 +268,7 @@ type Any :: Action
 
 -- | The most general of the actions; a monadic combination of 'BaseRW'
 newtype Any xs x r s e m a = Any{ unAny :: Walk 'ReadWrite 'Imperfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicAction)
+    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
 
 instance Functor m => Contravariant (Any xs x r s e m a) (Any xs x r' s e m a) r r' where
     contramap f = Any . contramap f . unAny
@@ -272,7 +279,7 @@ type Query :: Action
 
 -- | Like 'Any', but cannot move the cursor; a monadic combination of 'Step'
 newtype Query xs x r s e m a = Query{ unQuery :: Walk 'ReadOnly 'Imperfect xs x r s e m a }
-    deriving newtype (IsWalk, MonadicAction, Possible, Functor, Applicative, Monad)
+    deriving newtype (IsWalk, MonadicWalk, Possible, Functor, Applicative, Monad)
 
 instance Functor m => Contravariant (Query xs x r s e m a) (Query xs x r' s e m a) r r' where
     contramap f = Query . contramap f . unQuery
@@ -337,7 +344,7 @@ type Sure :: Action
 
 -- | Always succeeds
 newtype Sure xs x r s e m a = Sure{ unSure :: Walk 'ReadWrite 'Perfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicAction)
+    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
 
 instance Functor m => Contravariant (Sure xs x r s e m a) (Sure xs x r' s e m a) r r' where
     contramap f = Sure . contramap f . unSure
@@ -348,7 +355,7 @@ type SureQuery :: Action
 
 -- | Always succeeds, does not move the cursor
 newtype SureQuery xs x r s e m a = SureQuery{ unSureQuery :: Walk 'ReadOnly 'Perfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, IsWalk, MonadicAction, Possible)
+    deriving newtype (Functor, Applicative, Monad, IsWalk, MonadicWalk, Possible)
 
 instance Functor m => Contravariant (SureQuery xs x r s e m a) (SureQuery xs x r' s e m a) r r' where
     contramap f = SureQuery . contramap f . unSureQuery
