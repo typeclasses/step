@@ -137,7 +137,7 @@ takeText = repetition0 P.takeNext <&> ListLike.foldMap Nontrivial.generalize
 -- try :: Parser a -> Parser a
 
 infix 0 <?>
-(<?>) :: Monad m => ContravariantAction k => Parser s m k a -> Text -> Parser s m k a
+(<?>) :: Monad m => BasicAction k => Parser s m k a -> Text -> Parser s m k a
 p <?> c = P.contextualize c p
 
 -- todo

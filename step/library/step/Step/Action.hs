@@ -81,16 +81,16 @@ type Action =
     -> Type           -- ^ @a@ - produced upon success
     -> Type
 
-class (forall xs x r s e m. Functor m => Functor (act xs x r s e m)) => FunctorialAction (act :: Action)
+class (forall xs x r s e m. Functor m => Functor (act xs x r s e m)) =>
+    BasicAction (act :: Action)
+  where
+    contramapAction :: Functor m => (r -> r) -> act xs x r s e m a -> act xs x r s e m a
 
 class Returnable (act :: Action) where
     trivial :: a -> act xs x r s e m a
 
-class (FunctorialAction act, Returnable act, forall xs x r s e m. Functor m => Monad (act xs x r s e m)) =>
+class (BasicAction act, Returnable act, forall xs x r s e m. Functor m => Monad (act xs x r s e m)) =>
     MonadicAction (act :: Action)
-
-class ContravariantAction (act :: Action) where
-    contramapAction :: Functor m => (r -> r) -> act xs x r s e m a -> act xs x r s e m a
 
 class Fallible (act :: Action) where
     mapError :: Functor m => (e -> e') -> act xs x r s e m a -> act xs x r s e' m a
@@ -163,22 +163,30 @@ instance Functor m => Functor (Base 'ReadWrite 'Imperfect xs x r s e m) where
         Base_Fail x -> Base_Fail (fmap f x)
         Base_Commit x -> Base_Commit (fmap f x)
 
-instance FunctorialAction (Base 'ReadOnly 'Perfect)
-instance FunctorialAction (Base 'ReadOnly 'Imperfect)
-instance FunctorialAction (Base 'ReadWrite 'Perfect)
-instance FunctorialAction (Base 'ReadWrite 'Imperfect)
-
-instance ContravariantAction (Base mo 'Perfect) where
+instance BasicAction (Base 'ReadOnly 'Perfect) where
     contramapAction f = \case
         Base_Fail x -> case x of {}
         Base_RST x -> Base_RST (contramap f x)
         x -> x
 
-instance ContravariantAction (Base mo 'Imperfect) where
+instance BasicAction (Base 'ReadOnly 'Imperfect) where
     contramapAction f = \case
         Base_Fail x -> Base_Fail (contramapAction f x)
         Base_RST x -> Base_RST (contramap f x)
         x -> x
+
+instance BasicAction (Base 'ReadWrite 'Perfect) where
+    contramapAction f = \case
+        Base_Fail x -> case x of {}
+        Base_RST x -> Base_RST (contramap f x)
+        x -> x
+
+instance BasicAction (Base 'ReadWrite 'Imperfect) where
+    contramapAction f = \case
+        Base_Fail x -> Base_Fail (contramapAction f x)
+        Base_RST x -> Base_RST (contramap f x)
+        x -> x
+
 
 -- ⭕
 
@@ -201,10 +209,17 @@ deriving newtype instance Functor m => Monad (BaseM 'ReadWrite 'Imperfect xs x r
 deriving newtype instance Functor m => Monad (BaseM 'ReadOnly 'Perfect xs x r s e m)
 deriving newtype instance Functor m => Monad (BaseM 'ReadOnly 'Imperfect xs x r s e m)
 
-instance FunctorialAction (BaseM 'ReadWrite 'Perfect)
-instance FunctorialAction (BaseM 'ReadWrite 'Imperfect)
-instance FunctorialAction (BaseM 'ReadOnly 'Perfect)
-instance FunctorialAction (BaseM 'ReadOnly 'Imperfect)
+instance BasicAction (BaseM 'ReadWrite 'Perfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
+
+instance BasicAction (BaseM 'ReadWrite 'Imperfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
+
+instance BasicAction (BaseM 'ReadOnly 'Perfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
+
+instance BasicAction (BaseM 'ReadOnly 'Imperfect) where
+    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
 
 instance MonadicAction (BaseM 'ReadWrite 'Perfect)
 instance MonadicAction (BaseM 'ReadWrite 'Imperfect)
@@ -214,25 +229,13 @@ instance MonadicAction (BaseM 'ReadOnly 'Imperfect)
 instance Returnable (BaseM mo p) where
     trivial = BaseM . Pure
 
-instance ContravariantAction (BaseM 'ReadWrite 'Perfect) where
-    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
-
-instance ContravariantAction (BaseM 'ReadWrite 'Imperfect) where
-    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
-
-instance ContravariantAction (BaseM 'ReadOnly 'Perfect) where
-    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
-
-instance ContravariantAction (BaseM 'ReadOnly 'Imperfect) where
-    contramapAction f (BaseM a) = BaseM $ hoistFree (contramapAction f) a
-
 -- ⭕
 
 type Any :: Action
 
 -- | The most general of the actions; a monadic combination of 'BaseRW'
 newtype Any xs x r s e m a = Any{ unAny :: BaseM 'ReadWrite 'Imperfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, Returnable, ContravariantAction, FunctorialAction, MonadicAction)
+    deriving newtype (Functor, Applicative, Monad, Returnable, BasicAction, MonadicAction)
 
 -- ⭕
 
@@ -240,7 +243,7 @@ type Query :: Action
 
 -- | Like 'Any', but cannot move the cursor; a monadic combination of 'Base'
 newtype Query xs x r s e m a = Query{ unQuery :: BaseM 'ReadOnly 'Imperfect xs x r s e m a }
-    deriving newtype (FunctorialAction, MonadicAction, Returnable, Functor, Applicative, Monad, ContravariantAction)
+    deriving newtype (BasicAction, MonadicAction, Returnable, Functor, Applicative, Monad)
 
 -- ⭕
 
@@ -248,7 +251,7 @@ type Move :: Action
 
 -- | Always moves the cursor
 newtype Move xs x r s e m a = Move{ unMove :: Any xs x r s e m a }
-    deriving newtype (Functor, FunctorialAction, ContravariantAction)
+    deriving newtype (Functor, BasicAction)
 
 instance (Functor m, TypeError ('Text "Move cannot be Applicative because 'pure' would not move the cursor")) =>
     Applicative (Move xs x r s e m)
@@ -263,12 +266,11 @@ type Atom :: Action
 -- | Fails noncommittally; see 'try'
 newtype Atom xs x r s e m a = Atom{ unAtom :: Query xs x r s e m (Sure xs x r s e m a) }
     deriving stock Functor
-    deriving anyclass FunctorialAction
 
 instance Returnable Atom where
     trivial = Atom . trivial . trivial
 
-instance ContravariantAction Atom where
+instance BasicAction Atom where
     contramapAction f (Atom a) = Atom (contramapAction f (fmap (contramapAction f) a))
 
 instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x r s e m) where
@@ -282,9 +284,9 @@ type AtomicMove :: Action
 -- | Always moves the cursor, is atomic
 newtype AtomicMove xs x r s e m a = AtomicMove{ unAtomicMove :: Atom xs x r s e m a }
     deriving stock Functor
-    deriving anyclass FunctorialAction
 
-instance ContravariantAction AtomicMove where contramapAction f (AtomicMove a) = AtomicMove (contramapAction @Atom f a)
+instance BasicAction AtomicMove where
+    contramapAction f (AtomicMove a) = AtomicMove (contramapAction @Atom f a)
 
 instance (Functor m, TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x r s e m) where
     pure = error "unreachable"
@@ -296,7 +298,7 @@ type Sure :: Action
 
 -- | Always succeeds
 newtype Sure xs x r s e m a = Sure{ unSure :: BaseM 'ReadWrite 'Perfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, Returnable, ContravariantAction, FunctorialAction, MonadicAction)
+    deriving newtype (Functor, Applicative, Monad, Returnable, BasicAction, MonadicAction)
 
 -- ⭕
 
@@ -304,7 +306,7 @@ type SureQuery :: Action
 
 -- | Always succeeds, does not move the cursor
 newtype SureQuery xs x r s e m a = SureQuery{ unSureQuery :: BaseM 'ReadOnly 'Perfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, ContravariantAction, FunctorialAction, MonadicAction, Returnable)
+    deriving newtype (Functor, Applicative, Monad, BasicAction, MonadicAction, Returnable)
 
 -- ⭕
 
@@ -313,9 +315,8 @@ type Fail :: Action
 -- | Never succeeds, never moves the cursor, never does anything at all
 data Fail xs x r s e m a = Fail{ unFail :: r -> e }
     deriving stock Functor
-    deriving anyclass FunctorialAction
 
-instance ContravariantAction Fail where
+instance BasicAction Fail where
     contramapAction f (Fail g) = Fail (g . f)
 
 instance Fallible Fail where
@@ -528,21 +529,16 @@ instance AssumeSuccess Query SureQuery where
 
 -- ⭕
 
-class (FunctorialAction act, FunctorialAction try) =>
-    Atomic (act :: Action) (try :: Action) | act -> try
-  where
+class (BasicAction act, BasicAction try) => Atomic act try | act -> try where
     try :: Functor m => act xs x r s e m a -> try xs x r s e m (Maybe a)
 
-instance Atomic Atom Sure
-  where
+instance Atomic Atom Sure where
     try (Atom x) = castTo @Sure (try @Query x) >>= maybe (return Nothing) (fmap Just)
 
-instance Atomic AtomicMove Sure
-  where
+instance Atomic AtomicMove Sure where
     try = try @Atom . castTo @Atom
 
-instance Atomic Query SureQuery
-  where
+instance Atomic Query SureQuery where
     try :: forall xs x r s e m a. Functor m => Query xs x r s e m a -> SureQuery xs x r s e m (Maybe a)
     try (Query (BaseM q)) = SureQuery (BaseM (freeTryR q))
 
@@ -646,16 +642,10 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
 
 -- ⭕
 
-class (FunctorialAction act1, FunctorialAction act2, FunctorialAction (act1 >> act2)) =>
-    Join (act1 :: Action) (act2 :: Action)
-  where
-    join :: Functor m =>
-        act1 xs x r s e m (act2 xs x r s e m a)
-        -> (act1 >> act2) xs x r s e m a
+class (BasicAction act1, BasicAction act2, BasicAction (act1 >> act2)) => Join act1 act2 where
+    join :: Functor m => act1 xs x r s e m (act2 xs x r s e m a) -> (act1 >> act2) xs x r s e m a
 
-cast2 :: forall act2 act1 f xs x r s e m a.
-    (Is act1 act2, Functor m, Functor f) =>
-    f (act1 xs x r s e m a) -> f (act2 xs x r s e m a)
+cast2 :: forall act2 act1 f xs x r s e m a. (Is act1 act2, Functor m, Functor f) => f (act1 xs x r s e m a) -> f (act2 xs x r s e m a)
 cast2 = fmap castTo
 
 -- ⭕
