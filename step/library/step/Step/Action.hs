@@ -83,10 +83,10 @@ type Action =
 
 -- ⭕ Classes
 
-class Returnable (act :: Action) where
-    trivial :: a -> act xs x r s e m a
+class Possible (act :: Action) where
+    success :: a -> act xs x r s e m a
 
-class (IsWalk act, Returnable act, forall xs x r s e m. Functor m => Monad (act xs x r s e m)) =>
+class (IsWalk act, Possible act, forall xs x r s e m. Functor m => Monad (act xs x r s e m)) =>
     MonadicAction (act :: Action)
 
 class Fallible (act :: Action) where
@@ -252,8 +252,8 @@ instance MonadicAction (Walk 'ReadWrite 'Imperfect)
 instance MonadicAction (Walk 'ReadOnly 'Perfect)
 instance MonadicAction (Walk 'ReadOnly 'Imperfect)
 
-instance Returnable (Walk mo p) where
-    trivial = Walk . Pure
+instance Possible (Walk mo p) where
+    success = Walk . Pure
 
 -- ⭕
 
@@ -261,7 +261,7 @@ type Any :: Action
 
 -- | The most general of the actions; a monadic combination of 'BaseRW'
 newtype Any xs x r s e m a = Any{ unAny :: Walk 'ReadWrite 'Imperfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, Returnable, IsWalk, MonadicAction)
+    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicAction)
 
 instance Functor m => Contravariant (Any xs x r s e m a) (Any xs x r' s e m a) r r' where
     contramap f = Any . contramap f . unAny
@@ -272,7 +272,7 @@ type Query :: Action
 
 -- | Like 'Any', but cannot move the cursor; a monadic combination of 'Step'
 newtype Query xs x r s e m a = Query{ unQuery :: Walk 'ReadOnly 'Imperfect xs x r s e m a }
-    deriving newtype (IsWalk, MonadicAction, Returnable, Functor, Applicative, Monad)
+    deriving newtype (IsWalk, MonadicAction, Possible, Functor, Applicative, Monad)
 
 instance Functor m => Contravariant (Query xs x r s e m a) (Query xs x r' s e m a) r r' where
     contramap f = Query . contramap f . unQuery
@@ -302,8 +302,8 @@ type Atom :: Action
 newtype Atom xs x r s e m a = Atom{ unAtom :: Query xs x r s e m (Sure xs x r s e m a) }
     deriving stock Functor
 
-instance Returnable Atom where
-    trivial = Atom . trivial . trivial
+instance Possible Atom where
+    success = Atom . success . success
 
 instance IsWalk Atom
 
@@ -337,7 +337,7 @@ type Sure :: Action
 
 -- | Always succeeds
 newtype Sure xs x r s e m a = Sure{ unSure :: Walk 'ReadWrite 'Perfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, Returnable, IsWalk, MonadicAction)
+    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicAction)
 
 instance Functor m => Contravariant (Sure xs x r s e m a) (Sure xs x r' s e m a) r r' where
     contramap f = Sure . contramap f . unSure
@@ -348,7 +348,7 @@ type SureQuery :: Action
 
 -- | Always succeeds, does not move the cursor
 newtype SureQuery xs x r s e m a = SureQuery{ unSureQuery :: Walk 'ReadOnly 'Perfect xs x r s e m a }
-    deriving newtype (Functor, Applicative, Monad, IsWalk, MonadicAction, Returnable)
+    deriving newtype (Functor, Applicative, Monad, IsWalk, MonadicAction, Possible)
 
 instance Functor m => Contravariant (SureQuery xs x r s e m a) (SureQuery xs x r' s e m a) r r' where
     contramap f = SureQuery . contramap f . unSureQuery
@@ -602,7 +602,7 @@ freeTryR = \case
 -- ⭕
 
 -- | Loop0 act1 act2 means that a repetition of 0 or more act1 actions results in an act2 action.
-class (Join act1 act2, Returnable act2, Is (act1 >> act2) act2) =>
+class (Join act1 act2, Possible act2, Is (act1 >> act2) act2) =>
     Loop0 act1 act2 | act1 -> act2
 
 -- Atomic actions loose their atomicity when sequenced 2 or more times; guaranteed advancement is lost when sequencing 0 times
@@ -893,7 +893,7 @@ skip n = next `bindAction` \x ->
         _ -> castTo @Move (commit n)
 
 skipAtomically0 :: Monad m => Natural -> Atom xs x r s r m ()
-skipAtomically0 = maybe (trivial ()) (castTo @Atom . skipAtomically)  . preview Positive.refine
+skipAtomically0 = maybe (success ()) (castTo @Atom . skipAtomically)  . preview Positive.refine
 
 skipAtomically :: Monad m => Positive Natural -> AtomicMove xs x r s r m ()
 skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
@@ -911,7 +911,7 @@ atEnd :: Monad m => SureQuery xs x r s e m Bool
 atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
 end :: Monad m => Query xs x r s r m ()
-end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
+end = atEnd `bindAction` \e -> if e then success () else castTo @Query fail
 
 reset :: Monad m => SureQuery xs x r s e m ()
 reset = cast $ Base_Reset @'ReadOnly @'Perfect ()
@@ -957,7 +957,7 @@ count0 :: forall act1 act2 xs x r s e m a. Monad m =>
 count0 = \n a -> go a n
   where
     go a = fix \r -> \case
-        0 -> trivial []
+        0 -> success []
         n -> castTo @act2 $
             a `bindAction` \x -> r (n - 1) <&> \xs -> x : xs
 
