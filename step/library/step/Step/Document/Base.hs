@@ -120,7 +120,7 @@ record' spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanO
     ts = configLineTerminators (ctxConfig ctx)
 
 parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
-    act xs x (Context xs x s m) (Context xs x s m) (StateT (DocumentMemory xs x s) m) a
+    act xs x (Context xs x s m) (RST (Context xs x s m) (DocumentMemory xs x s) m) a
     -> Context xs x s m
     -> StateT (DocumentMemory xs x s) m (Either Error a)
 parse a =
@@ -135,7 +135,7 @@ parse a =
           Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
 parseOnly :: (Is act Any, Monad m, ListLike xs x) =>
-    act xs x (Context xs x s m) (Context xs x s m) (StateT (DocumentMemory xs x s) m) a
+    act xs x (Context xs x s m) (RST (Context xs x s m) (DocumentMemory xs x s) m) a
     -> Context xs x s m
     -> s
     -> m (Either Error a)
@@ -145,8 +145,7 @@ parseOnly p c s =
 type Parser (act :: Action) a = act
     Text Char
     (Context Text Char [Nontrivial Text Char] Identity)
-    (Context Text Char [Nontrivial Text Char] Identity)
-    (StateT (DocumentMemory Text Char [Nontrivial Text Char]) Identity)
+    (RST ((Context Text Char [Nontrivial Text Char] Identity)) (DocumentMemory Text Char [Nontrivial Text Char]) Identity)
     a
 
 parseSimple :: forall a act. (Is act Any) =>

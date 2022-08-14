@@ -27,22 +27,22 @@ import Step.ContextStack
 
 import qualified Loc
 
-contextualize :: forall act xs x s e m m' a. Functor m' => IsWalk act =>
+contextualize :: forall act xs x s e m m' a. MonadReader (Context xs x s m) m' => IsWalk act =>
     Text
-    -> act xs x (Context xs x s m) e m' a
-    -> act xs x (Context xs x s m) e m' a
-contextualize n = contramapWalk f
+    -> act xs x e m' a
+    -> act xs x e m' a
+contextualize n = hoistWalk (local f)
   where
     f :: Context xs x s m -> Context xs x s m
     f = over (Doc.ctxConfigLens % Doc.configContextLens % contextStackSeq) (n :<|)
 
-cursorPosition :: MonadState (DocumentMemory xs x s) m => SureQuery xs x r e m CursorPosition
+cursorPosition :: MonadState (DocumentMemory xs x s) m => SureQuery xs x e m CursorPosition
 cursorPosition = actionState <&> Doc.cursorPosition
 
-lineHistory :: MonadState (DocumentMemory xs x s) m => SureQuery xs x r e m LineHistory
+lineHistory :: MonadState (DocumentMemory xs x s) m => SureQuery xs x e m LineHistory
 lineHistory = actionState <&> Doc.lineHistory
 
-position :: MonadState (DocumentMemory xs x s) m' => SureQuery xs x (Context xs x s m) e m' Loc
+position :: MonadState (DocumentMemory xs x s) m' => SureQuery xs x e m' Loc
 position = do
     lh <- lineHistory
     cp <- cursorPosition

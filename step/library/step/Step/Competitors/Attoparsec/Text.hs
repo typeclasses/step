@@ -28,13 +28,14 @@ import Step.ContextStack
 
 import Step.Nontrivial
 
+import Step.RST
+
 import Optics
 
 type Parser s m (act :: Action) a =
     act Text Char
         (Doc.Context Text Char [Nontrivial Text Char] m)
-        (Doc.Context Text Char [Nontrivial Text Char] m)
-        (StateT (Doc.DocumentMemory Text Char s) m)
+        (RST ((Doc.Context Text Char [Nontrivial Text Char] m)) (Doc.DocumentMemory Text Char s) m)
         a
 
 char :: Monad m => Char -> Parser s m AtomicMove Char

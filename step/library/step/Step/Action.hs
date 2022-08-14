@@ -72,7 +72,6 @@ Arrows in the graph below indicate permitted use of 'cast'. (Not pictured: 'Fail
 type Action =
        Type           -- ^ @xs@ - text
     -> Type           -- ^ @x@ - char
-    -> Type           -- ^ @r@ - reader context
     -> Type           -- ^ @e@ - error
     -> (Type -> Type) -- ^ @m@ - monadic context
     -> Type           -- ^ @a@ - produced upon success
@@ -81,10 +80,10 @@ type Action =
 -- ⭕ Classes
 
 class Possible (act :: Action) where
-    success :: a -> act xs x r e m a
+    success :: a -> act xs x e m a
 
 class Fallible (act :: Action) where
-    mapError :: Functor m => (e -> e') -> act xs x r e m a -> act xs x r e' m a
+    mapError :: Functor m => (e -> e') -> act xs x e m a -> act xs x e' m a
 
 -- ⭕
 
@@ -112,40 +111,40 @@ type instance Imperfection 'Imperfect e = e
 
 type Step :: Mode -> Perfection -> Action
 
-data Step (mo :: Mode) (p :: Perfection) xs x r e m a =
-    Base_RST (r -> m a)
+data Step (mo :: Mode) (p :: Perfection) xs x e m a =
+    Base_RST (m a)
   | Base_Reset a
   | Base_Next (Maybe (Nontrivial xs x) -> a)
-  | Base_Fail (Imperfection p (r -> e))
+  | Base_Fail (Imperfection p (m e))
   | Base_Commit (Commit mo a)
 
-instance Functor m => Functor (Step 'ReadOnly 'Perfect xs x r e m) where
+instance Functor m => Functor (Step 'ReadOnly 'Perfect xs x e m) where
     fmap f = \case
-        Base_RST x -> Base_RST (fmap f . x)
+        Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
         Base_Next x -> Base_Next (fmap f x)
         Base_Fail x -> case x of {}
         Base_Commit x -> case x of {}
 
-instance Functor m => Functor (Step 'ReadOnly 'Imperfect xs x r e m) where
+instance Functor m => Functor (Step 'ReadOnly 'Imperfect xs x e m) where
     fmap f = \case
-        Base_RST x -> Base_RST (fmap f . x)
+        Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
         Base_Next x -> Base_Next (fmap f x)
         Base_Fail x -> Base_Fail x
         Base_Commit x -> case x of {}
 
-instance Functor m => Functor (Step 'ReadWrite 'Perfect xs x r e m) where
+instance Functor m => Functor (Step 'ReadWrite 'Perfect xs x e m) where
     fmap f = \case
-        Base_RST x -> Base_RST (fmap f . x)
+        Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
         Base_Next x -> Base_Next (fmap f x)
         Base_Fail x -> case x of {}
         Base_Commit x -> Base_Commit (fmap f x)
 
-instance Functor m => Functor (Step 'ReadWrite 'Imperfect xs x r e m) where
+instance Functor m => Functor (Step 'ReadWrite 'Imperfect xs x e m) where
     fmap f = \case
-        Base_RST x -> Base_RST (fmap f . x)
+        Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
         Base_Next x -> Base_Next (fmap f x)
         Base_Fail x -> Base_Fail x
@@ -154,40 +153,40 @@ instance Functor m => Functor (Step 'ReadWrite 'Imperfect xs x r e m) where
 -- ⭕ IsStep
 
 class
-    ( forall xs x r e m. Functor m => Functor (step xs x r e m)
+    ( forall xs x e m. Functor m => Functor (step xs x e m)
     ) =>
     IsStep (step :: Action)
   where
-    contramapStep :: Functor m => (r' -> r) -> step xs x r e m a -> step xs x r' e m a
+    hoistStep :: Functor m2 => (forall z. m1 z -> m2 z) -> step xs x e m1 a -> step xs x e m2 a
 
 instance IsStep (Step 'ReadOnly 'Perfect) where
-    contramapStep f = \case
+    hoistStep f = \case
         Base_Fail x -> case x of {}
-        Base_RST x -> Base_RST (x . f)
+        Base_RST x -> Base_RST (f x)
         Base_Commit x -> Base_Commit x
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
 
 instance IsStep (Step 'ReadOnly 'Imperfect) where
-    contramapStep f = \case
-        Base_Fail x -> Base_Fail (x . f)
-        Base_RST x -> Base_RST (x . f)
+    hoistStep f = \case
+        Base_Fail x -> Base_Fail (f x)
+        Base_RST x -> Base_RST (f x)
         Base_Commit x -> case x of {}
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
 
 instance IsStep (Step 'ReadWrite 'Perfect) where
-    contramapStep f = \case
+    hoistStep f = \case
         Base_Fail x -> case x of {}
-        Base_RST x -> Base_RST (x . f)
+        Base_RST x -> Base_RST (f x)
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
         Base_Commit x -> Base_Commit x
 
 instance IsStep (Step 'ReadWrite 'Imperfect) where
-    contramapStep f = \case
-        Base_Fail x -> Base_Fail (x . f)
-        Base_RST x -> Base_RST (x . f)
+    hoistStep f = \case
+        Base_Fail x -> Base_Fail (f x)
+        Base_RST x -> Base_RST (f x)
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
         Base_Commit x -> Base_Commit x
@@ -196,22 +195,22 @@ instance IsStep (Step 'ReadWrite 'Imperfect) where
 
 type Walk :: Mode -> Perfection -> Action
 
-newtype Walk mo p xs x r e m a = Walk{ unWalk :: Free (Step mo p xs x r e m) a }
+newtype Walk mo p xs x e m a = Walk{ unWalk :: Free (Step mo p xs x e m) a }
 
-deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Perfect xs x r e m)
-deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Imperfect xs x r e m)
-deriving newtype instance Functor m => Functor (Walk 'ReadOnly 'Perfect xs x r e m)
-deriving newtype instance Functor m => Functor (Walk 'ReadOnly 'Imperfect xs x r e m)
+deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Perfect xs x e m)
+deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Imperfect xs x e m)
+deriving newtype instance Functor m => Functor (Walk 'ReadOnly 'Perfect xs x e m)
+deriving newtype instance Functor m => Functor (Walk 'ReadOnly 'Imperfect xs x e m)
 
-deriving newtype instance Functor m => Applicative (Walk 'ReadWrite 'Perfect xs x r e m)
-deriving newtype instance Functor m => Applicative (Walk 'ReadWrite 'Imperfect xs x r e m)
-deriving newtype instance Functor m => Applicative (Walk 'ReadOnly 'Perfect xs x r e m)
-deriving newtype instance Functor m => Applicative (Walk 'ReadOnly 'Imperfect xs x r e m)
+deriving newtype instance Functor m => Applicative (Walk 'ReadWrite 'Perfect xs x e m)
+deriving newtype instance Functor m => Applicative (Walk 'ReadWrite 'Imperfect xs x e m)
+deriving newtype instance Functor m => Applicative (Walk 'ReadOnly 'Perfect xs x e m)
+deriving newtype instance Functor m => Applicative (Walk 'ReadOnly 'Imperfect xs x e m)
 
-deriving newtype instance Functor m => Monad (Walk 'ReadWrite 'Perfect xs x r e m)
-deriving newtype instance Functor m => Monad (Walk 'ReadWrite 'Imperfect xs x r e m)
-deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Perfect xs x r e m)
-deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Imperfect xs x r e m)
+deriving newtype instance Functor m => Monad (Walk 'ReadWrite 'Perfect xs x e m)
+deriving newtype instance Functor m => Monad (Walk 'ReadWrite 'Imperfect xs x e m)
+deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Perfect xs x e m)
+deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Imperfect xs x e m)
 
 instance Possible (Walk mo p) where
     success = Walk . Pure
@@ -219,31 +218,31 @@ instance Possible (Walk mo p) where
 -- ⭕ IsWalk
 
 class
-    ( forall xs x r e m. Functor m =>
-          Functor (walk xs x r e m)
+    ( forall xs x e m. Functor m =>
+          Functor (walk xs x e m)
     ) =>
     IsWalk (walk :: Action)
   where
-    contramapWalk :: Functor m => (r' -> r) -> walk xs x r e m a -> walk xs x r' e m a
+    hoistWalk :: Functor m2 => (forall z. m1 z -> m2 z) -> walk xs x e m1 a -> walk xs x e m2 a
 
 instance IsWalk (Walk 'ReadWrite 'Perfect) where
-    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
+    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
 
 instance IsWalk (Walk 'ReadWrite 'Imperfect) where
-    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
+    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
 
 instance IsWalk (Walk 'ReadOnly 'Perfect) where
-    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
+    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
 
 instance IsWalk (Walk 'ReadOnly 'Imperfect) where
-    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
+    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
 
 -- ⭕ MonadicWalk
 
 -- | Walks that are closed under sequencing
 class
-    ( IsWalk act, Possible act, forall xs x r e m. Functor m =>
-          Monad (act xs x r e m)
+    ( IsWalk act, Possible act, forall xs x e m. Functor m =>
+          Monad (act xs x e m)
     ) =>
     MonadicWalk (act :: Action)
 
@@ -257,36 +256,27 @@ instance MonadicWalk (Walk 'ReadOnly 'Imperfect)
 type Any :: Action
 
 -- | The most general of the actions; a monadic combination of 'BaseRW'
-newtype Any xs x r e m a = Any{ unAny :: Walk 'ReadWrite 'Imperfect xs x r e m a }
+newtype Any xs x e m a = Any{ unAny :: Walk 'ReadWrite 'Imperfect xs x e m a }
     deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
-
-instance Functor m => Contravariant (Any xs x r e m a) (Any xs x r' e m a) r r' where
-    contramap f = Any . contramapWalk f . unAny
 
 -- ⭕
 
 type Query :: Action
 
 -- | Like 'Any', but cannot move the cursor; a monadic combination of 'Step'
-newtype Query xs x r e m a = Query{ unQuery :: Walk 'ReadOnly 'Imperfect xs x r e m a }
+newtype Query xs x e m a = Query{ unQuery :: Walk 'ReadOnly 'Imperfect xs x e m a }
     deriving newtype (IsWalk, MonadicWalk, Possible, Functor, Applicative, Monad)
-
-instance Functor m => Contravariant (Query xs x r e m a) (Query xs x r' e m a) r r' where
-    contramap f = Query . contramapWalk f . unQuery
 
 -- ⭕
 
 type Move :: Action
 
 -- | Always moves the cursor
-newtype Move xs x r e m a = Move{ unMove :: Any xs x r e m a }
+newtype Move xs x e m a = Move{ unMove :: Any xs x e m a }
     deriving newtype (Functor, IsWalk)
 
-instance Functor m => Contravariant (Move xs x r e m a) (Move xs x r' e m a) r r' where
-    contramap f = Move . contramap f . unMove
-
 instance (Functor m, TypeError ('Text "Move cannot be Applicative because 'pure' would not move the cursor")) =>
-    Applicative (Move xs x r e m)
+    Applicative (Move xs x e m)
   where
     pure = error "unreachable"
     (<*>) = error "unreachable"
@@ -296,16 +286,16 @@ instance (Functor m, TypeError ('Text "Move cannot be Applicative because 'pure'
 type Atom :: Action
 
 -- | Fails noncommittally; see 'try'
-newtype Atom xs x r e m a = Atom{ unAtom :: Query xs x r e m (Sure xs x r e m a) }
+newtype Atom xs x e m a = Atom{ unAtom :: Query xs x e m (Sure xs x e m a) }
     deriving stock Functor
 
 instance Possible Atom where
     success = Atom . success . success
 
 instance IsWalk Atom where
-    contramapWalk f = Atom . contramap f . fmap (contramapWalk f) . unAtom
+    hoistWalk f = Atom . fmap (hoistWalk f) . hoistWalk f . unAtom
 
-instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x r e m) where
+instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x e m) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
@@ -314,13 +304,13 @@ instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) 
 type AtomicMove :: Action
 
 -- | Always moves the cursor, is atomic
-newtype AtomicMove xs x r e m a = AtomicMove{ unAtomicMove :: Atom xs x r e m a }
+newtype AtomicMove xs x e m a = AtomicMove{ unAtomicMove :: Atom xs x e m a }
     deriving stock Functor
 
 instance IsWalk AtomicMove where
-    contramapWalk f = AtomicMove . contramapWalk f . unAtomicMove
+    hoistWalk f = AtomicMove . hoistWalk f . unAtomicMove
 
-instance (Functor m, TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x r e m) where
+instance (Functor m, TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x e m) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
@@ -329,7 +319,7 @@ instance (Functor m, TypeError ('Text "AtomicMove cannot be Applicative because 
 type Sure :: Action
 
 -- | Always succeeds
-newtype Sure xs x r e m a = Sure{ unSure :: Walk 'ReadWrite 'Perfect xs x r e m a }
+newtype Sure xs x e m a = Sure{ unSure :: Walk 'ReadWrite 'Perfect xs x e m a }
     deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
 
 -- ⭕
@@ -337,7 +327,7 @@ newtype Sure xs x r e m a = Sure{ unSure :: Walk 'ReadWrite 'Perfect xs x r e m 
 type SureQuery :: Action
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery xs x r e m a = SureQuery{ unSureQuery :: Walk 'ReadOnly 'Perfect xs x r e m a }
+newtype SureQuery xs x e m a = SureQuery{ unSureQuery :: Walk 'ReadOnly 'Perfect xs x e m a }
     deriving newtype (Functor, Applicative, Monad, IsWalk, MonadicWalk, Possible)
 
 -- ⭕
@@ -345,22 +335,22 @@ newtype SureQuery xs x r e m a = SureQuery{ unSureQuery :: Walk 'ReadOnly 'Perfe
 type Fail :: Action
 
 -- | Never succeeds, never moves the cursor, never does anything at all
-data Fail xs x r e m a = Fail{ unFail :: r -> e }
+data Fail xs x e m a = Fail{ unFail :: m e }
     deriving stock Functor
 
 instance IsWalk Fail where
-    contramapWalk f = Fail . (. f) . unFail
+    hoistWalk f = Fail . f . unFail
 
 instance Fallible Fail where
-    mapError f (Fail x) = Fail \r -> f (x r)
+    mapError f (Fail x) = Fail $ fmap f x
 
 -- ⭕
 
 class Is (act1 :: Action) (act2 :: Action) where
-    cast :: Functor m => act1 xs x r e m a -> act2 xs x r e m a
+    cast :: Functor m => act1 xs x e m a -> act2 xs x e m a
 
-castTo :: forall act2 act1 xs x r e m a. (Functor m, Is act1 act2) =>
-    act1 xs x r e m a -> act2 xs x r e m a
+castTo :: forall act2 act1 xs x e m a. (Functor m, Is act1 act2) =>
+    act1 xs x e m a -> act2 xs x e m a
 castTo = cast @act1 @act2
 
 -- ⭕ Everything is itself
@@ -515,7 +505,7 @@ instance LossOfMovement SureQuery SureQuery
 -- ⭕
 
 class Is act2 act1 => AssumeMovement act1 act2 | act1 -> act2 where
-    assumeMovement :: act1 xs x r e m a -> act2 xs x r e m a
+    assumeMovement :: act1 xs x e m a -> act2 xs x e m a
 
 instance AssumeMovement Any Move where
     assumeMovement = Move
@@ -532,7 +522,7 @@ instance AssumeMovement AtomicMove AtomicMove where
 -- ⭕
 
 class Is act2 act1 => AssumeSuccess act1 act2 | act1 -> act2 where
-    assumeSuccess :: Monad m => act1 xs x r e m a -> act2 xs x r e m a
+    assumeSuccess :: Monad m => act1 xs x e m a -> act2 xs x e m a
 
 instance AssumeSuccess (Step 'ReadOnly 'Imperfect) (Step 'ReadOnly 'Perfect) where
     assumeSuccess = \case
@@ -559,7 +549,7 @@ instance AssumeSuccess Query SureQuery where
 -- ⭕
 
 class (IsWalk act, IsWalk try) => Atomic act try | act -> try where
-    try :: Functor m => act xs x r e m a -> try xs x r e m (Maybe a)
+    try :: Functor m => act xs x e m a -> try xs x e m (Maybe a)
 
 instance Atomic Atom Sure where
     try (Atom x) = castTo @Sure (try @Query x) >>= maybe (return Nothing) (fmap Just)
@@ -568,10 +558,10 @@ instance Atomic AtomicMove Sure where
     try = try @Atom . castTo @Atom
 
 instance Atomic Query SureQuery where
-    try :: forall xs x r e m a. Functor m => Query xs x r e m a -> SureQuery xs x r e m (Maybe a)
+    try :: forall xs x e m a. Functor m => Query xs x e m a -> SureQuery xs x e m (Maybe a)
     try (Query (Walk q)) = SureQuery (Walk (freeTryR q))
 
-freeTryR :: Functor m => Free (Step 'ReadOnly 'Imperfect xs x r e m) a -> Free (Step 'ReadOnly 'Perfect xs x r e m) (Maybe a)
+freeTryR :: Functor m => Free (Step 'ReadOnly 'Imperfect xs x e m) a -> Free (Step 'ReadOnly 'Perfect xs x e m) (Maybe a)
 freeTryR = \case
     Pure x -> return (Just x)
     Free b -> case b of
@@ -672,9 +662,9 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
 -- ⭕
 
 class (IsWalk act1, IsWalk act2, IsWalk (act1 >> act2)) => Join act1 act2 where
-    join :: Functor m => act1 xs x r e m (act2 xs x r e m a) -> (act1 >> act2) xs x r e m a
+    join :: Functor m => act1 xs x e m (act2 xs x e m a) -> (act1 >> act2) xs x e m a
 
-cast2 :: forall act2 act1 f xs x r e m a. (Is act1 act2, Functor m, Functor f) => f (act1 xs x r e m a) -> f (act2 xs x r e m a)
+cast2 :: forall act2 act1 f xs x e m a. (Is act1 act2, Functor m, Functor f) => f (act1 xs x e m a) -> f (act2 xs x e m a)
 cast2 = fmap castTo
 
 -- ⭕
@@ -818,103 +808,103 @@ instance Join SureQuery SureQuery where
 -- ⭕
 
 infixl 1 `bindAction`
-bindAction :: Functor m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x r e m a -> (a -> act2 xs x r e m b) -> act3 xs x r e m b
+bindAction :: Functor m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x e m a -> (a -> act2 xs x e m b) -> act3 xs x e m b
 bindAction x f = join (fmap f x)
 
 -- ⭕
 
-commit :: Monad m => Positive Natural -> AtomicMove xs x r e m ()
+commit :: Monad m => Positive Natural -> AtomicMove xs x e m ()
 commit n = AtomicMove $ Atom $ Query $ return $ Sure $ Walk $ liftF $ Base_Commit $ Commit n ()
 
-fail :: Fail xs x r r m a
-fail = Fail id
+fail :: MonadReader e m => Fail xs x e m a
+fail = Fail ask
 
-takeCharMaybe :: Monad m => Sure xs x r r m (Maybe x)
+takeCharMaybe :: MonadReader e m => Sure xs x e m (Maybe x)
 takeCharMaybe = try takeChar
 
-takeChar :: Monad m => AtomicMove xs x r r m x
+takeChar :: MonadReader e m => AtomicMove xs x e m x
 takeChar = nextChar `bindAction` \x -> commit one $> x
 
-nextChar :: Monad m => Query xs x r r m x
+nextChar :: MonadReader e m => Query xs x e m x
 nextChar = nextCharMaybe `bindAction` maybe (castTo @Query fail) return
 
-nextMaybe :: Monad m => SureQuery xs x r e m (Maybe (Nontrivial xs x))
+nextMaybe :: Monad m => SureQuery xs x e m (Maybe (Nontrivial xs x))
 nextMaybe = reset `bindAction` \() -> nextMaybe'
 
 -- | Like 'nextMaybe', but doesn't reset first
-nextMaybe' :: Functor m => SureQuery xs x r e m (Maybe (Nontrivial xs x))
+nextMaybe' :: Functor m => SureQuery xs x e m (Maybe (Nontrivial xs x))
 nextMaybe' = cast $ Base_Next @'ReadOnly @'Perfect id
 
-next :: Monad m => Query xs x r r m (Nontrivial xs x)
+next :: MonadReader e m => Query xs x e m (Nontrivial xs x)
 next = nextMaybe `bindAction` maybe (castTo @Query fail) return
 
 -- | Like 'next', but doesn't reset first
-next' :: Monad m => Query xs x r r m (Nontrivial xs x)
+next' :: MonadReader e m => Query xs x e m (Nontrivial xs x)
 next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
 
-takeNext :: Monad m => AtomicMove xs x r r m (Nontrivial xs x)
+takeNext :: MonadReader e m => AtomicMove xs x e m (Nontrivial xs x)
 takeNext = next `bindAction` \xs -> commit (Nontrivial.length xs) $> xs
 
-takeNextMaybe :: Monad m => Sure xs x r r m (Maybe (Nontrivial xs x))
+takeNextMaybe :: MonadReader e m => Sure xs x e m (Maybe (Nontrivial xs x))
 takeNextMaybe = try takeNext
 
-nextCharMaybe :: Monad m => SureQuery xs x r e m (Maybe x)
+nextCharMaybe :: Monad m => SureQuery xs x e m (Maybe x)
 nextCharMaybe = nextMaybe <&> fmap @Maybe Nontrivial.head
 
-satisfyJust :: Monad m => (x -> Maybe a) -> AtomicMove xs x r r m a
+satisfyJust :: MonadReader e m => (x -> Maybe a) -> AtomicMove xs x e m a
 satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
 
-skip0 :: Monad m => Natural -> Any xs x r r m ()
+skip0 :: MonadReader e m => Natural -> Any xs x e m ()
 skip0 = maybe (return ()) (castTo @Any . skip)  . preview Positive.refine
 
-skip :: Monad m => Positive Natural -> Move xs x r r m ()
+skip :: MonadReader e m => Positive Natural -> Move xs x e m ()
 skip n = next `bindAction` \x ->
     case Positive.minus (Nontrivial.length x) n of
         Signed.Minus n' ->
             commit (Nontrivial.length x) `bindAction` \() -> skip n'
         _ -> castTo @Move (commit n)
 
-skipAtomically0 :: Monad m => Natural -> Atom xs x r r m ()
+skipAtomically0 :: MonadReader e m => Natural -> Atom xs x e m ()
 skipAtomically0 = maybe (success ()) (castTo @Atom . skipAtomically)  . preview Positive.refine
 
-skipAtomically :: Monad m => Positive Natural -> AtomicMove xs x r r m ()
+skipAtomically :: MonadReader e m => Positive Natural -> AtomicMove xs x e m ()
 skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
 
-ensureAtLeast :: Monad m => Positive Natural -> Query xs x r r m ()
+ensureAtLeast :: MonadReader e m => Positive Natural -> Query xs x e m ()
 ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
   where
-    go :: Monad m => Positive Natural -> Query xs x r r m ()
+    go :: MonadReader e m => Positive Natural -> Query xs x e m ()
     go n = next' `bindAction` \x ->
         case Positive.minus n (Nontrivial.length x) of
             Signed.Plus n' -> go n'
             _ -> return ()
 
-atEnd :: Monad m => SureQuery xs x r e m Bool
+atEnd :: Monad m => SureQuery xs x e m Bool
 atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
-end :: Monad m => Query xs x r r m ()
+end :: MonadReader e m => Query xs x e m ()
 end = atEnd `bindAction` \e -> if e then success () else castTo @Query fail
 
-reset :: Monad m => SureQuery xs x r e m ()
+reset :: Monad m => SureQuery xs x e m ()
 reset = cast $ Base_Reset @'ReadOnly @'Perfect ()
 
-actionState :: MonadState s m => SureQuery xs x r e m s
-actionState = cast $ Base_RST @'ReadOnly @'Perfect (\_ -> get)
+actionState :: MonadState s m => SureQuery xs x e m s
+actionState = cast $ Base_RST @'ReadOnly @'Perfect get
 
-actionContext :: Monad m => SureQuery xs x r e m r
-actionContext = cast $ Base_RST @'ReadOnly @'Perfect return
+actionContext :: MonadReader a m => SureQuery xs x e m a
+actionContext = cast $ Base_RST @'ReadOnly @'Perfect ask
 
 one :: Positive Natural
 one = PositiveUnsafe 1
 
 -- while :: Monad m => LossOfMovement act1 act2 => Nontrivial.GeneralSpanOperation xs x
---     -> act1 xs x r e m a -> act2 xs x r e m a
+--     -> act1 xs x e m a -> act2 xs x e m a
 -- while = _
 
 
 -- todo: add an atomic version of 'text'
 
--- text :: Nontrivial xs x -> Move xs x r m ()
+-- text :: Nontrivial xs x -> Move xs x e m ()
 -- text = someOfNontrivialText A.>=> (maybe (return ()) (castTo @Any . text) . Nontrivial.refine)
 --   where
 --     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
@@ -934,8 +924,8 @@ one = PositiveUnsafe 1
 --                         )
 --                 else return (Left F.failure)
 
-count0 :: forall act1 act2 xs x r e m a. Monad m =>
-    Loop0 act1 act2 => Natural -> act1 xs x r e m a -> act2 xs x r e m [a]
+count0 :: forall act1 act2 xs x e m a. Monad m =>
+    Loop0 act1 act2 => Natural -> act1 xs x e m a -> act2 xs x e m [a]
 count0 = \n a -> go a n
   where
     go a = fix \r -> \case
@@ -943,8 +933,8 @@ count0 = \n a -> go a n
         n -> castTo @act2 $
             a `bindAction` \x -> r (n - 1) <&> \xs -> x : xs
 
-count1 :: forall act1 act2 xs x r e m a. Monad m => Loop1 act1 act2 =>
-    Positive Natural -> act1 xs x r e m a -> act2 xs x r e m (NonEmpty a)
+count1 :: forall act1 act2 xs x e m a. Monad m => Loop1 act1 act2 =>
+    Positive Natural -> act1 xs x e m a -> act2 xs x e m (NonEmpty a)
 count1 = \n a -> go a n
   where
     go a = fix \r -> \p ->
@@ -953,13 +943,13 @@ count1 = \n a -> go a n
             Just p' -> castTo @act2 $
                 a `bindAction` \x -> r p' <&> \xs -> NonEmpty.cons x xs
 
-repetition0 :: Monad m => AtomicMove xs x r e m a -> Sure xs x r e m [a]
+repetition0 :: Monad m => AtomicMove xs x e m a -> Sure xs x e m [a]
 repetition0 p = fix \r ->
     try p `bindAction` \case
         Nothing -> return []
         Just x -> (x :) <$> r
 
-repetition1 :: Monad m => AtomicMove xs x r e m a -> AtomicMove xs x r e m (NonEmpty a)
+repetition1 :: Monad m => AtomicMove xs x e m a -> AtomicMove xs x e m (NonEmpty a)
 repetition1 p = p `bindAction` \x -> repetition0 p <&> \xs -> x :| xs
 
 -- ⭕

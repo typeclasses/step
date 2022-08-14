@@ -23,16 +23,24 @@ import Step.Action
 --             Base_Fail (Fail x) -> ask <&> Left . x
 --             Base_Next f -> Cursor.next inputRunR >>= runFree . f
 
-runAny :: forall a m xs x r s s'. Monad m => CursorRunRW xs x r s s' m -> Any xs x r r (StateT s m) a -> RST r s m (Either r a)
+runAny :: forall a m xs x r s s'. Monad m => CursorRunRW xs x r s s' m -> Any xs x r (RST r s m) a -> RST r s m (Either r a)
 runAny CursorRunRW{ inputRunRW, runRW, resetRunRW, commitRunRW } (Any (Walk a)) =
       runRW (runFree @a inputRunRW resetRunRW commitRunRW a)
 
-runFree :: forall a m xs x r s s'. Monad m => Stream r (CursorState s s') m xs x -> RST r (CursorState s s') m () -> (Positive Natural -> RST r (CursorState s s') m AdvanceResult) -> Free (Step 'ReadWrite 'Imperfect xs x r r (StateT s m)) a -> RST r (CursorState s s') m (Either r a)
-runFree inputRunRW resetRunRW commitRunRW = fix \r -> \case
+runFree :: forall a m xs x r s s'. Monad m =>
+    Stream r (CursorState s s') m xs x
+    -> RST r (CursorState s s') m () -> (Positive Natural
+    -> RST r (CursorState s s') m AdvanceResult)
+    -> Free (Step 'ReadWrite 'Imperfect xs x r (RST r s m)) a
+    -> RST r (CursorState s s') m (Either r a)
+runFree inputRunRW resetRunRW commitRunRW = r
+  where
+    r :: Free (Step 'ReadWrite 'Imperfect xs x r (RST r s m)) a -> RST r (CursorState s s') m (Either r a)
+    r = \case
       Pure x -> return (Right x)
       Free b -> case b of
-          Base_RST x -> (ask >>= \r -> zoom commitLens (stateRST (x r))) >>= r
+          Base_RST x -> zoom commitLens x >>= r
           Base_Commit (Commit n x) -> commitRunRW n *> r x
           Base_Reset x -> resetRunRW *> r x
-          Base_Fail x -> ask <&> Left . x
+          Base_Fail x -> Left <$> zoom commitLens x
           Base_Next f -> Cursor.next inputRunRW >>= r . f
