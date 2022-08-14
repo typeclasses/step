@@ -2,7 +2,7 @@
 {-# language DataKinds, KindSignatures, InstanceSigs, StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# language ConstraintKinds, DataKinds, FlexibleContexts, KindSignatures, QuantifiedConstraints, TypeOperators #-}
 {-# language DataKinds, StandaloneKindSignatures, FunctionalDependencies, FlexibleInstances #-}
-{-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase #-}
+{-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase, GADTs #-}
 
 module Step.Action where
 
@@ -87,15 +87,17 @@ class Fallible (act :: Action) where
 
 -- ⭕
 
-data Mode = ReadWrite | ReadOnly
+data Mode = ReadOnly | ReadWrite
 
-data family Commit (m :: Mode) :: Type -> Type
+data Commit (mo :: Mode) a
+  where
+    Commit :: Positive Natural -> a -> Commit 'ReadWrite a
 
-data instance Commit 'ReadOnly a
-    deriving stock Functor
+instance Functor (Commit 'ReadOnly) where
+    fmap _ = \case{}
 
-data instance Commit 'ReadWrite a = Commit (Positive Natural) a
-    deriving stock Functor
+instance Functor (Commit 'ReadWrite) where
+    fmap f (Commit n x) = Commit n (f x)
 
 -- ⭕
 
@@ -118,23 +120,7 @@ data Step (mo :: Mode) (p :: Perfection) xs x e m a =
   | Base_Fail (Imperfection p (m e))
   | Base_Commit (Commit mo a)
 
-instance Functor m => Functor (Step 'ReadOnly 'Perfect xs x e m) where
-    fmap f = \case
-        Base_RST x -> Base_RST (fmap f x)
-        Base_Reset x -> Base_Reset (f x)
-        Base_Next x -> Base_Next (fmap f x)
-        Base_Fail x -> case x of {}
-        Base_Commit x -> case x of {}
-
-instance Functor m => Functor (Step 'ReadOnly 'Imperfect xs x e m) where
-    fmap f = \case
-        Base_RST x -> Base_RST (fmap f x)
-        Base_Reset x -> Base_Reset (f x)
-        Base_Next x -> Base_Next (fmap f x)
-        Base_Fail x -> Base_Fail x
-        Base_Commit x -> case x of {}
-
-instance Functor m => Functor (Step 'ReadWrite 'Perfect xs x e m) where
+instance (Functor m, Functor (Commit mo)) => Functor (Step mo 'Perfect xs x e m) where
     fmap f = \case
         Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
@@ -142,7 +128,7 @@ instance Functor m => Functor (Step 'ReadWrite 'Perfect xs x e m) where
         Base_Fail x -> case x of {}
         Base_Commit x -> Base_Commit (fmap f x)
 
-instance Functor m => Functor (Step 'ReadWrite 'Imperfect xs x e m) where
+instance (Functor m, Functor (Commit mo)) => Functor (Step mo 'Imperfect xs x e m) where
     fmap f = \case
         Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
@@ -159,7 +145,7 @@ class
   where
     hoistStep :: Functor m2 => (forall z. m1 z -> m2 z) -> step xs x e m1 a -> step xs x e m2 a
 
-instance IsStep (Step 'ReadOnly 'Perfect) where
+instance Functor (Commit mo) => IsStep (Step mo 'Perfect) where
     hoistStep f = \case
         Base_Fail x -> case x of {}
         Base_RST x -> Base_RST (f x)
@@ -167,29 +153,13 @@ instance IsStep (Step 'ReadOnly 'Perfect) where
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
 
-instance IsStep (Step 'ReadOnly 'Imperfect) where
+instance Functor (Commit mo) => IsStep (Step mo 'Imperfect) where
     hoistStep f = \case
         Base_Fail x -> Base_Fail (f x)
         Base_RST x -> Base_RST (f x)
-        Base_Commit x -> case x of {}
-        Base_Reset x -> Base_Reset x
-        Base_Next x -> Base_Next x
-
-instance IsStep (Step 'ReadWrite 'Perfect) where
-    hoistStep f = \case
-        Base_Fail x -> case x of {}
-        Base_RST x -> Base_RST (f x)
-        Base_Reset x -> Base_Reset x
-        Base_Next x -> Base_Next x
         Base_Commit x -> Base_Commit x
-
-instance IsStep (Step 'ReadWrite 'Imperfect) where
-    hoistStep f = \case
-        Base_Fail x -> Base_Fail (f x)
-        Base_RST x -> Base_RST (f x)
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
-        Base_Commit x -> Base_Commit x
 
 -- ⭕ Walk
 
@@ -197,20 +167,14 @@ type Walk :: Mode -> Perfection -> Action
 
 newtype Walk mo p xs x e m a = Walk{ unWalk :: Free (Step mo p xs x e m) a }
 
-deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Perfect xs x e m)
-deriving newtype instance Functor m => Functor (Walk 'ReadWrite 'Imperfect xs x e m)
-deriving newtype instance Functor m => Functor (Walk 'ReadOnly 'Perfect xs x e m)
-deriving newtype instance Functor m => Functor (Walk 'ReadOnly 'Imperfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Functor (Walk mo 'Perfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Functor (Walk mo 'Imperfect xs x e m)
 
-deriving newtype instance Functor m => Applicative (Walk 'ReadWrite 'Perfect xs x e m)
-deriving newtype instance Functor m => Applicative (Walk 'ReadWrite 'Imperfect xs x e m)
-deriving newtype instance Functor m => Applicative (Walk 'ReadOnly 'Perfect xs x e m)
-deriving newtype instance Functor m => Applicative (Walk 'ReadOnly 'Imperfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Applicative (Walk mo 'Perfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Applicative (Walk mo 'Imperfect xs x e m)
 
-deriving newtype instance Functor m => Monad (Walk 'ReadWrite 'Perfect xs x e m)
-deriving newtype instance Functor m => Monad (Walk 'ReadWrite 'Imperfect xs x e m)
-deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Perfect xs x e m)
-deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Imperfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Monad (Walk mo 'Perfect xs x e m)
+deriving newtype instance (Functor m, Functor (Commit mo)) => Monad (Walk mo 'Imperfect xs x e m)
 
 instance Possible (Walk mo p) where
     success = Walk . Pure
@@ -225,16 +189,10 @@ class
   where
     hoistWalk :: Functor m2 => (forall z. m1 z -> m2 z) -> walk xs x e m1 a -> walk xs x e m2 a
 
-instance IsWalk (Walk 'ReadWrite 'Perfect) where
+instance (Functor (Commit mo)) => IsWalk (Walk mo 'Perfect) where
     hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
 
-instance IsWalk (Walk 'ReadWrite 'Imperfect) where
-    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
-
-instance IsWalk (Walk 'ReadOnly 'Perfect) where
-    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
-
-instance IsWalk (Walk 'ReadOnly 'Imperfect) where
+instance (Functor (Commit mo)) => IsWalk (Walk mo 'Imperfect) where
     hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
 
 -- ⭕ MonadicWalk
@@ -246,10 +204,8 @@ class
     ) =>
     MonadicWalk (act :: Action)
 
-instance MonadicWalk (Walk 'ReadWrite 'Perfect)
-instance MonadicWalk (Walk 'ReadWrite 'Imperfect)
-instance MonadicWalk (Walk 'ReadOnly 'Perfect)
-instance MonadicWalk (Walk 'ReadOnly 'Imperfect)
+instance (Functor (Commit mo)) => MonadicWalk (Walk mo 'Perfect)
+instance (Functor (Commit mo)) => MonadicWalk (Walk mo 'Imperfect)
 
 -- ⭕
 
