@@ -119,19 +119,8 @@ data Step (mo :: Mode) (p :: Perfection) xs x r s e m a =
     Base_RST (RST r s m a)
   | Base_Reset a
   | Base_Next (Maybe (Nontrivial xs x) -> a)
-  | Base_Fail (Imperfection p (Fail xs x r s e m a))
+  | Base_Fail (Imperfection p (r -> e))
   | Base_Commit (Commit mo a)
-
-class
-    ( forall xs x r s e m. Functor m => Functor (step xs x r s e m)
-    , forall xs x r r' s e m a. Functor m => Contravariant (step xs x r s e m a) (step xs x r' s e m a) r r'
-    ) =>
-    IsStep (step :: Action)
-
-instance IsStep (Step 'ReadOnly 'Perfect)
-instance IsStep (Step 'ReadOnly 'Imperfect)
-instance IsStep (Step 'ReadWrite 'Perfect)
-instance IsStep (Step 'ReadWrite 'Imperfect)
 
 instance Functor m => Functor (Step 'ReadOnly 'Perfect xs x r s e m) where
     fmap f = \case
@@ -146,7 +135,7 @@ instance Functor m => Functor (Step 'ReadOnly 'Imperfect xs x r s e m) where
         Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
         Base_Next x -> Base_Next (fmap f x)
-        Base_Fail x -> Base_Fail (fmap f x)
+        Base_Fail x -> Base_Fail x
         Base_Commit x -> case x of {}
 
 instance Functor m => Functor (Step 'ReadWrite 'Perfect xs x r s e m) where
@@ -162,36 +151,45 @@ instance Functor m => Functor (Step 'ReadWrite 'Imperfect xs x r s e m) where
         Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
         Base_Next x -> Base_Next (fmap f x)
-        Base_Fail x -> Base_Fail (fmap f x)
+        Base_Fail x -> Base_Fail x
         Base_Commit x -> Base_Commit (fmap f x)
 
-instance Functor m => Contravariant (Step 'ReadOnly 'Perfect xs x r s e m a) (Step 'ReadOnly 'Perfect xs x r' s e m a) r r' where
-    contramap f = \case
+-- ⭕ IsStep
+
+class
+    ( forall xs x r s e m. Functor m => Functor (step xs x r s e m)
+    ) =>
+    IsStep (step :: Action)
+  where
+    contramapStep :: Functor m => (r' -> r) -> step xs x r s e m a -> step xs x r' s e m a
+
+instance IsStep (Step 'ReadOnly 'Perfect) where
+    contramapStep f = \case
         Base_Fail x -> case x of {}
         Base_RST x -> Base_RST (contramap f x)
         Base_Commit x -> Base_Commit x
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
 
-instance Functor m => Contravariant (Step 'ReadOnly 'Imperfect xs x r s e m a) (Step 'ReadOnly 'Imperfect xs x r' s e m a) r r' where
-    contramap f = \case
-        Base_Fail x -> Base_Fail (contramap f x)
+instance IsStep (Step 'ReadOnly 'Imperfect) where
+    contramapStep f = \case
+        Base_Fail x -> Base_Fail (x . f)
         Base_RST x -> Base_RST (contramap f x)
         Base_Commit x -> case x of {}
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
 
-instance Functor m => Contravariant (Step 'ReadWrite 'Perfect xs x r s e m a) (Step 'ReadWrite 'Perfect xs x r' s e m a) r r' where
-    contramap f = \case
+instance IsStep (Step 'ReadWrite 'Perfect) where
+    contramapStep f = \case
         Base_Fail x -> case x of {}
         Base_RST x -> Base_RST (contramap f x)
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
         Base_Commit x -> Base_Commit x
 
-instance Functor m => Contravariant (Step 'ReadWrite 'Imperfect xs x r s e m a) (Step 'ReadWrite 'Imperfect xs x r' s e m a) r r' where
-    contramap f = \case
-        Base_Fail x -> Base_Fail (contramap f x)
+instance IsStep (Step 'ReadWrite 'Imperfect) where
+    contramapStep f = \case
+        Base_Fail x -> Base_Fail (x . f)
         Base_RST x -> Base_RST (contramap f x)
         Base_Reset x -> Base_Reset x
         Base_Next x -> Base_Next x
@@ -218,18 +216,6 @@ deriving newtype instance Functor m => Monad (Walk 'ReadWrite 'Imperfect xs x r 
 deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Perfect xs x r s e m)
 deriving newtype instance Functor m => Monad (Walk 'ReadOnly 'Imperfect xs x r s e m)
 
-instance Functor m => Contravariant (Walk 'ReadWrite 'Perfect xs x r s e m a) (Walk 'ReadWrite 'Perfect xs x r' s e m a) r r' where
-    contramap f (Walk a) = Walk $ hoistFree (contramap f) a
-
-instance Functor m => Contravariant (Walk 'ReadWrite 'Imperfect xs x r s e m a) (Walk 'ReadWrite 'Imperfect xs x r' s e m a) r r' where
-    contramap f (Walk a) = Walk $ hoistFree (contramap f) a
-
-instance Functor m => Contravariant (Walk 'ReadOnly 'Perfect xs x r s e m a) (Walk 'ReadOnly 'Perfect xs x r' s e m a) r r' where
-    contramap f (Walk a) = Walk $ hoistFree (contramap f) a
-
-instance Functor m => Contravariant (Walk 'ReadOnly 'Imperfect xs x r s e m a) (Walk 'ReadOnly 'Imperfect xs x r' s e m a) r r' where
-    contramap f (Walk a) = Walk $ hoistFree (contramap f) a
-
 instance Possible (Walk mo p) where
     success = Walk . Pure
 
@@ -237,16 +223,23 @@ instance Possible (Walk mo p) where
 
 class
     ( forall xs x r s e m. Functor m =>
-          Functor (act xs x r s e m)
-    , forall xs x r r' s e m a. Functor m =>
-          Contravariant (act xs x r s e m a) (act xs x r' s e m a) r r'
+          Functor (walk xs x r s e m)
     ) =>
-    IsWalk (act :: Action)
+    IsWalk (walk :: Action)
+  where
+    contramapWalk :: Functor m => (r' -> r) -> walk xs x r s e m a -> walk xs x r' s e m a
 
-instance IsWalk (Walk 'ReadWrite 'Perfect)
-instance IsWalk (Walk 'ReadWrite 'Imperfect)
-instance IsWalk (Walk 'ReadOnly 'Perfect)
-instance IsWalk (Walk 'ReadOnly 'Imperfect)
+instance IsWalk (Walk 'ReadWrite 'Perfect) where
+    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
+
+instance IsWalk (Walk 'ReadWrite 'Imperfect) where
+    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
+
+instance IsWalk (Walk 'ReadOnly 'Perfect) where
+    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
+
+instance IsWalk (Walk 'ReadOnly 'Imperfect) where
+    contramapWalk f = Walk . hoistFree (contramapStep f) . unWalk
 
 -- ⭕ MonadicWalk
 
@@ -271,7 +264,7 @@ newtype Any xs x r s e m a = Any{ unAny :: Walk 'ReadWrite 'Imperfect xs x r s e
     deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
 
 instance Functor m => Contravariant (Any xs x r s e m a) (Any xs x r' s e m a) r r' where
-    contramap f = Any . contramap f . unAny
+    contramap f = Any . contramapWalk f . unAny
 
 -- ⭕
 
@@ -282,7 +275,7 @@ newtype Query xs x r s e m a = Query{ unQuery :: Walk 'ReadOnly 'Imperfect xs x 
     deriving newtype (IsWalk, MonadicWalk, Possible, Functor, Applicative, Monad)
 
 instance Functor m => Contravariant (Query xs x r s e m a) (Query xs x r' s e m a) r r' where
-    contramap f = Query . contramap f . unQuery
+    contramap f = Query . contramapWalk f . unQuery
 
 -- ⭕
 
@@ -312,10 +305,8 @@ newtype Atom xs x r s e m a = Atom{ unAtom :: Query xs x r s e m (Sure xs x r s 
 instance Possible Atom where
     success = Atom . success . success
 
-instance IsWalk Atom
-
-instance Functor m => Contravariant (Atom xs x r s e m a) (Atom xs x r' s e m a) r r' where
-    contramap f = Atom . contramap f . fmap (contramap f) . unAtom
+instance IsWalk Atom where
+    contramapWalk f = Atom . contramap f . fmap (contramapWalk f) . unAtom
 
 instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x r s e m) where
     pure = error "unreachable"
@@ -329,10 +320,8 @@ type AtomicMove :: Action
 newtype AtomicMove xs x r s e m a = AtomicMove{ unAtomicMove :: Atom xs x r s e m a }
     deriving stock Functor
 
-instance IsWalk AtomicMove
-
-instance Functor m => Contravariant (AtomicMove xs x r s e m a) (AtomicMove xs x r' s e m a) r r' where
-    contramap f = AtomicMove . contramap f . unAtomicMove
+instance IsWalk AtomicMove where
+    contramapWalk f = AtomicMove . contramapWalk f . unAtomicMove
 
 instance (Functor m, TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x r s e m) where
     pure = error "unreachable"
@@ -346,9 +335,6 @@ type Sure :: Action
 newtype Sure xs x r s e m a = Sure{ unSure :: Walk 'ReadWrite 'Perfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
 
-instance Functor m => Contravariant (Sure xs x r s e m a) (Sure xs x r' s e m a) r r' where
-    contramap f = Sure . contramap f . unSure
-
 -- ⭕
 
 type SureQuery :: Action
@@ -356,9 +342,6 @@ type SureQuery :: Action
 -- | Always succeeds, does not move the cursor
 newtype SureQuery xs x r s e m a = SureQuery{ unSureQuery :: Walk 'ReadOnly 'Perfect xs x r s e m a }
     deriving newtype (Functor, Applicative, Monad, IsWalk, MonadicWalk, Possible)
-
-instance Functor m => Contravariant (SureQuery xs x r s e m a) (SureQuery xs x r' s e m a) r r' where
-    contramap f = SureQuery . contramap f . unSureQuery
 
 -- ⭕
 
@@ -368,16 +351,11 @@ type Fail :: Action
 data Fail xs x r s e m a = Fail{ unFail :: r -> e }
     deriving stock Functor
 
-instance IsWalk Fail
-
-instance Functor m => Contravariant (Fail xs x r s e m a) (Fail xs x r' s e m a) r r' where
-    contramap f = Fail . (. f) . unFail
+instance IsWalk Fail where
+    contramapWalk f = Fail . (. f) . unFail
 
 instance Fallible Fail where
     mapError f (Fail x) = Fail \r -> f (x r)
-
-reFail :: Fail xs x r s e m a -> Fail xs x r s e m a'
-reFail (Fail x) = Fail x
 
 -- ⭕
 
@@ -503,19 +481,19 @@ instance Is AtomicMove Any where
 -- ⭕ Casting out of fail
 
 instance Is Fail Any where
-    cast = Any . Walk . liftF . Base_Fail
+    cast = Any . Walk . liftF . Base_Fail . unFail
 
 instance Is Fail Query where
-    cast = Query . Walk . liftF . Base_Fail
+    cast = Query . Walk . liftF . Base_Fail . unFail
 
 instance Is Fail Move where
-    cast = Move . Any . Walk . liftF . Base_Fail
+    cast = Move . Any . Walk . liftF . Base_Fail . unFail
 
 instance Is Fail Atom where
-    cast = Atom . Query . Walk . liftF . Base_Fail . reFail
+    cast = Atom . Query . Walk . liftF . Base_Fail . unFail
 
 instance Is Fail AtomicMove where
-    cast = AtomicMove . Atom . Query . Walk . liftF . Base_Fail . reFail
+    cast = AtomicMove . Atom . Query . Walk . liftF . Base_Fail . unFail
 
 -- ⭕
 

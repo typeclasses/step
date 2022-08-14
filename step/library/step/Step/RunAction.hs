@@ -33,5 +33,5 @@ runAny CursorRunRW{ inputRunRW, runRW, resetRunRW, commitRunRW } (Any (Walk a)) 
             Base_RST x -> zoom commitLens x >>= runFree
             Base_Commit (Commit n x) -> commitRunRW n *> runFree x
             Base_Reset x -> resetRunRW *> runFree x
-            Base_Fail (Fail x) -> ask <&> Left . x
+            Base_Fail x -> ask <&> Left . x
             Base_Next f -> Cursor.next inputRunRW >>= runFree . f
