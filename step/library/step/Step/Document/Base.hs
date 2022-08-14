@@ -10,6 +10,7 @@ module Step.Document.Base
     -- * Running parsers
     parse, parseOnly, parseSimple,
     configContextLens, ctxConfigLens,
+    Parser,
   )
   where
 
@@ -38,6 +39,8 @@ import Step.GeneralCursors
 import Step.ContextStack
 
 import Step.RunAction
+
+import Text (Text)
 
 ---
 
@@ -117,7 +120,7 @@ record' spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanO
     ts = configLineTerminators (ctxConfig ctx)
 
 parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
-    act xs x (Context xs x s m) (DocumentMemory xs x s) (Context xs x s m) m a
+    act xs x (Context xs x s m) (Context xs x s m) (StateT (DocumentMemory xs x s) m) a
     -> Context xs x s m
     -> StateT (DocumentMemory xs x s) m (Either Error a)
 parse a =
@@ -132,18 +135,22 @@ parse a =
           Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
 parseOnly :: (Is act Any, Monad m, ListLike xs x) =>
-    act xs x (Context xs x s m) (DocumentMemory xs x s) (Context xs x s m) m a
+    act xs x (Context xs x s m) (Context xs x s m) (StateT (DocumentMemory xs x s) m) a
     -> Context xs x s m
     -> s
     -> m (Either Error a)
 parseOnly p c s =
     evalStateT (parse p c) DocumentMemory{ buffer = [], lineHistory = Lines.empty, cursorPosition = 0, streamState = s }
 
-parseSimple :: forall xs a act. (Is act Any, ListLike xs Char) =>
-    act xs Char
-        (Context xs Char [Nontrivial xs Char] Identity)
-        (DocumentMemory xs Char [Nontrivial xs Char])
-        (Context xs Char [Nontrivial xs Char] Identity) Identity a
-    -> [Nontrivial xs Char]
+type Parser (act :: Action) a = act
+    Text Char
+    (Context Text Char [Nontrivial Text Char] Identity)
+    (Context Text Char [Nontrivial Text Char] Identity)
+    (StateT (DocumentMemory Text Char [Nontrivial Text Char]) Identity)
+    a
+
+parseSimple :: forall a act. (Is act Any) =>
+    Parser act a
+    -> [Nontrivial Text Char]
     -> Either Error a
 parseSimple p i = runIdentity (parseOnly p (Context def Cursor.list) i)

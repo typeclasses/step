@@ -1,3 +1,5 @@
+{-# language FlexibleContexts #-}
+
 module Step.Document.Actions where
 
 import Step.Internal.Prelude
@@ -25,19 +27,22 @@ import Step.ContextStack
 
 import qualified Loc
 
-contextualize :: forall act xs x s s' e m a. Monad m => IsWalk act => Text -> act xs x (Context xs x s m) s' e m a -> act xs x (Context xs x s m) s' e m a
+contextualize :: forall act xs x s e m m' a. Functor m' => IsWalk act =>
+    Text
+    -> act xs x (Context xs x s m) e m' a
+    -> act xs x (Context xs x s m) e m' a
 contextualize n = contramapWalk f
   where
     f :: Context xs x s m -> Context xs x s m
     f = over (Doc.ctxConfigLens % Doc.configContextLens % contextStackSeq) (n :<|)
 
-cursorPosition :: Monad m => SureQuery xs x r (DocumentMemory xs x s) e m CursorPosition
+cursorPosition :: MonadState (DocumentMemory xs x s) m => SureQuery xs x r e m CursorPosition
 cursorPosition = actionState <&> Doc.cursorPosition
 
-lineHistory :: Monad m => SureQuery xs x r (DocumentMemory xs x s) e m LineHistory
+lineHistory :: MonadState (DocumentMemory xs x s) m => SureQuery xs x r e m LineHistory
 lineHistory = actionState <&> Doc.lineHistory
 
-position :: Monad m => SureQuery xs x (Context xs x s m) (DocumentMemory xs x s) e m Loc
+position :: MonadState (DocumentMemory xs x s) m' => SureQuery xs x (Context xs x s m) e m' Loc
 position = do
     lh <- lineHistory
     cp <- cursorPosition

@@ -33,9 +33,9 @@ import Optics
 type Parser s m (act :: Action) a =
     act Text Char
         (Doc.Context Text Char [Nontrivial Text Char] m)
-        (Doc.DocumentMemory Text Char s)
         (Doc.Context Text Char [Nontrivial Text Char] m)
-        m a
+        (StateT (Doc.DocumentMemory Text Char s) m)
+        a
 
 char :: Monad m => Char -> Parser s m AtomicMove Char
 char x = P.satisfyJust (\y -> if y == x then Just y else Nothing) <?> "char " <> Text.pack (show x)
