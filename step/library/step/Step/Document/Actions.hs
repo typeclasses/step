@@ -25,7 +25,7 @@ import Step.ContextStack
 
 import qualified Loc
 
-contextualize :: forall act xs x s s' e m a. Monad m => BasicAction act => Text -> act xs x (Context xs x s m) s' e m a -> act xs x (Context xs x s m) s' e m a
+contextualize :: forall act xs x s s' e m a. Monad m => IsWalk act => Text -> act xs x (Context xs x s m) s' e m a -> act xs x (Context xs x s m) s' e m a
 contextualize n = contramap f
   where
     f :: Context xs x s m -> Context xs x s m
