@@ -103,11 +103,15 @@ instance Functor (Commit 'ReadWrite) where
 
 data Perfection = Perfect | Imperfect
 
-type family Imperfection (p :: Perfection) (e :: Type) :: Type
+data Error (p :: Perfection) e
+  where
+    Error :: e -> Error 'Imperfect e
 
-type instance Imperfection 'Perfect e = Void
+instance Functor (Error 'Perfect) where
+    fmap _ = \case{}
 
-type instance Imperfection 'Imperfect e = e
+instance Functor (Error 'Imperfect) where
+    fmap f (Error e) = Error (f e)
 
 -- ⭕
 
@@ -117,18 +121,10 @@ data Step (mo :: Mode) (p :: Perfection) xs x e m a =
     Base_RST (m a)
   | Base_Reset a
   | Base_Next (Maybe (Nontrivial xs x) -> a)
-  | Base_Fail (Imperfection p (m e))
+  | Base_Fail (Error p (m e))
   | Base_Commit (Commit mo a)
 
-instance (Functor m, Functor (Commit mo)) => Functor (Step mo 'Perfect xs x e m) where
-    fmap f = \case
-        Base_RST x -> Base_RST (fmap f x)
-        Base_Reset x -> Base_Reset (f x)
-        Base_Next x -> Base_Next (fmap f x)
-        Base_Fail x -> case x of {}
-        Base_Commit x -> Base_Commit (fmap f x)
-
-instance (Functor m, Functor (Commit mo)) => Functor (Step mo 'Imperfect xs x e m) where
+instance (Functor m, Functor (Commit mo)) => Functor (Step mo p xs x e m) where
     fmap f = \case
         Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
@@ -145,17 +141,9 @@ class
   where
     hoistStep :: Functor m2 => (forall z. m1 z -> m2 z) -> step xs x e m1 a -> step xs x e m2 a
 
-instance Functor (Commit mo) => IsStep (Step mo 'Perfect) where
+instance (Functor (Commit mo), Functor (Error p)) => IsStep (Step mo p) where
     hoistStep f = \case
-        Base_Fail x -> case x of {}
-        Base_RST x -> Base_RST (f x)
-        Base_Commit x -> Base_Commit x
-        Base_Reset x -> Base_Reset x
-        Base_Next x -> Base_Next x
-
-instance Functor (Commit mo) => IsStep (Step mo 'Imperfect) where
-    hoistStep f = \case
-        Base_Fail x -> Base_Fail (f x)
+        Base_Fail x -> Base_Fail (fmap f x)
         Base_RST x -> Base_RST (f x)
         Base_Commit x -> Base_Commit x
         Base_Reset x -> Base_Reset x
@@ -424,19 +412,19 @@ instance Is AtomicMove Any where
 -- ⭕ Casting out of fail
 
 instance Is Fail Any where
-    cast = Any . Walk . liftF . Base_Fail . unFail
+    cast = Any . Walk . liftF . Base_Fail . Error . unFail
 
 instance Is Fail Query where
-    cast = Query . Walk . liftF . Base_Fail . unFail
+    cast = Query . Walk . liftF . Base_Fail . Error . unFail
 
 instance Is Fail Move where
-    cast = Move . Any . Walk . liftF . Base_Fail . unFail
+    cast = Move . Any . Walk . liftF . Base_Fail . Error . unFail
 
 instance Is Fail Atom where
-    cast = Atom . Query . Walk . liftF . Base_Fail . unFail
+    cast = Atom . Query . Walk . liftF . Base_Fail . Error . unFail
 
 instance Is Fail AtomicMove where
-    cast = AtomicMove . Atom . Query . Walk . liftF . Base_Fail . unFail
+    cast = AtomicMove . Atom . Query . Walk . liftF . Base_Fail . Error . unFail
 
 -- ⭕
 

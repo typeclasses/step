@@ -6,7 +6,7 @@ module Step.Document.Base
   (
     -- * Types
     -- DocumentParsing,
-    Config (..), Context (..), Error (..), documentCursor, cursorPositionLens, lineHistoryLens, DocumentMemory (..),
+    Config (..), Context (..), DocError (..), documentCursor, cursorPositionLens, lineHistoryLens, DocumentMemory (..),
     -- * Running parsers
     parse, parseOnly, parseSimple,
     configContextLens, ctxConfigLens,
@@ -73,7 +73,7 @@ configContextLens = lens configContext \x y -> x{ configContext = y }
 
 ---
 
-data Error = Error{ errorContext :: ContextStack }
+data DocError = DocError{ errorContext :: ContextStack }
     deriving stock (Eq, Show)
 
 ---
@@ -122,7 +122,7 @@ record' spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanO
 parse :: forall act xs x s m a. (Is act Any, Monad m, ListLike xs x) =>
     act xs x (Context xs x s m) (RST (Context xs x s m) (DocumentMemory xs x s) m) a
     -> Context xs x s m
-    -> StateT (DocumentMemory xs x s) m (Either Error a)
+    -> StateT (DocumentMemory xs x s) m (Either DocError a)
 parse a =
   let
     -- c :: CursorRW' xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
@@ -132,13 +132,13 @@ parse a =
   in
     view rstState $ runAny (cursorRunRW c) (Action.castTo @Any a) <&> \case
           Right x -> Right x
-          Left c' -> Left Error{ errorContext = c' & view (ctxConfigLens % configContextLens) }
+          Left c' -> Left DocError{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
 parseOnly :: (Is act Any, Monad m, ListLike xs x) =>
     act xs x (Context xs x s m) (RST (Context xs x s m) (DocumentMemory xs x s) m) a
     -> Context xs x s m
     -> s
-    -> m (Either Error a)
+    -> m (Either DocError a)
 parseOnly p c s =
     evalStateT (parse p c) DocumentMemory{ buffer = [], lineHistory = Lines.empty, cursorPosition = 0, streamState = s }
 
@@ -151,5 +151,5 @@ type Parser (act :: Action) a = act
 parseSimple :: forall a act. (Is act Any) =>
     Parser act a
     -> [Nontrivial Text Char]
-    -> Either Error a
+    -> Either DocError a
 parseSimple p i = runIdentity (parseOnly p (Context def Cursor.list) i)

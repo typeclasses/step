@@ -62,7 +62,7 @@ prop_charCharChar2 = property do
 prop_charCharChar3 = property do
     input :: TextChunks <- forAll (genChunks "abcd")
     let x = P.parseSimple (charCharChar P.<* P.end) input
-    x === Left (P.Error [])
+    x === Left (P.DocError [])
 
 contextualizeTests = testGroup "p = contextualize \"Digit\" (require (satisfy isDigit))"
   [ testPropertyNamed "p parses \"2\"" "prop_digit2" prop_digit2
@@ -79,7 +79,7 @@ prop_digit2 = property do
 prop_digitA = property do
     input :: TextChunks <- forAll (genChunks "a")
     let x = P.parseSimple digit input
-    x === Left (P.Error ["Digit"])
+    x === Left (P.DocError ["Digit"])
 
 repetitionTests = testGroup "p = repetition0 (satisfy isDigit)"
   [ testPropertyNamed "p parses 123 from 123abc" "prop_digitList_part" prop_digitList_part
