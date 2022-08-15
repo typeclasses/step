@@ -18,10 +18,10 @@ import Step.Action
 --     runFree = \case
 --         Pure x -> return (Right x)
 --         Free b -> case b of
---             Base_RST x -> zoom commitLens x >>= runFree
---             Base_Reset x -> resetRunR *> runFree x
---             Base_Fail (Fail x) -> ask <&> Left . x
---             Base_Next f -> Cursor.next inputRunR >>= runFree . f
+--             Step_Lift x -> zoom commitLens x >>= runFree
+--             Step_Reset x -> resetRunR *> runFree x
+--             Step_Fail (Fail x) -> ask <&> Left . x
+--             Step_Next f -> Cursor.next inputRunR >>= runFree . f
 
 runAny :: forall a m xs x r s s'. Monad m => CursorRunRW xs x r s s' m -> Any xs x r (RST r s m) a -> RST r s m (Either r a)
 runAny CursorRunRW{ inputRunRW, runRW, resetRunRW, commitRunRW } (Any (Walk a)) =
@@ -39,8 +39,8 @@ runFree inputRunRW resetRunRW commitRunRW = r
     r = \case
       Pure x -> return (Right x)
       Free b -> case b of
-          Base_RST x -> zoom commitLens x >>= r
-          Base_Commit (Commit n x) -> commitRunRW n *> r x
-          Base_Reset x -> resetRunRW *> r x
-          Base_Fail (Error x) -> return (Left x)
-          Base_Next f -> Cursor.next inputRunRW >>= r . f
+          Step_Lift x -> zoom commitLens x >>= r
+          Step_Commit (Commit n x) -> commitRunRW n *> r x
+          Step_Reset x -> resetRunRW *> r x
+          Step_Fail (Error x) -> return (Left x)
+          Step_Next f -> Cursor.next inputRunRW >>= r . f

@@ -114,19 +114,19 @@ instance Functor (Error p) where
 type Step :: Mode -> Perfection -> Action
 
 data Step (mo :: Mode) (p :: Perfection) xs x e m a =
-    Base_RST (m a)
-  | Base_Reset a
-  | Base_Next (Maybe (Nontrivial xs x) -> a)
-  | Base_Fail (Error p e)
-  | Base_Commit (Commit mo a)
+    Step_Lift (m a)
+  | Step_Reset a
+  | Step_Next (Maybe (Nontrivial xs x) -> a)
+  | Step_Fail (Error p e)
+  | Step_Commit (Commit mo a)
 
 instance Functor m => Functor (Step mo p xs x e m) where
     fmap f = \case
-        Base_RST x -> Base_RST (fmap f x)
-        Base_Reset x -> Base_Reset (f x)
-        Base_Next x -> Base_Next (fmap f x)
-        Base_Fail x -> Base_Fail x
-        Base_Commit x -> Base_Commit (fmap f x)
+        Step_Lift x -> Step_Lift (fmap f x)
+        Step_Reset x -> Step_Reset (f x)
+        Step_Next x -> Step_Next (fmap f x)
+        Step_Fail x -> Step_Fail x
+        Step_Commit x -> Step_Commit (fmap f x)
 
 instance IsAction (Step mo p)
 
@@ -138,11 +138,11 @@ class IsAction step => IsStep step
 
 instance IsStep (Step mo p) where
     hoistStep f = \case
-        Base_Fail x -> Base_Fail x
-        Base_RST x -> Base_RST (f x)
-        Base_Commit x -> Base_Commit x
-        Base_Reset x -> Base_Reset x
-        Base_Next x -> Base_Next x
+        Step_Fail x -> Step_Fail x
+        Step_Lift x -> Step_Lift (f x)
+        Step_Commit x -> Step_Commit x
+        Step_Reset x -> Step_Reset x
+        Step_Next x -> Step_Next x
 
 -- ⭕ Walk
 
@@ -293,27 +293,27 @@ instance {-# overlappable #-} Is a a where
 
 instance Is (Step 'ReadOnly p) (Step 'ReadWrite p) where
     cast = \case
-        Base_Commit x -> case x of {}
-        Base_RST x -> Base_RST x
-        Base_Next x -> Base_Next x
-        Base_Reset x -> Base_Reset x
-        Base_Fail x -> Base_Fail x
+        Step_Commit x -> case x of {}
+        Step_Lift x -> Step_Lift x
+        Step_Next x -> Step_Next x
+        Step_Reset x -> Step_Reset x
+        Step_Fail x -> Step_Fail x
 
 instance Is (Step mo 'Perfect) (Step mo 'Imperfect) where
     cast = \case
-        Base_Fail x -> case x of {}
-        Base_RST x -> Base_RST x
-        Base_Next x -> Base_Next x
-        Base_Reset x -> Base_Reset x
-        Base_Commit x -> Base_Commit x
+        Step_Fail x -> case x of {}
+        Step_Lift x -> Step_Lift x
+        Step_Next x -> Step_Next x
+        Step_Reset x -> Step_Reset x
+        Step_Commit x -> Step_Commit x
 
 instance Is (Step 'ReadOnly 'Perfect) (Step 'ReadWrite 'Imperfect) where
     cast = \case
-        Base_Fail x -> case x of {}
-        Base_Commit x -> case x of {}
-        Base_RST x -> Base_RST x
-        Base_Next x -> Base_Next x
-        Base_Reset x -> Base_Reset x
+        Step_Fail x -> case x of {}
+        Step_Commit x -> case x of {}
+        Step_Lift x -> Step_Lift x
+        Step_Next x -> Step_Next x
+        Step_Reset x -> Step_Reset x
 
 -- ⭕ Straightforward casting from Step to Walk via lifting into Free
 
@@ -399,16 +399,16 @@ instance Is AtomicMove Any where
 -- ⭕ Casting out of fail
 
 instance Is Fail Any where
-    cast = Any . Walk . (>>= liftF . Base_Fail . Error) . liftF . Base_RST . unFail
+    cast = Any . Walk . (>>= liftF . Step_Fail . Error) . liftF . Step_Lift . unFail
 
 instance Is Fail Query where
-    cast = Query . Walk . (>>= liftF . Base_Fail . Error) . liftF . Base_RST . unFail
+    cast = Query . Walk . (>>= liftF . Step_Fail . Error) . liftF . Step_Lift . unFail
 
 instance Is Fail Move where
     cast = Move . cast
 
 instance Is Fail Atom where
-    cast = Atom . Query . Walk . (>>= liftF . Base_Fail . Error) . liftF . Base_RST . unFail
+    cast = Atom . Query . Walk . (>>= liftF . Step_Fail . Error) . liftF . Step_Lift . unFail
 
 instance Is Fail AtomicMove where
     cast = AtomicMove . cast
@@ -457,19 +457,19 @@ class Is act2 act1 => AssumeSuccess act1 act2 | act1 -> act2 where
 
 instance AssumeSuccess (Step 'ReadOnly 'Imperfect) (Step 'ReadOnly 'Perfect) where
     assumeSuccess = \case
-        Base_Commit x -> case x of {}
-        Base_RST x -> Base_RST x
-        Base_Next x -> Base_Next x
-        Base_Reset x -> Base_Reset x
-        Base_Fail _ -> error "assumeSuccess: assumption failed"
+        Step_Commit x -> case x of {}
+        Step_Lift x -> Step_Lift x
+        Step_Next x -> Step_Next x
+        Step_Reset x -> Step_Reset x
+        Step_Fail _ -> error "assumeSuccess: assumption failed"
 
 instance AssumeSuccess (Step 'ReadWrite 'Imperfect) (Step 'ReadWrite 'Perfect) where
     assumeSuccess = \case
-        Base_Commit x -> Base_Commit x
-        Base_RST x -> Base_RST x
-        Base_Next x -> Base_Next x
-        Base_Reset x -> Base_Reset x
-        Base_Fail _ -> error "assumeSuccess: assumption failed"
+        Step_Commit x -> Step_Commit x
+        Step_Lift x -> Step_Lift x
+        Step_Next x -> Step_Next x
+        Step_Reset x -> Step_Reset x
+        Step_Fail _ -> error "assumeSuccess: assumption failed"
 
 instance AssumeSuccess Any Sure where
     assumeSuccess (Any (Walk x)) = Sure (Walk (hoistFree assumeSuccess x))
@@ -496,11 +496,11 @@ freeTryR :: Functor m => Free (Step 'ReadOnly 'Imperfect xs x e m) a -> Free (St
 freeTryR = \case
     Pure x -> return (Just x)
     Free b -> case b of
-        Base_Fail _ -> return Nothing
-        Base_RST x -> liftF (Base_RST x) >>= freeTryR
-        Base_Reset x -> liftF (Base_Reset x) >>= freeTryR
-        Base_Next x -> liftF (Base_Next x) >>= freeTryR
-        Base_Commit x -> case x of {}
+        Step_Fail _ -> return Nothing
+        Step_Lift x -> liftF (Step_Lift x) >>= freeTryR
+        Step_Reset x -> liftF (Step_Reset x) >>= freeTryR
+        Step_Next x -> liftF (Step_Next x) >>= freeTryR
+        Step_Commit x -> case x of {}
 
 -- ⭕
 
@@ -745,7 +745,7 @@ bindAction x f = join (fmap f x)
 -- ⭕
 
 commit :: Monad m => Positive Natural -> AtomicMove xs x e m ()
-commit n = AtomicMove $ Atom $ Query $ return $ Sure $ Walk $ liftF $ Base_Commit $ Commit n ()
+commit n = AtomicMove $ Atom $ Query $ return $ Sure $ Walk $ liftF $ Step_Commit $ Commit n ()
 
 fail :: MonadReader e m => Fail xs x e m a
 fail = Fail ask
@@ -764,7 +764,7 @@ nextMaybe = reset `bindAction` \() -> nextMaybe'
 
 -- | Like 'nextMaybe', but doesn't reset first
 nextMaybe' :: Functor m => SureQuery xs x e m (Maybe (Nontrivial xs x))
-nextMaybe' = cast $ Base_Next @'ReadOnly @'Perfect id
+nextMaybe' = cast $ Step_Next @'ReadOnly @'Perfect id
 
 next :: MonadReader e m => Query xs x e m (Nontrivial xs x)
 next = nextMaybe `bindAction` maybe (castTo @Query fail) return
@@ -817,13 +817,13 @@ end :: MonadReader e m => Query xs x e m ()
 end = atEnd `bindAction` \e -> if e then success () else castTo @Query fail
 
 reset :: Monad m => SureQuery xs x e m ()
-reset = cast $ Base_Reset @'ReadOnly @'Perfect ()
+reset = cast $ Step_Reset @'ReadOnly @'Perfect ()
 
 actionState :: MonadState s m => SureQuery xs x e m s
-actionState = cast $ Base_RST @'ReadOnly @'Perfect get
+actionState = cast $ Step_Lift @'ReadOnly @'Perfect get
 
 actionContext :: MonadReader a m => SureQuery xs x e m a
-actionContext = cast $ Base_RST @'ReadOnly @'Perfect ask
+actionContext = cast $ Step_Lift @'ReadOnly @'Perfect ask
 
 one :: Positive Natural
 one = PositiveUnsafe 1
