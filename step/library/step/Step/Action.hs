@@ -148,7 +148,7 @@ instance IsStep (Step mo p) where
 
 type Walk :: Mode -> Perfection -> Action
 
-newtype Walk mo p xs x e m a = Walk{ unWalk :: Free (Step mo p xs x e m) a }
+newtype Walk mo p xs x e m a = Walk{ unWalk :: F (Step mo p xs x e m) a }
 
 deriving newtype instance Functor m => Functor (Walk mo p xs x e m)
 
@@ -157,7 +157,7 @@ deriving newtype instance Functor m => Applicative (Walk mo p xs x e m)
 deriving newtype instance Functor m => Monad (Walk mo p xs x e m)
 
 instance Possible (Walk mo p) where
-    success = Walk . Pure
+    success = Walk . return
 
 instance IsAction (Walk mo p)
 
@@ -169,7 +169,7 @@ class IsAction walk => IsWalk walk
         (forall z mo p. Step mo p xs x e m1 z -> Step mo p xs x e m2 z) -> walk xs x e m1 a -> walk xs x e m2 a
 
 instance IsWalk (Walk mo p) where
-    mapSteps f = Walk . hoistFree f . unWalk
+    mapSteps f = Walk . hoistF f . unWalk
 
 -- ⭕ MonadicWalk
 
@@ -315,7 +315,7 @@ instance Is (Step 'ReadOnly 'Perfect) (Step 'ReadWrite 'Imperfect) where
         Step_Next x -> Step_Next x
         Step_Reset x -> Step_Reset x
 
--- ⭕ Straightforward casting from Step to Walk via lifting into Free
+-- ⭕ Straightforward casting from Step to Walk via lifting into F
 
 instance Is (Step 'ReadOnly 'Perfect) SureQuery where
     cast = SureQuery . Walk . liftF
@@ -329,7 +329,7 @@ instance Is (Step 'ReadWrite 'Perfect) Sure where
 instance Is (Step 'ReadWrite 'Imperfect) Any where
     cast = Any . Walk . liftF
 
--- ⭕ Two-step casts that involve casting between Step types and then into Free
+-- ⭕ Two-step casts that involve casting between Step types and then into F
 
 instance Is (Step 'ReadOnly 'Perfect) Sure where
     cast = Sure . Walk . liftF . cast
@@ -346,23 +346,23 @@ instance Is (Step 'ReadWrite 'Perfect) Any where
 -- ⭕ Casting out of read-only
 
 instance Is SureQuery Sure where
-    cast = Sure . Walk . hoistFree cast . unWalk . unSureQuery
+    cast = Sure . Walk . hoistF cast . unWalk . unSureQuery
 
 instance Is Query Any where
-    cast = Any . Walk . hoistFree cast . unWalk . unQuery
+    cast = Any . Walk . hoistF cast . unWalk . unQuery
 
 -- ⭕ Casting out of sureness
 
 instance Is SureQuery Query where
-    cast = Query . Walk . hoistFree cast . unWalk . unSureQuery
+    cast = Query . Walk . hoistF cast . unWalk . unSureQuery
 
 instance Is Sure Any where
-    cast = Any . Walk . hoistFree cast . unWalk . unSure
+    cast = Any . Walk . hoistF cast . unWalk . unSure
 
 -- ⭕ Casting out of both read-only and sureness
 
 instance Is SureQuery Any where
-    cast = Any . Walk . hoistFree cast . unWalk . unSureQuery
+    cast = Any . Walk . hoistF cast . unWalk . unSureQuery
 
 -- ⭕ Casting to Atom
 
@@ -472,10 +472,10 @@ instance AssumeSuccess (Step 'ReadWrite 'Imperfect) (Step 'ReadWrite 'Perfect) w
         Step_Fail _ -> error "assumeSuccess: assumption failed"
 
 instance AssumeSuccess Any Sure where
-    assumeSuccess (Any (Walk x)) = Sure (Walk (hoistFree assumeSuccess x))
+    assumeSuccess (Any (Walk x)) = Sure (Walk (hoistF assumeSuccess x))
 
 instance AssumeSuccess Query SureQuery where
-    assumeSuccess (Query (Walk x)) = SureQuery (Walk (hoistFree assumeSuccess x))
+    assumeSuccess (Query (Walk x)) = SureQuery (Walk (hoistF assumeSuccess x))
 
 -- ⭕
 
@@ -492,14 +492,19 @@ instance Atomic Query SureQuery where
     try :: forall xs x e m a. Functor m => Query xs x e m a -> SureQuery xs x e m (Maybe a)
     try (Query (Walk q)) = SureQuery (Walk (freeTryR q))
 
-freeTryR :: Functor m => Free (Step 'ReadOnly 'Imperfect xs x e m) a -> Free (Step 'ReadOnly 'Perfect xs x e m) (Maybe a)
-freeTryR = \case
-    Pure x -> return (Just x)
-    Free b -> case b of
+freeTryR :: forall m xs x e a. Functor m => F (Step 'ReadOnly 'Imperfect xs x e m) a -> F (Step 'ReadOnly 'Perfect xs x e m) (Maybe a)
+freeTryR a = runF a f g
+  where
+    f :: a -> F (Step 'ReadOnly 'Perfect xs x e m) (Maybe a)
+    f = return . Just
+
+    g :: Step 'ReadOnly 'Imperfect xs x e m (F (Step 'ReadOnly 'Perfect xs x e m) (Maybe a))
+        -> F (Step 'ReadOnly 'Perfect xs x e m) (Maybe a)
+    g = \case
         Step_Fail _ -> return Nothing
-        Step_Lift x -> liftF (Step_Lift x) >>= freeTryR
-        Step_Reset x -> liftF (Step_Reset x) >>= freeTryR
-        Step_Next x -> liftF (Step_Next x) >>= freeTryR
+        Step_Lift x -> Monad.join (liftF (Step_Lift x))
+        Step_Reset x -> Monad.join (liftF (Step_Reset x))
+        Step_Next x -> Monad.join (liftF (Step_Next x))
         Step_Commit x -> case x of {}
 
 -- ⭕

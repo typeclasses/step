@@ -84,7 +84,7 @@ common base
           , Data.IntMap.Strict as IntMap
           )
       , data-default-class (Data.Default.Class as Default)
-      , free (Control.Monad.Free as Monad.Free)
+      , free (Control.Monad.Free.Church as Monad.Free)
       , ListLike (Data.ListLike as ListLike)
       , mmorph
           ( Control.Monad.Morph as Morph
