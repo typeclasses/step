@@ -43,7 +43,7 @@ prop_ex1 = property do
     input :: TextChunks <- forAll (genChunks "Move\r\nTwo\rThree")
 
     t <- forAll Gen.bool
-    let lh = Lines.build NT.spanOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
+    let lh = Lines.build NT.spanOperation NT.leftViewOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
 
     locateCursorInDocument  0 lh === Just (CursorAt (loc 1 1))
     locateCursorInDocument  1 lh === Just (CursorAt (loc 1 2))
@@ -67,7 +67,7 @@ prop_ex2 = property do
     input :: TextChunks <- forAll (genChunks "ab\r")
 
     t <- forAll Gen.bool
-    let lh = Lines.build NT.spanOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
+    let lh = Lines.build NT.spanOperation NT.leftViewOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
 
     locateCursorInDocument  0 lh === Just (CursorAt (loc 1 1))
     locateCursorInDocument  1 lh === Just (CursorAt (loc 1 2))
@@ -91,7 +91,7 @@ prop_ex3 = property do
 prop_oneLine = property do
     input :: TextChunks <- forAll (genChunks "abc")
 
-    let lh = Lines.build NT.spanOperation Lines.charTerminators input
+    let lh = Lines.build NT.spanOperation NT.leftViewOperation Lines.charTerminators input
 
     lh === LineHistory
               { lineStartPosition = Map.fromList [(0, 1)]

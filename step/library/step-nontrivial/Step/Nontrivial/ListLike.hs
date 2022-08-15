@@ -7,6 +7,7 @@ module Step.Nontrivial.ListLike
     dropOperation,
     whileOperation,
     splitOperation,
+    leftViewOperation,
   )
   where
 
@@ -17,9 +18,11 @@ import Step.Nontrivial.Operations
 import Step.Nontrivial.ListLike.Construction
 
 import Step.Nontrivial.Type
+import Step.Nontrivial.Unsafe
 
 import qualified ListLike
 
+import Positive.Unsafe
 import qualified Positive
 import qualified Positive.Math as Positive
 import qualified Signed
@@ -66,3 +69,33 @@ splitOperation = SplitOperation \n whole ->
                 (fromIntegral (review Positive.refine n))
                 (generalize whole)
         _ -> SplitInsufficient
+
+leftViewOperation :: forall xs x. ListLike xs x => LeftViewOperation xs x
+leftViewOperation = LeftViewOperation{ leftView = iso f g }
+  where
+    f :: Nontrivial xs x -> Pop xs x
+    f a = a
+        & generalize
+        & ListLike.uncons
+        & fromMaybe (error "ListLike leftViewIso")
+        & \(x, b) -> Pop
+            { popItem = x
+            , popRemainder =
+                case Positive.minus (length a) (PositiveUnsafe 1) of
+                    Signed.Plus n -> Just NontrivialUnsafe
+                        { generalize = b
+                        , length = n
+                        }
+                    _ -> Nothing
+            }
+
+    g :: Pop xs x -> Nontrivial xs x
+    g Pop{ popItem, popRemainder } = case popRemainder of
+        Nothing -> NontrivialUnsafe
+          { generalize = ListLike.singleton popItem
+          , length = PositiveUnsafe 1
+          }
+        Just b -> NontrivialUnsafe
+          { generalize = ListLike.cons popItem (generalize b)
+          , length = Positive.plus (length b) (PositiveUnsafe 1)
+          }

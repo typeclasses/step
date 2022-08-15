@@ -5,6 +5,20 @@ module Step.Document.Actions where
 import Step.Internal.Prelude
 
 import Step.Action
+    ( nextMaybe,
+      actionState,
+      SureQuery,
+      CursorPosition,
+      IsStep(hoistStep),
+      IsWalk(..),
+      AtomicMove,
+      castTo,
+      bindAction,
+      commit,
+      fail,
+      nextCharMaybe,
+      one )
+import qualified Step.Action as A
 
 import Step.Document.Base (DocumentMemory, Context)
 import qualified Step.Document.Base as Doc
@@ -13,6 +27,7 @@ import Text (Text)
 
 import qualified Step.Nontrivial as Nontrivial
 import Step.Nontrivial (Nontrivial)
+import qualified Step.Nontrivial.ListLike as LL
 
 import Step.Cursor
 
@@ -57,3 +72,9 @@ position = do
                 Just (LineHistory.CursorAt x) -> return x
                 Just LineHistory.CursorLocationNeedsMoreInput ->
                     error "LineHistory problem: after buffering more, should not need more input to determine position"
+
+satisfyJust :: MonadReader e m => ListLike xs x => (x -> Maybe a) -> AtomicMove xs x e m a
+satisfyJust = A.satisfyJust LL.leftViewOperation
+
+nextCharMaybe :: Monad m => ListLike xs x => SureQuery xs x e m (Maybe x)
+nextCharMaybe = A.nextCharMaybe LL.leftViewOperation

@@ -3,7 +3,7 @@
 module Step.Nontrivial.Type
   (
     Nontrivial,
-    length, head, tail, generalize,
+    length, generalize,
   )
   where
 

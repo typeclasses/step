@@ -2,7 +2,7 @@
 
 module Step.Nontrivial
   (
-    Nontrivial, generalize, length, head, tail,
+    Nontrivial, generalize, length,
     module Step.Nontrivial.Operations,
     module Step.Nontrivial.Misc,
   )

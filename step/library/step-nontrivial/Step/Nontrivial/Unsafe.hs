@@ -16,8 +16,6 @@ data Nontrivial xs x =
   NontrivialUnsafe
     { generalize :: !xs
     , length :: Positive Natural
-    , head :: x
-    , tail :: Maybe (Nontrivial xs x)
     }
 
 instance Eq xs => Eq (Nontrivial xs x) where

@@ -6,6 +6,10 @@ import Step.Internal.Prelude
 
 import Step.Nontrivial.Type
 
+newtype LeftViewOperation xs x = LeftViewOperation{ leftView :: Iso' (Nontrivial xs x) (Pop xs x) }
+
+data Pop xs x = Pop{ popItem :: x, popRemainder :: Maybe (Nontrivial xs x) }
+
 newtype UntrivializeOperation xs x =
     UntrivializeOperation{ untrivialize :: xs -> Maybe (Nontrivial xs x) }
 

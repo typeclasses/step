@@ -20,7 +20,7 @@ import qualified Char
 
 import qualified Loc
 
-import Step.Nontrivial (Nontrivial, Span (..), SpanOperation (..))
+import Step.Nontrivial (Nontrivial, Span (..), SpanOperation (..), LeftViewOperation (..), Pop (..))
 import qualified Step.Nontrivial as Nontrivial
 
 import qualified List
@@ -91,8 +91,8 @@ empty =
     , terminated = False
     }
 
-build :: SpanOperation xs x -> Terminators x -> [Nontrivial xs x] -> LineHistory
-build spanOp ts xs = runIdentity $ execRST (traverse_ (record spanOp) xs) ts empty
+build :: SpanOperation xs x -> LeftViewOperation xs x -> Terminators x -> [Nontrivial xs x] -> LineHistory
+build spanOp lviewOp ts xs = runIdentity $ execRST (traverse_ (record spanOp lviewOp) xs) ts empty
 
 data Terminators x =
   Terminators
@@ -113,11 +113,10 @@ notTerminator ts = Predicate \c ->
         [isCarriageReturn ts, isLineFeed ts]
 
 record :: forall xs x m. Monad m =>
-    SpanOperation xs x -> Nontrivial xs x -> RST (Terminators x) LineHistory m ()
-record SpanOperation{ span } = fix \r x -> ask >>= \ts ->
+    SpanOperation xs x -> LeftViewOperation xs x -> Nontrivial xs x -> RST (Terminators x) LineHistory m ()
+record SpanOperation{ span } LeftViewOperation{ leftView } = fix \r x -> ask >>= \ts ->
   let
-    h = Nontrivial.head x
-    t = Nontrivial.tail x
+    Pop{ popItem = h, popRemainder = t } = view leftView x
   in
     if getPredicate (isCarriageReturn ts) h then recordCR *> traverse_ r t
     else if getPredicate (isLineFeed ts) h then recordLF *> traverse_ r t

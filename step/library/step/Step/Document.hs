@@ -9,5 +9,5 @@ module Step.Document
 
 import Step.Document.Actions
 import Step.Document.Base hiding (cursorPosition, lineHistory)
-import Step.Action
+import Step.Action hiding (satisfyJust, nextCharMaybe)
 import Step.Action.Do

@@ -754,14 +754,14 @@ commit n = AtomicMove $ Atom $ Query $ return $ Sure $ Walk $ liftF $ Step_Commi
 fail :: MonadReader e m => Fail xs x e m a
 fail = Fail ask
 
-takeCharMaybe :: MonadReader e m => Sure xs x e m (Maybe x)
-takeCharMaybe = try takeChar
+takeCharMaybe :: MonadReader e m => Nontrivial.LeftViewOperation xs x -> Sure xs x e m (Maybe x)
+takeCharMaybe lview = try (takeChar lview)
 
-takeChar :: MonadReader e m => AtomicMove xs x e m x
-takeChar = nextChar `bindAction` \x -> commit one $> x
+takeChar :: MonadReader e m => Nontrivial.LeftViewOperation xs x -> AtomicMove xs x e m x
+takeChar lview = nextChar lview `bindAction` \x -> commit one $> x
 
-nextChar :: MonadReader e m => Query xs x e m x
-nextChar = nextCharMaybe `bindAction` maybe (castTo @Query fail) return
+nextChar :: MonadReader e m => Nontrivial.LeftViewOperation xs x -> Query xs x e m x
+nextChar lview = nextCharMaybe lview `bindAction` maybe (castTo @Query fail) return
 
 nextMaybe :: Monad m => SureQuery xs x e m (Maybe (Nontrivial xs x))
 nextMaybe = reset `bindAction` \() -> nextMaybe'
@@ -783,11 +783,12 @@ takeNext = next `bindAction` \xs -> commit (Nontrivial.length xs) $> xs
 takeNextMaybe :: MonadReader e m => Sure xs x e m (Maybe (Nontrivial xs x))
 takeNextMaybe = try takeNext
 
-nextCharMaybe :: Monad m => SureQuery xs x e m (Maybe x)
-nextCharMaybe = nextMaybe <&> fmap @Maybe Nontrivial.head
+nextCharMaybe :: Monad m => Nontrivial.LeftViewOperation xs x -> SureQuery xs x e m (Maybe x)
+nextCharMaybe Nontrivial.LeftViewOperation{ leftView } =
+    nextMaybe <&> fmap @Maybe (Nontrivial.popItem . view leftView)
 
-satisfyJust :: MonadReader e m => (x -> Maybe a) -> AtomicMove xs x e m a
-satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
+satisfyJust :: MonadReader e m => Nontrivial.LeftViewOperation xs x -> (x -> Maybe a) -> AtomicMove xs x e m a
+satisfyJust lview ok = nextCharMaybe lview `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
 
 skip0 :: MonadReader e m => Natural -> Any xs x e m ()
 skip0 = maybe (return ()) (castTo @Any . skip)  . preview Positive.refine

@@ -24,7 +24,7 @@ import qualified Step.Cursor as Cursor
 
 import Step.RST
 
-import Step.Nontrivial (Nontrivial, DropOperation, SpanOperation)
+import Step.Nontrivial (Nontrivial, DropOperation, SpanOperation, LeftViewOperation)
 import qualified Step.Nontrivial.ListLike as LL
 
 import Char (Char)
@@ -102,19 +102,19 @@ configLineTerminatorsLens :: Lens
 configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerminators = y }
 
 documentCursor :: Monad m =>
-    DropOperation xs x -> SpanOperation xs x
+    DropOperation xs x -> SpanOperation xs x -> LeftViewOperation xs x
     -> CursorRW xs x (Context xs x s m) (DocumentMemory xs x s) (Buffer xs x) m
-documentCursor dropOp spanOp =
+documentCursor dropOp spanOp lviewOp =
     loadingCursor dropOp bufferLens
-        & contramap (recordingStream spanOp)
+        & contramap (recordingStream spanOp lviewOp)
 
 recordingStream :: Monad m =>
-    SpanOperation xs x -> Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
-recordingStream spanOp ctx =
-    Cursor.record (record' spanOp ctx) $ over streamRST (zoom streamStateLens) $ ctxStream ctx
+    SpanOperation xs x -> LeftViewOperation xs x -> Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
+recordingStream spanOp lviewOp ctx =
+    Cursor.record (record' spanOp lviewOp ctx) $ over streamRST (zoom streamStateLens) $ ctxStream ctx
 
-record' :: Monad m => SpanOperation xs x -> Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
-record' spanOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanOp)
+record' :: Monad m => SpanOperation xs x -> LeftViewOperation xs x -> Context xs x s m -> Nontrivial xs x -> RST () (DocumentMemory xs x s) m ()
+record' spanOp lviewOp ctx = contraconst ts . zoom lineHistoryLens . (Lines.record spanOp lviewOp)
   where
     ts = configLineTerminators (ctxConfig ctx)
 
@@ -127,7 +127,7 @@ parse a =
     -- c :: CursorRW' xs (Item xs) (Context xs (Item xs) s m) (DocumentMemory xs (Item xs) s) m
     c =
         -- CursorRW' $
-        documentCursor LL.dropOperation LL.spanOperation
+        documentCursor LL.dropOperation LL.spanOperation LL.leftViewOperation
   in
     view rstState $ runAny (cursorRunRW c) (counting cursorPositionLens $ Action.castTo @Any a) <&> \case
           Right x -> Right x

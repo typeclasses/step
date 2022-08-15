@@ -20,8 +20,6 @@ untrivializeOperation = UntrivializeOperation \x -> do
       NontrivialUnsafe
         { generalize = x
         , length = l
-        , head = ListLike.head x
-        , tail = untrivialize untrivializeOperation (ListLike.tail x)
         }
 
 nontrivialUnsafe :: ListLike xs x => xs -> Nontrivial xs x
@@ -29,6 +27,4 @@ nontrivialUnsafe x =
     NontrivialUnsafe
       { generalize = x
       , length = (Positive.PositiveUnsafe . fromIntegral . ListLike.length) x
-      , head = ListLike.head x
-      , tail = untrivialize untrivializeOperation (ListLike.tail x)
       }
