@@ -181,9 +181,7 @@ class
     ) =>
     MonadicWalk (act :: Action)
 
-instance MonadicWalk (Walk mo 'Perfect)
-
-instance MonadicWalk (Walk mo 'Imperfect)
+instance MonadicWalk (Walk mo p)
 
 -- ⭕
 
