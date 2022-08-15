@@ -42,5 +42,5 @@ runFree inputRunRW resetRunRW commitRunRW = r
           Base_RST x -> zoom commitLens x >>= r
           Base_Commit (Commit n x) -> commitRunRW n *> r x
           Base_Reset x -> resetRunRW *> r x
-          Base_Fail (Error x) -> Left <$> zoom commitLens x
+          Base_Fail (Error x) -> return (Left x)
           Base_Next f -> Cursor.next inputRunRW >>= r . f

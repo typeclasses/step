@@ -121,7 +121,7 @@ data Step (mo :: Mode) (p :: Perfection) xs x e m a =
     Base_RST (m a)
   | Base_Reset a
   | Base_Next (Maybe (Nontrivial xs x) -> a)
-  | Base_Fail (Error p (m e))
+  | Base_Fail (Error p e)
   | Base_Commit (Commit mo a)
 
 instance (Functor m, Functor (Commit mo)) => Functor (Step mo p xs x e m) where
@@ -143,7 +143,7 @@ class
 
 instance (Functor (Commit mo), Functor (Error p)) => IsStep (Step mo p) where
     hoistStep f = \case
-        Base_Fail x -> Base_Fail (fmap f x)
+        Base_Fail x -> Base_Fail x
         Base_RST x -> Base_RST (f x)
         Base_Commit x -> Base_Commit x
         Base_Reset x -> Base_Reset x
@@ -409,19 +409,19 @@ instance Is AtomicMove Any where
 -- ⭕ Casting out of fail
 
 instance Is Fail Any where
-    cast = Any . Walk . liftF . Base_Fail . Error . unFail
+    cast = Any . Walk . (>>= liftF . Base_Fail . Error) . liftF . Base_RST . unFail
 
 instance Is Fail Query where
-    cast = Query . Walk . liftF . Base_Fail . Error . unFail
+    cast = Query . Walk . (>>= liftF . Base_Fail . Error) . liftF . Base_RST . unFail
 
 instance Is Fail Move where
-    cast = Move . Any . Walk . liftF . Base_Fail . Error . unFail
+    cast = Move . cast
 
 instance Is Fail Atom where
-    cast = Atom . Query . Walk . liftF . Base_Fail . Error . unFail
+    cast = Atom . Query . Walk . (>>= liftF . Base_Fail . Error) . liftF . Base_RST . unFail
 
 instance Is Fail AtomicMove where
-    cast = AtomicMove . Atom . Query . Walk . liftF . Base_Fail . Error . unFail
+    cast = AtomicMove . cast
 
 -- ⭕
 
