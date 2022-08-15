@@ -77,6 +77,8 @@ type Action =
     -> Type           -- ^ @a@ - produced upon success
     -> Type
 
+class (forall xs x e m. Functor m => Functor (act xs x e m)) => IsAction act
+
 -- ⭕ Classes
 
 class Possible (act :: Action) where
@@ -93,10 +95,7 @@ data Commit (mo :: Mode) a
   where
     Commit :: Positive Natural -> a -> Commit 'ReadWrite a
 
-instance Functor (Commit 'ReadOnly) where
-    fmap _ = \case{}
-
-instance Functor (Commit 'ReadWrite) where
+instance Functor (Commit mo) where
     fmap f (Commit n x) = Commit n (f x)
 
 -- ⭕
@@ -107,10 +106,7 @@ data Error (p :: Perfection) e
   where
     Error :: e -> Error 'Imperfect e
 
-instance Functor (Error 'Perfect) where
-    fmap _ = \case{}
-
-instance Functor (Error 'Imperfect) where
+instance Functor (Error p) where
     fmap f (Error e) = Error (f e)
 
 -- ⭕
@@ -124,7 +120,7 @@ data Step (mo :: Mode) (p :: Perfection) xs x e m a =
   | Base_Fail (Error p e)
   | Base_Commit (Commit mo a)
 
-instance (Functor m, Functor (Commit mo)) => Functor (Step mo p xs x e m) where
+instance Functor m => Functor (Step mo p xs x e m) where
     fmap f = \case
         Base_RST x -> Base_RST (fmap f x)
         Base_Reset x -> Base_Reset (f x)
@@ -132,16 +128,15 @@ instance (Functor m, Functor (Commit mo)) => Functor (Step mo p xs x e m) where
         Base_Fail x -> Base_Fail x
         Base_Commit x -> Base_Commit (fmap f x)
 
+instance IsAction (Step mo p)
+
 -- ⭕ IsStep
 
-class
-    ( forall xs x e m. Functor m => Functor (step xs x e m)
-    ) =>
-    IsStep (step :: Action)
+class IsAction step => IsStep step
   where
     hoistStep :: Functor m2 => (forall z. m1 z -> m2 z) -> step xs x e m1 a -> step xs x e m2 a
 
-instance (Functor (Commit mo), Functor (Error p)) => IsStep (Step mo p) where
+instance IsStep (Step mo p) where
     hoistStep f = \case
         Base_Fail x -> Base_Fail x
         Base_RST x -> Base_RST (f x)
@@ -155,42 +150,40 @@ type Walk :: Mode -> Perfection -> Action
 
 newtype Walk mo p xs x e m a = Walk{ unWalk :: Free (Step mo p xs x e m) a }
 
-deriving newtype instance (Functor m, Functor (Commit mo)) => Functor (Walk mo p xs x e m)
+deriving newtype instance Functor m => Functor (Walk mo p xs x e m)
 
-deriving newtype instance (Functor m, Functor (Commit mo)) => Applicative (Walk mo p xs x e m)
+deriving newtype instance Functor m => Applicative (Walk mo p xs x e m)
 
-deriving newtype instance (Functor m, Functor (Commit mo)) => Monad (Walk mo p xs x e m)
+deriving newtype instance Functor m => Monad (Walk mo p xs x e m)
 
 instance Possible (Walk mo p) where
     success = Walk . Pure
 
+instance IsAction (Walk mo p)
+
 -- ⭕ IsWalk
 
-class
-    ( forall xs x e m. Functor m =>
-          Functor (walk xs x e m)
-    ) =>
-    IsWalk (walk :: Action)
+class IsAction walk => IsWalk walk
   where
-    hoistWalk :: Functor m2 => (forall z. m1 z -> m2 z) -> walk xs x e m1 a -> walk xs x e m2 a
+    mapSteps :: forall xs x e m1 m2 a. Functor m1 => Functor m2 =>
+        (forall z mo p. Step mo p xs x e m1 z -> Step mo p xs x e m2 z) -> walk xs x e m1 a -> walk xs x e m2 a
 
-instance (Functor (Commit mo)) => IsWalk (Walk mo 'Perfect) where
-    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
-
-instance (Functor (Commit mo)) => IsWalk (Walk mo 'Imperfect) where
-    hoistWalk f = Walk . hoistFree (hoistStep f) . unWalk
+instance IsWalk (Walk mo p) where
+    mapSteps f = Walk . hoistFree f . unWalk
 
 -- ⭕ MonadicWalk
 
 -- | Walks that are closed under sequencing
 class
-    ( IsWalk act, Possible act, forall xs x e m. Functor m =>
-          Monad (act xs x e m)
+    ( IsWalk act
+    , Possible act
+    , forall xs x e m. Functor m => Monad (act xs x e m)
     ) =>
     MonadicWalk (act :: Action)
 
-instance (Functor (Commit mo)) => MonadicWalk (Walk mo 'Perfect)
-instance (Functor (Commit mo)) => MonadicWalk (Walk mo 'Imperfect)
+instance MonadicWalk (Walk mo 'Perfect)
+
+instance MonadicWalk (Walk mo 'Imperfect)
 
 -- ⭕
 
@@ -198,7 +191,7 @@ type Any :: Action
 
 -- | The most general of the actions; a monadic combination of 'BaseRW'
 newtype Any xs x e m a = Any{ unAny :: Walk 'ReadWrite 'Imperfect xs x e m a }
-    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
+    deriving newtype (Functor, Applicative, Monad, Possible, IsAction, IsWalk, MonadicWalk)
 
 -- ⭕
 
@@ -206,7 +199,7 @@ type Query :: Action
 
 -- | Like 'Any', but cannot move the cursor; a monadic combination of 'Step'
 newtype Query xs x e m a = Query{ unQuery :: Walk 'ReadOnly 'Imperfect xs x e m a }
-    deriving newtype (IsWalk, MonadicWalk, Possible, Functor, Applicative, Monad)
+    deriving newtype (IsAction, IsWalk, MonadicWalk, Possible, Functor, Applicative, Monad)
 
 -- ⭕
 
@@ -214,7 +207,7 @@ type Move :: Action
 
 -- | Always moves the cursor
 newtype Move xs x e m a = Move{ unMove :: Any xs x e m a }
-    deriving newtype (Functor, IsWalk)
+    deriving newtype (Functor, IsAction, IsWalk)
 
 instance (Functor m, TypeError ('Text "Move cannot be Applicative because 'pure' would not move the cursor")) =>
     Applicative (Move xs x e m)
@@ -229,12 +222,13 @@ type Atom :: Action
 -- | Fails noncommittally; see 'try'
 newtype Atom xs x e m a = Atom{ unAtom :: Query xs x e m (Sure xs x e m a) }
     deriving stock Functor
+    deriving anyclass IsAction
+
+instance IsWalk Atom where
+    mapSteps f = Atom . mapSteps f . fmap (mapSteps f) . unAtom
 
 instance Possible Atom where
     success = Atom . success . success
-
-instance IsWalk Atom where
-    hoistWalk f = Atom . fmap (hoistWalk f) . hoistWalk f . unAtom
 
 instance (Functor m, TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x e m) where
     pure = error "unreachable"
@@ -247,9 +241,7 @@ type AtomicMove :: Action
 -- | Always moves the cursor, is atomic
 newtype AtomicMove xs x e m a = AtomicMove{ unAtomicMove :: Atom xs x e m a }
     deriving stock Functor
-
-instance IsWalk AtomicMove where
-    hoistWalk f = AtomicMove . hoistWalk f . unAtomicMove
+    deriving newtype (IsAction, IsWalk)
 
 instance (Functor m, TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x e m) where
     pure = error "unreachable"
@@ -261,7 +253,7 @@ type Sure :: Action
 
 -- | Always succeeds
 newtype Sure xs x e m a = Sure{ unSure :: Walk 'ReadWrite 'Perfect xs x e m a }
-    deriving newtype (Functor, Applicative, Monad, Possible, IsWalk, MonadicWalk)
+    deriving newtype (Functor, Applicative, Monad, Possible, IsAction, IsWalk, MonadicWalk)
 
 -- ⭕
 
@@ -269,7 +261,7 @@ type SureQuery :: Action
 
 -- | Always succeeds, does not move the cursor
 newtype SureQuery xs x e m a = SureQuery{ unSureQuery :: Walk 'ReadOnly 'Perfect xs x e m a }
-    deriving newtype (Functor, Applicative, Monad, IsWalk, MonadicWalk, Possible)
+    deriving newtype (Functor, Applicative, Monad, IsAction, IsWalk, MonadicWalk, Possible)
 
 -- ⭕
 
@@ -278,9 +270,7 @@ type Fail :: Action
 -- | Never succeeds, never moves the cursor, never does anything at all
 data Fail xs x e m a = Fail{ unFail :: m e }
     deriving stock Functor
-
-instance IsWalk Fail where
-    hoistWalk f = Fail . f . unFail
+    deriving anyclass IsAction
 
 instance Fallible Fail where
     mapError f (Fail x) = Fail $ fmap f x
@@ -489,7 +479,7 @@ instance AssumeSuccess Query SureQuery where
 
 -- ⭕
 
-class (IsWalk act, IsWalk try) => Atomic act try | act -> try where
+class (IsAction act, IsAction try) => Atomic act try | act -> try where
     try :: Functor m => act xs x e m a -> try xs x e m (Maybe a)
 
 instance Atomic Atom Sure where
@@ -602,7 +592,7 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
 
 -- ⭕
 
-class (IsWalk act1, IsWalk act2, IsWalk (act1 >> act2)) => Join act1 act2 where
+class (IsAction act1, IsAction act2, IsAction (act1 >> act2)) => Join act1 act2 where
     join :: Functor m => act1 xs x e m (act2 xs x e m a) -> (act1 >> act2) xs x e m a
 
 cast2 :: forall act2 act1 f xs x e m a. (Is act1 act2, Functor m, Functor f) => f (act1 xs x e m a) -> f (act2 xs x e m a)
