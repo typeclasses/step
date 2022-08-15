@@ -897,3 +897,10 @@ strictlyIncreaseCursorPosition = increaseCursorPosition . review Positive.refine
 
 increaseCursorPosition :: Natural -> Endo CursorPosition
 increaseCursorPosition x = Endo $ CursorPosition . (+ x) . cursorPositionNatural
+
+counting :: IsWalk act => MonadState s m => Lens' s CursorPosition -> act xs x r m a -> act xs x r m a
+counting o = mapSteps \case
+    s@(Step_Commit (Commit n _)) -> do
+        liftF (Step_Lift (modifying o $ appEndo $ strictlyIncreaseCursorPosition n))
+        liftF s
+    s -> liftF s

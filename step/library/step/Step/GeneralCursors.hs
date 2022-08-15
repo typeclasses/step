@@ -4,7 +4,7 @@ module Step.GeneralCursors
   (
     {- * Pure and loading cursors -} bufferStateCursor, loadingCursor,
     {- * Cursor transformers -}
-    {- ** Counting -} countingCursor, CursorPosition (..),
+    {- ** Counting -} CursorPosition (..),
     {- ** While -} whileCursor,
   )
   where
@@ -77,24 +77,6 @@ loadingCursor dropOp bufferLens = CursorRW{ initRW, inputRW, commitRW, resetRW }
 
     next' :: RST (Stream () s m xs x) (CursorState s (Buffer xs x)) m (Maybe (Nontrivial xs x))
     next' = ask >>= \upstream -> zoom commitLens $ contravoid (next upstream)
-
-
--- | Augments a cursor by keeping count of how many characters have been committed
---
-countingCursor :: forall s s' xs x r m. Monad m =>
-    Lens' s CursorPosition -- ^ The field of state in which the count is stored
-    -> CursorRW xs x r s s' m
-    -> CursorRW xs x r s s' m
-countingCursor positionLens c = CursorRW{ initRW, inputRW, commitRW, resetRW }
-  where
-    initRW = Cursor.initRW c
-    inputRW = Cursor.inputRW c
-    resetRW = zoom commitLens initRW >>= assign sessionLens
-    commitRW = \n -> count n *> Cursor.commitRW c n
-
-    count :: Positive Natural -> RST r (CursorState s srw) m ()
-    count n = modifying (commitLens % positionLens) $
-        appEndo $ strictlyIncreaseCursorPosition n
 
 -- todo: While state needs to be redesigned in light of "reset"
 

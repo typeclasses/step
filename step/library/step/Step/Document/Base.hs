@@ -107,7 +107,6 @@ documentCursor :: Monad m =>
 documentCursor dropOp spanOp =
     loadingCursor dropOp bufferLens
         & contramap (recordingStream spanOp)
-        & countingCursor cursorPositionLens
 
 recordingStream :: Monad m =>
     SpanOperation xs x -> Context xs x s m -> Stream () (DocumentMemory xs x s) m xs x
@@ -130,7 +129,7 @@ parse a =
         -- CursorRW' $
         documentCursor LL.dropOperation LL.spanOperation
   in
-    view rstState $ runAny (cursorRunRW c) (Action.castTo @Any a) <&> \case
+    view rstState $ runAny (cursorRunRW c) (counting cursorPositionLens $ Action.castTo @Any a) <&> \case
           Right x -> Right x
           Left c' -> Left DocError{ errorContext = c' & view (ctxConfigLens % configContextLens) }
 
