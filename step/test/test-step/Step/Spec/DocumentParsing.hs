@@ -21,6 +21,7 @@ import qualified Char
 import Char (Char)
 
 import Text (Text)
+import qualified Text
 
 import qualified Step.Cursor as Cursor
 import Step.Cursor (genChunks)
@@ -172,8 +173,7 @@ prop_linePosition_oneColumn = property do
     x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
 
 prop_linePosition_both = property do
-    let genInputLine = Gen.text (Range.singleton 19) Gen.alpha <&> (<> "\n")
-    input :: TextChunks <- forAll (genChunks =<< times 10 genInputLine)
+    input :: TextChunks <- forAll $ genChunks $ times 10 $ Text.replicate 19 "a" <> "\n"
     n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
     atomic <- forAll Gen.bool
     let p = if atomic
