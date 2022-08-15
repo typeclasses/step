@@ -166,10 +166,11 @@ instance IsAction (Walk mo p)
 class IsAction walk => IsWalk walk
   where
     mapSteps :: forall xs x e m1 m2 a. Functor m1 => Functor m2 =>
-        (forall z mo p. Step mo p xs x e m1 z -> Step mo p xs x e m2 z) -> walk xs x e m1 a -> walk xs x e m2 a
+        (forall z mo p. Step mo p xs x e m1 z -> F (Step mo p xs x e m2) z)
+        -> walk xs x e m1 a -> walk xs x e m2 a
 
 instance IsWalk (Walk mo p) where
-    mapSteps f = Walk . hoistF f . unWalk
+    mapSteps f = Walk . (\a -> runF a return (Monad.join . f)) . unWalk
 
 -- ⭕ MonadicWalk
 

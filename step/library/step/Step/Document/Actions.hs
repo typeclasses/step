@@ -31,7 +31,7 @@ contextualize :: forall act xs x s e m m' a. MonadReader (Context xs x s m) m' =
     Text
     -> act xs x e m' a
     -> act xs x e m' a
-contextualize n = mapSteps (hoistStep (local f))
+contextualize n = mapSteps (liftF . hoistStep (local f))
   where
     f :: Context xs x s m -> Context xs x s m
     f = over (Doc.ctxConfigLens % Doc.configContextLens % contextStackSeq) (n :<|)
