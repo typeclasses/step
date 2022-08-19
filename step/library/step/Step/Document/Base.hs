@@ -87,19 +87,19 @@ data Context xs x s m =
 ctxConfigLens :: Lens (Context xs x s m) (Context xs x s m) (Config x) (Config x)
 ctxConfigLens = lens ctxConfig \x y -> x{ ctxConfig = y }
 
-ctxStreamLens :: Lens
-  (Context xs1 x s1 m1)
-  (Context xs2 x s2 m2)
-  (Stream () s1 m1 xs1 x)
-  (Stream () s2 m2 xs2 x)
-ctxStreamLens = lens ctxStream \x y -> x{ ctxStream = y }
+-- ctxStreamLens :: Lens
+--   (Context xs1 x s1 m1)
+--   (Context xs2 x s2 m2)
+--   (Stream () s1 m1 xs1 x)
+--   (Stream () s2 m2 xs2 x)
+-- ctxStreamLens = lens ctxStream \x y -> x{ ctxStream = y }
 
-configLineTerminatorsLens :: Lens
-  (Config x1)
-  (Config x2)
-  (Lines.Terminators x1)
-  (Lines.Terminators x2)
-configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerminators = y }
+-- configLineTerminatorsLens :: Lens
+--   (Config x1)
+--   (Config x2)
+--   (Lines.Terminators x1)
+--   (Lines.Terminators x2)
+-- configLineTerminatorsLens = lens configLineTerminators \x y -> x{ configLineTerminators = y }
 
 documentCursor :: Monad m =>
     DropOperation xs x -> SpanOperation xs x -> LeftViewOperation xs x
