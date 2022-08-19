@@ -6,10 +6,10 @@
 
 module Step.Effectful where
 
-import Step.Internal.Prelude
+import Step.Internal.Prelude hiding (evalState, runState, put, get, execState)
 
 import Step.Nontrivial (Nontrivial)
-import qualified Step.Nontrivial as Nontrivial
+import qualified Step.Nontrivial as NT
 
 import Positive.Unsafe (Positive (PositiveUnsafe))
 import qualified Positive
@@ -19,68 +19,153 @@ import qualified Signed
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.Error.Static
+import Effectful.Dispatch.Dynamic
+import Effectful.State.Static.Local
 
 import TypeLits (TypeError, ErrorMessage (Text))
 
--- ⭕
+-- ⭕ The Buffer data structure
+
+newtype Buffer xs x = Buffer{ bufferToSeq :: Seq (Nontrivial xs x) }
+    deriving newtype (Semigroup, Monoid)
+
+instance IsList (Buffer xs x) where
+    type Item (Buffer xs x) = Nontrivial xs x
+    fromList = Buffer . fromList
+    toList = toList . bufferToSeq
+
+feedBuffer :: State (Buffer xs x) :> es => Nontrivial xs x -> Eff es ()
+feedBuffer x = gets bufferToSeq >>= \xs -> put (Buffer (xs :|> x))
+
+returnToBuffer :: State (Buffer xs x) :> es => Nontrivial xs x -> Eff es ()
+returnToBuffer x = gets bufferToSeq >>= \xs -> put (Buffer (x :<| xs))
+
+takeBufferChunk :: State (Buffer xs x) :> es => Eff es (Maybe (Nontrivial xs x))
+takeBufferChunk = gets bufferToSeq >>= \case
+    Empty -> return Nothing
+    y :<| ys -> put (Buffer ys) $> Just y
+
+dropFromBuffer :: State (Buffer xs x) :> es =>
+    NT.DropOperation xs x
+    -> Positive Natural
+    -> Eff es AdvanceResult
+dropFromBuffer NT.DropOperation{ NT.drop } = fix \r n -> gets bufferToSeq >>= \case
+    Empty -> return YouCanNotAdvance{ shortfall = n }
+    x :<| xs -> case drop n x of
+        NT.DropAll -> put (Buffer xs) $> AdvanceSuccess
+        NT.DropPart{ NT.dropRemainder } -> put (Buffer (dropRemainder :<| xs)) $> AdvanceSuccess
+        NT.DropInsufficient{ NT.dropShortfall } -> put (Buffer xs) *> r dropShortfall
+
+-- ⭕ Phantoms
 
 data Perfection = Perfect | Imperfect
 
-data Flaw (p :: Perfection) (e :: Type) :: Effect
+data Mode = ReadOnly | ReadWrite
 
-type instance DispatchOf (Flaw p e) = 'Static 'NoSideEffects
+-- ⭕ The Load effect
 
--- ⭕
+data Load (xs :: Type) (x :: Type) :: Effect
+  where
+    Load :: Load xs x m (Maybe (Nontrivial xs x))
 
-type Commit :: Effect
+type instance DispatchOf (Load xs x) = 'Dynamic
 
-data Commit :: Effect where
-    Commit :: Positive Natural -> Commit m ()
+-- ⭕ The Buffered effect
 
-type instance DispatchOf Commit = 'Dynamic
+data Buffered (xs :: Type) (x :: Type) :: Effect
 
--- ⭕
+type instance DispatchOf (Buffered xs x) = 'Static 'NoSideEffects
 
-data Look (xs :: Type) (x :: Type) :: Effect where
-    Next :: Look xs x m (Maybe (Nontrivial xs x))
-    Reset :: Look xs x m ()
+newtype instance StaticRep (Buffered xs x) = CommitBuffer (Buffer xs x)
 
-type instance DispatchOf (Look xs x) = 'Dynamic
+-- ⭕ The View effect
 
--- ⭕
+data View (xs :: Type) (x :: Type) :: Effect
 
--- | The kind of all the action types
-type Action =
-       Type           -- ^ @xs@ - text
-    -> Type           -- ^ @x@ - char
-    -> Type           -- ^ @e@ - error
-    -> [Effect]       -- ^ @es@ - additional effects
-    -> Type           -- ^ @a@ - produced upon success
-    -> Type
+type instance DispatchOf (View xs x) = 'Static 'NoSideEffects
 
--- ⭕
+newtype instance StaticRep (View xs x) = ViewBuffer (Buffer xs x)
 
-type Any :: Action
+-- ⭕ The Step effect
+
+data Step (mo :: Mode) (p :: Perfection) (xs :: Type) (x :: Type) (e :: Type) :: Effect
+  where
+    Commit :: Positive Natural -> Step 'ReadWrite p xs x m e AdvanceResult
+    Next :: Step mo p xs x m e (Maybe (Nontrivial xs x))
+    Reset :: Step mo p xs x m e ()
+    Fail :: e -> Step mo 'Imperfect xs x e m ()
+
+type instance DispatchOf (Step mo p xs x e) = 'Dynamic
+
+runStep :: forall xs x e es a.
+    '[Load xs x, Buffered xs x, Error e] :>> es =>
+    NT.DropOperation xs x
+    -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a
+    -> Eff es a
+runStep dropOp = reinterpret
+    (\a -> getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) -> evalState b a)
+    \(env :: LocalEnv localEs (State (Buffer xs x) ': es)) ->
+        let
+          -- bufferMore :: Eff (State (Buffer xs x) : es) ()
+          -- bufferMore :: Eff (LocalEnv localEs (State (Buffer xs x) ': es)) ()
+          bufferMore :: SharedSuffix es (State (Buffer xs x) ': es) => Eff (State (Buffer xs x) ': es) ()
+          bufferMore = localSeqUnlift env \unlift ->
+              localSeqUnlift env \unlift -> unlift (send Load) >>= \case
+                  Nothing -> return ()
+                  Just x -> do
+                      getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) ->
+                          putStaticRep (CommitBuffer (runPureEff $ execState b (feedBuffer x)))
+                      unlift (get >>= \(ViewBuffer b) ->
+                          put (runState b (feedBuffer x)))
+
+          commitBuffered :: Positive Natural -> Eff (State (Buffer xs x) : es) AdvanceResult
+          commitBuffered n = getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) ->
+              runState b (dropFromBuffer dropOp n) >>= \(ar, b') -> putStaticRep (CommitBuffer b') $> ar
+        in
+        \case
+          Fail e -> throwError e
+          Reset -> getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) -> put b
+          -- Next -> localSeqUnlift env \unlift -> unlift $ get >>= \(ViewBuffer b) ->
+          --     runState b takeBufferChunk >>= \(xm, b') -> putStaticRep (Buffered b') $> xm
+          Commit n -> commitBuffered n >>= \case
+              r@AdvanceSuccess -> return r
+              YouCanNotAdvance n' -> bufferMore *> commitBuffered n'
+
+-- ⭕ Simple actions that are just a newtype for an action with a Step effect
 
 -- | The most general of the actions
-newtype Any xs x e es a = Any (Eff (Commit ': Look xs x ': Error e ': es) a)
+newtype Any xs x es e a = Any (Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a)
     deriving newtype (Functor, Applicative, Monad)
-
--- ⭕
-
-type Query :: Action
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query xs x e es a = Query (Eff (Look xs x ': Error e ': es) a)
+newtype Query xs x es e a = Query (Eff (Step 'ReadOnly 'Imperfect xs x e ': es) a)
     deriving newtype (Functor, Applicative, Monad)
 
--- ⭕
+-- | Always succeeds
+newtype Sure xs x es e a = Sure (Eff (Step 'ReadWrite 'Perfect xs x e ': es) a)
+    deriving newtype (Functor, Applicative, Monad)
 
-type Move :: Action
+-- | Always succeeds, does not move the cursor
+newtype SureQuery xs x es e a = SureQuery (Eff (Step 'ReadOnly 'Perfect xs x e ': es) a)
+    deriving newtype (Functor, Applicative, Monad)
+
+-- ⭕ Actions defines in terms of others
+
+-- | Fails noncommittally; see 'try'
+newtype Atom xs x es e a = Atom{ unAtom :: Query xs x es e (Sure xs x es e a) }
+    deriving stock (Functor)
 
 -- | Always moves the cursor
-newtype Move xs x e es a = Move (Any xs x e es a)
+newtype Move xs x es e a = Move (Any xs x es e a)
     deriving stock (Functor)
+
+-- | Always moves the cursor, is atomic
+newtype AtomicMove xs x es e a = AtomicMove{ unAtomicMove :: Atom xs x es e a }
+    deriving stock (Functor)
+
+instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x e m) where
+    pure = error "unreachable"
+    (<*>) = error "unreachable"
 
 instance (TypeError ('Text "Move cannot be Applicative because 'pure' would not move the cursor")) =>
     Applicative (Move xs x e es)
@@ -88,42 +173,35 @@ instance (TypeError ('Text "Move cannot be Applicative because 'pure' would not 
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
--- ⭕
-
-type Atom :: Action
-
--- | Fails noncommittally; see 'try'
-newtype Atom xs x e es a = Atom{ unAtom :: Query xs x e es (Sure xs x e es a) }
-    deriving stock (Functor)
-
-instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs x e m) where
-    pure = error "unreachable"
-    (<*>) = error "unreachable"
-
--- ⭕
-
-type AtomicMove :: Action
-
--- | Always moves the cursor, is atomic
-newtype AtomicMove xs x e es a = AtomicMove{ unAtomicMove :: Atom xs x e es a }
-    deriving stock (Functor)
-
 instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x e m) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
 -- ⭕
 
-type Sure :: Action
-
--- | Always succeeds
-newtype Sure xs x e es a = Sure (Eff (Commit ': Look xs x ': es) a)
-    deriving newtype (Functor, Applicative, Monad)
+data AdvanceResult =
+    AdvanceSuccess
+  | YouCanNotAdvance{ shortfall :: Positive Natural }
 
 -- ⭕
 
-type SureQuery :: Action
+-- pureFeed :: State [Nontrivial xs x] :> es => Feed xs x es
+-- pureFeed =
+--   Feed
+--     { upstream = get >>= \case [] -> return Nothing; x : xs -> put xs $> Just x
+--     }
 
--- | Always succeeds, does not move the cursor
-newtype SureQuery xs x e es a = SureQuery (Eff (Look xs x ': es) a)
-    deriving newtype (Functor, Applicative, Monad)
+-- ⭕
+
+-- runAny :: forall xs x e es extra a.
+--     Input xs x :> es =>
+--     Subset extra es =>
+--     Any xs x extra e a -> Eff es a
+-- runAny (Any (act :: Eff (Step 'ReadWrite 'Imperfect xs x : extra) a)) =
+--     inject $ reinterpret @(Step 'ReadWrite 'Imperfect xs x) @'[State (Buffer xs x)] f g act
+--   where
+--     f :: Eff (State (Buffer xs x) : es) a -> Eff es a
+--     f = evalState (Buffer mempty)
+
+--     g :: LocalEnv localEs '[State (Buffer xs x)] -> Step 'ReadWrite 'Imperfect xs x (Eff localEs) a1 -> Eff '[State (Buffer xs x)] a1
+--     g = _
