@@ -33,6 +33,7 @@ common base
       , bytestring
       , containers
       , data-default-class
+      , effectful
       , free
       , hedgehog
       , ListLike ^>= 4.7
@@ -133,6 +134,8 @@ library
         Step.Document.Base
 
         Step.Competitors.Attoparsec.Text
+
+        Step.Effectful
 
     reexported-modules:
         Step.Cursor
