@@ -70,21 +70,30 @@ data Load (xs :: Type) (x :: Type) :: Effect
 
 type instance DispatchOf (Load xs x) = 'Dynamic
 
--- ⭕ The Buffered effect
+-- ⭕ The CommitBufferState effect
 
-data Buffered (xs :: Type) (x :: Type) :: Effect
+data CommitBufferState (xs :: Type) (x :: Type) :: Effect
 
-type instance DispatchOf (Buffered xs x) = 'Static 'NoSideEffects
+type instance DispatchOf (CommitBufferState xs x) = 'Static 'NoSideEffects
 
-newtype instance StaticRep (Buffered xs x) = CommitBuffer (Buffer xs x)
+newtype instance StaticRep (CommitBufferState xs x) = CommitBuffer{ unCommitBuffer :: Buffer xs x }
 
--- ⭕ The View effect
+getCommitBuffer :: forall xs x es. CommitBufferState xs x :> es => Eff es (Buffer xs x)
+getCommitBuffer = getStaticRep <&> unCommitBuffer
 
-data View (xs :: Type) (x :: Type) :: Effect
+-- ⭕ The ViewBufferState effect
 
-type instance DispatchOf (View xs x) = 'Static 'NoSideEffects
+data ViewBufferState (xs :: Type) (x :: Type) :: Effect
 
-newtype instance StaticRep (View xs x) = ViewBuffer (Buffer xs x)
+type instance DispatchOf (ViewBufferState xs x) = 'Static 'NoSideEffects
+
+newtype instance StaticRep (ViewBufferState xs x) = ViewBuffer (Buffer xs x)
+
+evalViewBufferState :: Buffer xs x -> Eff (ViewBufferState xs x ': es) a -> Eff es a
+evalViewBufferState = evalStaticRep . ViewBuffer
+
+putViewBuffer :: ViewBufferState xs x :> es => Buffer xs x -> Eff es ()
+putViewBuffer = putStaticRep . ViewBuffer
 
 -- ⭕ The Step effect
 
@@ -97,39 +106,52 @@ data Step (mo :: Mode) (p :: Perfection) (xs :: Type) (x :: Type) (e :: Type) ::
 
 type instance DispatchOf (Step mo p xs x e) = 'Dynamic
 
-runStep :: forall xs x e es a.
-    '[Load xs x, Buffered xs x, Error e] :>> es =>
-    NT.DropOperation xs x
-    -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a
-    -> Eff es a
-runStep dropOp = reinterpret
-    (\a -> getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) -> evalState b a)
+runStep :: forall xs x e es a. '[Load xs x, CommitBufferState xs x, Error e] :>> es => NT.DropOperation xs x
+    -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a -> Eff es a
+runStep dropOp = reinterpret @(Step 'ReadWrite 'Imperfect xs x e)
+    (\a -> getCommitBuffer @xs @x >>= \b -> evalViewBufferState @xs @x b a)
+    (\_env act ->
+          case act of
+              Fail e -> throwError e
+              Reset -> getCommitBuffer @xs @x >>= putViewBuffer @xs @x
+              -- Next ->
+    )
+
+-- g :: forall xs x es e. '[Load xs x, CommitBufferState xs x, Error e, ViewBufferState xs x] :>> es =>
+--     NT.DropOperation xs x
+--     -> EffectHandler (Step 'ReadWrite 'Imperfect xs x e) es
+--     -- ViewBufferState xs x :> localEs =>
+--     -- -> LocalEnv localEs es
+--     -- -> Step 'ReadWrite 'Imperfect xs x e (Eff localEs) a
+--     -- -> Eff es a
+
+{-
     \(env :: LocalEnv localEs (State (Buffer xs x) ': es)) ->
         let
-          -- bufferMore :: Eff (State (Buffer xs x) : es) ()
-          -- bufferMore :: Eff (LocalEnv localEs (State (Buffer xs x) ': es)) ()
           bufferMore :: SharedSuffix es (State (Buffer xs x) ': es) => Eff (State (Buffer xs x) ': es) ()
-          bufferMore = localSeqUnlift env \unlift ->
-              localSeqUnlift env \unlift -> unlift (send Load) >>= \case
-                  Nothing -> return ()
-                  Just x -> do
-                      getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) ->
-                          putStaticRep (CommitBuffer (runPureEff $ execState b (feedBuffer x)))
-                      unlift (get >>= \(ViewBuffer b) ->
-                          put (runState b (feedBuffer x)))
+          bufferMore = _
+              -- localSeqUnlift env \unlift ->
+              -- localSeqUnlift env \unlift -> unlift (send Load) >>= \case
+              --     Nothing -> return ()
+              --     Just x -> do
+              --         getStaticRep @(CommitBufferState xs x) >>= \(CommitBuffer b) ->
+              --             putStaticRep (CommitBuffer (runPureEff $ execState b (feedBuffer x)))
+              --         unlift (get >>= \(ViewBuffer b) ->
+              --             put (runState b (feedBuffer x)))
 
           commitBuffered :: Positive Natural -> Eff (State (Buffer xs x) : es) AdvanceResult
-          commitBuffered n = getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) ->
+          commitBuffered n = getStaticRep @(CommitBufferState xs x) >>= \(CommitBuffer b) ->
               runState b (dropFromBuffer dropOp n) >>= \(ar, b') -> putStaticRep (CommitBuffer b') $> ar
         in
         \case
           Fail e -> throwError e
-          Reset -> getStaticRep @(Buffered xs x) >>= \(CommitBuffer b) -> put b
+          Reset -> getStaticRep @(CommitBufferState xs x) >>= \(CommitBuffer b) -> put b
           -- Next -> localSeqUnlift env \unlift -> unlift $ get >>= \(ViewBuffer b) ->
-          --     runState b takeBufferChunk >>= \(xm, b') -> putStaticRep (Buffered b') $> xm
+          --     runState b takeBufferChunk >>= \(xm, b') -> putStaticRep (CommitBufferState b') $> xm
           Commit n -> commitBuffered n >>= \case
               r@AdvanceSuccess -> return r
               YouCanNotAdvance n' -> bufferMore *> commitBuffered n'
+-}
 
 -- ⭕ Simple actions that are just a newtype for an action with a Step effect
 
