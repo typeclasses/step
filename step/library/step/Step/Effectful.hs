@@ -40,8 +40,11 @@ instance IsList (StaticRep (Buffer bt xs x)) where
     fromList = BufferSeq . fromList
     toList = toList . bufferSeq
 
-runBuffer :: forall bt xs x es a. Seq (Nontrivial xs x) -> Eff (Buffer bt xs x ': es) a -> Eff es a
-runBuffer = evalStaticRep . BufferSeq
+runBuffer :: forall bt xs x es a. Eff (Buffer bt xs x ': es) a -> Eff es a
+runBuffer = runBuffer' mempty
+
+runBuffer' :: forall bt xs x es a. Seq (Nontrivial xs x) -> Eff (Buffer bt xs x ': es) a -> Eff es a
+runBuffer' = evalStaticRep . BufferSeq
 
 getBufferSeq :: forall bt xs x es. Buffer bt xs x :> es => Eff es (Seq (Nontrivial xs x))
 getBufferSeq = getStaticRep @(Buffer bt xs x) <&> bufferSeq
@@ -99,7 +102,7 @@ runStep :: forall xs x e es a. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] 
 runStep dropOp = reinterpret runStepHandler (stepHandler dropOp)
 
 runStepHandler :: forall xs x es a. Buffer 'CommitBuffer xs x :> es => Eff (Buffer 'ViewBuffer xs x ': es) a -> Eff es a
-runStepHandler a = getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer @'ViewBuffer @xs @x b a
+runStepHandler a = getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer' @'ViewBuffer @xs @x b a
 
 stepHandler :: forall xs x es e. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
     -> EffectHandler (Step 'ReadWrite 'Imperfect xs x e) (Buffer 'ViewBuffer xs x ': es)
