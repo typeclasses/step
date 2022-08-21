@@ -2,7 +2,7 @@
 {-# language DataKinds, KindSignatures, InstanceSigs, StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# language ConstraintKinds, DataKinds, FlexibleContexts, KindSignatures, QuantifiedConstraints, TypeOperators #-}
 {-# language DataKinds, StandaloneKindSignatures, FunctionalDependencies, FlexibleInstances #-}
-{-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase, GADTs #-}
+{-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase, GADTs, AllowAmbiguousTypes #-}
 
 module Step.Effectful where
 
@@ -70,6 +70,9 @@ data Load (xs :: Type) (x :: Type) :: Effect
 
 type instance DispatchOf (Load xs x) = 'Dynamic
 
+load :: Load xs x :> es => Eff es (Maybe (Nontrivial xs x))
+load = send Load
+
 -- ⭕ The CommitBufferState effect
 
 data CommitBufferState (xs :: Type) (x :: Type) :: Effect
@@ -80,6 +83,12 @@ newtype instance StaticRep (CommitBufferState xs x) = CommitBuffer{ unCommitBuff
 
 getCommitBuffer :: forall xs x es. CommitBufferState xs x :> es => Eff es (Buffer xs x)
 getCommitBuffer = getStaticRep <&> unCommitBuffer
+
+feedCommitBuffer :: forall xs x es. CommitBufferState xs x :> es => Nontrivial xs x -> Eff es ()
+feedCommitBuffer x = do
+    CommitBuffer (b :: Buffer xs x) <- getStaticRep
+    b' <- execState b (feedBuffer x)
+    putStaticRep (CommitBuffer b')
 
 -- ⭕ The ViewBufferState effect
 
@@ -92,8 +101,24 @@ newtype instance StaticRep (ViewBufferState xs x) = ViewBuffer (Buffer xs x)
 evalViewBufferState :: Buffer xs x -> Eff (ViewBufferState xs x ': es) a -> Eff es a
 evalViewBufferState = evalStaticRep . ViewBuffer
 
+getViewBuffer :: ViewBufferState xs x :> es => Eff es (Buffer xs x)
+getViewBuffer = getStaticRep <&> \(ViewBuffer b) -> b
+
 putViewBuffer :: ViewBufferState xs x :> es => Buffer xs x -> Eff es ()
 putViewBuffer = putStaticRep . ViewBuffer
+
+takeViewBufferChunk :: forall xs x es. ViewBufferState xs x :> es => Eff es (Maybe (Nontrivial xs x))
+takeViewBufferChunk = do
+    b <- getViewBuffer @xs @x
+    (xm, b') <- runState b takeBufferChunk
+    putViewBuffer b'
+    return xm
+
+feedViewBuffer :: forall xs x es. ViewBufferState xs x :> es => Nontrivial xs x -> Eff es ()
+feedViewBuffer x = do
+    ViewBuffer (b :: Buffer xs x) <- getStaticRep
+    b' <- execState b (feedBuffer x)
+    putStaticRep (ViewBuffer b')
 
 -- ⭕ The Step effect
 
@@ -111,11 +136,26 @@ runStep :: forall xs x e es a. '[Load xs x, CommitBufferState xs x, Error e] :>>
 runStep dropOp = reinterpret @(Step 'ReadWrite 'Imperfect xs x e)
     (\a -> getCommitBuffer @xs @x >>= \b -> evalViewBufferState @xs @x b a)
     (\_env act ->
+          let
+          in
           case act of
               Fail e -> throwError e
               Reset -> getCommitBuffer @xs @x >>= putViewBuffer @xs @x
-              -- Next ->
+              Next -> takeViewBufferChunk >>= \case
+                  Just x -> return (Just x)
+                  Nothing -> bufferMore @xs @x >>= \case{ True -> takeViewBufferChunk; False -> return Nothing }
+              Commit n -> _
     )
+
+bufferMore :: forall xs x es. '[Load xs x, ViewBufferState xs x, CommitBufferState xs x] :>> es => Eff es Bool
+bufferMore = do
+    xm <- load @xs @x
+    case xm of
+        Nothing -> return False
+        Just x -> do
+            feedViewBuffer x
+            feedCommitBuffer x
+            return True
 
 -- g :: forall xs x es e. '[Load xs x, CommitBufferState xs x, Error e, ViewBufferState xs x] :>> es =>
 --     NT.DropOperation xs x
