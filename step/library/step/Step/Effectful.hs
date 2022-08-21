@@ -71,6 +71,10 @@ dropFromBuffer NT.DropOperation{ NT.drop } = fix \r n -> getBufferSeq @bt >>= \c
         NT.DropPart{ NT.dropRemainder } -> putBufferSeq @bt (dropRemainder :<| xs) $> AdvanceSuccess
         NT.DropInsufficient{ NT.dropShortfall } -> putBufferSeq @bt xs *> r dropShortfall
 
+data AdvanceResult =
+    AdvanceSuccess
+  | YouCanNotAdvance{ shortfall :: Positive Natural }
+
 -- ⭕ The Load effect
 
 data Load (xs :: Type) (x :: Type) :: Effect
@@ -81,6 +85,14 @@ type instance DispatchOf (Load xs x) = 'Dynamic
 
 load :: Load xs x :> es => Eff es (Maybe (Nontrivial xs x))
 load = send Load
+
+loadFromList :: [Nontrivial xs x] -> Eff (Load xs x ': es) a-> Eff es (a, [Nontrivial xs x])
+loadFromList xs = reinterpret (runState xs) loadFromListHandler
+
+loadFromListHandler :: State [Nontrivial xs x] :> es => EffectHandler (Load xs x) (es)
+loadFromListHandler _env Load = get >>= \case
+    [] -> return Nothing
+    x : xs -> put xs $> Just x
 
 -- ⭕ The Step effect
 
@@ -106,7 +118,7 @@ runStepHandler a = getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer' @'Vie
 
 stepHandler :: forall xs x es e. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
     -> EffectHandler (Step 'ReadWrite 'Imperfect xs x e) (Buffer 'ViewBuffer xs x ': es)
-stepHandler dropOp = \_env act -> case act of
+stepHandler dropOp _env = \case
       Fail e -> throwError e
       Reset -> getBufferSeq @'CommitBuffer @xs @x >>= putBufferSeq @'ViewBuffer @xs @x
       Next -> runStepNext
@@ -172,12 +184,6 @@ instance (TypeError ('Text "Move cannot be Applicative because 'pure' would not 
 instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x e m) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
-
--- ⭕
-
-data AdvanceResult =
-    AdvanceSuccess
-  | YouCanNotAdvance{ shortfall :: Positive Natural }
 
 -- ⭕
 
