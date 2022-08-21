@@ -96,29 +96,28 @@ type instance DispatchOf (Step mo p xs x e) = 'Dynamic
 
 runStep :: forall xs x e es a. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
     -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a -> Eff es a
-runStep dropOp = reinterpret @(Step 'ReadWrite 'Imperfect xs x e)
-    (\a -> getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer @'ViewBuffer @xs @x b a)
-    (\_env act ->
-          let
-          in
-          case act of
-              Fail e -> throwError e
-              Reset -> getBufferSeq @'CommitBuffer @xs @x >>= putBufferSeq @'ViewBuffer @xs @x
-              Next -> takeBufferChunk @'ViewBuffer >>= \case
-                  Just x -> return (Just x)
-                  Nothing -> bufferMore @xs @x >>= \case{ True -> takeBufferChunk @'ViewBuffer; False -> return Nothing }
-              Commit n -> _
-    )
+runStep dropOp = reinterpret runStepHandler (stepHandler dropOp)
+
+runStepHandler :: forall xs x es a. Buffer 'CommitBuffer xs x :> es => Eff (Buffer 'ViewBuffer xs x ': es) a -> Eff es a
+runStepHandler a = getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer @'ViewBuffer @xs @x b a
+
+stepHandler :: forall xs x es e. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
+    -> EffectHandler (Step 'ReadWrite 'Imperfect xs x e) (Buffer 'ViewBuffer xs x ': es)
+stepHandler dropOp = \_env act -> case act of
+      Fail e -> throwError e
+      Reset -> getBufferSeq @'CommitBuffer @xs @x >>= putBufferSeq @'ViewBuffer @xs @x
+      Next -> runStepNext
+      Commit n -> _
+
+runStepNext :: forall xs x es. '[Load xs x, Buffer 'ViewBuffer xs x, Buffer 'CommitBuffer xs x] :>> es => Eff es (Maybe (Nontrivial xs x))
+runStepNext = takeBufferChunk @'ViewBuffer >>= \case
+    Just x -> return (Just x)
+    Nothing -> bufferMore @xs @x >>= \case{ True -> takeBufferChunk @'ViewBuffer; False -> return Nothing }
 
 bufferMore :: forall xs x es. '[Load xs x, Buffer 'ViewBuffer xs x, Buffer 'CommitBuffer xs x] :>> es => Eff es Bool
-bufferMore = do
-    xm <- load @xs @x
-    case xm of
-        Nothing -> return False
-        Just x -> do
-            feedBuffer @'CommitBuffer x
-            feedBuffer @'ViewBuffer x
-            return True
+bufferMore = load @xs @x >>= \case
+    Nothing -> return False
+    Just x -> do{ feedBuffer @'CommitBuffer x; feedBuffer @'ViewBuffer x; return True }
 
 -- g :: forall xs x es e. '[Load xs x, CommitBufferState xs x, Error e, ViewBufferState xs x] :>> es =>
 --     NT.DropOperation xs x
