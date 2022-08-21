@@ -127,42 +127,6 @@ bufferMore = load @xs @x >>= \case
     Nothing -> return False
     Just x -> do{ feedBuffer @'CommitBuffer x; feedBuffer @'ViewBuffer x; return True }
 
--- g :: forall xs x es e. '[Load xs x, CommitBufferState xs x, Error e, ViewBufferState xs x] :>> es =>
---     NT.DropOperation xs x
---     -> EffectHandler (Step 'ReadWrite 'Imperfect xs x e) es
---     -- ViewBufferState xs x :> localEs =>
---     -- -> LocalEnv localEs es
---     -- -> Step 'ReadWrite 'Imperfect xs x e (Eff localEs) a
---     -- -> Eff es a
-
-{-
-    \(env :: LocalEnv localEs (State (Buffer xs x) ': es)) ->
-        let
-          bufferMore :: SharedSuffix es (State (Buffer xs x) ': es) => Eff (State (Buffer xs x) ': es) ()
-          bufferMore = _
-              -- localSeqUnlift env \unlift ->
-              -- localSeqUnlift env \unlift -> unlift (send Load) >>= \case
-              --     Nothing -> return ()
-              --     Just x -> do
-              --         getStaticRep @(CommitBufferState xs x) >>= \(CommitBuffer b) ->
-              --             putStaticRep (CommitBuffer (runPureEff $ execState b (feedBuffer x)))
-              --         unlift (get >>= \(ViewBuffer b) ->
-              --             put (runState b (feedBuffer x)))
-
-          commitBuffered :: Positive Natural -> Eff (State (Buffer xs x) : es) AdvanceResult
-          commitBuffered n = getStaticRep @(CommitBufferState xs x) >>= \(CommitBuffer b) ->
-              runState b (dropFromBuffer dropOp n) >>= \(ar, b') -> putStaticRep (CommitBuffer b') $> ar
-        in
-        \case
-          Fail e -> throwError e
-          Reset -> getStaticRep @(CommitBufferState xs x) >>= \(CommitBuffer b) -> put b
-          -- Next -> localSeqUnlift env \unlift -> unlift $ get >>= \(ViewBuffer b) ->
-          --     runState b takeBufferChunk >>= \(xm, b') -> putStaticRep (CommitBufferState b') $> xm
-          Commit n -> commitBuffered n >>= \case
-              r@AdvanceSuccess -> return r
-              YouCanNotAdvance n' -> bufferMore *> commitBuffered n'
--}
-
 -- ⭕ Simple actions that are just a newtype for an action with a Step effect
 
 -- | The most general of the actions
