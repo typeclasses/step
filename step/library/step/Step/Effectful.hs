@@ -184,26 +184,3 @@ instance (TypeError ('Text "Move cannot be Applicative because 'pure' would not 
 instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs x e m) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
-
--- ⭕
-
--- pureFeed :: State [Nontrivial xs x] :> es => Feed xs x es
--- pureFeed =
---   Feed
---     { upstream = get >>= \case [] -> return Nothing; x : xs -> put xs $> Just x
---     }
-
--- ⭕
-
--- runAny :: forall xs x e es extra a.
---     Input xs x :> es =>
---     Subset extra es =>
---     Any xs x extra e a -> Eff es a
--- runAny (Any (act :: Eff (Step 'ReadWrite 'Imperfect xs x : extra) a)) =
---     inject $ reinterpret @(Step 'ReadWrite 'Imperfect xs x) @'[State (Buffer xs x)] f g act
---   where
---     f :: Eff (State (Buffer xs x) : es) a -> Eff es a
---     f = evalState (Buffer mempty)
-
---     g :: LocalEnv localEs '[State (Buffer xs x)] -> Step 'ReadWrite 'Imperfect xs x (Eff localEs) a1 -> Eff '[State (Buffer xs x)] a1
---     g = _
