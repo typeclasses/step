@@ -24,43 +24,49 @@ import Effectful.State.Static.Local
 
 import TypeLits (TypeError, ErrorMessage (Text))
 
--- ⭕ The Buffer data structure
+-- ⭕ The Buffer effect
 
-newtype Buffer xs x = Buffer{ bufferToSeq :: Seq (Nontrivial xs x) }
+data Buffer (bt :: BufferType) (xs :: Type) (x :: Type) :: Effect
+
+data BufferType = CommitBuffer | ViewBuffer
+
+type instance DispatchOf (Buffer bt xs x) = 'Static 'NoSideEffects
+
+newtype instance StaticRep (Buffer bt xs x) = BufferSeq{ bufferSeq :: Seq (Nontrivial xs x) }
     deriving newtype (Semigroup, Monoid)
 
-instance IsList (Buffer xs x) where
-    type Item (Buffer xs x) = Nontrivial xs x
-    fromList = Buffer . fromList
-    toList = toList . bufferToSeq
+instance IsList (StaticRep (Buffer bt xs x)) where
+    type Item (StaticRep (Buffer bt xs x)) = Nontrivial xs x
+    fromList = BufferSeq . fromList
+    toList = toList . bufferSeq
 
-feedBuffer :: State (Buffer xs x) :> es => Nontrivial xs x -> Eff es ()
-feedBuffer x = gets bufferToSeq >>= \xs -> put (Buffer (xs :|> x))
+runBuffer :: forall bt xs x es a. Seq (Nontrivial xs x) -> Eff (Buffer bt xs x ': es) a -> Eff es a
+runBuffer = evalStaticRep . BufferSeq
 
-returnToBuffer :: State (Buffer xs x) :> es => Nontrivial xs x -> Eff es ()
-returnToBuffer x = gets bufferToSeq >>= \xs -> put (Buffer (x :<| xs))
+getBufferSeq :: forall bt xs x es. Buffer bt xs x :> es => Eff es (Seq (Nontrivial xs x))
+getBufferSeq = getStaticRep @(Buffer bt xs x) <&> bufferSeq
 
-takeBufferChunk :: State (Buffer xs x) :> es => Eff es (Maybe (Nontrivial xs x))
-takeBufferChunk = gets bufferToSeq >>= \case
+putBufferSeq :: forall bt xs x es. Buffer bt xs x :> es => Seq (Nontrivial xs x) -> Eff es ()
+putBufferSeq = putStaticRep @(Buffer bt xs x) . BufferSeq
+
+feedBuffer :: forall bt xs x es. Buffer bt xs x :> es => Nontrivial xs x -> Eff es ()
+feedBuffer x = getBufferSeq @bt @xs @x >>= \xs -> putBufferSeq @bt @xs @x (xs :|> x)
+
+returnToBuffer :: forall bt xs x es. Buffer bt xs x :> es => Nontrivial xs x -> Eff es ()
+returnToBuffer x = getBufferSeq @bt >>= \xs -> putBufferSeq @bt (x :<| xs)
+
+takeBufferChunk :: forall bt xs x es. Buffer bt xs x :> es => Eff es (Maybe (Nontrivial xs x))
+takeBufferChunk = getBufferSeq @bt >>= \case
     Empty -> return Nothing
-    y :<| ys -> put (Buffer ys) $> Just y
+    y :<| ys -> putBufferSeq @bt ys $> Just y
 
-dropFromBuffer :: State (Buffer xs x) :> es =>
-    NT.DropOperation xs x
-    -> Positive Natural
-    -> Eff es AdvanceResult
-dropFromBuffer NT.DropOperation{ NT.drop } = fix \r n -> gets bufferToSeq >>= \case
+dropFromBuffer :: forall bt xs x es. Buffer bt xs x :> es => NT.DropOperation xs x -> Positive Natural -> Eff es AdvanceResult
+dropFromBuffer NT.DropOperation{ NT.drop } = fix \r n -> getBufferSeq @bt >>= \case
     Empty -> return YouCanNotAdvance{ shortfall = n }
     x :<| xs -> case drop n x of
-        NT.DropAll -> put (Buffer xs) $> AdvanceSuccess
-        NT.DropPart{ NT.dropRemainder } -> put (Buffer (dropRemainder :<| xs)) $> AdvanceSuccess
-        NT.DropInsufficient{ NT.dropShortfall } -> put (Buffer xs) *> r dropShortfall
-
--- ⭕ Phantoms
-
-data Perfection = Perfect | Imperfect
-
-data Mode = ReadOnly | ReadWrite
+        NT.DropAll -> putBufferSeq @bt xs $> AdvanceSuccess
+        NT.DropPart{ NT.dropRemainder } -> putBufferSeq @bt (dropRemainder :<| xs) $> AdvanceSuccess
+        NT.DropInsufficient{ NT.dropShortfall } -> putBufferSeq @bt xs *> r dropShortfall
 
 -- ⭕ The Load effect
 
@@ -73,53 +79,6 @@ type instance DispatchOf (Load xs x) = 'Dynamic
 load :: Load xs x :> es => Eff es (Maybe (Nontrivial xs x))
 load = send Load
 
--- ⭕ The CommitBufferState effect
-
-data CommitBufferState (xs :: Type) (x :: Type) :: Effect
-
-type instance DispatchOf (CommitBufferState xs x) = 'Static 'NoSideEffects
-
-newtype instance StaticRep (CommitBufferState xs x) = CommitBuffer{ unCommitBuffer :: Buffer xs x }
-
-getCommitBuffer :: forall xs x es. CommitBufferState xs x :> es => Eff es (Buffer xs x)
-getCommitBuffer = getStaticRep <&> unCommitBuffer
-
-feedCommitBuffer :: forall xs x es. CommitBufferState xs x :> es => Nontrivial xs x -> Eff es ()
-feedCommitBuffer x = do
-    CommitBuffer (b :: Buffer xs x) <- getStaticRep
-    b' <- execState b (feedBuffer x)
-    putStaticRep (CommitBuffer b')
-
--- ⭕ The ViewBufferState effect
-
-data ViewBufferState (xs :: Type) (x :: Type) :: Effect
-
-type instance DispatchOf (ViewBufferState xs x) = 'Static 'NoSideEffects
-
-newtype instance StaticRep (ViewBufferState xs x) = ViewBuffer (Buffer xs x)
-
-evalViewBufferState :: Buffer xs x -> Eff (ViewBufferState xs x ': es) a -> Eff es a
-evalViewBufferState = evalStaticRep . ViewBuffer
-
-getViewBuffer :: ViewBufferState xs x :> es => Eff es (Buffer xs x)
-getViewBuffer = getStaticRep <&> \(ViewBuffer b) -> b
-
-putViewBuffer :: ViewBufferState xs x :> es => Buffer xs x -> Eff es ()
-putViewBuffer = putStaticRep . ViewBuffer
-
-takeViewBufferChunk :: forall xs x es. ViewBufferState xs x :> es => Eff es (Maybe (Nontrivial xs x))
-takeViewBufferChunk = do
-    b <- getViewBuffer @xs @x
-    (xm, b') <- runState b takeBufferChunk
-    putViewBuffer b'
-    return xm
-
-feedViewBuffer :: forall xs x es. ViewBufferState xs x :> es => Nontrivial xs x -> Eff es ()
-feedViewBuffer x = do
-    ViewBuffer (b :: Buffer xs x) <- getStaticRep
-    b' <- execState b (feedBuffer x)
-    putStaticRep (ViewBuffer b')
-
 -- ⭕ The Step effect
 
 data Step (mo :: Mode) (p :: Perfection) (xs :: Type) (x :: Type) (e :: Type) :: Effect
@@ -129,32 +88,36 @@ data Step (mo :: Mode) (p :: Perfection) (xs :: Type) (x :: Type) (e :: Type) ::
     Reset :: Step mo p xs x m e ()
     Fail :: e -> Step mo 'Imperfect xs x e m ()
 
+data Perfection = Perfect | Imperfect
+
+data Mode = ReadOnly | ReadWrite
+
 type instance DispatchOf (Step mo p xs x e) = 'Dynamic
 
-runStep :: forall xs x e es a. '[Load xs x, CommitBufferState xs x, Error e] :>> es => NT.DropOperation xs x
+runStep :: forall xs x e es a. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
     -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a -> Eff es a
 runStep dropOp = reinterpret @(Step 'ReadWrite 'Imperfect xs x e)
-    (\a -> getCommitBuffer @xs @x >>= \b -> evalViewBufferState @xs @x b a)
+    (\a -> getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer @'ViewBuffer @xs @x b a)
     (\_env act ->
           let
           in
           case act of
               Fail e -> throwError e
-              Reset -> getCommitBuffer @xs @x >>= putViewBuffer @xs @x
-              Next -> takeViewBufferChunk >>= \case
+              Reset -> getBufferSeq @'CommitBuffer @xs @x >>= putBufferSeq @'ViewBuffer @xs @x
+              Next -> takeBufferChunk @'ViewBuffer >>= \case
                   Just x -> return (Just x)
-                  Nothing -> bufferMore @xs @x >>= \case{ True -> takeViewBufferChunk; False -> return Nothing }
+                  Nothing -> bufferMore @xs @x >>= \case{ True -> takeBufferChunk @'ViewBuffer; False -> return Nothing }
               Commit n -> _
     )
 
-bufferMore :: forall xs x es. '[Load xs x, ViewBufferState xs x, CommitBufferState xs x] :>> es => Eff es Bool
+bufferMore :: forall xs x es. '[Load xs x, Buffer 'ViewBuffer xs x, Buffer 'CommitBuffer xs x] :>> es => Eff es Bool
 bufferMore = do
     xm <- load @xs @x
     case xm of
         Nothing -> return False
         Just x -> do
-            feedViewBuffer x
-            feedCommitBuffer x
+            feedBuffer @'CommitBuffer x
+            feedBuffer @'ViewBuffer x
             return True
 
 -- g :: forall xs x es e. '[Load xs x, CommitBufferState xs x, Error e, ViewBufferState xs x] :>> es =>
