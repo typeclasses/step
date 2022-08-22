@@ -135,6 +135,12 @@ bufferMore = load @xs @x >>= \case
     Nothing -> return False
     Just x -> do{ feedBuffer @'CommitBuffer x; feedBuffer @'ViewBuffer x; return True }
 
+castStep :: Step 'ReadOnly xs x m1 a -> Step 'ReadWrite xs x m2 a
+castStep = \case{ Next -> Next; Reset -> Reset }
+
+castStepEffect :: forall xs x es a. Step 'ReadWrite xs x :> es => Eff (Step 'ReadOnly xs x ': es) a -> Eff es a
+castStepEffect = interpret \_ -> send . castStep
+
 -- ⭕ Simple actions that are just a newtype for an action with a Step effect
 
 -- | The most general of the actions
