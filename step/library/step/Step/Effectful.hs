@@ -96,33 +96,29 @@ loadFromListHandler _env Load = get >>= \case
 
 -- ⭕ The Step effect
 
-data Step (mo :: Mode) (p :: Perfection) (xs :: Type) (x :: Type) (e :: Type) :: Effect
+data Step (mo :: Mode) (xs :: Type) (x :: Type) :: Effect
   where
-    Commit :: Positive Natural -> Step 'ReadWrite p xs x m e AdvanceResult
-    Next :: Step mo p xs x m e (Maybe (Nontrivial xs x))
-    Reset :: Step mo p xs x m e ()
-    Fail :: e -> Step mo 'Imperfect xs x e m ()
-
-data Perfection = Perfect | Imperfect
+    Commit :: Positive Natural -> Step 'ReadWrite xs x m AdvanceResult
+    Next :: Step mo xs x m (Maybe (Nontrivial xs x))
+    Reset :: Step mo xs x m ()
 
 data Mode = ReadOnly | ReadWrite
 
-type instance DispatchOf (Step mo p xs x e) = 'Dynamic
+type instance DispatchOf (Step mo xs x) = 'Dynamic
 
-runStep :: forall xs x e es a. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
-    -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a -> Eff es a
+runStep :: forall xs x es a. '[Load xs x, Buffer 'CommitBuffer xs x] :>> es => NT.DropOperation xs x
+    -> Eff (Step 'ReadWrite xs x ': es) a -> Eff es a
 runStep dropOp = reinterpret runStepHandler (stepHandler dropOp)
 
 runStepHandler :: forall xs x es a. Buffer 'CommitBuffer xs x :> es => Eff (Buffer 'ViewBuffer xs x ': es) a -> Eff es a
 runStepHandler a = getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer' @'ViewBuffer @xs @x b a
 
-stepHandler :: forall xs x es e. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
-    -> EffectHandler (Step 'ReadWrite 'Imperfect xs x e) (Buffer 'ViewBuffer xs x ': es)
+stepHandler :: forall xs x es. '[Load xs x, Buffer 'CommitBuffer xs x] :>> es => NT.DropOperation xs x
+    -> EffectHandler (Step 'ReadWrite xs x) (Buffer 'ViewBuffer xs x ': es)
 stepHandler dropOp _env = \case
-      Fail e -> throwError e
-      Reset -> getBufferSeq @'CommitBuffer @xs @x >>= putBufferSeq @'ViewBuffer @xs @x
-      Next -> runStepNext
-      Commit n -> runStepCommit @xs @x dropOp n
+    Reset -> getBufferSeq @'CommitBuffer @xs @x >>= putBufferSeq @'ViewBuffer @xs @x
+    Next -> runStepNext
+    Commit n -> runStepCommit @xs @x dropOp n
 
 runStepNext :: forall xs x es. '[Load xs x, Buffer 'ViewBuffer xs x, Buffer 'CommitBuffer xs x] :>> es => Eff es (Maybe (Nontrivial xs x))
 runStepNext = takeBufferChunk @'ViewBuffer >>= \case
@@ -142,19 +138,19 @@ bufferMore = load @xs @x >>= \case
 -- ⭕ Simple actions that are just a newtype for an action with a Step effect
 
 -- | The most general of the actions
-newtype Any xs x es e a = Any (Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a)
+newtype Any xs x es e a = Any (Eff (Step 'ReadWrite xs x ': Error e ': es) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query xs x es e a = Query (Eff (Step 'ReadOnly 'Imperfect xs x e ': es) a)
+newtype Query xs x es e a = Query (Eff (Step 'ReadOnly xs x ': Error e ': es) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure xs x es e a = Sure (Eff (Step 'ReadWrite 'Perfect xs x e ': es) a)
+newtype Sure xs x es e a = Sure (Eff (Step 'ReadWrite xs x ': es) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery xs x es e a = SureQuery (Eff (Step 'ReadOnly 'Perfect xs x e ': es) a)
+newtype SureQuery xs x es e a = SureQuery (Eff (Step 'ReadOnly xs x ': es) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- ⭕ Actions defines in terms of others
