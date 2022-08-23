@@ -392,3 +392,11 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
 
     -- All other combinations degrade to Any.
     _ >> _ = Any
+
+-- ⭕
+
+class Join (act1 :: Action) (act2 :: Action) where
+    join :: act1 xs x es e (act2 xs x es e a) -> (act1 >> act2) xs x es e a
+
+cast2 :: forall act2 act1 f xs x es e a. Is act1 act2 => Functor f => f (act1 xs x es e a) -> f (act2 xs x es e a)
+cast2 = fmap (castTo @act2)
