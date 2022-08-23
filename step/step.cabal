@@ -34,12 +34,14 @@ common base
       , containers
       , data-default-class
       , effectful
+      , effectful-core
       , free
       , hedgehog
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , mmorph
       , mtl
+      , primitive
       , transformers
       , nat-optics ^>= 1.0.1.0
       , optics ^>= 0.4
