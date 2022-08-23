@@ -400,3 +400,152 @@ class Join (act1 :: Action) (act2 :: Action) where
 
 cast2 :: forall act2 act1 f xs x es e a. Is act1 act2 => Functor f => f (act1 xs x es e a) -> f (act2 xs x es e a)
 cast2 = fmap (castTo @act2)
+
+-- ⭕
+
+class Is act2 act1 => AssumeMovement (act1 :: Action) (act2 :: Action) | act1 -> act2 where
+    assumeMovement :: act1 xs x es e a -> act2 xs x es e a
+
+instance AssumeMovement Any Move where
+    assumeMovement = Move
+
+instance AssumeMovement Atom AtomicMove where
+    assumeMovement = AtomicMove
+
+-- ⭕
+
+instance Join Any Any where
+    join = Monad.join
+instance Join Any Atom where
+    join = join @Any @Any . cast2 @Any
+instance Join Any AtomicMove where
+    join = assumeMovement . join @Any @Any . cast2 @Any
+instance Join Any Failure where
+    join = join @Any @Any . cast2 @Any
+instance Join Any Move where
+    join = assumeMovement . join @Any @Any . cast2 @Any
+instance Join Any Query where
+    join = join @Any @Any . cast2 @Any
+instance Join Any SureQuery where
+    join = join @Any @Any . cast2 @Any
+instance Join Any Sure where
+    join = join @Any @Any . cast2 @Any
+
+instance Join Atom Any where
+    join = join @Any @Any . castTo @Any
+instance Join Atom Atom where
+    join = join @Any @Any . castTo @Any . cast2 @Any
+instance Join Atom AtomicMove where
+    join = assumeMovement . join @Any @Any . castTo @Any . cast2 @Any
+instance Join Atom Failure where
+    join = join @Any @Any . castTo @Any . cast2 @Any
+instance Join Atom Move where
+    join = assumeMovement . join @Any @Any . castTo @Any . cast2 @Any
+instance Join Atom Query where
+    join = castTo @Any . join @Any @Any . castTo @Any . cast2 @Any
+instance Join Atom SureQuery where
+    join = Atom . fmap (join @Sure @SureQuery) . (\(Atom q) -> q)
+instance Join Atom Sure where
+    join = Atom . fmap (join @Sure @Sure) . (\(Atom q) -> q)
+
+instance Join AtomicMove Any where
+    join = assumeMovement . join . castTo @Atom
+instance Join AtomicMove Atom where
+    join = assumeMovement . join . castTo @Atom
+instance Join AtomicMove AtomicMove where
+    join = join . castTo @Atom
+instance Join AtomicMove Failure where
+    join = assumeMovement . join . castTo @Atom
+instance Join AtomicMove Move where
+    join = join . castTo @Atom
+instance Join AtomicMove Query where
+    join = assumeMovement . join . castTo @Atom
+instance Join AtomicMove SureQuery where
+    join = assumeMovement . join . castTo @Atom
+instance Join AtomicMove Sure where
+    join = assumeMovement . join . castTo @Atom
+
+instance Join Failure Any where
+    join (Failure f) = Failure f
+instance Join Failure Atom where
+    join (Failure f) = Failure f
+instance Join Failure AtomicMove where
+    join (Failure f) = Failure f
+instance Join Failure Failure where
+    join (Failure f) = Failure f
+instance Join Failure Move where
+    join (Failure f) = Failure f
+instance Join Failure Query where
+    join (Failure f) = Failure f
+instance Join Failure Sure where
+    join (Failure f) = Failure f
+instance Join Failure SureQuery where
+    join (Failure f) = Failure f
+
+instance Join Move Any where
+    join = assumeMovement . join . castTo @Any
+instance Join Move Atom where
+    join = assumeMovement . join . castTo @Any
+instance Join Move AtomicMove where
+    join = join . castTo @Any
+instance Join Move Failure where
+    join = assumeMovement . join . castTo @Any
+instance Join Move Move where
+    join = join . castTo @Any
+instance Join Move Query where
+    join = assumeMovement . join . castTo @Any
+instance Join Move SureQuery where
+    join = assumeMovement . join . castTo @Any
+instance Join Move Sure where
+    join = assumeMovement . join . castTo @Any
+
+instance Join Query Any where
+    join = join @Any @Any . castTo @Any
+instance Join Query Atom where
+    join = Atom . join . fmap (\(Atom q) -> q)
+instance Join Query AtomicMove where
+    join = assumeMovement . join @Query @Atom . cast2 @Atom
+instance Join Query Failure where
+    join = join @Query @Query . cast2 @Query
+instance Join Query Move where
+    join = assumeMovement . join @Query @Any . cast2 @Any
+instance Join Query Query where
+    join = Monad.join
+instance Join Query SureQuery where
+    join = join @Query @Query . cast2 @Query
+instance Join Query Sure where
+    join = Atom
+
+instance Join Sure Any where
+    join = join @Any @Any . castTo @Any
+instance Join Sure Atom where
+    join = castTo @Any . join @Any @Any . castTo @Any . cast2 @Any
+instance Join Sure AtomicMove where
+    join = assumeMovement . join @Any @Any . castTo @Any . cast2 @Any
+instance Join Sure Failure where
+    join = join @Any @Any . castTo @Any . cast2 @Any
+instance Join Sure Move where
+    join = assumeMovement . join @Any @Any . castTo @Any . cast2 @Any
+instance Join Sure Query where
+    join = castTo @Any . join @Any @Any . castTo @Any . cast2 @Any
+instance Join Sure SureQuery where
+    join = join @Sure @Sure . cast2 @Sure
+instance Join Sure Sure where
+    join = Monad.join
+
+instance Join SureQuery Any where
+    join = join @Any @Any . castTo @Any
+instance Join SureQuery Atom where
+    join = Atom . join @SureQuery @Query . fmap (\(Atom q) -> q)
+instance Join SureQuery AtomicMove where
+    join = assumeMovement . join . cast2 @Atom
+instance Join SureQuery Failure where
+    join = join @Query @Failure . castTo @Query
+instance Join SureQuery Move where
+    join = assumeMovement . join. cast2 @Any
+instance Join SureQuery Query where
+    join = join @Query @Query . castTo @Query
+instance Join SureQuery Sure where
+    join = join @Sure @Sure . castTo @Sure
+instance Join SureQuery SureQuery where
+    join = Monad.join
