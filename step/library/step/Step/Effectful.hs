@@ -6,7 +6,7 @@
 
 module Step.Effectful where
 
-import Step.Internal.Prelude hiding (evalState, runState, put, get, execState)
+import Step.Internal.Prelude hiding (evalState, runState, put, get, execState, ask)
 
 import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as NT
@@ -21,6 +21,7 @@ import Effectful.Dispatch.Static
 import Effectful.Error.Static
 import Effectful.Dispatch.Dynamic
 import Effectful.State.Static.Local
+import Effectful.Reader.Static
 
 import TypeLits (TypeError, ErrorMessage (Text))
 
@@ -132,6 +133,13 @@ castStepDual = \case
     StepNext -> StepNext
     StepReset -> StepReset
 
+tryStep :: Step mo 'Imperfect xs x e m a -> Maybe (Step mo 'Perfect xs x e' m' a)
+tryStep = \case
+    StepFail _ -> Nothing
+    StepNext -> Just StepNext
+    StepReset -> Just StepReset
+    StepCommit n -> Just (StepCommit n)
+
 runStep :: forall xs x e es a. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
     -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a -> Eff es a
 runStep dropOp = reinterpret runStepHandler (stepHandler dropOp)
@@ -230,11 +238,27 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
+-- ⭕ The Nil effect
+
+type Nil :: Effect
+
+data Nil m a = Nil
+
+type instance DispatchOf Nil = 'Dynamic
+
+runNil :: Eff (Nil ': es) a -> Eff es (Maybe a)
+runNil = fmap (either (\() -> Nothing) Just) . reinterpret runErrorNoCallStack \_ -> \case{ Nil -> throwError () }
+
+
 -- ⭕ General utilities for casting effects
 
 castEff :: DispatchOf e1 ~ 'Dynamic => DispatchOf e2 ~ 'Dynamic =>
     (forall m1 m2 a'. e1 m1 a' -> e2 m2 a') -> Eff (e1 ': es) a -> Eff (e2 ': es) a
 castEff f = interpret (\_ -> send . f) . swapEff . raise
+
+tryEff :: DispatchOf e1 ~ 'Dynamic => DispatchOf e2 ~ 'Dynamic =>
+    (forall m1 m2 a'. e1 m1 a' -> Maybe (e2 m2 a')) -> Eff (e1 ': es) a -> Eff (e2 ': es) (Maybe a)
+tryEff f = reinterpret runNil (\_ -> maybe (send Nil) send . f) . swapEff . raise
 
 -- https://github.com/haskell-effectful/effectful/discussions/91#discussioncomment-3451935
 swapEff :: Eff (e1 : e2 : es) a -> Eff (e2 : e1 : es) a
@@ -317,31 +341,31 @@ instance Is AtomicMove Any where
 -- ⭕ Casting out of failure
 
 class Fallible (act :: Action) where
-    fail :: Eff es e -> act xs x es e a
+    liftFailEffect :: Eff es e -> act xs x es e a
 
 instance Fallible Any where
-    fail :: forall xs x e a es. Eff es e -> Any xs x es e a
-    fail x = Any do
+    liftFailEffect :: forall xs x e a es. Eff es e -> Any xs x es e a
+    liftFailEffect x = Any do
         e <- raise x
         send @(Step 'ReadWrite 'Imperfect xs x e) (StepFail e)
 
 instance Fallible Query where
-    fail :: forall xs x e a es. Eff es e -> Query xs x es e a
-    fail x = Query do
+    liftFailEffect :: forall xs x e a es. Eff es e -> Query xs x es e a
+    liftFailEffect x = Query do
         e <- raise x
         send @(Step 'ReadOnly 'Imperfect xs x e) (StepFail e)
 
 instance Fallible Move where
-    fail = Move . fail
+    liftFailEffect = Move . liftFailEffect
 
 instance Fallible Atom where
-    fail = Atom . fail
+    liftFailEffect = Atom . liftFailEffect
 
 instance Fallible AtomicMove where
-    fail = AtomicMove . fail
+    liftFailEffect = AtomicMove . liftFailEffect
 
 instance Fallible a => Is Failure a where
-    cast (Failure x) = fail x
+    cast (Failure x) = liftFailEffect x
 
 -- ⭕
 
@@ -549,3 +573,127 @@ instance Join SureQuery Sure where
     join = join @Sure @Sure . castTo @Sure
 instance Join SureQuery SureQuery where
     join = Monad.join
+
+-- ⭕
+
+class Atomic (act :: Action) (try :: Action) | act -> try where
+    try :: act xs x es e a -> try xs x es e (Maybe a)
+
+instance Atomic Atom Sure where
+    try (Atom x) = castTo @Sure (try @Query x) >>= maybe (return Nothing) (fmap Just)
+
+instance Atomic AtomicMove Sure where
+    try = try @Atom . castTo @Atom
+
+instance Atomic Query SureQuery where
+    try :: forall xs x es e a. Query xs x es e a -> SureQuery xs x es e (Maybe a)
+    try (Query q) = SureQuery (tryEff tryStep q)
+
+-- ⭕
+
+infixl 1 `bindAction`
+bindAction :: Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x es e a -> (a -> act2 xs x es e b) -> act3 xs x es e b
+bindAction x f = join (fmap f x)
+
+-- ⭕
+
+class Trivial (act :: Action) where
+    trivial :: a -> act xs x e m a
+
+instance Trivial Any where
+    trivial x = Any (return x)
+
+instance Trivial Query where
+    trivial x = Query (return x)
+
+instance Trivial Sure where
+    trivial x = Sure (return x)
+
+instance Trivial SureQuery where
+    trivial x = SureQuery (return x)
+
+instance Trivial Atom where
+    trivial x = Atom (Query (return (trivial x)))
+
+-- ⭕
+
+commit :: forall xs x es e. Positive Natural -> AtomicMove xs x es e ()
+commit n = AtomicMove $ Atom $ Query $ return $ Sure $ void $ send @(Step 'ReadWrite 'Perfect xs x e) $ StepCommit n
+
+fail :: Reader e :> es => Failure xs x es e a
+fail = Failure ask
+
+takeCharMaybe :: Reader e :> es => NT.LeftViewOperation xs x -> Sure xs x es e (Maybe x)
+takeCharMaybe lview = try (takeChar lview)
+
+takeChar :: Reader e :> es => NT.LeftViewOperation xs x -> AtomicMove xs x es e x
+takeChar lview = nextChar lview `bindAction` \x -> commit one $> x
+
+nextChar :: Reader e :> es => NT.LeftViewOperation xs x -> Query xs x es e x
+nextChar lview = nextCharMaybe lview `bindAction` maybe (castTo @Query fail) return
+
+nextMaybe :: Monad m => SureQuery xs x es e (Maybe (Nontrivial xs x))
+nextMaybe = reset `bindAction` \() -> nextMaybe'
+
+-- | Like 'nextMaybe', but doesn't reset first
+nextMaybe' :: Functor m => SureQuery xs x es e (Maybe (Nontrivial xs x))
+nextMaybe' = SureQuery $ send $ StepNext @'ReadOnly @'Perfect
+
+next :: Reader e :> es => Query xs x es e (Nontrivial xs x)
+next = nextMaybe `bindAction` maybe (castTo @Query fail) return
+
+-- | Like 'next', but doesn't reset first
+next' :: Reader e :> es => Query xs x es e (Nontrivial xs x)
+next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
+
+takeNext :: Reader e :> es => AtomicMove xs x es e (Nontrivial xs x)
+takeNext = next `bindAction` \xs -> commit (NT.length xs) $> xs
+
+takeNextMaybe :: Reader e :> es => Sure xs x es e (Maybe (Nontrivial xs x))
+takeNextMaybe = try takeNext
+
+nextCharMaybe :: Monad m => NT.LeftViewOperation xs x -> SureQuery xs x es e (Maybe x)
+nextCharMaybe NT.LeftViewOperation{ NT.leftView } =
+    nextMaybe <&> fmap @Maybe (NT.popItem . view leftView)
+
+satisfyJust :: Reader e :> es => NT.LeftViewOperation xs x -> (x -> Maybe a) -> AtomicMove xs x es e a
+satisfyJust lview ok = nextCharMaybe lview `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
+
+skip0 :: Reader e :> es => Natural -> Any xs x es e ()
+skip0 = maybe (return ()) (castTo @Any . skip)  . preview Positive.refine
+
+skip :: Reader e :> es => Positive Natural -> Move xs x es e ()
+skip n = next `bindAction` \x ->
+    case Positive.minus (NT.length x) n of
+        Signed.Minus n' ->
+            commit (NT.length x) `bindAction` \_ -> skip n'
+        _ -> castTo @Move (commit n)
+
+skipAtomically0 :: Reader e :> es => Natural -> Atom xs x es e ()
+skipAtomically0 = maybe (trivial ()) (castTo @Atom . skipAtomically)  . preview Positive.refine
+
+skipAtomically :: Reader e :> es => Positive Natural -> AtomicMove xs x es e ()
+skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
+
+ensureAtLeast :: Reader e :> es => Positive Natural -> Query xs x es e ()
+ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
+  where
+    go :: Reader e :> es => Positive Natural -> Query xs x es e ()
+    go n = next' `bindAction` \x ->
+        case Positive.minus n (NT.length x) of
+            Signed.Plus n' -> go n'
+            _ -> return ()
+
+atEnd :: Monad m => SureQuery xs x es e Bool
+atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
+
+end :: Reader e :> es => Query xs x es e ()
+end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
+
+reset :: forall xs x es e. SureQuery xs x es e ()
+reset = SureQuery $ send @(Step 'ReadOnly 'Perfect xs x e) $ StepReset
+
+-- ⭕
+
+one :: Positive Natural
+one = PositiveUnsafe 1
