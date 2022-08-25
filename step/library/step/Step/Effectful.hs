@@ -249,16 +249,15 @@ type instance DispatchOf Nil = 'Dynamic
 runNil :: Eff (Nil ': es) a -> Eff es (Maybe a)
 runNil = fmap (either (\() -> Nothing) Just) . reinterpret runErrorNoCallStack \_ -> \case{ Nil -> throwError () }
 
-
 -- ⭕ General utilities for casting effects
 
-castEff :: DispatchOf e1 ~ 'Dynamic => DispatchOf e2 ~ 'Dynamic =>
+castEff :: forall e1 e2 es a. DispatchOf e1 ~ 'Dynamic => DispatchOf e2 ~ 'Dynamic =>
     (forall m1 m2 a'. e1 m1 a' -> e2 m2 a') -> Eff (e1 ': es) a -> Eff (e2 ': es) a
-castEff f = interpret (\_ -> send . f) . swapEff . raise
+castEff f = interpret (\_ -> send @e2 . f) . swapEff . raise
 
-tryEff :: DispatchOf e1 ~ 'Dynamic => DispatchOf e2 ~ 'Dynamic =>
+tryEff :: forall e1 e2 es a. DispatchOf e1 ~ 'Dynamic => DispatchOf e2 ~ 'Dynamic =>
     (forall m1 m2 a'. e1 m1 a' -> Maybe (e2 m2 a')) -> Eff (e1 ': es) a -> Eff (e2 ': es) (Maybe a)
-tryEff f = reinterpret runNil (\_ -> maybe (send Nil) send . f) . swapEff . raise
+tryEff f = reinterpret runNil (\_ -> maybe (send Nil) (raise . send @e2 @(e2 ': es)) . f) . swapEff . raise
 
 -- https://github.com/haskell-effectful/effectful/discussions/91#discussioncomment-3451935
 swapEff :: Eff (e1 : e2 : es) a -> Eff (e2 : e1 : es) a
@@ -592,7 +591,7 @@ instance Atomic Query SureQuery where
 -- ⭕
 
 infixl 1 `bindAction`
-bindAction :: Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x es e a -> (a -> act2 xs x es e b) -> act3 xs x es e b
+bindAction :: (Join act1 act2, Functor (act1 xs x es e)) => act1 >> act2 ~ act3 => act1 xs x es e a -> (a -> act2 xs x es e b) -> act3 xs x es e b
 bindAction x f = join (fmap f x)
 
 -- ⭕
@@ -632,12 +631,12 @@ takeChar lview = nextChar lview `bindAction` \x -> commit one $> x
 nextChar :: Reader e :> es => NT.LeftViewOperation xs x -> Query xs x es e x
 nextChar lview = nextCharMaybe lview `bindAction` maybe (castTo @Query fail) return
 
-nextMaybe :: Monad m => SureQuery xs x es e (Maybe (Nontrivial xs x))
+nextMaybe :: SureQuery xs x es e (Maybe (Nontrivial xs x))
 nextMaybe = reset `bindAction` \() -> nextMaybe'
 
 -- | Like 'nextMaybe', but doesn't reset first
-nextMaybe' :: Functor m => SureQuery xs x es e (Maybe (Nontrivial xs x))
-nextMaybe' = SureQuery $ send $ StepNext @'ReadOnly @'Perfect
+nextMaybe' :: forall xs x es e. SureQuery xs x es e (Maybe (Nontrivial xs x))
+nextMaybe' = SureQuery $ send @(Step 'ReadOnly 'Perfect xs x e) StepNext
 
 next :: Reader e :> es => Query xs x es e (Nontrivial xs x)
 next = nextMaybe `bindAction` maybe (castTo @Query fail) return
@@ -652,7 +651,7 @@ takeNext = next `bindAction` \xs -> commit (NT.length xs) $> xs
 takeNextMaybe :: Reader e :> es => Sure xs x es e (Maybe (Nontrivial xs x))
 takeNextMaybe = try takeNext
 
-nextCharMaybe :: Monad m => NT.LeftViewOperation xs x -> SureQuery xs x es e (Maybe x)
+nextCharMaybe :: NT.LeftViewOperation xs x -> SureQuery xs x es e (Maybe x)
 nextCharMaybe NT.LeftViewOperation{ NT.leftView } =
     nextMaybe <&> fmap @Maybe (NT.popItem . view leftView)
 
@@ -684,7 +683,7 @@ ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
             Signed.Plus n' -> go n'
             _ -> return ()
 
-atEnd :: Monad m => SureQuery xs x es e Bool
+atEnd :: SureQuery xs x es e Bool
 atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
 end :: Reader e :> es => Query xs x es e ()
