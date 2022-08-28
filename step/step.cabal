@@ -33,15 +33,12 @@ common base
       , bytestring
       , containers
       , data-default-class
-      , effectful
-      , effectful-core
       , free
       , hedgehog
       , ListLike ^>= 4.7
       , loc ^>= 0.1.4
       , mmorph
       , mtl
-      , primitive
       , transformers
       , nat-optics ^>= 1.0.1.0
       , optics ^>= 0.4
@@ -113,12 +110,20 @@ common base
       , text (Data.Text as Text)
 
 library
-    import: base
+    default-language: Haskell2010
+    ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
     hs-source-dirs: library/step
     build-depends:
-        step-internal
-      , step-nontrivial
-    mixins: step-internal (Step.Internal.Prelude)
+        step-nontrivial
+      , effectful
+      , effectful-core
+      , primitive
+      , text
+      , loc
+      , nat-optics
+      , optics
+      , base
+      , containers
     exposed-modules:
         Step.Base
 

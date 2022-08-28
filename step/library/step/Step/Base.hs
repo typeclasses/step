@@ -1,35 +1,56 @@
 {-# language UndecidableInstances #-}
 {-# language DataKinds, KindSignatures, InstanceSigs, StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# language ConstraintKinds, DataKinds, FlexibleContexts, KindSignatures, QuantifiedConstraints, TypeOperators #-}
-{-# language DataKinds, StandaloneKindSignatures, FunctionalDependencies, FlexibleInstances #-}
-{-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase, GADTs, AllowAmbiguousTypes #-}
+{-# language DataKinds, StandaloneKindSignatures, FunctionalDependencies, FlexibleInstances, BlockArguments, LambdaCase #-}
+{-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase, GADTs, AllowAmbiguousTypes, NoImplicitPrelude, TypeApplications, ScopedTypeVariables, NamedFieldPuns, TypeFamilies, RankNTypes #-}
 
 module Step.Base where
 
-import Step.Internal.Prelude hiding (evalState, runState, put, get, execState, ask)
+-- The basics
+import Data.Bool (Bool (..))
+import Data.Maybe (Maybe (..), maybe, isJust, isNothing)
+import Data.Functor (Functor (..), (<&>), ($>), (<$>), void)
+import Data.Function (($), (&), (.), id, fix)
+import Data.Either (Either (..), either)
+import Control.Monad (Monad (..), (=<<))
+import qualified Control.Monad as Monad
+import Control.Applicative (Applicative (..))
+import System.IO (IO)
+import Data.Kind (Type)
+import Data.Semigroup (Semigroup (..))
+import Data.Monoid (Monoid (..))
+import Prelude ((+), (-), error)
 
+-- Containers
+import Data.Sequence (Seq (..))
+
+-- Nontrivial
 import Step.Nontrivial (Nontrivial)
 import qualified Step.Nontrivial as NT
 
-import Positive.Unsafe (Positive (PositiveUnsafe))
-import qualified Positive
-import qualified Positive.Math as Positive
-import qualified Signed
+-- Optics
+import Optics (view, preview, review, re, (%), iso)
 
+-- Math
+import Numeric.Natural (Natural)
+import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
+import qualified NatOptics.Positive as Positive
+import qualified NatOptics.Positive.Math as Positive
+import qualified NatOptics.Signed as Signed
+
+-- Effects
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.Error.Static
 import Effectful.Dispatch.Dynamic
 import Effectful.State.Static.Local
 import Effectful.Reader.Static
-
-import TypeLits (TypeError, ErrorMessage (Text))
-
-import Data.Primitive.PrimArray
 import Effectful.Internal.Env
-import Effectful.Internal.Monad
 
-import qualified Monad
+-- Etc
+import GHC.TypeLits (TypeError, ErrorMessage (Text))
+import Data.Primitive.PrimArray
+import GHC.Exts (IsList (..))
 
 -- ⭕ The Buffer effect
 
