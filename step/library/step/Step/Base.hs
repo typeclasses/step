@@ -8,9 +8,9 @@ module Step.Base where
 
 -- The basics
 import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..), maybe, isJust, isNothing)
+import Data.Maybe (Maybe (..), maybe, isJust, isNothing, fromMaybe)
 import Data.Functor (Functor (..), (<&>), ($>), (<$>), void)
-import Data.Function (($), (&), (.), id, fix)
+import Data.Function (($), (&), (.), id, fix, on)
 import Data.Either (Either (..), either)
 import Control.Monad (Monad (..), (=<<))
 import qualified Control.Monad as Monad
@@ -20,16 +20,18 @@ import Data.Kind (Type)
 import Data.Semigroup (Semigroup (..))
 import Data.Monoid (Monoid (..))
 import Prelude ((+), (-), error)
+import Data.Functor.Contravariant (Predicate (..), contramap)
+import Data.Eq (Eq ((==)))
+import Data.Ord (Ord (compare))
+import Text.Show (Show (showsPrec))
 
 -- Containers
 import Data.Sequence (Seq (..))
-
--- Nontrivial
-import Step.Nontrivial (Nontrivial)
-import qualified Step.Nontrivial as NT
+import qualified Data.ListLike as LL
+import Data.ListLike (ListLike)
 
 -- Optics
-import Optics (view, preview, review, re, (%), iso)
+import Optics (view, preview, review, re, (%), iso, Iso, Iso')
 
 -- Math
 import Numeric.Natural (Natural)
@@ -37,6 +39,7 @@ import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
+import Prelude (fromIntegral)
 
 -- Effects
 import Effectful
@@ -52,52 +55,167 @@ import GHC.TypeLits (TypeError, ErrorMessage (Text))
 import Data.Primitive.PrimArray
 import GHC.Exts (IsList (..))
 
+-- ⭕ The Chunk class
+
+class Chunk xs x where
+    leftView :: Iso' xs (Pop xs x)
+    span :: Predicate x -> xs -> Span xs
+    split :: Positive Natural -> xs -> Split xs
+    drop :: Positive Natural -> xs -> Drop xs
+    while :: Predicate x -> xs -> While xs
+    length :: xs -> Positive Natural
+
+data Pop xs x = Pop{ popItem :: x, popRemainder :: Maybe xs }
+
+data Span xs =
+    SpanAll
+  | SpanNone
+  | SpanPart{ spannedPart :: xs, spanRemainder :: xs }
+  deriving stock (Eq, Ord, Show)
+
+data Split xs = SplitInsufficient | Split xs xs
+  deriving stock (Eq, Ord, Show)
+
+data Drop xs =
+    DropAll
+  | DropInsufficient{ dropShortfall :: Positive Natural }
+  | DropPart{ dropRemainder :: xs }
+  deriving stock (Eq, Ord, Show)
+
+data While xs = WhileNone | WhilePrefix xs | WhileAll
+
+-- ⭕ ListLike chunks
+
+data NonEmptyListLike xs x =
+  NonEmptyListLike
+    { nonEmptyListLike :: !xs
+    , nonEmptyListLikeLength :: !(Positive Natural)
+    }
+
+assumeNonEmptyListLike :: ListLike xs (Item xs) => xs -> NonEmptyListLike xs x
+assumeNonEmptyListLike xs = NonEmptyListLike xs (PositiveUnsafe (fromIntegral (LL.length xs)))
+
+maybeNonEmptyListLike :: ListLike xs (Item xs) => xs -> Maybe (NonEmptyListLike xs x)
+maybeNonEmptyListLike xs = preview Positive.natPrism (fromIntegral (LL.length xs)) <&> \l -> NonEmptyListLike xs l
+
+instance Eq xs => Eq (NonEmptyListLike xs x) where
+    (==) = (==) `on` nonEmptyListLike
+
+instance Ord xs => Ord (NonEmptyListLike xs x) where
+    compare = compare `on` nonEmptyListLike
+
+instance Show xs => Show (NonEmptyListLike xs x) where
+    showsPrec p = showsPrec p . nonEmptyListLike
+
+instance ListLike xs x => Chunk (NonEmptyListLike xs x) x
+  where
+    length = nonEmptyListLikeLength
+
+    span = \f whole ->
+        tupleSpan (LL.span (getPredicate f) (nonEmptyListLike whole))
+      where
+        tupleSpan (a, b) =
+            if LL.null b then SpanAll else
+            if LL.null a then SpanNone else
+            SpanPart (assumeNonEmptyListLike a) (assumeNonEmptyListLike b)
+
+    drop = \n whole ->
+        case Positive.minus (nonEmptyListLikeLength whole) n of
+            Signed.Zero ->
+                DropAll
+            Signed.Plus _ ->
+                DropPart
+                  { dropRemainder = assumeNonEmptyListLike $
+                      LL.drop (fromIntegral (review Positive.refine n)) (nonEmptyListLike whole)
+                  }
+            Signed.Minus dropShortfall ->
+                DropInsufficient{ dropShortfall }
+
+    while = \f x ->
+        case maybeNonEmptyListLike
+              (LL.takeWhile (getPredicate f) (nonEmptyListLike x))
+          of
+            Nothing -> WhileNone
+            Just y ->
+                if nonEmptyListLikeLength y == nonEmptyListLikeLength x
+                then WhileAll
+                else WhilePrefix y
+
+    split = \n whole ->
+        case Positive.minus (nonEmptyListLikeLength whole) n of
+            Signed.Plus _ -> Split (assumeNonEmptyListLike a) (assumeNonEmptyListLike b)
+              where
+                (a, b) = LL.splitAt
+                    (fromIntegral (review Positive.refine n))
+                    (nonEmptyListLike whole)
+            _ -> SplitInsufficient
+
+    leftView = iso f g
+      where
+        f :: NonEmptyListLike xs x -> Pop (NonEmptyListLike xs x) x
+        f a = a
+            & nonEmptyListLike
+            & LL.uncons
+            & fromMaybe (error "ListLike leftViewIso")
+            & \(x, b) -> Pop
+                { popItem = x
+                , popRemainder =
+                    case Positive.minus (nonEmptyListLikeLength a) (PositiveUnsafe 1) of
+                        Signed.Plus n -> Just (NonEmptyListLike b n )
+                        _ -> Nothing
+                }
+
+        g :: Pop (NonEmptyListLike xs x) x -> NonEmptyListLike xs x
+        g Pop{ popItem, popRemainder } = case popRemainder of
+            Nothing -> NonEmptyListLike (LL.singleton popItem) (PositiveUnsafe 1)
+            Just b -> NonEmptyListLike (LL.cons popItem (nonEmptyListLike b)) (Positive.plus (nonEmptyListLikeLength b) (PositiveUnsafe 1))
+
 -- ⭕ The Buffer effect
 
-data Buffer (bt :: BufferType) (xs :: Type) (x :: Type) :: Effect
+data Buffer (bt :: BufferType) (c :: Type) :: Effect
 
 data BufferType = CommitBuffer | ViewBuffer
 
-type instance DispatchOf (Buffer bt xs x) = 'Static 'NoSideEffects
+type instance DispatchOf (Buffer bt c) = 'Static 'NoSideEffects
 
-newtype instance StaticRep (Buffer bt xs x) = BufferSeq{ bufferSeq :: Seq (Nontrivial xs x) }
+newtype instance StaticRep (Buffer bt c) = BufferSeq{ bufferSeq :: Seq c }
     deriving newtype (Semigroup, Monoid)
 
-instance IsList (StaticRep (Buffer bt xs x)) where
-    type Item (StaticRep (Buffer bt xs x)) = Nontrivial xs x
+instance IsList (StaticRep (Buffer bt c)) where
+    type Item (StaticRep (Buffer bt c)) = c
     fromList = BufferSeq . fromList
     toList = toList . bufferSeq
 
-runBuffer :: forall bt xs x es a. Eff (Buffer bt xs x ': es) a -> Eff es a
+runBuffer :: forall bt c es a. Eff (Buffer bt c ': es) a -> Eff es a
 runBuffer = runBuffer' mempty
 
-runBuffer' :: forall bt xs x es a. Seq (Nontrivial xs x) -> Eff (Buffer bt xs x ': es) a -> Eff es a
+runBuffer' :: forall bt c es a. Seq c -> Eff (Buffer bt c ': es) a -> Eff es a
 runBuffer' = evalStaticRep . BufferSeq
 
-getBufferSeq :: forall bt xs x es. Buffer bt xs x :> es => Eff es (Seq (Nontrivial xs x))
-getBufferSeq = getStaticRep @(Buffer bt xs x) <&> bufferSeq
+getBufferSeq :: forall bt c es. Buffer bt c :> es => Eff es (Seq c)
+getBufferSeq = getStaticRep @(Buffer bt c) <&> bufferSeq
 
-putBufferSeq :: forall bt xs x es. Buffer bt xs x :> es => Seq (Nontrivial xs x) -> Eff es ()
-putBufferSeq = putStaticRep @(Buffer bt xs x) . BufferSeq
+putBufferSeq :: forall bt c es. Buffer bt c :> es => Seq c -> Eff es ()
+putBufferSeq = putStaticRep @(Buffer bt c) . BufferSeq
 
-feedBuffer :: forall bt xs x es. Buffer bt xs x :> es => Nontrivial xs x -> Eff es ()
-feedBuffer x = getBufferSeq @bt @xs @x >>= \xs -> putBufferSeq @bt @xs @x (xs :|> x)
+feedBuffer :: forall bt c es. Buffer bt c :> es => c -> Eff es ()
+feedBuffer x = getBufferSeq @bt @c >>= \xs -> putBufferSeq @bt @c (xs :|> x)
 
-returnToBuffer :: forall bt xs x es. Buffer bt xs x :> es => Nontrivial xs x -> Eff es ()
+returnToBuffer :: forall bt c es. Buffer bt c :> es => c -> Eff es ()
 returnToBuffer x = getBufferSeq @bt >>= \xs -> putBufferSeq @bt (x :<| xs)
 
-takeBufferChunk :: forall bt xs x es. Buffer bt xs x :> es => Eff es (Maybe (Nontrivial xs x))
+takeBufferChunk :: forall bt c es. Buffer bt c :> es => Eff es (Maybe c)
 takeBufferChunk = getBufferSeq @bt >>= \case
     Empty -> return Nothing
     y :<| ys -> putBufferSeq @bt ys $> Just y
 
-dropFromBuffer :: forall bt xs x es. Buffer bt xs x :> es => NT.DropOperation xs x -> Positive Natural -> Eff es AdvanceResult
-dropFromBuffer NT.DropOperation{ NT.drop } = fix \r n -> getBufferSeq @bt >>= \case
+dropFromBuffer :: forall bt c x es. Chunk c x => Buffer bt c :> es => Positive Natural -> Eff es AdvanceResult
+dropFromBuffer = fix \r n -> getBufferSeq @bt @c >>= \case
     Empty -> return YouCanNotAdvance{ shortfall = n }
-    x :<| xs -> case drop n x of
-        NT.DropAll -> putBufferSeq @bt xs $> AdvanceSuccess
-        NT.DropPart{ NT.dropRemainder } -> putBufferSeq @bt (dropRemainder :<| xs) $> AdvanceSuccess
-        NT.DropInsufficient{ NT.dropShortfall } -> putBufferSeq @bt xs *> r dropShortfall
+    x :<| xs -> case drop @c @x n x of
+        DropAll -> putBufferSeq @bt xs $> AdvanceSuccess
+        DropPart{ dropRemainder } -> putBufferSeq @bt (dropRemainder :<| xs) $> AdvanceSuccess
+        DropInsufficient{ dropShortfall } -> putBufferSeq @bt xs *> r dropShortfall
 
 data AdvanceResult =
     AdvanceSuccess
@@ -105,31 +223,31 @@ data AdvanceResult =
 
 -- ⭕ The Load effect
 
-data Load (xs :: Type) (x :: Type) :: Effect
+data Load (c :: Type) :: Effect
   where
-    Load :: Load xs x m (Maybe (Nontrivial xs x))
+    Load :: Load c m (Maybe c)
 
-type instance DispatchOf (Load xs x) = 'Dynamic
+type instance DispatchOf (Load c) = 'Dynamic
 
-load :: Load xs x :> es => Eff es (Maybe (Nontrivial xs x))
+load :: Load c :> es => Eff es (Maybe c)
 load = send Load
 
-loadFromList :: [Nontrivial xs x] -> Eff (Load xs x ': es) a-> Eff es (a, [Nontrivial xs x])
+loadFromList :: [c] -> Eff (Load c ': es) a-> Eff es (a, [c])
 loadFromList xs = reinterpret (runState xs) loadFromListHandler
 
-loadFromListHandler :: State [Nontrivial xs x] :> es => EffectHandler (Load xs x) (es)
+loadFromListHandler :: State [c] :> es => EffectHandler (Load c) (es)
 loadFromListHandler _env Load = get >>= \case
     [] -> return Nothing
     x : xs -> put xs $> Just x
 
 -- ⭕ The Step effect
 
-data Step (mo :: Mode) (p :: Perfection) (xs :: Type) (x :: Type) (e :: Type) :: Effect
+data Step (mo :: Mode) (p :: Perfection) (c :: Type) (x :: Type) (e :: Type) :: Effect
   where
-    StepCommit :: Positive Natural -> Step 'ReadWrite p xs x m e AdvanceResult
-    StepNext :: Step mo p xs x m e (Maybe (Nontrivial xs x))
-    StepReset :: Step mo p xs x m e ()
-    StepFail :: e -> Step mo 'Imperfect xs x e m a
+    StepCommit :: Positive Natural -> Step 'ReadWrite p c x m e AdvanceResult
+    StepNext :: Step mo p c x m e (Maybe c)
+    StepReset :: Step mo p c x m e ()
+    StepFail :: e -> Step mo 'Imperfect c x e m a
 
 data Perfection = Perfect | Imperfect
 
@@ -161,33 +279,33 @@ tryStep = \case
     StepReset -> Just StepReset
     StepCommit n -> Just (StepCommit n)
 
-runStep :: forall xs x e es a. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
-    -> Eff (Step 'ReadWrite 'Imperfect xs x e ': es) a -> Eff es a
-runStep dropOp = reinterpret runStepHandler (stepHandler dropOp)
+runStep :: forall c x e es a. Chunk c x => '[Load c, Buffer 'CommitBuffer c, Error e] :>> es =>
+    Eff (Step 'ReadWrite 'Imperfect c x e ': es) a -> Eff es a
+runStep = reinterpret runStepHandler stepHandler
 
-runStepHandler :: forall xs x es a. Buffer 'CommitBuffer xs x :> es => Eff (Buffer 'ViewBuffer xs x ': es) a -> Eff es a
-runStepHandler a = getBufferSeq @'CommitBuffer @xs @x >>= \b -> runBuffer' @'ViewBuffer @xs @x b a
+runStepHandler :: forall c es a. Buffer 'CommitBuffer c :> es => Eff (Buffer 'ViewBuffer c ': es) a -> Eff es a
+runStepHandler a = getBufferSeq @'CommitBuffer @c >>= \b -> runBuffer' @'ViewBuffer @c b a
 
-stepHandler :: forall xs x es e. '[Load xs x, Buffer 'CommitBuffer xs x, Error e] :>> es => NT.DropOperation xs x
-    -> EffectHandler (Step 'ReadWrite 'Imperfect xs x e) (Buffer 'ViewBuffer xs x ': es)
-stepHandler dropOp _env = \case
+stepHandler :: forall c x es e. Chunk c x => '[Load c, Buffer 'CommitBuffer c, Error e] :>> es =>
+    EffectHandler (Step 'ReadWrite 'Imperfect c x e) (Buffer 'ViewBuffer c ': es)
+stepHandler _env = \case
       StepFail e -> throwError e
-      StepReset -> getBufferSeq @'CommitBuffer @xs @x >>= putBufferSeq @'ViewBuffer @xs @x
+      StepReset -> getBufferSeq @'CommitBuffer @c >>= putBufferSeq @'ViewBuffer @c
       StepNext -> runStepNext
-      StepCommit n -> runStepCommit @xs @x dropOp n
+      StepCommit n -> runStepCommit @c @x n
 
-runStepNext :: forall xs x es. '[Load xs x, Buffer 'ViewBuffer xs x, Buffer 'CommitBuffer xs x] :>> es => Eff es (Maybe (Nontrivial xs x))
+runStepNext :: forall c es. '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Eff es (Maybe c)
 runStepNext = takeBufferChunk @'ViewBuffer >>= \case
     Just x -> return (Just x)
-    Nothing -> bufferMore @xs @x >>= \case{ True -> takeBufferChunk @'ViewBuffer; False -> return Nothing }
+    Nothing -> bufferMore @c >>= \case{ True -> takeBufferChunk @'ViewBuffer; False -> return Nothing }
 
-runStepCommit :: forall xs x es. '[Load xs x, Buffer 'ViewBuffer xs x, Buffer 'CommitBuffer xs x] :>> es => NT.DropOperation xs x -> Positive Natural -> Eff es AdvanceResult
-runStepCommit dropOp n = dropFromBuffer @'CommitBuffer @xs @x dropOp n >>= \case
+runStepCommit :: forall c x es. Chunk c x => '[Load x, Buffer 'ViewBuffer x, Buffer 'CommitBuffer x] :>> es => Positive Natural -> Eff es AdvanceResult
+runStepCommit n = dropFromBuffer @'CommitBuffer @c n >>= \case
     r@AdvanceSuccess -> return r
-    r@YouCanNotAdvance{ shortfall = n' } -> bufferMore @xs @x >>= \case{ True -> dropFromBuffer @'CommitBuffer @xs @x dropOp n'; False -> return r }
+    r@YouCanNotAdvance{ shortfall = n' } -> bufferMore @c >>= \case{ True -> dropFromBuffer @'CommitBuffer @c n'; False -> return r }
 
-bufferMore :: forall xs x es. '[Load xs x, Buffer 'ViewBuffer xs x, Buffer 'CommitBuffer xs x] :>> es => Eff es Bool
-bufferMore = load @xs @x >>= \case
+bufferMore :: forall c es. '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Eff es Bool
+bufferMore = load @c >>= \case
     Nothing -> return False
     Just x -> do{ feedBuffer @'CommitBuffer x; feedBuffer @'ViewBuffer x; return True }
 
@@ -643,64 +761,63 @@ commit n = AtomicMove $ Atom $ Query $ return $ Sure $ void $ send @(Step 'ReadW
 fail :: Reader e :> es => Failure xs x es e a
 fail = Failure ask
 
-takeCharMaybe :: Reader e :> es => NT.LeftViewOperation xs x -> Sure xs x es e (Maybe x)
-takeCharMaybe lview = try (takeChar lview)
+takeCharMaybe :: Chunk c x => Reader e :> es => Sure c x es e (Maybe x)
+takeCharMaybe = try takeChar
 
-takeChar :: Reader e :> es => NT.LeftViewOperation xs x -> AtomicMove xs x es e x
-takeChar lview = nextChar lview `bindAction` \x -> commit one $> x
+takeChar :: Chunk c x => Reader e :> es => AtomicMove c x es e x
+takeChar = nextChar `bindAction` \x -> commit one $> x
 
-nextChar :: Reader e :> es => NT.LeftViewOperation xs x -> Query xs x es e x
-nextChar lview = nextCharMaybe lview `bindAction` maybe (castTo @Query fail) return
+nextChar :: Chunk c x => Reader e :> es => Query c x es e x
+nextChar = nextCharMaybe `bindAction` maybe (castTo @Query fail) return
 
-nextMaybe :: SureQuery xs x es e (Maybe (Nontrivial xs x))
+nextMaybe :: SureQuery c x es e (Maybe c)
 nextMaybe = reset `bindAction` \() -> nextMaybe'
 
 -- | Like 'nextMaybe', but doesn't reset first
-nextMaybe' :: forall xs x es e. SureQuery xs x es e (Maybe (Nontrivial xs x))
-nextMaybe' = SureQuery $ send @(Step 'ReadOnly 'Perfect xs x e) StepNext
+nextMaybe' :: forall c x es e. SureQuery c x es e (Maybe c)
+nextMaybe' = SureQuery $ send @(Step 'ReadOnly 'Perfect c x e) StepNext
 
-next :: Reader e :> es => Query xs x es e (Nontrivial xs x)
+next :: Reader e :> es => Query c x es e c
 next = nextMaybe `bindAction` maybe (castTo @Query fail) return
 
 -- | Like 'next', but doesn't reset first
-next' :: Reader e :> es => Query xs x es e (Nontrivial xs x)
+next' :: Reader e :> es => Query c x es e c
 next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
 
-takeNext :: Reader e :> es => AtomicMove xs x es e (Nontrivial xs x)
-takeNext = next `bindAction` \xs -> commit (NT.length xs) $> xs
+takeNext :: forall c x e es. Chunk c x => Reader e :> es => AtomicMove c x es e c
+takeNext = next `bindAction` \xs -> commit (length @c @x xs) $> xs
 
-takeNextMaybe :: Reader e :> es => Sure xs x es e (Maybe (Nontrivial xs x))
+takeNextMaybe :: Chunk c x => Reader e :> es => Sure c x es e (Maybe c)
 takeNextMaybe = try takeNext
 
-nextCharMaybe :: NT.LeftViewOperation xs x -> SureQuery xs x es e (Maybe x)
-nextCharMaybe NT.LeftViewOperation{ NT.leftView } =
-    nextMaybe <&> fmap @Maybe (NT.popItem . view leftView)
+nextCharMaybe :: Chunk c x => SureQuery c x es e (Maybe x)
+nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . view leftView)
 
-satisfyJust :: Reader e :> es => NT.LeftViewOperation xs x -> (x -> Maybe a) -> AtomicMove xs x es e a
-satisfyJust lview ok = nextCharMaybe lview `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
+satisfyJust :: Chunk c x => Reader e :> es => (x -> Maybe a) -> AtomicMove c x es e a
+satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
 
-skip0 :: Reader e :> es => Natural -> Any xs x es e ()
+skip0 :: forall c x e es. Chunk c x => Reader e :> es => Natural -> Any c x es e ()
 skip0 = maybe (return ()) (castTo @Any . skip)  . preview Positive.refine
 
-skip :: Reader e :> es => Positive Natural -> Move xs x es e ()
+skip :: forall c x e es. Chunk c x => Reader e :> es => Positive Natural -> Move c x es e ()
 skip n = next `bindAction` \x ->
-    case Positive.minus (NT.length x) n of
+    case Positive.minus (length @c @x x) n of
         Signed.Minus n' ->
-            commit (NT.length x) `bindAction` \_ -> skip n'
+            commit (length @c @x x) `bindAction` \_ -> skip n'
         _ -> castTo @Move (commit n)
 
-skipAtomically0 :: Reader e :> es => Natural -> Atom xs x es e ()
+skipAtomically0 :: forall c x e es. Chunk c x => Reader e :> es => Natural -> Atom c x es e ()
 skipAtomically0 = maybe (trivial ()) (castTo @Atom . skipAtomically)  . preview Positive.refine
 
-skipAtomically :: Reader e :> es => Positive Natural -> AtomicMove xs x es e ()
+skipAtomically :: forall c x e es. Chunk c x => Reader e :> es => Positive Natural -> AtomicMove c x es e ()
 skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
 
-ensureAtLeast :: Reader e :> es => Positive Natural -> Query xs x es e ()
+ensureAtLeast :: forall c x e es. Chunk c x => Reader e :> es => Positive Natural -> Query c x es e ()
 ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
   where
-    go :: Reader e :> es => Positive Natural -> Query xs x es e ()
+    go :: Reader e :> es => Positive Natural -> Query c x es e ()
     go n = next' `bindAction` \x ->
-        case Positive.minus n (NT.length x) of
+        case Positive.minus n (length @c @x x) of
             Signed.Plus n' -> go n'
             _ -> return ()
 

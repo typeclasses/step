@@ -114,8 +114,7 @@ library
     ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
     hs-source-dirs: library/step
     build-depends:
-        step-nontrivial
-      , effectful
+        effectful
       , effectful-core
       , primitive
       , text
@@ -124,6 +123,7 @@ library
       , optics
       , base
       , containers
+      , ListLike
     exposed-modules:
         Step.Base
 
