@@ -289,20 +289,20 @@ runStepHandler a = getBufferSeq @'CommitBuffer @c >>= \b -> runBuffer' @'ViewBuf
 stepHandler :: forall c x es e. Chunk c x => '[Load c, Buffer 'CommitBuffer c, Error e] :>> es =>
     EffectHandler (Step 'ReadWrite 'Imperfect c x e) (Buffer 'ViewBuffer c ': es)
 stepHandler _env = \case
-      StepFail e -> throwError e
-      StepReset -> getBufferSeq @'CommitBuffer @c >>= putBufferSeq @'ViewBuffer @c
-      StepNext -> runStepNext
-      StepCommit n -> runStepCommit @c @x n
+    StepFail e -> throwError e
+    StepReset -> getBufferSeq @'CommitBuffer @c >>= putBufferSeq @'ViewBuffer @c
+    StepNext -> runStepNext @c
+    StepCommit n -> runStepCommit @c @x n
 
 runStepNext :: forall c es. '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Eff es (Maybe c)
 runStepNext = takeBufferChunk @'ViewBuffer >>= \case
     Just x -> return (Just x)
     Nothing -> bufferMore @c >>= \case{ True -> takeBufferChunk @'ViewBuffer; False -> return Nothing }
 
-runStepCommit :: forall c x es. Chunk c x => '[Load x, Buffer 'ViewBuffer x, Buffer 'CommitBuffer x] :>> es => Positive Natural -> Eff es AdvanceResult
-runStepCommit n = dropFromBuffer @'CommitBuffer @c n >>= \case
+runStepCommit :: forall c x es. Chunk c x => '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Positive Natural -> Eff es AdvanceResult
+runStepCommit n = dropFromBuffer @'CommitBuffer @c @x n >>= \case
     r@AdvanceSuccess -> return r
-    r@YouCanNotAdvance{ shortfall = n' } -> bufferMore @c >>= \case{ True -> dropFromBuffer @'CommitBuffer @c n'; False -> return r }
+    r@YouCanNotAdvance{ shortfall = n' } -> bufferMore @c >>= \case{ True -> dropFromBuffer @'CommitBuffer @c @x n'; False -> return r }
 
 bufferMore :: forall c es. '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Eff es Bool
 bufferMore = load @c >>= \case
