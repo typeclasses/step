@@ -4,7 +4,7 @@
 {-# language DataKinds, StandaloneKindSignatures, FunctionalDependencies, FlexibleInstances #-}
 {-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase, GADTs, AllowAmbiguousTypes #-}
 
-module Step.Effectful where
+module Step.Base where
 
 import Step.Internal.Prelude hiding (evalState, runState, put, get, execState, ask)
 

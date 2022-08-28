@@ -118,6 +118,16 @@ library
     build-depends:
         step-internal
       , step-nontrivial
+    mixins: step-internal (Step.Internal.Prelude)
+    exposed-modules:
+        Step.Base
+
+library step-v1
+    import: base
+    hs-source-dirs: library/step-v1
+    build-depends:
+        step-internal
+      , step-nontrivial
       , step-cursor
       , step-rst
     mixins: step-internal (Step.Internal.Prelude)
@@ -136,8 +146,6 @@ library
         Step.Document.Base
 
         Step.Competitors.Attoparsec.Text
-
-        Step.Effectful
 
     reexported-modules:
         Step.Cursor
@@ -195,13 +203,13 @@ library step-rst
     exposed-modules:
         Step.RST
 
-test-suite test-step
+test-suite test-step-v1
     import: base
     type: exitcode-stdio-1.0
-    hs-source-dirs: test/test-step
+    hs-source-dirs: test/test-step-v1
     main-is: Main.hs
     build-depends:
-        step, step-internal, step-nontrivial, step-rst
+        step-v1, step-internal, step-nontrivial, step-rst
       , tasty, tasty-hedgehog, tasty-hunit, text
     mixins:
         step-internal (Step.Internal.Prelude)
