@@ -239,7 +239,7 @@ instance Fallible Atom where
 instance Fallible AtomicMove where
     failActionM = AtomicMove . Atom . Query . failStepClientM
 
--- | Action that can be tried noncomittally
+-- | Action that can be tried noncommittally
 class Atomic (act :: Action) (try :: Action) | act -> try where
     try :: act xs x m e a -> try xs x m e (Maybe a)
 
@@ -254,7 +254,7 @@ instance Atomic AtomicMove Sure where
 instance Atomic Query SureQuery where
     try (Query q) = SureQuery (mapMaybeRequest tryStep q)
 
--- | Unsafe coersion to action that always moves
+-- | Unsafe coercion to action that always moves
 class Is act2 act1 => AssumeMovement (act1 :: Action) (act2 :: Action) | act1 -> act2 where
     assumeMovement :: act1 xs x es e a -> act2 xs x es e a
 
