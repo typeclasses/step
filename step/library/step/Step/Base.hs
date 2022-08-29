@@ -80,7 +80,7 @@ mapMaybeRequest f (Client a) = Client \send -> MTL.runMaybeT $ a \r -> MaybeT $ 
 
 -- ⭕ OneOf
 
-type family OneOf (xs :: Type) :: Type
+type family OneOf (c :: Type) :: Type
 
 -- ⭕ Step
 
@@ -102,27 +102,27 @@ data AdvanceResult =
 
 -- Step conversions
 
-castStepMode :: Step 'ReadOnly p xs m e a -> Step 'ReadWrite p xs m e a
+castStepMode :: Step 'ReadOnly p c m e a -> Step 'ReadWrite p c m e a
 castStepMode = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepFail x -> StepFail x
     StepLift x -> StepLift x
 
-castStepPerfection :: Step mo 'Perfect xs m e a -> Step mo 'Imperfect xs m e a
+castStepPerfection :: Step mo 'Perfect c m e a -> Step mo 'Imperfect c m e a
 castStepPerfection = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepCommit x -> StepCommit x
     StepLift x -> StepLift x
 
-castStepDual :: Step 'ReadOnly 'Perfect xs m e a -> Step 'ReadWrite 'Imperfect xs m e a
+castStepDual :: Step 'ReadOnly 'Perfect c m e a -> Step 'ReadWrite 'Imperfect c m e a
 castStepDual = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepLift x -> StepLift x
 
-tryStep :: Step mo 'Imperfect xs m e a -> Maybe (Step mo p xs m e' a)
+tryStep :: Step mo 'Imperfect c m e a -> Maybe (Step mo p c m e' a)
 tryStep = \case
     StepFail _ -> Nothing
     StepNext -> Just StepNext
@@ -147,19 +147,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any xs m e a = Any (Client (Step 'ReadWrite 'Imperfect xs m e) a)
+newtype Any c m e a = Any (Client (Step 'ReadWrite 'Imperfect c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query xs m e a = Query (Client (Step 'ReadOnly 'Imperfect xs m e) a)
+newtype Query c m e a = Query (Client (Step 'ReadOnly 'Imperfect c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure xs m e a = Sure (Client (Step 'ReadWrite 'Perfect xs m e) a)
+newtype Sure c m e a = Sure (Client (Step 'ReadWrite 'Perfect c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery xs m e a = SureQuery (Client (Step 'ReadOnly 'Perfect xs m e) a)
+newtype SureQuery c m e a = SureQuery (Client (Step 'ReadOnly 'Perfect c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- Actions defined in terms of others
@@ -169,37 +169,37 @@ type Move :: Action
 type AtomicMove :: Action
 
 -- | Fails noncommittally; see 'try'
-newtype Atom xs m e a = Atom (Query xs m e (Sure xs m e a))
+newtype Atom c m e a = Atom (Query c m e (Sure c m e a))
     deriving stock (Functor)
 
 -- | Always moves the cursor
-newtype Move xs m e a = Move (Any xs m e a)
+newtype Move c m e a = Move (Any c m e a)
     deriving stock (Functor)
 
 -- | Always moves the cursor, is atomic
-newtype AtomicMove xs m e a = AtomicMove (Atom xs m e a)
+newtype AtomicMove c m e a = AtomicMove (Atom c m e a)
     deriving stock (Functor)
 
-instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom xs m e) where
+instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom c m e) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
 instance (TypeError ('Text "Move cannot be Applicative because 'pure' would not move the cursor")) =>
-    Applicative (Move xs m e)
+    Applicative (Move c m e)
   where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
-instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove xs e m) where
+instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' would not move the cursor and (<*>) would not preserve atomicity")) => Applicative (AtomicMove c e m) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
 -- Failure action
 
-newtype Failure xs m e a = Failure (m e)
+newtype Failure c m e a = Failure (m e)
     deriving stock (Functor)
 
-instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure xs m e) where
+instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m e) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
@@ -207,7 +207,7 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
 
 -- | Action that can return a value and do nothing else
 class Trivial (act :: Action) where
-    trivial :: a -> act xs e m a
+    trivial :: a -> act c e m a
 
 instance Trivial Any where
     trivial x = Any (return x)
@@ -226,7 +226,7 @@ instance Trivial Atom where
 
 -- | Action that can fail
 class Fallible (act :: Action) where
-    failActionM :: m e -> act xs m e a
+    failActionM :: m e -> act c m e a
 
 instance Fallible Any where
     failActionM = Any . failStepClientM
@@ -245,7 +245,7 @@ instance Fallible AtomicMove where
 
 -- | Action that can be tried noncommittally
 class Atomic (act :: Action) (try :: Action) | act -> try where
-    try :: act xs m e a -> try xs m e (Maybe a)
+    try :: act c m e a -> try c m e (Maybe a)
 
 instance Atomic Atom Sure where
     try (Atom (Query q)) =
@@ -260,7 +260,7 @@ instance Atomic Query SureQuery where
 
 -- | Unsafe coercion to action that always moves
 class Is act2 act1 => AssumeMovement (act1 :: Action) (act2 :: Action) | act1 -> act2 where
-    assumeMovement :: act1 xs es e a -> act2 xs es e a
+    assumeMovement :: act1 c es e a -> act2 c es e a
 
 instance AssumeMovement Any Move where
     assumeMovement = Move
@@ -271,13 +271,13 @@ instance AssumeMovement Atom AtomicMove where
 -- ⭕ Action subtype relationship
 
 class Is (act1 :: Action) (act2 :: Action) where
-    cast :: act1 xs es e a -> act2 xs es e a
+    cast :: act1 c es e a -> act2 c es e a
 
 -- | Same as 'cast', but with type parameters reordered so that the action we're casting to is first, which is more convenient for type application in some circumstances
-castTo :: forall act2 act1 xs es e a. Is act1 act2 => act1 xs es e a -> act2 xs es e a
+castTo :: forall act2 act1 c es e a. Is act1 act2 => act1 c es e a -> act2 c es e a
 castTo = cast @act1 @act2
 
-cast2 :: forall act2 act1 f xs es e a. Is act1 act2 => Functor f => f (act1 xs es e a) -> f (act2 xs es e a)
+cast2 :: forall act2 act1 f c es e a. Is act1 act2 => Functor f => f (act1 c es e a) -> f (act2 c es e a)
 cast2 = fmap (castTo @act2)
 
 -- Everything is itself
@@ -390,11 +390,11 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
     _ >> _ = Any
 
 class Join (act1 :: Action) (act2 :: Action) where
-    join :: act1 xs es e (act2 xs es e a) -> (act1 >> act2) xs es e a
+    join :: act1 c es e (act2 c es e a) -> (act1 >> act2) c es e a
 
 infixl 1 `bindAction`
-bindAction :: (Join act1 act2, Functor (act1 xs es e), act1 >> act2 ~ act3) =>
-    act1 xs es e a -> (a -> act2 xs es e b) -> act3 xs es e b
+bindAction :: (Join act1 act2, Functor (act1 c es e), act1 >> act2 ~ act3) =>
+    act1 c es e a -> (a -> act2 c es e b) -> act3 c es e b
 bindAction x f = join (fmap f x)
 
 -- Any >> ...
@@ -607,59 +607,59 @@ instance Join SureQuery SureQuery where
 
 -- ⭕ Chunk
 
-class Chunk xs where
-    leftView :: Iso' xs (Pop xs)
-    span :: Predicate (OneOf xs) -> xs -> Span xs
-    split :: Positive Natural -> xs -> Split xs
-    drop :: Positive Natural -> xs -> Drop xs
-    while :: Predicate (OneOf xs) -> xs -> While xs
-    length :: xs -> Positive Natural
+class Chunk c where
+    leftView :: Iso' c (Pop c)
+    span :: Predicate (OneOf c) -> c -> Span c
+    split :: Positive Natural -> c -> Split c
+    drop :: Positive Natural -> c -> Drop c
+    while :: Predicate (OneOf c) -> c -> While c
+    length :: c -> Positive Natural
 
-data Pop xs = Pop{ popItem :: OneOf xs, popRemainder :: Maybe xs }
+data Pop c = Pop{ popItem :: OneOf c, popRemainder :: Maybe c }
 
-data Span xs =
+data Span c =
     SpanAll
   | SpanNone
-  | SpanPart{ spannedPart :: xs, spanRemainder :: xs }
+  | SpanPart{ spannedPart :: c, spanRemainder :: c }
   deriving stock (Eq, Ord, Show)
 
-data Split xs = SplitInsufficient | Split xs xs
+data Split c = SplitInsufficient | Split c c
   deriving stock (Eq, Ord, Show)
 
-data Drop xs =
+data Drop c =
     DropAll
   | DropInsufficient{ dropShortfall :: Positive Natural }
-  | DropPart{ dropRemainder :: xs }
+  | DropPart{ dropRemainder :: c }
   deriving stock (Eq, Ord, Show)
 
-data While xs = WhileNone | WhilePrefix xs | WhileAll
+data While c = WhileNone | WhilePrefix c | WhileAll
 
 -- ListLike chunks
 
-data NonEmptyListLike xs =
+data NonEmptyListLike c =
   NonEmptyListLike
-    { nonEmptyListLike :: !xs
+    { nonEmptyListLike :: !c
     , nonEmptyListLikeLength :: !(Positive Natural)
     }
 
-assumeNonEmptyListLike :: ListLike xs (Item xs) => xs -> NonEmptyListLike xs
-assumeNonEmptyListLike xs = NonEmptyListLike xs (PositiveUnsafe (fromIntegral (LL.length xs)))
+assumeNonEmptyListLike :: ListLike c (Item c) => c -> NonEmptyListLike c
+assumeNonEmptyListLike c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
 
-maybeNonEmptyListLike :: ListLike xs (Item xs) => xs -> Maybe (NonEmptyListLike xs)
-maybeNonEmptyListLike xs = preview Positive.natPrism (fromIntegral (LL.length xs)) <&> \l -> NonEmptyListLike xs l
+maybeNonEmptyListLike :: ListLike c (Item c) => c -> Maybe (NonEmptyListLike c)
+maybeNonEmptyListLike c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
 
-instance Eq xs => Eq (NonEmptyListLike xs) where
+instance Eq c => Eq (NonEmptyListLike c) where
     (==) = (==) `on` nonEmptyListLike
 
-instance Ord xs => Ord (NonEmptyListLike xs) where
+instance Ord c => Ord (NonEmptyListLike c) where
     compare = compare `on` nonEmptyListLike
 
-instance Show xs => Show (NonEmptyListLike xs) where
+instance Show c => Show (NonEmptyListLike c) where
     showsPrec p = showsPrec p . nonEmptyListLike
 
-type instance OneOf (NonEmptyListLike xs) = Item xs
+type instance OneOf (NonEmptyListLike c) = Item c
 
-instance ListLike xs (Item xs) => Chunk (NonEmptyListLike xs)
+instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
   where
 
     length = nonEmptyListLikeLength
@@ -705,7 +705,7 @@ instance ListLike xs (Item xs) => Chunk (NonEmptyListLike xs)
 
     leftView = iso f g
       where
-        f :: NonEmptyListLike xs -> Pop (NonEmptyListLike xs)
+        f :: NonEmptyListLike c -> Pop (NonEmptyListLike c)
         f a = a
             & nonEmptyListLike
             & LL.uncons
@@ -718,17 +718,17 @@ instance ListLike xs (Item xs) => Chunk (NonEmptyListLike xs)
                         _ -> Nothing
                 }
 
-        g :: Pop (NonEmptyListLike xs) -> NonEmptyListLike xs
+        g :: Pop (NonEmptyListLike c) -> NonEmptyListLike c
         g Pop{ popItem, popRemainder } = case popRemainder of
             Nothing -> NonEmptyListLike (LL.singleton popItem) (PositiveUnsafe 1)
             Just b -> NonEmptyListLike (LL.cons popItem (nonEmptyListLike b)) (Positive.plus (nonEmptyListLikeLength b) (PositiveUnsafe 1))
 
 -- ⭕ Prelude of actions
 
-commit :: forall xs es e. Positive Natural -> AtomicMove xs es e ()
+commit :: forall c es e. Positive Natural -> AtomicMove c es e ()
 commit n = AtomicMove $ Atom $ Query $ return $ Sure $ void $ Client \send -> send $ StepCommit n
 
-fail :: MonadReader e m => Failure xs m e a
+fail :: MonadReader e m => Failure c m e a
 fail = Failure MTL.ask
 
 takeCharMaybe :: Chunk c => MonadReader e m => Sure c m e (Maybe (OneOf c))
@@ -755,7 +755,7 @@ next' :: MonadReader e m => Query c m e c
 next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
 
 takeNext :: forall c e m. Chunk c => MonadReader e m => AtomicMove c m e c
-takeNext = next `bindAction` \xs -> commit (length @c xs) $> xs
+takeNext = next `bindAction` \c -> commit (length @c c) $> c
 
 takeNextMaybe :: Chunk c => MonadReader e m => Sure c m e (Maybe c)
 takeNextMaybe = try takeNext
@@ -791,13 +791,13 @@ ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
             Signed.Plus n' -> go n'
             _ -> return ()
 
-atEnd :: SureQuery xs es e Bool
+atEnd :: SureQuery c es e Bool
 atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
-end :: MonadReader e m => Query xs m e ()
+end :: MonadReader e m => Query c m e ()
 end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
 
-reset :: forall xs es e. SureQuery xs es e ()
+reset :: forall c es e. SureQuery c es e ()
 reset = SureQuery $ Client \send -> send StepReset
 
 -- ⭕
@@ -834,10 +834,10 @@ one = PositiveUnsafe 1
 -- putBufferSeq = putStaticRep @(Buffer bt c) . BufferSeq
 
 -- feedBuffer :: forall bt c es. Buffer bt c :> es => c -> Eff es ()
--- feedBuffer x = getBufferSeq @bt @c >>= \xs -> putBufferSeq @bt @c (xs :|> x)
+-- feedBuffer x = getBufferSeq @bt @c >>= \c -> putBufferSeq @bt @c (c :|> x)
 
 -- returnToBuffer :: forall bt c es. Buffer bt c :> es => c -> Eff es ()
--- returnToBuffer x = getBufferSeq @bt >>= \xs -> putBufferSeq @bt (x :<| xs)
+-- returnToBuffer x = getBufferSeq @bt >>= \c -> putBufferSeq @bt (x :<| c)
 
 -- takeBufferChunk :: forall bt c es. Buffer bt c :> es => Eff es (Maybe c)
 -- takeBufferChunk = getBufferSeq @bt >>= \case
@@ -847,10 +847,10 @@ one = PositiveUnsafe 1
 -- dropFromBuffer :: forall bt c x es. Chunk c x => Buffer bt c :> es => Positive Natural -> Eff es AdvanceResult
 -- dropFromBuffer = fix \r n -> getBufferSeq @bt @c >>= \case
 --     Empty -> return YouCanNotAdvance{ shortfall = n }
---     x :<| xs -> case drop @c @x n x of
---         DropAll -> putBufferSeq @bt xs $> AdvanceSuccess
---         DropPart{ dropRemainder } -> putBufferSeq @bt (dropRemainder :<| xs) $> AdvanceSuccess
---         DropInsufficient{ dropShortfall } -> putBufferSeq @bt xs *> r dropShortfall
+--     x :<| c -> case drop @c @x n x of
+--         DropAll -> putBufferSeq @bt c $> AdvanceSuccess
+--         DropPart{ dropRemainder } -> putBufferSeq @bt (dropRemainder :<| c) $> AdvanceSuccess
+--         DropInsufficient{ dropShortfall } -> putBufferSeq @bt c *> r dropShortfall
 
 -- ⭕
 
@@ -878,7 +878,7 @@ one = PositiveUnsafe 1
 --     Just x -> do{ feedBuffer @'CommitBuffer x; feedBuffer @'ViewBuffer x; return True }
 
 -- parseOnlyListT :: forall k c x es e a. Chunk c x => Is k Any => k c x es e a -> ListT (Eff es) c -> Eff es (Either e a)
--- parseOnlyListT a xs = let Any eff = cast a in
+-- parseOnlyListT a c = let Any eff = cast a in
 --     _
 --     $ runError
 --     $ runStep @c @x @e
