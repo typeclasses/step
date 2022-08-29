@@ -112,18 +112,23 @@ common base
 library
     default-language: Haskell2010
     ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
+
+    -- Temporary for early stage development
+    ghc-options: -fno-warn-unused-imports
+    ghc-options: -fno-warn-missing-signatures
+
     hs-source-dirs: library/step
     build-depends:
-        effectful
-      , effectful-core
-      , primitive
-      , text
+        text
       , loc
       , nat-optics
       , optics
       , base
       , containers
       , ListLike
+      , list-transformer
+      , mtl
+      , transformers
     exposed-modules:
         Step.Base
 
