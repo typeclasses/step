@@ -108,20 +108,13 @@ castStepMode = \case
     StepFail x -> StepFail x
     StepLift x -> StepLift x
 
-castStepPerfection :: Step mo c m Void a -> Step mo c m e a
-castStepPerfection = \case
+mapStepFail :: (e1 -> e2) -> Step mo c m e1 a -> Step mo c m e2 a
+mapStepFail f = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepCommit x -> StepCommit x
     StepLift x -> StepLift x
-    StepFail x -> absurd x
-
-castStepDual :: Step 'ReadOnly c m Void a -> Step 'ReadWrite c m e a
-castStepDual = \case
-    StepNext -> StepNext
-    StepReset -> StepReset
-    StepLift x -> StepLift x
-    StepFail x -> absurd x
+    StepFail x -> StepFail (f x)
 
 tryStep :: Step mo c m e a -> Maybe (Step mo c m e' a)
 tryStep = \case
@@ -295,13 +288,13 @@ instance Is Query Any where
     cast (Query x) = Any (mapRequest castStepMode x)
 
 instance Is SureQuery Query where
-    cast (SureQuery x) = Query (mapRequest castStepPerfection x)
+    cast (SureQuery x) = Query (mapRequest (mapStepFail absurd) x)
 
 instance Is Sure Any where
-    cast (Sure x) = Any (mapRequest castStepPerfection x)
+    cast (Sure x) = Any (mapRequest (mapStepFail absurd) x)
 
 instance Is SureQuery Any where
-    cast (SureQuery x) = Any (mapRequest castStepDual x)
+    cast (SureQuery x) = Any (mapRequest (mapStepFail absurd . castStepMode) x)
 
 -- Casting to Atom
 
