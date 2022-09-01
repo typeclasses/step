@@ -26,6 +26,7 @@ import Data.Ord (Ord (compare))
 import Text.Show (Show (showsPrec))
 import Data.Foldable (traverse_)
 import Data.Traversable (traverse)
+import Data.Void (Void, absurd)
 
 -- Containers
 import Data.Sequence (Seq (..))
@@ -84,15 +85,13 @@ type family OneOf (c :: Type) :: Type
 
 -- ⭕ Step
 
-data Step (mo :: Mode) (p :: Perfection) (c :: Type) (m :: Type -> Type) (e :: Type) (a :: Type)
+data Step (mo :: Mode) (c :: Type) (m :: Type -> Type) (e :: Type) (a :: Type)
   where
-    StepCommit :: Positive Natural -> Step 'ReadWrite p c m e AdvanceResult
-    StepNext :: Step mo p c m e (Maybe c)
-    StepReset :: Step mo p c m e ()
-    StepFail :: e -> Step mo 'Imperfect c m e a
-    StepLift :: m a -> Step mo p c m e a
-
-data Perfection = Perfect | Imperfect
+    StepCommit :: Positive Natural -> Step 'ReadWrite c m e AdvanceResult
+    StepNext :: Step mo c m e (Maybe c)
+    StepReset :: Step mo c m e ()
+    StepFail :: e -> Step mo c m e a
+    StepLift :: m a -> Step mo c m e a
 
 data Mode = ReadOnly | ReadWrite
 
@@ -102,27 +101,29 @@ data AdvanceResult =
 
 -- Step conversions
 
-castStepMode :: Step 'ReadOnly p c m e a -> Step 'ReadWrite p c m e a
+castStepMode :: Step 'ReadOnly c m e a -> Step 'ReadWrite c m e a
 castStepMode = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepFail x -> StepFail x
     StepLift x -> StepLift x
 
-castStepPerfection :: Step mo 'Perfect c m e a -> Step mo 'Imperfect c m e a
+castStepPerfection :: Step mo c m Void a -> Step mo c m e a
 castStepPerfection = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepCommit x -> StepCommit x
     StepLift x -> StepLift x
+    StepFail x -> absurd x
 
-castStepDual :: Step 'ReadOnly 'Perfect c m e a -> Step 'ReadWrite 'Imperfect c m e a
+castStepDual :: Step 'ReadOnly c m Void a -> Step 'ReadWrite c m e a
 castStepDual = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepLift x -> StepLift x
+    StepFail x -> absurd x
 
-tryStep :: Step mo 'Imperfect c m e a -> Maybe (Step mo p c m e' a)
+tryStep :: Step mo c m e a -> Maybe (Step mo c m e' a)
 tryStep = \case
     StepFail _ -> Nothing
     StepNext -> Just StepNext
@@ -132,7 +133,7 @@ tryStep = \case
 
 --
 
-failStepClientM :: m e -> Client (Step mo 'Imperfect c m e) a
+failStepClientM :: m e -> Client (Step mo c m e) a
 failStepClientM x = Client \send -> send (StepLift x) >>= \e -> send (StepFail e)
 
 -- ⭕ Action
@@ -147,19 +148,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (Client (Step 'ReadWrite 'Imperfect c m e) a)
+newtype Any c m e a = Any (Client (Step 'ReadWrite c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (Client (Step 'ReadOnly 'Imperfect c m e) a)
+newtype Query c m e a = Query (Client (Step 'ReadOnly c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Client (Step 'ReadWrite 'Perfect c m e) a)
+newtype Sure c m e a = Sure (Client (Step 'ReadWrite c m Void) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Client (Step 'ReadOnly 'Perfect c m e) a)
+newtype SureQuery c m e a = SureQuery (Client (Step 'ReadOnly c m Void) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- Actions defined in terms of others
