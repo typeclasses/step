@@ -85,13 +85,15 @@ type family OneOf (c :: Type) :: Type
 
 -- ⭕ Step
 
-data Step (com :: Type) (c :: Type) (m :: Type -> Type) (e :: Type) (a :: Type)
+data Step (res :: Type) (com :: Type) (c :: Type) (m :: Type -> Type) (e :: Type) (a :: Type)
   where
-    StepCommit :: com -> Step com c m e AdvanceResult
-    StepNext :: Step com c m e (Maybe c)
-    StepReset :: Step com c m e ()
-    StepFail :: e -> Step com c m e a
-    StepLift :: m a -> Step com c m e a
+    StepCommit :: com -> Step res com c m e AdvanceResult
+    StepNext :: Step res com c m e (Maybe c)
+    StepReset :: res -> Step Reset com c m e ()
+    StepFail :: e -> Step res com c m e a
+    StepLift :: m a -> Step res com c m e a
+
+data Reset = Reset
 
 newtype Commit = Commit (Positive Natural)
 
@@ -101,33 +103,33 @@ data AdvanceResult =
 
 -- Step conversions
 
-mapStepCommit :: (com1 -> com2) -> Step com1 c m e a -> Step com2 c m e a
+mapStepCommit :: (com1 -> com2) -> Step res com1 c m e a -> Step res com2 c m e a
 mapStepCommit f = \case
     StepNext -> StepNext
-    StepReset -> StepReset
+    StepReset x -> StepReset x
     StepFail x -> StepFail x
     StepLift x -> StepLift x
     StepCommit x -> StepCommit (f x)
 
-mapStepFail :: (e1 -> e2) -> Step com c m e1 a -> Step com c m e2 a
+mapStepFail :: (e1 -> e2) -> Step res com c m e1 a -> Step res com c m e2 a
 mapStepFail f = \case
     StepNext -> StepNext
-    StepReset -> StepReset
+    StepReset x -> StepReset x
     StepCommit x -> StepCommit x
     StepLift x -> StepLift x
     StepFail x -> StepFail (f x)
 
-tryStep :: Step com c m e a -> Maybe (Step com c m e' a)
+tryStep :: Step res com c m e a -> Maybe (Step res com c m e' a)
 tryStep = \case
     StepFail _ -> Nothing
     StepNext -> Just StepNext
-    StepReset -> Just StepReset
+    StepReset x -> Just (StepReset x)
     StepCommit n -> Just (StepCommit n)
     StepLift x -> Just (StepLift x)
 
 --
 
-failStepClientM :: m e -> Client (Step com c m e) a
+failStepClientM :: m e -> Client (Step res com c m e) a
 failStepClientM x = Client \send -> send (StepLift x) >>= \e -> send (StepFail e)
 
 -- ⭕ Action
@@ -142,19 +144,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (Client (Step Commit c m e) a)
+newtype Any c m e a = Any (Client (Step Reset Commit c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (Client (Step Void c m e) a)
+newtype Query c m e a = Query (Client (Step Reset Void c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Client (Step Commit c m Void) a)
+newtype Sure c m e a = Sure (Client (Step Reset Commit c m Void) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Client (Step Void c m Void) a)
+newtype SureQuery c m e a = SureQuery (Client (Step Reset Void c m Void) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- Actions defined in terms of others
@@ -793,7 +795,7 @@ end :: MonadReader e m => Query c m e ()
 end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
 
 reset :: forall c es e. SureQuery c es e ()
-reset = SureQuery $ Client \send -> send StepReset
+reset = SureQuery $ Client \send -> send (StepReset Reset)
 
 -- ⭕
 
