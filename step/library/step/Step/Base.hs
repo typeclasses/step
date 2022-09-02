@@ -722,6 +722,11 @@ instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
             Nothing -> NonEmptyListLike (LL.singleton popItem) (PositiveUnsafe 1)
             Just b -> NonEmptyListLike (LL.cons popItem (nonEmptyListLike b)) (Positive.plus (nonEmptyListLikeLength b) (PositiveUnsafe 1))
 
+-- ⭕
+
+one :: Positive Natural
+one = PositiveUnsafe 1
+
 -- ⭕ Prelude of actions
 
 commit :: forall c es e. Positive Natural -> AtomicMove c es e ()
@@ -798,11 +803,6 @@ end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
 
 reset :: forall c es e. SureQuery c es e ()
 reset = SureQuery $ Client \send -> send (StepReset Reset)
-
--- ⭕
-
-one :: Positive Natural
-one = PositiveUnsafe 1
 
 -- ⭕ The Buffer effect
 
