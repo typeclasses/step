@@ -85,15 +85,15 @@ type family OneOf (c :: Type) :: Type
 
 -- ⭕ Step
 
-data Step (mo :: Mode) (c :: Type) (m :: Type -> Type) (e :: Type) (a :: Type)
+data Step (com :: Type) (c :: Type) (m :: Type -> Type) (e :: Type) (a :: Type)
   where
-    StepCommit :: Positive Natural -> Step 'ReadWrite c m e AdvanceResult
-    StepNext :: Step mo c m e (Maybe c)
-    StepReset :: Step mo c m e ()
-    StepFail :: e -> Step mo c m e a
-    StepLift :: m a -> Step mo c m e a
+    StepCommit :: com -> Step com c m e AdvanceResult
+    StepNext :: Step com c m e (Maybe c)
+    StepReset :: Step com c m e ()
+    StepFail :: e -> Step com c m e a
+    StepLift :: m a -> Step com c m e a
 
-data Mode = ReadOnly | ReadWrite
+newtype Commit = Commit (Positive Natural)
 
 data AdvanceResult =
     AdvanceSuccess
@@ -101,14 +101,15 @@ data AdvanceResult =
 
 -- Step conversions
 
-castStepMode :: Step 'ReadOnly c m e a -> Step 'ReadWrite c m e a
-castStepMode = \case
+mapStepCommit :: (com1 -> com2) -> Step com1 c m e a -> Step com2 c m e a
+mapStepCommit f = \case
     StepNext -> StepNext
     StepReset -> StepReset
     StepFail x -> StepFail x
     StepLift x -> StepLift x
+    StepCommit x -> StepCommit (f x)
 
-mapStepFail :: (e1 -> e2) -> Step mo c m e1 a -> Step mo c m e2 a
+mapStepFail :: (e1 -> e2) -> Step com c m e1 a -> Step com c m e2 a
 mapStepFail f = \case
     StepNext -> StepNext
     StepReset -> StepReset
@@ -116,7 +117,7 @@ mapStepFail f = \case
     StepLift x -> StepLift x
     StepFail x -> StepFail (f x)
 
-tryStep :: Step mo c m e a -> Maybe (Step mo c m e' a)
+tryStep :: Step com c m e a -> Maybe (Step com c m e' a)
 tryStep = \case
     StepFail _ -> Nothing
     StepNext -> Just StepNext
@@ -126,7 +127,7 @@ tryStep = \case
 
 --
 
-failStepClientM :: m e -> Client (Step mo c m e) a
+failStepClientM :: m e -> Client (Step com c m e) a
 failStepClientM x = Client \send -> send (StepLift x) >>= \e -> send (StepFail e)
 
 -- ⭕ Action
@@ -141,19 +142,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (Client (Step 'ReadWrite c m e) a)
+newtype Any c m e a = Any (Client (Step Commit c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (Client (Step 'ReadOnly c m e) a)
+newtype Query c m e a = Query (Client (Step Void c m e) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Client (Step 'ReadWrite c m Void) a)
+newtype Sure c m e a = Sure (Client (Step Commit c m Void) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Client (Step 'ReadOnly c m Void) a)
+newtype SureQuery c m e a = SureQuery (Client (Step Void c m Void) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- Actions defined in terms of others
@@ -243,7 +244,7 @@ class Atomic (act :: Action) (try :: Action) | act -> try where
 
 instance Atomic Atom Sure where
     try (Atom (Query q)) =
-        Sure (mapMaybeRequest (tryStep . castStepMode) q)
+        Sure (mapMaybeRequest (tryStep . mapStepCommit absurd) q)
         >>= maybe (return Nothing) (fmap Just)
 
 instance Atomic AtomicMove Sure where
@@ -282,10 +283,10 @@ instance {-# overlappable #-} Is a a where
 -- Casting actions via casting steps
 
 instance Is SureQuery Sure where
-    cast (SureQuery x) = Sure (mapRequest castStepMode x)
+    cast (SureQuery x) = Sure (mapRequest (mapStepCommit absurd) x)
 
 instance Is Query Any where
-    cast (Query x) = Any (mapRequest castStepMode x)
+    cast (Query x) = Any (mapRequest (mapStepCommit absurd) x)
 
 instance Is SureQuery Query where
     cast (SureQuery x) = Query (mapRequest (mapStepFail absurd) x)
@@ -294,7 +295,7 @@ instance Is Sure Any where
     cast (Sure x) = Any (mapRequest (mapStepFail absurd) x)
 
 instance Is SureQuery Any where
-    cast (SureQuery x) = Any (mapRequest (mapStepFail absurd . castStepMode) x)
+    cast (SureQuery x) = Any (mapRequest (mapStepFail absurd . mapStepCommit absurd) x)
 
 -- Casting to Atom
 
@@ -720,7 +721,7 @@ instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
 -- ⭕ Prelude of actions
 
 commit :: forall c es e. Positive Natural -> AtomicMove c es e ()
-commit n = AtomicMove $ Atom $ Query $ return $ Sure $ void $ Client \send -> send $ StepCommit n
+commit n = AtomicMove $ Atom $ Query $ return $ Sure $ void $ Client \send -> send $ StepCommit $ Commit n
 
 fail :: MonadReader e m => Failure c m e a
 fail = Failure MTL.ask
