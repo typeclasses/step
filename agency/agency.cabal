@@ -1,0 +1,40 @@
+cabal-version: 3.0
+
+name: agency
+version: 0
+
+license: Apache-2.0
+license-file: license.txt
+
+library
+    default-language: Haskell2010
+    ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
+
+    -- Temporary for early stage development
+    ghc-options: -fno-warn-unused-imports
+    ghc-options: -fno-warn-missing-signatures
+
+    default-extensions:
+        BlockArguments
+        DataKinds
+        DeriveFunctor
+        DerivingStrategies
+        LambdaCase
+        KindSignatures
+        GADTs
+        NoMonomorphismRestriction
+        NoImplicitPrelude
+        RankNTypes
+        ScopedTypeVariables
+        StandaloneDeriving
+        TypeApplications
+        TypeFamilies
+
+    build-depends:
+        base ^>= 4.15
+      , relude
+
+    hs-source-dirs: library/agency
+
+    exposed-modules:
+        Agency
