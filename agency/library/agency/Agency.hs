@@ -4,13 +4,21 @@ import Relude hiding (Proxy)
 
 data Agent (am :: Maybe (Type -> Type)) (bm :: Maybe (Type -> Type)) m r
   where
+
     Request :: a x -> (x -> Agent ('Just a) bm m r) -> Agent ('Just a) bm m r
         -- ^ When this agent makes a request of type @a x@, it receives from its upstream a response of type @x@.
+
     Serve :: (forall x. b x -> Agent am 'Nothing m (x, Agent am ('Just b) m r)) -> Agent am ('Just b) m r
         -- ^ When this agent receives a request of type @b x@, it response to its downstream with a response of type @x@.
+
     AgentM :: m (Agent am bm m r) -> Agent am bm m r
+        -- ^ An action lifted from the base monad @m@
+
     AgentBind :: Agent am bm m x -> (x -> Agent am bm m r) -> Agent am bm m r
+        -- ^ ('>>=') = AgentBind
+
     AgentPure :: r -> Agent am bm m r
+        -- ^ 'pure' = AgentPure
 
 deriving stock instance Functor m => Functor (Agent am bm m)
 
@@ -29,7 +37,7 @@ type Client a m r = Agent ('Just a) 'Nothing m r
 
 type Proxy a b m r = Agent ('Just a) ('Just b) m r
 
-generalizeDownstream :: Functor m => Agent am 'Nothing m r -> Agent am bm m r
+generalizeDownstream :: forall bm am m r. Functor m => Agent am 'Nothing m r -> Agent am bm m r
 generalizeDownstream = \case
     AgentPure x -> AgentPure x
     AgentBind x f -> AgentBind (generalizeDownstream x) (fmap generalizeDownstream f)
@@ -43,20 +51,25 @@ generalizeUpstream = \case
     AgentM x -> AgentM (fmap generalizeUpstream x)
     Serve f -> Serve (fmap generalizeUpstream . (fmap . fmap . fmap) generalizeUpstream $ f)
 
-(>->) :: Functor m => Agent am ('Just b) m r -> Agent ('Just b) cm m r -> Agent am cm m r
+(>->) :: forall am b cm m r. Functor m => Agent am ('Just b) m r -> Agent ('Just b) cm m r -> Agent am cm m r
 up >-> down =
   case down of
     AgentPure b -> AgentPure b
     AgentM b -> AgentM (fmap (up >->) b)
-    Serve f -> Serve \x -> _
+    Serve f -> Serve \(x :: c x) -> ((z up (f x) <&> \(y, c) -> (y, up >-> c)) :: Agent am 'Nothing m (x, Agent am cm m r))
     AgentBind x f -> _
     Request x g ->
       case up of
         AgentPure a -> AgentPure a
         AgentM ma -> _
-        Serve f -> generalizeDownstream (f x) >>= \(y, c) -> (c >-> g y)
+        Serve f -> generalizeDownstream @cm (f x) >>= \(y, c) -> (c >-> g y)
         Request y h -> Request y \z -> h z >-> down
         AgentBind x f -> _
+
+z :: Agent am ('Just b) m r
+  -> Agent ('Just b) 'Nothing m (x, Agent ('Just b) ('Just b1) m r)
+  -> Agent am 'Nothing m (x, Agent ('Just b) ('Just b1) m r)
+z = _
 
 {-
 
