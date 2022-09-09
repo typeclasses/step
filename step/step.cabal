@@ -29,7 +29,7 @@ common base
         TypeApplications
         TypeFamilies
     build-depends:
-        base ^>= 4.15
+        base ^>= 4.16
       , bytestring
       , containers
       , data-default-class
