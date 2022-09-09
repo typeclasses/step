@@ -11,7 +11,7 @@ data Agent (am :: Maybe (Type -> Type)) (bm :: Maybe (Type -> Type)) m r
     AgentServe :: Server am b m r -> Agent am ('Just b) m r
         -- ^ When this agent receives a request of type @b x@, it response to its downstream with a response of type @x@.
 
-    AgentM :: m (Agent am bm m r) -> Agent am bm m r
+    AgentAction :: m (Agent am bm m r) -> Agent am bm m r
         -- ^ An action lifted from the base monad @m@
 
     AgentBind :: Agent am bm m x -> (x -> Agent am bm m r) -> Agent am bm m r
@@ -20,9 +20,18 @@ data Agent (am :: Maybe (Type -> Type)) (bm :: Maybe (Type -> Type)) m r
     AgentPure :: r -> Agent am bm m r
         -- ^ 'pure' = AgentPure
 
-data Client x a bm m r = Client (a x) (x -> Agent ('Just a) bm m r)
+data Client x a bm m r =
+  Client
+    { clientRequest :: a x
+    , clientContinuation :: x -> Agent ('Just a) bm m r
+    }
 
-newtype Server am b m r = Server (forall x. b x -> Agent am 'Nothing m (x, Agent am ('Just b) m r))
+newtype Server am b m r =
+  Server
+    ( forall x.
+        b x
+        -> Agent am 'Nothing m ( x, Agent am ('Just b) m r )
+    )
 
 deriving stock instance Functor m => Functor (Client x a bm m)
 deriving stock instance Functor m => Functor (Server am b m)
@@ -40,7 +49,7 @@ generalizeAgentDownstream :: forall bm am m r. Functor m => Agent am 'Nothing m 
 generalizeAgentDownstream = \case
     AgentPure x -> AgentPure x
     AgentBind x f -> AgentBind (generalizeAgentDownstream x) (fmap generalizeAgentDownstream f)
-    AgentM x -> AgentM (fmap generalizeAgentDownstream x)
+    AgentAction x -> AgentAction (fmap generalizeAgentDownstream x)
     AgentRequest x -> AgentRequest (generalizeClientDownstream x)
 
 generalizeClientDownstream :: forall bm x a m r. Client x a 'Nothing m r -> Client x a bm m r
@@ -50,7 +59,7 @@ generalizeAgentUpstream :: Functor m => Agent 'Nothing bm m r -> Agent am bm m r
 generalizeAgentUpstream = \case
     AgentPure x -> AgentPure x
     AgentBind x f -> AgentBind (generalizeAgentUpstream x) (fmap generalizeAgentUpstream f)
-    AgentM x -> AgentM (fmap generalizeAgentUpstream x)
+    AgentAction x -> AgentAction (fmap generalizeAgentUpstream x)
     AgentServe (Server f) -> AgentServe $ Server (fmap generalizeAgentUpstream . (fmap . fmap . fmap) generalizeAgentUpstream $ f)
 
 (>->) = agentToAgent
@@ -59,13 +68,13 @@ agentToAgent :: forall am b cm m r. Functor m => Agent am ('Just b) m Void -> Ag
 agentToAgent up down =
     case down of
         AgentPure b -> AgentPure b
-        AgentM b -> AgentM (fmap (up >->) b)
+        AgentAction b -> AgentAction (fmap (up >->) b)
         AgentServe s -> AgentServe (agentToServer up s)
         AgentBind x f -> _
         AgentRequest x ->
             case up of
                 AgentPure a -> absurd a
-                AgentM ma -> _
+                AgentAction ma -> _
                 AgentServe s -> serverToClient s x
                 AgentRequest c -> clientToAgent c down
                 AgentBind x f -> _
@@ -80,7 +89,7 @@ agentToServer :: Functor m => Agent am ('Just b) m Void -> Server ('Just b) c m 
 agentToServer up (Server f) =
     Server \x -> case f x of
         AgentPure (y, down') -> AgentPure (y, up >-> down')
-        AgentM b' -> AgentM (((fmap . fmap . fmap) (up >->)) . fmap (up >->) $ b')
+        AgentAction b' -> AgentAction (((fmap . fmap . fmap) (up >->)) . fmap (up >->) $ b')
 
 {-
 
