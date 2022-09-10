@@ -2,7 +2,11 @@ module Agency where
 
 import Relude hiding (Proxy)
 
-data Agent (am :: Maybe (Type -> Type)) (bm :: Maybe (Type -> Type)) m r where
+type Response = Type -> Type
+
+type Context = Type -> Type
+
+data Agent (am :: Maybe Response) (bm :: Maybe Response) (m :: Context) r where
 
     -- | Request of type @a x@ + continuation from response type @x@
     AgentRequest :: Client x a bm m r -> Agent ('Just a) bm m r
@@ -19,25 +23,28 @@ data Agent (am :: Maybe (Type -> Type)) (bm :: Maybe (Type -> Type)) m r where
     -- | 'pure'
     AgentPure :: r -> Agent am bm m r
 
-data Client x a bm m r = Client
+data Client x (a :: Response) (bm :: Maybe Response) (m :: Context) r = Client
     { clientRequest :: a x
         -- ^ A client makes a request of type @a x@
     , clientContinuation :: x -> Agent ('Just a) bm m r
         -- ^ A client receives a response of type @x@ from upstream
     }
 
-newtype Server am b m r = Server
-    { serverHandler :: forall x. b x -> Agent am 'Nothing m ( x, Agent am ('Just b) m r )
+newtype Server (am :: Maybe Response) (b :: Response) (m :: Context) r = Server
+    { serverHandler :: forall x. b x -> Agent am 'Nothing m (Yield x am b m r)
         -- ^ A server receives a @b x@ request from downstream and responds with @x@
     }
 
-data Connect am b cm m r = Connect
-    { connectServer :: Agent am ('Just b) m Void
-    , connectClient :: Agent ('Just b) cm m r
+data Yield x (am :: Maybe Response) (b :: Response) (m :: Context) r = Yield
+    { yieldResponse :: x
+        -- ^ Response returned by a server
+    , yieldContinuation :: Agent am ('Just b) m r
+        -- ^ What's next for the server
     }
 
 deriving stock instance Functor m => Functor (Client x a bm m)
 deriving stock instance Functor m => Functor (Server am b m)
+deriving stock instance Functor m => Functor (Yield x am b m)
 deriving stock instance Functor m => Functor (Agent am bm m)
 
 instance Functor m => Applicative (Agent am bm m) where
@@ -64,18 +71,15 @@ generalizeAgentDownstream = \case
 generalizeClientDownstream :: forall bm x a m r. Functor m => Client x a 'Nothing m r -> Client x a bm m r
 generalizeClientDownstream (Client x f) = Client x (fmap generalizeAgentDownstream f)
 
-generalizeConnectDownstream :: Functor m => Connect am b 'Nothing m r -> Connect am b cm m r
-generalizeConnectDownstream (Connect a b) = Connect a (generalizeAgentDownstream b)
-
 generalizeAgentUpstream :: Functor m => Agent 'Nothing bm m r -> Agent am bm m r
 generalizeAgentUpstream = \case
     AgentPure x -> AgentPure x
     AgentBind x f -> AgentBind (generalizeAgentUpstream x) (fmap generalizeAgentUpstream f)
     AgentAction x -> AgentAction (fmap generalizeAgentUpstream x)
-    AgentServe (Server f) -> AgentServe $ Server (fmap generalizeAgentUpstream . (fmap . fmap . fmap) generalizeAgentUpstream $ f)
+    AgentServe (Server f) -> AgentServe $ Server (fmap generalizeAgentUpstream . (fmap . fmap) generalizeYieldUpstream $ f)
 
-generalizeConnectUpstream :: Functor m => Connect 'Nothing b cm m r -> Connect am b cm m r
-generalizeConnectUpstream (Connect a b) = Connect (generalizeAgentUpstream a) b
+generalizeYieldUpstream :: Functor m => Yield x 'Nothing b m r -> Yield x am b m r
+generalizeYieldUpstream (Yield r c) = Yield r (generalizeAgentUpstream c)
 
 (>->) :: forall am b cm m r. Functor m =>
     Agent am ('Just b) m Void -> Agent ('Just b) cm m r -> Agent am cm m r
@@ -84,7 +88,9 @@ _ >-> AgentPure x = AgentPure x
 
 up >-> AgentAction x = AgentAction (fmap (up >->) x)
 
--- up >-> AgentServe (Server f) = AgentServe $ Server (\x -> up >-> (fmap . fmap) (up >->) (f x))
+up >-> AgentServe (Server f) = AgentServe $ Server \x ->
+    _
+    -- up >-> (fmap . fmap) (up >->) (f x)
 
 -- AgentAction ma >-> AgentRequest (Client x g) = _
 
