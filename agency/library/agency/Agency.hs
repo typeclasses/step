@@ -47,6 +47,8 @@ data Yield x (am :: Maybe Response) (b :: Response) (m :: Context) r = Yield
         -- ^ What's next for the server
     }
 
+newtype Daemon am b m = Daemon{ daemonAgent :: Agent am ('Just b) m Void }
+
 deriving stock instance Functor m => Functor (Client x a bm m)
 deriving stock instance Functor m => Functor (Server am b m)
 deriving stock instance Functor m => Functor (Yield x am b m)
@@ -92,20 +94,19 @@ generalizeYieldUpstream :: Functor m => Yield x 'Nothing b m r -> Yield x am b m
 generalizeYieldUpstream (Yield r c) = Yield r (generalizeAgentUpstream c)
 
 (>->) :: forall am b cm m r. Functor m =>
-    Agent am ('Just b) m Void -> Agent ('Just b) cm m r -> Agent am cm m r
+    Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 _ >-> AgentPure x = AgentPure x
 up >-> AgentAction x = AgentAction (fmap (up >->) x)
 up >-> AgentServe (Server f) = AgentServe $ Server \x -> up +>> f x
-_ >-> _ = _
 
 (+>>) :: Functor m =>
-    Agent am ('Just b) m Void -> Reaction x ('Just b) c m r -> Reaction x am c m r
+    Daemon am b m -> Reaction x ('Just b) c m r -> Reaction x am c m r
 up +>> Reaction (AgentPure (Yield y down)) = Reaction $ pure $ Yield y $ up >-> down
 up +>> Reaction (AgentAction a) = Reaction $ AgentAction $ a <&> \a' ->
     reactionAgent $ up +>> Reaction a'
-AgentServe (Server f) +>> Reaction (AgentRequest (Client x g)) = Reaction do
+Daemon (AgentServe (Server f)) +>> Reaction (AgentRequest (Client x g)) = Reaction do
     Yield y up' <- reactionAgent $ f x
-    reactionAgent $ up' +>> Reaction (g y)
+    reactionAgent $ Daemon up' +>> Reaction (g y)
 
 {-
 
