@@ -69,30 +69,6 @@ runAgent = \case
     AgentAction x -> x >>= runAgent
     AgentBind x f -> runAgent x >>= (runAgent . f)
 
-generalizeAgentDownstream :: forall bm am m r. Functor m => Agent am 'Nothing m r -> Agent am bm m r
-generalizeAgentDownstream = \case
-    AgentPure x -> AgentPure x
-    AgentBind x f -> AgentBind (generalizeAgentDownstream x) (fmap generalizeAgentDownstream f)
-    AgentAction x -> AgentAction (fmap generalizeAgentDownstream x)
-    AgentRequest x -> AgentRequest (generalizeClientDownstream x)
-
-generalizeClientDownstream :: forall bm x a m r. Functor m => Client x a 'Nothing m r -> Client x a bm m r
-generalizeClientDownstream (Client x f) = Client x (fmap generalizeAgentDownstream f)
-
-generalizeAgentUpstream :: Functor m => Agent 'Nothing bm m r -> Agent am bm m r
-generalizeAgentUpstream = \case
-    AgentPure x -> AgentPure x
-    AgentBind x f -> AgentBind (generalizeAgentUpstream x) (fmap generalizeAgentUpstream f)
-    AgentAction x -> AgentAction (fmap generalizeAgentUpstream x)
-    AgentServe (Server f) -> AgentServe $ Server $ fmap generalizeReactionUpstream f
-
-generalizeReactionUpstream :: Functor m => Reaction x 'Nothing b m r -> Reaction x am b m r
-generalizeReactionUpstream (Reaction x) =
-    Reaction $ generalizeAgentUpstream $ fmap generalizeYieldUpstream x
-
-generalizeYieldUpstream :: Functor m => Yield x 'Nothing b m r -> Yield x am b m r
-generalizeYieldUpstream (Yield r c) = Yield r (generalizeAgentUpstream c)
-
 (>->) :: forall am b cm m r. Functor m =>
     Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 _ >-> AgentPure x = AgentPure x
