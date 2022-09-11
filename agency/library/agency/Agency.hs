@@ -31,8 +31,13 @@ data Client x (a :: Response) (bm :: Maybe Response) (m :: Context) r = Client
     }
 
 newtype Server (am :: Maybe Response) (b :: Response) (m :: Context) r = Server
-    { serverHandler :: forall x. b x -> Agent am 'Nothing m (Yield x am b m r)
+    { serverHandler :: forall x. b x -> Reaction x am b m r
         -- ^ A server receives a @b x@ request from downstream and responds with @x@
+    }
+
+newtype Reaction x (am :: Maybe Response) (b :: Response) (m :: Context) r = Reaction
+    { reactionAgent :: Agent am 'Nothing m (Yield x am b m r)
+        -- ^ A server in the process of reacting to a request
     }
 
 data Yield x (am :: Maybe Response) (b :: Response) (m :: Context) r = Yield
@@ -46,6 +51,7 @@ deriving stock instance Functor m => Functor (Client x a bm m)
 deriving stock instance Functor m => Functor (Server am b m)
 deriving stock instance Functor m => Functor (Yield x am b m)
 deriving stock instance Functor m => Functor (Agent am bm m)
+deriving stock instance Functor m => Functor (Reaction x am b m)
 
 instance Functor m => Applicative (Agent am bm m) where
     pure = AgentPure
@@ -76,29 +82,30 @@ generalizeAgentUpstream = \case
     AgentPure x -> AgentPure x
     AgentBind x f -> AgentBind (generalizeAgentUpstream x) (fmap generalizeAgentUpstream f)
     AgentAction x -> AgentAction (fmap generalizeAgentUpstream x)
-    AgentServe (Server f) -> AgentServe $ Server (fmap generalizeAgentUpstream . (fmap . fmap) generalizeYieldUpstream $ f)
+    AgentServe (Server f) -> AgentServe $ Server $ fmap generalizeReactionUpstream f
+
+generalizeReactionUpstream :: Functor m => Reaction x 'Nothing b m r -> Reaction x am b m r
+generalizeReactionUpstream (Reaction x) =
+    Reaction $ generalizeAgentUpstream $ fmap generalizeYieldUpstream x
 
 generalizeYieldUpstream :: Functor m => Yield x 'Nothing b m r -> Yield x am b m r
 generalizeYieldUpstream (Yield r c) = Yield r (generalizeAgentUpstream c)
 
 (>->) :: forall am b cm m r. Functor m =>
     Agent am ('Just b) m Void -> Agent ('Just b) cm m r -> Agent am cm m r
-
 _ >-> AgentPure x = AgentPure x
-
 up >-> AgentAction x = AgentAction (fmap (up >->) x)
-
-up >-> AgentServe (Server f) = AgentServe $ Server \x ->
-    _
-    -- up >-> (fmap . fmap) (up >->) (f x)
-
--- AgentAction ma >-> AgentRequest (Client x g) = _
-
--- AgentServe (Server f) >-> AgentRequest (Client x g) = _
-
--- AgentRequest (Client y h) >-> AgentRequest (Client x g) = AgentRequest $ Client y \z -> h z >-> down
-
+up >-> AgentServe (Server f) = AgentServe $ Server \x -> up +>> f x
 _ >-> _ = _
+
+(+>>) :: Functor m =>
+    Agent am ('Just b) m Void -> Reaction x ('Just b) c m r -> Reaction x am c m r
+up +>> Reaction (AgentPure (Yield y down)) = Reaction $ pure $ Yield y $ up >-> down
+up +>> Reaction (AgentAction a) = Reaction $ AgentAction $ a <&> \a' ->
+    reactionAgent $ up +>> Reaction a'
+AgentServe (Server f) +>> Reaction (AgentRequest (Client x g)) = Reaction do
+    Yield y up' <- reactionAgent $ f x
+    reactionAgent $ up' +>> Reaction (g y)
 
 {-
 
