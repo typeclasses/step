@@ -65,11 +65,11 @@ runAgent = \case
     AgentMap x f -> runAgent x <&> f
     AgentBind x f -> runAgent x >>= (runAgent . f)
 
-(>->) :: forall am b cm m r.
-    Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
+(>->) :: Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 _ >-> AgentPure x = AgentPure x
 _ >-> AgentAction x = AgentAction x
 up >-> AgentServe (Server f) = AgentServe $ Server \x -> up +>> f x
+Daemon (AgentServe (Server f)) >-> AgentRequest x = reactionAgent' (f x) <&> yieldResponse
 
 (+>>) ::
     Daemon am b m -> Reaction x ('Just b) c m r -> Reaction x am c m r
@@ -81,6 +81,20 @@ up +>> Reaction (AgentAction a) = Reaction do
 Daemon (AgentServe (Server f)) +>> Reaction (AgentRequest x) = Reaction do
     Yield y up' <- reactionAgent $ f x
     reactionAgent $ Daemon up' +>> Reaction (pure y)
+
+relaxAgentDown :: Agent am 'Nothing m r -> Agent am cm m r
+relaxAgentDown = r
+  where
+    r :: Agent am 'Nothing m r -> Agent am cm m r
+    r = \case
+      AgentRequest x -> AgentRequest x
+      AgentAction x -> AgentAction x
+      AgentBind x f -> AgentBind (r x) (fmap r f)
+      AgentMap x f -> AgentMap (r x) f
+      AgentPure x -> AgentPure x
+
+reactionAgent' :: Reaction x am b m r -> Agent am cm m (Yield x am b m r)
+reactionAgent' = relaxAgentDown . reactionAgent
 
 {-
 
