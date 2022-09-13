@@ -15,6 +15,7 @@ library
     ghc-options: -fno-warn-missing-signatures
 
     default-extensions:
+        ApplicativeDo
         BlockArguments
         DataKinds
         DeriveFunctor

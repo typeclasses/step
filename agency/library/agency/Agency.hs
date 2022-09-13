@@ -18,7 +18,7 @@ data Agent (am :: Maybe Response) (bm :: Maybe Response) (m :: Context) r where
     AgentBind :: Agent am bm m x -> (x -> Agent am bm m r) -> Agent am bm m r
 
     -- | Action lifted from the base monad @m@
-    AgentAction :: m r -> Agent am bm m r
+    AgentAction :: m (Agent am bm m r) -> Agent am bm m r
 
     -- | Request of type @a x@ + continuation from response type @x@
     AgentRequest :: a r -> Agent ('Just a) bm m r
@@ -47,7 +47,7 @@ newtype Daemon am b m = Daemon{ daemonAgent :: Agent am ('Just b) m Void }
 
 instance Functor m => Functor (Agent am bm m) where
     fmap f = \case
-        AgentAction x -> AgentAction (fmap f x)
+        AgentAction x -> AgentAction (fmap (fmap f) x)
         AgentMap a g -> AgentMap a (f . g)
         a -> AgentMap a f
 
@@ -62,41 +62,41 @@ instance Functor m => Monad (Agent am bm m) where
 runAgent :: Monad m => Agent 'Nothing 'Nothing m r -> m r
 runAgent = \case
     AgentPure x -> pure x
-    AgentAction x -> x
+    AgentAction x -> x >>= runAgent
     AgentMap x f -> runAgent x <&> f
     AgentBind x f -> runAgent x >>= (runAgent . f)
 
 (>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 _ >-> AgentPure x = AgentPure x
-_ >-> AgentAction x = AgentAction x
+up >-> AgentAction x = AgentAction do
+    down <- x
+    pure $ up >-> down
 up >-> AgentServe (Server f) = AgentServe $ Server \x -> up +>> f x
 Daemon (AgentServe (Server f)) >-> AgentRequest x = reactionAgent' (f x) <&> yieldResponse
-Daemon (AgentAction x) >-> _ = AgentAction (vacuous x)
 
 (+>>) :: Functor m =>
     Daemon am b m -> Reaction x ('Just b) c m r -> Reaction x am c m r
 up +>> Reaction (AgentPure (Yield y down)) = Reaction do
     pure $ Yield y $ up >-> down
-up +>> Reaction (AgentAction a) = Reaction do
-    Yield y down <- AgentAction a
-    pure $ Yield y $ up >-> down
+up +>> Reaction (AgentAction a) = Reaction $ AgentAction do
+    a' <- a
+    pure $ reactionAgent $ up +>> Reaction a'
 Daemon (AgentServe (Server f)) +>> Reaction (AgentRequest x) = Reaction do
     Yield y up' <- reactionAgent $ f x
     reactionAgent $ Daemon up' +>> Reaction (pure y)
-Daemon (AgentAction x) +>> _ = Reaction (AgentAction (vacuous x))
 
-relaxAgentDown :: Agent am 'Nothing m r -> Agent am cm m r
+relaxAgentDown :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
 relaxAgentDown = r
   where
-    r :: Agent am 'Nothing m r -> Agent am cm m r
+    r :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
     r = \case
       AgentRequest x -> AgentRequest x
-      AgentAction x -> AgentAction x
+      AgentAction x -> AgentAction (fmap r x)
       AgentBind x f -> AgentBind (r x) (fmap r f)
       AgentMap x f -> AgentMap (r x) f
       AgentPure x -> AgentPure x
 
-reactionAgent' :: Reaction x am b m r -> Agent am cm m (Yield x am b m r)
+reactionAgent' :: Functor m => Reaction x am b m r -> Agent am cm m (Yield x am b m r)
 reactionAgent' = relaxAgentDown . reactionAgent
 
 {-
