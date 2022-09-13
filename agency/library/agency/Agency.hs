@@ -8,23 +8,23 @@ type Context = Type -> Type
 
 data Agent (am :: Maybe Response) (bm :: Maybe Response) (m :: Context) r where
 
+    -- | 'pure'
+    AgentPure :: r -> Agent am bm m r
+
+    -- | ('<&>')
+    AgentMap :: Agent am bm m x -> (x -> r) -> Agent am bm m r
+
+    -- | ('>>=')
+    AgentBind :: Agent am bm m x -> (x -> Agent am bm m r) -> Agent am bm m r
+
+    -- | Action lifted from the base monad @m@
+    AgentAction :: m r -> Agent am bm m r
+
     -- | Request of type @a x@ + continuation from response type @x@
     AgentRequest :: a r -> Agent ('Just a) bm m r
 
     -- | Continuation from request type @b x@ producing a response of type @x@
     AgentServe :: Server am b m r -> Agent am ('Just b) m r
-
-    -- | Action lifted from the base monad @m@
-    AgentAction :: m r -> Agent am bm m r
-
-    -- | ('>>=')
-    AgentBind :: Agent am bm m x -> (x -> Agent am bm m r) -> Agent am bm m r
-
-    -- | ('<&>')
-    AgentMap :: Agent am bm m x -> (x -> r) -> Agent am bm m r
-
-    -- | 'pure'
-    AgentPure :: r -> Agent am bm m r
 
 newtype Server (am :: Maybe Response) (b :: Response) (m :: Context) r = Server
     { serverHandler :: forall x. b x -> Reaction x am b m r
