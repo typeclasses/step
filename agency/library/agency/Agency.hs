@@ -11,9 +11,6 @@ data Agent (am :: Maybe Response) (bm :: Maybe Response) (m :: Context) r where
     -- | 'pure'
     AgentPure :: r -> Agent am bm m r
 
-    -- | ('<&>')
-    AgentMap :: Agent am bm m x -> (x -> r) -> Agent am bm m r
-
     -- | ('>>=')
     AgentBind :: Agent am bm m x -> (x -> Agent am bm m r) -> Agent am bm m r
 
@@ -48,8 +45,7 @@ newtype Daemon am b m = Daemon{ daemonAgent :: Agent am ('Just b) m Void }
 instance Functor m => Functor (Agent am bm m) where
     fmap f = \case
         AgentAction x -> AgentAction (fmap (fmap f) x)
-        AgentMap a g -> AgentMap a (f . g)
-        a -> AgentMap a f
+        a -> AgentBind a (AgentPure . f)
 
 instance Functor m => Applicative (Agent am bm m) where
     pure = AgentPure
@@ -63,7 +59,6 @@ runAgent :: Monad m => Agent 'Nothing 'Nothing m r -> m r
 runAgent = \case
     AgentPure x -> pure x
     AgentAction x -> x >>= runAgent
-    AgentMap x f -> runAgent x <&> f
     AgentBind x f -> runAgent x >>= (runAgent . f)
 
 (>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
@@ -93,7 +88,6 @@ relaxAgentDown = r
       AgentRequest x -> AgentRequest x
       AgentAction x -> AgentAction (fmap r x)
       AgentBind x f -> AgentBind (r x) (fmap r f)
-      AgentMap x f -> AgentMap (r x) f
       AgentPure x -> AgentPure x
 
 reactionAgent' :: Functor m => Reaction x am b m r -> Agent am cm m (Yield x am b m r)
