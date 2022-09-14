@@ -29,6 +29,7 @@ library
         ScopedTypeVariables
         StandaloneDeriving
         StrictData
+        TupleSections
         TypeApplications
         TypeFamilies
 

@@ -29,7 +29,7 @@ type Server (am :: Maybe Response) (b :: Response) (m :: Context) r =
 
 -- | A server in the process of reacting to a request
 type Reaction x (am :: Maybe Response) (b :: Response) (m :: Context) r =
-    Agent am 'Nothing m (x, Agent am ('Just b) m r)
+    Agent am 'Nothing m (Agent am ('Just b) m r, x)
 
 type Daemon am b m = Agent am ('Just b) m Void
 
@@ -52,17 +52,25 @@ runAgent = \case
     AgentAction x -> x >>= runAgent
     AgentBind x f -> runAgent x >>= (runAgent . f)
 
-(>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
-_ >-> AgentPure x = AgentPure x
-up >-> AgentAction x = AgentAction (x <&> (up >->))
-up >-> AgentServe f = AgentServe \x -> up +>> f x
-AgentServe f >-> AgentRequest x = relaxAgentDown (f x) <&> fst
+type Connection am b cm m r = Agent am cm m (Daemon am b m, r)
 
-(+>>) :: Functor m =>
-    Daemon am b m -> Reaction x ('Just b) c m r -> Reaction x am c m r
-up +>> AgentPure (y, down) = pure (y, up >-> down)
-up +>> AgentAction a = AgentAction (a <&> (up +>>))
-AgentServe f +>> AgentRequest x = f x >>= \(y, up') -> up' +>> pure y
+connect :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Connection am b cm m r
+connect up (AgentPure x) = fmap (up,) (AgentPure x)
+connect up (AgentAction x) = AgentAction (x <&> connect up)
+connect up (AgentBind y g) = connect up y >>= \(up', z) -> connect up' (g z)
+connect up (AgentServe f) = AgentServe \x -> connect up (f x) <&> \(up', (down', z)) -> (connect up' down', z)
+connect (AgentServe f) (AgentRequest x) = relaxAgentDown (f x)
+
+-- AgentServe f >-> AgentRequest x = relaxAgentDown (f x) <&> fst
+
+(>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
+a >-> b = fmap snd (connect a b)
+
+-- (+>>) :: Functor m =>
+--     Daemon am b m -> Reaction x ('Just b) c m r -> Reaction x am c m r
+-- up +>> AgentPure (y, down) = pure (y, up >-> down)
+-- up +>> AgentAction a = AgentAction (a <&> (up +>>))
+-- AgentServe f +>> AgentRequest x = f x >>= \(y, up') -> up' +>> pure y
 
 relaxAgentDown :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
 relaxAgentDown = r
