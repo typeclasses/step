@@ -23,24 +23,15 @@ data Agent (am :: Maybe Response) (bm :: Maybe Response) (m :: Context) r where
     -- | Continuation from request type @b x@ producing a response of type @x@
     AgentServe :: Server am b m r -> Agent am ('Just b) m r
 
-newtype Server (am :: Maybe Response) (b :: Response) (m :: Context) r = Server
-    { serverHandler :: forall x. b x -> Reaction x am b m r
-        -- ^ A server receives a @b x@ request from downstream and responds with @x@
-    }
+-- | A server receives a @b x@ request from downstream and responds with @x@
+type Server (am :: Maybe Response) (b :: Response) (m :: Context) r =
+    forall x. b x -> Reaction x am b m r
 
-newtype Reaction x (am :: Maybe Response) (b :: Response) (m :: Context) r = Reaction
-    { reactionAgent :: Agent am 'Nothing m (Yield x am b m r)
-        -- ^ A server in the process of reacting to a request
-    }
+-- | A server in the process of reacting to a request
+type Reaction x (am :: Maybe Response) (b :: Response) (m :: Context) r =
+    Agent am 'Nothing m (x, Agent am ('Just b) m r)
 
-data Yield x (am :: Maybe Response) (b :: Response) (m :: Context) r = Yield
-    { yieldResponse :: x
-        -- ^ Response returned by a server
-    , yieldContinuation :: Agent am ('Just b) m r
-        -- ^ What's next for the server
-    }
-
-newtype Daemon am b m = Daemon{ daemonAgent :: Agent am ('Just b) m Void }
+type Daemon am b m = Agent am ('Just b) m Void
 
 instance Functor m => Functor (Agent am bm m) where
     fmap f = \case
@@ -63,22 +54,15 @@ runAgent = \case
 
 (>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 _ >-> AgentPure x = AgentPure x
-up >-> AgentAction x = AgentAction do
-    down <- x
-    pure $ up >-> down
-up >-> AgentServe (Server f) = AgentServe $ Server \x -> up +>> f x
-Daemon (AgentServe (Server f)) >-> AgentRequest x = reactionAgent' (f x) <&> yieldResponse
+up >-> AgentAction x = AgentAction (x <&> (up >->))
+up >-> AgentServe f = AgentServe \x -> up +>> f x
+AgentServe f >-> AgentRequest x = relaxAgentDown (f x) <&> fst
 
 (+>>) :: Functor m =>
     Daemon am b m -> Reaction x ('Just b) c m r -> Reaction x am c m r
-up +>> Reaction (AgentPure (Yield y down)) = Reaction do
-    pure $ Yield y $ up >-> down
-up +>> Reaction (AgentAction a) = Reaction $ AgentAction do
-    a' <- a
-    pure $ reactionAgent $ up +>> Reaction a'
-Daemon (AgentServe (Server f)) +>> Reaction (AgentRequest x) = Reaction do
-    Yield y up' <- reactionAgent $ f x
-    reactionAgent $ Daemon up' +>> Reaction (pure y)
+up +>> AgentPure (y, down) = pure (y, up >-> down)
+up +>> AgentAction a = AgentAction (a <&> (up +>>))
+AgentServe f +>> AgentRequest x = f x >>= \(y, up') -> up' +>> pure y
 
 relaxAgentDown :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
 relaxAgentDown = r
@@ -89,9 +73,6 @@ relaxAgentDown = r
       AgentAction x -> AgentAction (fmap r x)
       AgentBind x f -> AgentBind (r x) (fmap r f)
       AgentPure x -> AgentPure x
-
-reactionAgent' :: Functor m => Reaction x am b m r -> Agent am cm m (Yield x am b m r)
-reactionAgent' = relaxAgentDown . reactionAgent
 
 {-
 
