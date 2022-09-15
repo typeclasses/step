@@ -21,15 +21,7 @@ data Agent (am :: Maybe Response) (bm :: Maybe Response) (m :: Context) r where
     AgentRequest :: a r -> Agent ('Just a) bm m r
 
     -- | Continuation from request type @b x@ producing a response of type @x@
-    AgentServe :: Server am b m r -> Agent am ('Just b) m r
-
--- | A server receives a @b x@ request from downstream and responds with @x@
-type Server (am :: Maybe Response) (b :: Response) (m :: Context) r =
-    forall x. b x -> Reaction x am b m r
-
--- | A server in the process of reacting to a request
-type Reaction x (am :: Maybe Response) (b :: Response) (m :: Context) r =
-    Agent am 'Nothing m (Agent am ('Just b) m r, x)
+    AgentServe :: (forall x. b x -> Agent am 'Nothing m (r, x)) -> Agent am ('Just b) m r
 
 type Daemon am b m = Agent am ('Just b) m Void
 
@@ -58,19 +50,11 @@ connect :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Connection am
 connect up (AgentPure x) = fmap (up,) (AgentPure x)
 connect up (AgentAction x) = AgentAction (x <&> connect up)
 connect up (AgentBind y g) = connect up y >>= \(up', z) -> connect up' (g z)
-connect up (AgentServe f) = AgentServe \x -> connect up (f x) <&> \(up', (down', z)) -> (connect up' down', z)
-connect (AgentServe f) (AgentRequest x) = relaxAgentDown (f x)
-
--- AgentServe f >-> AgentRequest x = relaxAgentDown (f x) <&> fst
+connect up (AgentServe f) = AgentServe \x -> connect up (f x) <&> \(up', (r, y)) -> ((up', r), y)
+connect (AgentBind (AgentServe f) g) (AgentRequest x) = relaxAgentDown (f x) <&> \(r, y) -> (g r, y)
 
 (>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 a >-> b = fmap snd (connect a b)
-
--- (+>>) :: Functor m =>
---     Daemon am b m -> Reaction x ('Just b) c m r -> Reaction x am c m r
--- up +>> AgentPure (y, down) = pure (y, up >-> down)
--- up +>> AgentAction a = AgentAction (a <&> (up +>>))
--- AgentServe f +>> AgentRequest x = f x >>= \(y, up') -> up' +>> pure y
 
 relaxAgentDown :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
 relaxAgentDown = r
