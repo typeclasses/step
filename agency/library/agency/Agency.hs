@@ -15,7 +15,7 @@ data Agent (am :: Maybe Response) (bm :: Maybe Response) (m :: Context) r where
     AgentBind :: Agent am bm m x -> (x -> Agent am bm m r) -> Agent am bm m r
 
     -- | Action lifted from the base monad @m@
-    AgentAction :: m (Agent am bm m r) -> Agent am bm m r
+    AgentAction :: m r -> Agent am bm m r
 
     -- | Request of type @a x@ + continuation from response type @x@
     AgentRequest :: a r -> Agent ('Just a) bm m r
@@ -27,7 +27,7 @@ type Daemon am b m = Agent am ('Just b) m Void
 
 instance Functor m => Functor (Agent am bm m) where
     fmap f = \case
-        AgentAction x -> AgentAction (fmap (fmap f) x)
+        AgentAction x -> AgentAction (fmap f x)
         a -> AgentBind a (AgentPure . f)
 
 instance Functor m => Applicative (Agent am bm m) where
@@ -41,17 +41,23 @@ instance Functor m => Monad (Agent am bm m) where
 runAgent :: Monad m => Agent 'Nothing 'Nothing m r -> m r
 runAgent = \case
     AgentPure x -> pure x
-    AgentAction x -> x >>= runAgent
+    AgentAction x -> x
     AgentBind x f -> runAgent x >>= (runAgent . f)
 
 type Connection am b cm m r = Agent am cm m (Daemon am b m, r)
 
 connect :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Connection am b cm m r
+
 connect up (AgentPure x) = fmap (up,) (AgentPure x)
-connect up (AgentAction x) = AgentAction (x <&> connect up)
+connect up (AgentAction x) = AgentAction (x <&> (up,))
 connect up (AgentBind y g) = connect up y >>= \(up', z) -> connect up' (g z)
 connect up (AgentServe f) = AgentServe \x -> connect up (f x) <&> \(up', (r, y)) -> ((up', r), y)
+
 connect (AgentBind (AgentServe f) g) (AgentRequest x) = relaxAgentDown (f x) <&> \(r, y) -> (g r, y)
+
+-- These cases involving 'absurd' don't really happen, but they satisfy the type checker
+connect (AgentAction x) (AgentRequest _) = AgentAction (fmap absurd x)
+connect (AgentServe f) (AgentRequest x) = relaxAgentDown (f x) >>= \(r, _) -> absurd r
 
 (>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 a >-> b = fmap snd (connect a b)
@@ -62,7 +68,7 @@ relaxAgentDown = r
     r :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
     r = \case
       AgentRequest x -> AgentRequest x
-      AgentAction x -> AgentAction (fmap r x)
+      AgentAction x -> AgentAction x
       AgentBind x f -> AgentBind (r x) (fmap r f)
       AgentPure x -> AgentPure x
 
