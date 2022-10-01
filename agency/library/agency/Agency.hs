@@ -2,7 +2,8 @@ module Agency where
 
 import Relude hiding (Proxy)
 
-data Client (up :: Type -> Type) (m :: Type -> Type) (a :: Type) where
+data Client up m a
+  where
     Pure :: a -> Client up m a
     Action :: m a -> Client up m a
     Request :: up a -> Client up m a
@@ -11,23 +12,24 @@ data Client (up :: Type -> Type) (m :: Type -> Type) (a :: Type) where
 newtype Handler up down m =
     Handler (forall a. down a -> Client up m (Server up down m, a))
 
-newtype Server (up :: Type -> Type) (down :: Type -> Type) (m :: Type -> Type) =
+newtype Server up down m =
     Server (Client up m (Handler up down m))
 
-instance Functor m => Functor (Client up m) where
+instance Functor m => Functor (Client up m)
+  where
     fmap f = \case
         Pure x -> Pure (f x)
         Action x -> Action (fmap f x)
         Request x -> Bind (Request x) (Pure . f)
         Bind x g -> Bind x (fmap (fmap f) g)
 
-instance Functor m => Applicative (Client up m) where
+instance Functor m => Applicative (Client up m)
+  where
     pure = Pure
     a1 <*> a2 = Bind a1 \f -> a2 <&> \x -> f x
     a1 *> a2 = Bind a1 \_ -> a2
 
-instance Functor m => Monad (Client up m) where
-    (>>=) = Bind
+instance Functor m => Monad (Client up m) where (>>=) = Bind
 
 data Nil a
 
