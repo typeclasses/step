@@ -73,20 +73,12 @@ connectServerToServer up (Server down) =
     Server (connectServerToClient up down <&> \(up', h) -> connectServerToHandler up' h)
 
 connectServerToHandler :: Functor m => Server up x m -> Handler x down m -> Handler up down m
-connectServerToHandler up (Handler h) = Handler \r -> _ (h r)
+connectServerToHandler up (Handler h) = Handler \r -> do
+    (up', (down', s)) <- connectServerToClient up (h r)
+    pure (connectServerToServer up' down', s)
 
 -- (>->) :: Functor m => Server am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 -- a >-> b = fmap snd (connect a b)
-
--- relaxAgentDown :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
--- relaxAgentDown = r
---   where
---     r :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
---     r = \case
---       AgentRequest x -> AgentRequest x
---       AgentAction x -> AgentAction x
---       AgentBind x f -> AgentBind (r x) (fmap r f)
---       AgentPure x -> AgentPure x
 
 {-
 
