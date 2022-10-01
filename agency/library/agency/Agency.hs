@@ -10,10 +10,10 @@ data Client up m a
     Bind    :: Client up m x -> (x -> Client up m a) -> Client up m a
 
 newtype Handler up down m =
-    Handler (forall a. down a -> Client up m (Server up down m, a))
+    Handler{ handle :: forall a. down a -> Client up m (Server up down m, a) }
 
 newtype Server up down m =
-    Server (Client up m (Handler up down m))
+    Server{ serve :: Client up m (Handler up down m) }
 
 instance Functor m => Functor (Client up m)
   where
@@ -46,11 +46,11 @@ connectDaemonToClient up down =
         Action  x   -> Action (fmap (up,) x)
         Bind    x f -> connectDaemonToClient up x `Bind` \(up', y) -> connectDaemonToClient up' (f y)
         Request r   ->
-            case up of
-                Server (Pure (Handler h)) -> h r
-                Server (Action x)         -> Action x `Bind` \(Handler h) -> h r
-                Server (Request r')       -> Request r' `Bind` \(Handler h) -> h r
-                Server (Bind x f)         -> x `Bind` \y -> f y `Bind` \(Handler h) -> h r
+            case serve up of
+                Pure h     ->                                 handle h r
+                Action x   -> Action x           `Bind` \h -> handle h r
+                Request r' -> Request r'         `Bind` \h -> handle h r
+                Bind x f   -> x `Bind` \y -> f y `Bind` \h -> handle h r
 
 -- connectDaemonToDaemon :: Functor m => Server up x m -> Server x down m -> Server up down m
 -- connectDaemonToDaemon up down =
