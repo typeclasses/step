@@ -21,6 +21,8 @@ library
         DeriveFunctor
         DerivingStrategies
         EmptyCase
+        FlexibleInstances
+        FunctionalDependencies
         LambdaCase
         KindSignatures
         GADTs

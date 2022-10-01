@@ -68,17 +68,18 @@ connectServerToRequest up r = case serve up of
     Request r' -> Request r'         `Bind` \h -> handle h r
     Bind x f   -> x `Bind` \y -> f y `Bind` \h -> handle h r
 
-connectServerToServer :: Functor m => Server up x m -> Server x down m -> Server up down m
-connectServerToServer up (Server down) =
-    Server (connectServerToClient up down <&> \(up', h) -> connectServerToHandler up' h)
+class Connect xa xb m (a :: Type -> Type) (b :: Type -> Type) where
+    (>->) :: Functor m => Server a b m -> xb -> xa
 
-connectServerToHandler :: Functor m => Server up x m -> Handler x down m -> Handler up down m
-connectServerToHandler up (Handler h) = Handler \r -> do
-    (up', (down', s)) <- connectServerToClient up (h r)
-    pure (connectServerToServer up' down', s)
+instance Connect (Handler a down m) (Handler b down m) m a b where
+    up >-> Handler h = Handler \r -> do
+        (up', (down', s)) <- connectServerToClient up (h r)
+        pure (up' >-> down', s)
 
--- (>->) :: Functor m => Server am b m -> Agent ('Just b) cm m r -> Agent am cm m r
--- a >-> b = fmap snd (connect a b)
+instance Connect (Server a down m) (Server b down m) m a b where
+    up >-> Server down = Server do
+        (up', h) <- connectServerToClient up down
+        pure (up' >-> h)
 
 {-
 
