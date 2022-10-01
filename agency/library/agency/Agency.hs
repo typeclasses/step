@@ -39,12 +39,12 @@ run = \case
     Action x   -> x
     Bind   x f -> run x >>= (run . f)
 
-connectDaemonToClient :: Functor m => Server up x m -> Client x m a -> Client up m (Server up x m, a)
-connectDaemonToClient up down =
+connectServerToClient :: Functor m => Server up x m -> Client x m a -> Client up m (Server up x m, a)
+connectServerToClient up down =
     case down of
         Pure    x   -> Pure (up, x)
         Action  x   -> Action (fmap (up,) x)
-        Bind    x f -> connectDaemonToClient up x `Bind` \(up', y) -> connectDaemonToClient up' (f y)
+        Bind    x f -> connectServerToClient up x `Bind` \(up', y) -> connectServerToClient up' (f y)
         Request r   ->
             case serve up of
                 Pure h     ->                                 handle h r
