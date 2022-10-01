@@ -23,6 +23,7 @@ library
         LambdaCase
         KindSignatures
         GADTs
+        ImpredicativeTypes
         NoMonomorphismRestriction
         NoImplicitPrelude
         RankNTypes
