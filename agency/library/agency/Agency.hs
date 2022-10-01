@@ -4,10 +4,10 @@ import Relude hiding (Proxy)
 
 data Client up m a
   where
-    Pure :: a -> Client up m a
-    Action :: m a -> Client up m a
+    Pure    :: a    -> Client up m a
+    Action  :: m a  -> Client up m a
     Request :: up a -> Client up m a
-    Bind :: Client up m x -> (x -> Client up m a) -> Client up m a
+    Bind    :: Client up m x -> (x -> Client up m a) -> Client up m a
 
 newtype Handler up down m =
     Handler (forall a. down a -> Client up m (Server up down m, a))
@@ -18,16 +18,16 @@ newtype Server up down m =
 instance Functor m => Functor (Client up m)
   where
     fmap f = \case
-        Pure x -> Pure (f x)
-        Action x -> Action (fmap f x)
-        Request x -> Bind (Request x) (Pure . f)
-        Bind x g -> Bind x (fmap (fmap f) g)
+        Pure    x   -> Pure $ f x
+        Action  x   -> Action $ fmap f x
+        Request x   -> Request x `Bind` (Pure . f)
+        Bind    x g -> x `Bind` fmap (fmap f) g
 
 instance Functor m => Applicative (Client up m)
   where
     pure = Pure
-    a1 <*> a2 = Bind a1 \f -> a2 <&> \x -> f x
-    a1 *> a2 = Bind a1 \_ -> a2
+    a1 <*> a2 = a1 `Bind` \f -> a2 <&> \x -> f x
+    a1  *> a2 = a1 `Bind` \_ -> a2
 
 instance Functor m => Monad (Client up m) where (>>=) = Bind
 
@@ -35,22 +35,22 @@ data Nil a
 
 run :: Monad m => Client Nil m a -> m a
 run = \case
-    Pure x -> pure x
-    Action x -> x
-    Bind x f -> run x >>= (run . f)
+    Pure   x   -> pure x
+    Action x   -> x
+    Bind   x f -> run x >>= (run . f)
 
 connectDaemonToClient :: Functor m => Server up x m -> Client x m a -> Client up m (Server up x m, a)
 connectDaemonToClient up down =
     case down of
-        Pure x -> Pure (up, x)
-        Action x -> Action (fmap (up,) x)
-        Bind x f -> connectDaemonToClient up x `Bind` \(up', y) -> connectDaemonToClient up' (f y)
-        Request r ->
+        Pure    x   -> Pure (up, x)
+        Action  x   -> Action (fmap (up,) x)
+        Bind    x f -> connectDaemonToClient up x `Bind` \(up', y) -> connectDaemonToClient up' (f y)
+        Request r   ->
             case up of
                 Server (Pure (Handler h)) -> h r
-                Server (Action x) -> Action x `Bind` \(Handler h) -> h r
-                Server (Request r') -> Request r' `Bind` \(Handler h) -> h r
-                Server (Bind x f) -> x `Bind` \y -> f y `Bind` \(Handler h) -> h r
+                Server (Action x)         -> Action x `Bind` \(Handler h) -> h r
+                Server (Request r')       -> Request r' `Bind` \(Handler h) -> h r
+                Server (Bind x f)         -> x `Bind` \y -> f y `Bind` \(Handler h) -> h r
 
 -- connectDaemonToDaemon :: Functor m => Server up x m -> Server x down m -> Server up down m
 -- connectDaemonToDaemon up down =
