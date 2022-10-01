@@ -20,6 +20,7 @@ library
         DataKinds
         DeriveFunctor
         DerivingStrategies
+        EmptyCase
         LambdaCase
         KindSignatures
         GADTs

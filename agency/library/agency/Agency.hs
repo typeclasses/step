@@ -7,25 +7,32 @@ data Client up m a
     Pure    :: a    -> Client up m a
     Action  :: m a  -> Client up m a
     Request :: up a -> Client up m a
-    Bind    :: Client up m x -> (x -> Client up m a) -> Client up m a
+
+    Bind :: Client up m x -> (x -> Client up m a) -> Client up m a
 
 newtype Handler up down m =
-    Handler{ handle :: forall a. down a -> Client up m (Server up down m, a) }
+    Handler
+      { handle :: forall a.
+          down a -> Client up m (Server up down m, a)
+      }
 
 newtype Server up down m =
-    Server{ serve :: Client up m (Handler up down m) }
+    Server
+      { serve :: Client up m (Handler up down m)
+      }
 
 instance Functor m => Functor (Client up m)
   where
     fmap f = \case
-        Pure    x   -> Pure $ f x
-        Action  x   -> Action $ fmap f x
-        Request x   -> Request x `Bind` (Pure . f)
-        Bind    x g -> x `Bind` fmap (fmap f) g
+        Pure    x    ->  Pure $ f x
+        Action  x    ->  Action $ fmap f x
+        Request x    ->  Request x `Bind` (Pure . f)
+        Bind    x g  ->  x `Bind` fmap (fmap f) g
 
 instance Functor m => Applicative (Client up m)
   where
     pure = Pure
+
     a1 <*> a2 = a1 `Bind` \f -> a2 <&> \x -> f x
     a1  *> a2 = a1 `Bind` \_ -> a2
 
@@ -33,24 +40,33 @@ instance Functor m => Monad (Client up m) where (>>=) = Bind
 
 data Nil a
 
-run :: Monad m => Client Nil m a -> m a
-run = \case
-    Pure   x   -> pure x
-    Action x   -> x
-    Bind   x f -> run x >>= (run . f)
+nil :: Nil a -> a
+nil = \case{}
 
-connectServerToClient :: Functor m => Server up x m -> Client x m a -> Client up m (Server up x m, a)
-connectServerToClient up down =
-    case down of
-        Pure    x   -> Pure (up, x)
-        Action  x   -> Action (fmap (up,) x)
-        Bind    x f -> connectServerToClient up x `Bind` \(up', y) -> connectServerToClient up' (f y)
-        Request r   ->
-            case serve up of
-                Pure h     ->                                 handle h r
-                Action x   -> Action x           `Bind` \h -> handle h r
-                Request r' -> Request r'         `Bind` \h -> handle h r
-                Bind x f   -> x `Bind` \y -> f y `Bind` \h -> handle h r
+run :: forall up m a. Monad m => (forall r. up r -> m r) -> Client up m a -> m a
+run z = go
+  where
+    go :: forall b. Monad m => Client up m b -> m b
+    go = \case
+      Pure    x    ->  pure x
+      Action  x    ->  x
+      Bind    x f  ->  go x >>= (go . f)
+      Request x    ->  z x
+
+connectServerToClient :: Functor m =>
+    Server up x m -> Client x m a -> Client up m (Server up x m, a)
+connectServerToClient up = \case
+    Pure    x   -> Pure (up, x)
+    Action  x   -> Action (fmap (up,) x)
+    Bind    x f -> connectServerToClient up x `Bind` \(up', y) -> connectServerToClient up' (f y)
+    Request r   -> connectServerToRequest up r
+
+connectServerToRequest :: Server up down m -> down a -> Client up m (Server up down m, a)
+connectServerToRequest up r = case serve up of
+    Pure h     ->                                 handle h r
+    Action x   -> Action x           `Bind` \h -> handle h r
+    Request r' -> Request r'         `Bind` \h -> handle h r
+    Bind x f   -> x `Bind` \y -> f y `Bind` \h -> handle h r
 
 connectServerToServer :: Functor m => Server up x m -> Server x down m -> Server up down m
 connectServerToServer up (Server down) =
