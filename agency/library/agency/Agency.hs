@@ -9,10 +9,10 @@ data Client (up :: Type -> Type) (m :: Type -> Type) (a :: Type) where
     Bind :: Client up m x -> (x -> Client up m a) -> Client up m a
 
 newtype Handler up down m =
-    Handler (forall a. down a -> Client up m (Daemon up down m, a))
+    Handler (forall a. down a -> Client up m (Server up down m, a))
 
-newtype Daemon (up :: Type -> Type) (down :: Type -> Type) (m :: Type -> Type) =
-    Daemon (Client up m (Handler up down m))
+newtype Server (up :: Type -> Type) (down :: Type -> Type) (m :: Type -> Type) =
+    Server (Client up m (Handler up down m))
 
 instance Functor m => Functor (Client up m) where
     fmap f = \case
@@ -37,7 +37,7 @@ run = \case
     Action x -> x
     Bind x f -> run x >>= (run . f)
 
-connectDaemonToClient :: Functor m => Daemon up x m -> Client x m a -> Client up m (Daemon up x m, a)
+connectDaemonToClient :: Functor m => Server up x m -> Client x m a -> Client up m (Server up x m, a)
 connectDaemonToClient up down =
     case down of
         Pure x -> Pure (up, x)
@@ -45,17 +45,17 @@ connectDaemonToClient up down =
         Bind x f -> connectDaemonToClient up x `Bind` \(up', y) -> connectDaemonToClient up' (f y)
         Request r ->
             case up of
-                Daemon (Pure (Handler h)) -> h r
-                Daemon (Action x) -> Action x `Bind` \(Handler h) -> h r
-                Daemon (Request r') -> Request r' `Bind` \(Handler h) -> h r
-                Daemon (Bind x f) -> x `Bind` \y -> f y `Bind` \(Handler h) -> h r
+                Server (Pure (Handler h)) -> h r
+                Server (Action x) -> Action x `Bind` \(Handler h) -> h r
+                Server (Request r') -> Request r' `Bind` \(Handler h) -> h r
+                Server (Bind x f) -> x `Bind` \y -> f y `Bind` \(Handler h) -> h r
 
--- connectDaemonToDaemon :: Functor m => Daemon up x m -> Daemon x down m -> Daemon up down m
+-- connectDaemonToDaemon :: Functor m => Server up x m -> Server x down m -> Server up down m
 -- connectDaemonToDaemon up down =
 --     case down of
---         Daemon (Pure (Handler h)) -> Daemon (Pure (Handler _))
+--         Server (Pure (Handler h)) -> Server (Pure (Handler _))
 
--- (>->) :: Functor m => Daemon am b m -> Agent ('Just b) cm m r -> Agent am cm m r
+-- (>->) :: Functor m => Server am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 -- a >-> b = fmap snd (connect a b)
 
 -- relaxAgentDown :: Functor m => Agent am 'Nothing m r -> Agent am cm m r
