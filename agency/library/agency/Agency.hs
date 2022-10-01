@@ -52,10 +52,12 @@ connectServerToClient up down =
                 Request r' -> Request r'         `Bind` \h -> handle h r
                 Bind x f   -> x `Bind` \y -> f y `Bind` \h -> handle h r
 
--- connectDaemonToDaemon :: Functor m => Server up x m -> Server x down m -> Server up down m
--- connectDaemonToDaemon up down =
---     case down of
---         Server (Pure (Handler h)) -> Server (Pure (Handler _))
+connectServerToServer :: Functor m => Server up x m -> Server x down m -> Server up down m
+connectServerToServer up (Server down) =
+    Server (connectServerToClient up down <&> \(up', h) -> connectServerToHandler up' h)
+
+connectServerToHandler :: Functor m => Server up x m -> Handler x down m -> Handler up down m
+connectServerToHandler up (Handler h) = Handler \r -> _ (h r)
 
 -- (>->) :: Functor m => Server am b m -> Agent ('Just b) cm m r -> Agent am cm m r
 -- a >-> b = fmap snd (connect a b)
