@@ -1,35 +1,37 @@
-module SupplyChain (Client, Server, Serving (..), server, perform, request, Nil, nil, run, Connect ((>->))) where
+module SupplyChain (Client, Vendor, Supply (..), vend, perform, request, Nil, nil, run, Connect ((>->))) where
 
 import Control.Applicative
 import Control.Monad
 import Data.Function
 import Data.Functor
+import Data.Kind
 
-data Client up m a
+type I = Type -> Type
+
+data Client (a :: I) m r
   where
-    Pure    :: a    -> Client up m a
-    Perform :: m a  -> Client up m a
-    Request :: up a -> Client up m a
+    Pure    :: r   -> Client a m r
+    Perform :: m r -> Client a m r
+    Request :: a r -> Client a m r
 
-    Bind :: Client up m x -> (x -> Client up m a) -> Client up m a
+    Bind :: Client a m x -> (x -> Client a m r) -> Client a m r
 
-perform :: m a -> Client up m a
+perform :: m r -> Client a m r
 perform = Perform
 
-request :: up a -> Client up m a
+request :: a r -> Client a m r
 request = Request
 
-newtype Server up down m =
-    Server
-      { serve :: Client up m (forall a.
-            down a -> Client up m (Serving up down m a))
+newtype Vendor (a :: I) (b :: I) m =
+    Vendor
+      { serve :: Client a m (forall r. b r -> Client a m (Supply a b m r))
       }
 
-data Serving up down m a = Serving{ next :: Server up down m, response :: a }
+data Supply (a :: I) (b :: I) m r = Supply{ next :: Vendor a b m, product :: r }
 
-server = Server
+vend = Vendor
 
-instance Functor m => Functor (Client up m)
+instance Functor m => Functor (Client a m)
   where
     fmap f = \case
         Pure    x    ->  Pure $ f x
@@ -37,36 +39,36 @@ instance Functor m => Functor (Client up m)
         Request x    ->  Request x `Bind` (Pure . f)
         Bind    x g  ->  x `Bind` fmap (fmap f) g
 
-instance Functor m => Applicative (Client up m)
+instance Functor m => Applicative (Client a m)
   where
     pure = Pure
 
     a1 <*> a2 = a1 `Bind` \f -> a2 <&> \x -> f x
     a1  *> a2 = a1 `Bind` \_ -> a2
 
-instance Functor m => Monad (Client up m) where (>>=) = Bind
+instance Functor m => Monad (Client a m) where (>>=) = Bind
 
-data Nil a
+data Nil r
 
-nil :: Nil a -> a
+nil :: Nil r -> r
 nil = \case{}
 
-run :: forall up m a. Monad m => (forall r. up r -> m r) -> Client up m a -> m a
+run :: forall a m r. Monad m => (forall x. a x -> m x) -> Client a m r -> m r
 run z = go
   where
-    go :: forall b. Monad m => Client up m b -> m b
+    go :: forall r'. Monad m => Client a m r' -> m r'
     go = \case
       Pure    x    ->  pure x
       Perform x    ->  x
       Bind    x f  ->  go x >>= (go . f)
       Request x    ->  z x
 
-connectPlus :: Functor m => Server a b m -> Client b m r -> Client a m (Serving a b m r)
+connectPlus :: Functor m => Vendor a b m -> Client b m r -> Client a m (Supply a b m r)
 connectPlus up = \case
-    Pure    x    ->  Pure                    Serving{ next = up, response = x }
-    Perform act  ->  Perform $ act <&> \x -> Serving{ next = up, response = x }
+    Pure    x    ->  Pure                    Supply{ next = up, product = x }
+    Perform act  ->  Perform $ act <&> \x -> Supply{ next = up, product = x }
     Bind    x f  ->  connectPlus up x `Bind`
-                       \Serving{ next = up', response = y } ->
+                       \Supply{ next = up', product = y } ->
                           connectPlus up' (f y)
     Request r    ->
         case serve up of
@@ -76,20 +78,20 @@ connectPlus up = \case
             Bind x f    ->  x `Bind` \y -> f y `Bind` \h -> h r
 
 class Connect a b m downstream result | a b m downstream -> result where
-    (>->) :: Server a b m -> downstream -> result
+    (>->) :: Vendor a b m -> downstream -> result
 
 instance Functor m => Connect a b m (Client b m r) (Client a m r) where
-    up >-> down = connectPlus up down <&> response
+    up >-> down = connectPlus up down <&> product
 
-instance Functor m => Connect a b m (Server b c m) (Server a c m) where
-    up >-> Server down =
-        Server $
+instance Functor m => Connect a b m (Vendor b c m) (Vendor a c m) where
+    up >-> Vendor down =
+        Vendor $
             connectPlus up down <&> \case
-                Serving{ next = up', response = h } ->
+                Supply{ next = up', product = h } ->
                     \r ->
                         connectPlus up' (h r) <&>
-                            \Serving{ next = up'', response = Serving{ next = down', response = s } } ->
-                                Serving{ next = up'' >-> down', response = s }
+                            \Supply{ next = up'', product = Supply{ next = down', product = s } } ->
+                                Supply{ next = up'' >-> down', product = s }
 
 {-
 
