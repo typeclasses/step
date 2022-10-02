@@ -1,26 +1,39 @@
-module Agency (Client (..), Server (..), Nil, nil, run, Connect (..)) where
+module Agency (Client, Server, Serving (..), server, perform, request, Nil, nil, run, Connect ((>->))) where
 
-import Relude hiding (Proxy)
+import Control.Applicative
+import Control.Monad
+import Data.Function
+import Data.Functor
 
 data Client up m a
   where
     Pure    :: a    -> Client up m a
-    Action  :: m a  -> Client up m a
+    Perform :: m a  -> Client up m a
     Request :: up a -> Client up m a
 
     Bind :: Client up m x -> (x -> Client up m a) -> Client up m a
 
+perform :: m a -> Client up m a
+perform = Perform
+
+request :: up a -> Client up m a
+request = Request
+
 newtype Server up down m =
     Server
       { serve :: Client up m (forall a.
-            down a -> Client up m (Server up down m, a))
+            down a -> Client up m (Serving up down m a))
       }
+
+data Serving up down m a = Serving{ next :: Server up down m, response :: a }
+
+server = Server
 
 instance Functor m => Functor (Client up m)
   where
     fmap f = \case
         Pure    x    ->  Pure $ f x
-        Action  x    ->  Action $ fmap f x
+        Perform x    ->  Perform $ fmap f x
         Request x    ->  Request x `Bind` (Pure . f)
         Bind    x g  ->  x `Bind` fmap (fmap f) g
 
@@ -44,36 +57,39 @@ run z = go
     go :: forall b. Monad m => Client up m b -> m b
     go = \case
       Pure    x    ->  pure x
-      Action  x    ->  x
+      Perform x    ->  x
       Bind    x f  ->  go x >>= (go . f)
       Request x    ->  z x
 
-connectPlus :: Functor m => Server a b m -> Client b m r -> Client a m (Server a b m, r)
+connectPlus :: Functor m => Server a b m -> Client b m r -> Client a m (Serving a b m r)
 connectPlus up = \case
-    Pure    x   -> Pure (up, x)
-    Action  x   -> Action (fmap (up,) x)
-    Bind    x f -> connectPlus up x `Bind` \(up', y) -> connectPlus up' (f y)
-    Request r   ->
+    Pure    x    ->  Pure                    Serving{ next = up, response = x }
+    Perform act  ->  Perform $ act <&> \x -> Serving{ next = up, response = x }
+    Bind    x f  ->  connectPlus up x `Bind`
+                       \Serving{ next = up', response = y } ->
+                          connectPlus up' (f y)
+    Request r    ->
         case serve up of
-            Pure h     ->                                 h r
-            Action x   -> Action x           `Bind` \h -> h r
-            Request r' -> Request r'         `Bind` \h -> h r
-            Bind x f   -> x `Bind` \y -> f y `Bind` \h -> h r
+            Pure h      ->                                  h r
+            Perform x   ->  Perform x          `Bind` \h -> h r
+            Request r'  ->  Request r'         `Bind` \h -> h r
+            Bind x f    ->  x `Bind` \y -> f y `Bind` \h -> h r
 
 class Connect a b m downstream result | a b m downstream -> result where
     (>->) :: Server a b m -> downstream -> result
 
 instance Functor m => Connect a b m (Client b m r) (Client a m r) where
-    up >-> down = connectPlus up down <&> snd
+    up >-> down = connectPlus up down <&> response
 
 instance Functor m => Connect a b m (Server b c m) (Server a c m) where
     up >-> Server down =
         Server $
             connectPlus up down <&> \case
-                (up', h) ->
-                    \r -> do
-                        (up'', (down', s)) <- connectPlus up' (h r)
-                        pure (up'' >-> down', s)
+                Serving{ next = up', response = h } ->
+                    \r ->
+                        connectPlus up' (h r) <&>
+                            \Serving{ next = up'', response = Serving{ next = down', response = s } } ->
+                                Serving{ next = up'' >-> down', response = s }
 
 {-
 
