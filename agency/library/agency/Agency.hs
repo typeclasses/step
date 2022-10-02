@@ -1,4 +1,4 @@
-module Agency where
+module Agency (Client (..), Server (..), Nil, nil, run, Connect (..)) where
 
 import Relude hiding (Proxy)
 
@@ -48,29 +48,32 @@ run z = go
       Bind    x f  ->  go x >>= (go . f)
       Request x    ->  z x
 
-connectServerToClient :: Functor m =>
-    Server up x m -> Client x m a -> Client up m (Server up x m, a)
-connectServerToClient up = \case
+connectPlus :: Functor m => Server a b m -> Client b m r -> Client a m (Server a b m, r)
+connectPlus up = \case
     Pure    x   -> Pure (up, x)
     Action  x   -> Action (fmap (up,) x)
-    Bind    x f -> connectServerToClient up x `Bind` \(up', y) -> connectServerToClient up' (f y)
-    Request r   -> connectServerToRequest up r
+    Bind    x f -> connectPlus up x `Bind` \(up', y) -> connectPlus up' (f y)
+    Request r   ->
+        case serve up of
+            Pure h     ->                                 h r
+            Action x   -> Action x           `Bind` \h -> h r
+            Request r' -> Request r'         `Bind` \h -> h r
+            Bind x f   -> x `Bind` \y -> f y `Bind` \h -> h r
 
-connectServerToRequest :: Server up down m -> down a -> Client up m (Server up down m, a)
-connectServerToRequest up r = case serve up of
-    Pure h     ->                                 h r
-    Action x   -> Action x           `Bind` \h -> h r
-    Request r' -> Request r'         `Bind` \h -> h r
-    Bind x f   -> x `Bind` \y -> f y `Bind` \h -> h r
+class Connect a b m downstream result | a b m downstream -> result where
+    (>->) :: Server a b m -> downstream -> result
 
-(>->) :: Functor m => Server up1 up2 m -> Server up2 down m -> Server up1 down m
-up >-> Server down =
-    Server $
-        connectServerToClient up down <&> \case
-            (up', h) ->
-                \r -> do
-                    (up'', (down', s)) <- connectServerToClient up' (h r)
-                    pure (up'' >-> down', s)
+instance Functor m => Connect a b m (Client b m r) (Client a m r) where
+    up >-> down = connectPlus up down <&> snd
+
+instance Functor m => Connect a b m (Server b c m) (Server a c m) where
+    up >-> Server down =
+        Server $
+            connectPlus up down <&> \case
+                (up', h) ->
+                    \r -> do
+                        (up'', (down', s)) <- connectPlus up' (h r)
+                        pure (up'' >-> down', s)
 
 {-
 
