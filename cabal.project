@@ -1,3 +1,3 @@
-packages: agency, step
+packages: supply-chain, step
 
 with-compiler: ghc-9.2.4

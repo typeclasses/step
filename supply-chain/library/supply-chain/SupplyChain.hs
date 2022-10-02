@@ -1,4 +1,4 @@
-module Agency (Client, Server, Serving (..), server, perform, request, Nil, nil, run, Connect ((>->))) where
+module SupplyChain (Client, Server, Serving (..), server, perform, request, Nil, nil, run, Connect ((>->))) where
 
 import Control.Applicative
 import Control.Monad
