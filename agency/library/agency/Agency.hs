@@ -10,15 +10,10 @@ data Client up m a
 
     Bind :: Client up m x -> (x -> Client up m a) -> Client up m a
 
-newtype Handler up down m =
-    Handler
-      { handle :: forall a.
-          down a -> Client up m (Server up down m, a)
-      }
-
 newtype Server up down m =
     Server
-      { serve :: Client up m (Handler up down m)
+      { serve :: Client up m (forall a.
+            down a -> Client up m (Server up down m, a))
       }
 
 instance Functor m => Functor (Client up m)
@@ -63,23 +58,19 @@ connectServerToClient up = \case
 
 connectServerToRequest :: Server up down m -> down a -> Client up m (Server up down m, a)
 connectServerToRequest up r = case serve up of
-    Pure h     ->                                 handle h r
-    Action x   -> Action x           `Bind` \h -> handle h r
-    Request r' -> Request r'         `Bind` \h -> handle h r
-    Bind x f   -> x `Bind` \y -> f y `Bind` \h -> handle h r
+    Pure h     ->                                 h r
+    Action x   -> Action x           `Bind` \h -> h r
+    Request r' -> Request r'         `Bind` \h -> h r
+    Bind x f   -> x `Bind` \y -> f y `Bind` \h -> h r
 
-class Connect xa xb m (a :: Type -> Type) (b :: Type -> Type) where
-    (>->) :: Functor m => Server a b m -> xb -> xa
-
-instance Connect (Handler a down m) (Handler b down m) m a b where
-    up >-> Handler h = Handler \r -> do
-        (up', (down', s)) <- connectServerToClient up (h r)
-        pure (up' >-> down', s)
-
-instance Connect (Server a down m) (Server b down m) m a b where
-    up >-> Server down = Server do
-        (up', h) <- connectServerToClient up down
-        pure (up' >-> h)
+(>->) :: Functor m => Server up1 up2 m -> Server up2 down m -> Server up1 down m
+up >-> Server down =
+    Server $
+        connectServerToClient up down <&> \case
+            (up', h) ->
+                \r -> do
+                    (up'', (down', s)) <- connectServerToClient up' (h r)
+                    pure (up'' >-> down', s)
 
 {-
 
