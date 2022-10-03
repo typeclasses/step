@@ -6,9 +6,9 @@ import Data.Function
 import Data.Functor
 import Data.Kind
 
-type I = Type -> Type
+type Interface = Type -> Type
 
-data Client (a :: I) m r
+data Client (a :: Interface) m r
   where
     Pure    :: r   -> Client a m r
     Perform :: m r -> Client a m r
@@ -33,12 +33,12 @@ instance Functor m => Applicative (Client a m)
 
 instance Functor m => Monad (Client a m) where (>>=) = Bind
 
-newtype Vendor (a :: I) (b :: I) m =
+newtype Vendor (a :: Interface) (b :: Interface) m =
     Vendor
       { runVendor :: Client a m (forall r. b r -> Client a m (Supply a b m r))
       }
 
-data Supply (a :: I) (b :: I) m r =
+data Supply (a :: Interface) (b :: Interface) m r =
     Supply
       { next :: Vendor a b m
       , product :: r
