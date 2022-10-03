@@ -1,7 +1,7 @@
 module SupplyChain.Base
   (
     {- * Types        -} Client, Vendor, Supply (..),
-    {- * Introduction -} vend, perform, request,
+    {- * Introduction -} vend, perform, request, (+>),
     {- * Elimination  -} run,
     {- * Composition  -} Connect ((>->)),
   )
@@ -23,6 +23,9 @@ request = Request
 
 vend :: Client a m (forall r. b r -> Client a m (Supply a b m r)) -> Vendor a b m
 vend = Vendor
+
+(+>) :: r -> Vendor a b m -> Supply a b m r
+(+>) = flip Supply
 
 run :: forall a m r. Monad m => (forall x. a x -> m x) -> Client a m r -> m r
 run z = go
