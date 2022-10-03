@@ -5,8 +5,8 @@ module SupplyChain.More
     {- * Combining vendors -} Either' (..), bivend,
     {- * Trivial vendors -} function,
     {- * Counting -} Counting (..), counting,
-    {- * Infinite streams -} Next (..), iterate,
-    {- * Finite streams -} NextMaybe (..), list,
+    {- * Infinite streams -} InfiniteStream (..), iterate,
+    {- * Finite streams -} FiniteStream (..), list,
   )
   where
 
@@ -48,44 +48,46 @@ bivend a b = vend $ pure \case
 ---
 
 -- | A simple stateless vendor that responds to each request by applying a function
-function :: Functor m => (forall product. a product -> product) -> Vendor up a m
-function f = go  where  go = vend $ pure \x -> pure $ f x +> go
+function :: Functor m => (forall product. i product -> product) -> Vendor up i m
+function f = go
+  where
+    go = vend $ pure \x -> pure $ f x +> go
 
 ---
 
-type Next :: Type -> Interface
+type InfiniteStream :: Type -> Interface
 
-data Next item product
+data InfiniteStream item product
   where
-    Next :: Next item item
+    Next :: InfiniteStream item item
       -- ^ The next item from a nonterminating input stream
 
-iterate :: forall a m up. Functor m => a -> (a -> a) -> Vendor up (Next a) m
+iterate :: forall a m up. Functor m => a -> (a -> a) -> Vendor up (InfiniteStream a) m
 iterate = flip it
   where
     it f = go
       where
-        go :: a -> Vendor up (Next a) m
+        go :: a -> Vendor up (InfiniteStream a) m
         go x = vend $ pure \Next -> pure $ x +> go (f x)
 
 ---
 
-type NextMaybe :: Type -> Interface
+type FiniteStream :: Type -> Interface
 
-data NextMaybe item product
+data FiniteStream item product
   where
-    NextMaybe :: NextMaybe item (Maybe item)
+    NextMaybe :: FiniteStream item (Maybe item)
       -- ^ The next item, or 'Nothing' if input is exhausted
 
-list :: forall a m up. Functor m => [a] -> Vendor up (NextMaybe a) m
+list :: forall a m up. Functor m => [a] -> Vendor up (FiniteStream a) m
 list = go
   where
-    go :: [a] -> Vendor up (NextMaybe a) m
+    go :: [a] -> Vendor up (FiniteStream a) m
     go = \case
         []      ->  endOfList
         x : xs  ->  vend $ pure $ \NextMaybe -> pure $ Just x +> go xs
 
-endOfList :: Functor m => Vendor up (NextMaybe a) m
+endOfList :: Functor m => Vendor up (FiniteStream a) m
 endOfList = go
   where
     go = vend $ pure \NextMaybe -> pure $ Nothing +> go
