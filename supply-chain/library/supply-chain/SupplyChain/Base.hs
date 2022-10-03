@@ -1,5 +1,6 @@
 module SupplyChain.Base
   (
+    I,
     {- * Client       -} Client, perform, request,
     {- * Vendor       -} Vendor, vend, runVendor,
     {- * Supply       -} Supply (..), (+>),
