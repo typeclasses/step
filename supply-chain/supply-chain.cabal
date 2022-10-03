@@ -44,4 +44,6 @@ library
     hs-source-dirs: library/supply-chain
 
     exposed-modules:
-        SupplyChain
+        SupplyChain.Base
+        SupplyChain.Core
+        SupplyChain.More
