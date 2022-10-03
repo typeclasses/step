@@ -35,10 +35,14 @@ instance Functor m => Monad (Client a m) where (>>=) = Bind
 
 newtype Vendor (a :: I) (b :: I) m =
     Vendor
-      { serve :: Client a m (forall r. b r -> Client a m (Supply a b m r))
+      { runVendor :: Client a m (forall r. b r -> Client a m (Supply a b m r))
       }
 
-data Supply (a :: I) (b :: I) m r = Supply{ next :: Vendor a b m, product :: r }
+data Supply (a :: I) (b :: I) m r =
+    Supply
+      { next :: Vendor a b m
+      , product :: r
+      }
 
 connectVendorToClient :: Functor m => Vendor a b m -> Client b m r -> Client a m (Supply a b m r)
 connectVendorToClient up = \case
@@ -51,7 +55,7 @@ connectVendorToClient up = \case
 
 connectVendorToRequest :: Vendor a b m -> b r -> Client a m (Supply a b m r)
 connectVendorToRequest up r =
-    case serve up of
+    case runVendor up of
         Pure h      ->                                  h r
         Perform x   ->  Perform x          `Bind` \h -> h r
         Request r'  ->  Request r'         `Bind` \h -> h r
