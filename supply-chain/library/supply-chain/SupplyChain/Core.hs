@@ -1,72 +1,91 @@
 module SupplyChain.Core where
 
-import Control.Applicative
-import Control.Monad
-import Data.Function
-import Data.Functor
-import Data.Kind
+import Control.Applicative (Applicative (pure, (*>), (<*>)), (<$>))
+import Control.Monad (Monad((>>=)), Functor (fmap))
+import Data.Function (($), (.))
+import Data.Functor (Functor (fmap), (<$>), (<&>))
+import Data.Kind (Type)
+
+type Action = Type -> Type
 
 type Interface = Type -> Type
 
-data Client (a :: Interface) m r
+data Client (up :: Interface) (action :: Action) (product :: Type)
   where
-    Pure    :: r   -> Client a m r
-    Perform :: m r -> Client a m r
-    Request :: a r -> Client a m r
+    Pure    ::        product -> Client up action product
+    Perform :: action product -> Client up action product
+    Request :: up     product -> Client up action product
 
-    Bind :: Client a m x -> (x -> Client a m r) -> Client a m r
+    Bind :: Client up action x
+         -> (x -> Client up action product)
+         ->       Client up action product
 
-instance Functor m => Functor (Client a m)
+instance Functor action => Functor (Client up action)
   where
-    fmap f = \case
-        Pure    x    ->  Pure $ f x
-        Perform x    ->  Perform $ fmap f x
-        Request x    ->  Request x `Bind` (Pure . f)
-        Bind    x g  ->  x `Bind` fmap (fmap f) g
+    fmap f = client_fmap_f
+      where
+        client_fmap_f = \case
+          Pure product      ->  Pure (f product)
+          Perform action    ->  Perform (fmap f action)
+          Request request   ->  Bind (Request request) (Pure . f)
+          Bind step1 step2  ->  Bind step1 (client_fmap_f . step2)
 
 instance Functor m => Applicative (Client a m)
   where
     pure = Pure
 
-    a1 <*> a2 = a1 `Bind` \f -> a2 <&> \x -> f x
-    a1  *> a2 = a1 `Bind` \_ -> a2
+    a1 <*> a2 = a1 `Bind` \f -> (f $) <$> a2
+    a1  *> a2 = a1 `Bind` \_ ->           a2
 
-instance Functor m => Monad (Client a m) where (>>=) = Bind
+instance Functor m => Monad (Client a m)
+  where
+    (>>=) = Bind
 
-newtype Vendor (a :: Interface) (b :: Interface) m =
-    Vendor
-      { runVendor :: Client a m (forall r. b r -> Client a m (Supply a b m r))
-      }
+newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
+  Vendor
+    { runVendor ::
+        Client up action
+          ( forall product.
+              down product -> Client up action (Supply up down action product)
+          )
+    }
 
-data Supply (a :: Interface) (b :: Interface) m r =
-    Supply
-      { next :: Vendor a b m
-      , product :: r
-      }
+data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
+  Supply
+    { supplyNext :: Vendor up down action
+    , supplyProduct :: product
+    }
+
+deriving stock instance Functor (Supply up down action)
 
 connectVendorToClient :: Functor m => Vendor a b m -> Client b m r -> Client a m (Supply a b m r)
-connectVendorToClient up = \case
-    Pure    x    ->  Pure                    Supply{ next = up, product = x }
-    Perform act  ->  Perform $ act <&> \x -> Supply{ next = up, product = x }
+connectVendorToClient up =
+  \case
+    Pure    x    ->  Pure                    Supply{ supplyNext = up, supplyProduct = x }
+    Perform act  ->  Perform $ act <&> \x -> Supply{ supplyNext = up, supplyProduct = x }
     Bind    x f  ->  connectVendorToClient up x `Bind`
-                       \Supply{ next = up', product = y } ->
+                       \Supply{ supplyNext = up', supplyProduct = y } ->
                           connectVendorToClient up' (f y)
     Request r    ->  connectVendorToRequest up r
 
 connectVendorToRequest :: Vendor a b m -> b r -> Client a m (Supply a b m r)
-connectVendorToRequest up r =
-    case runVendor up of
-        Pure h      ->                                  h r
-        Perform x   ->  Perform x          `Bind` \h -> h r
-        Request r'  ->  Request r'         `Bind` \h -> h r
-        Bind x f    ->  x `Bind` \y -> f y `Bind` \h -> h r
+connectVendorToRequest up =
+  case runVendor up of
+    Pure h      ->  h
+    Perform x   ->  \r -> Perform x          `Bind` \h -> h r
+    Request r'  ->  \r -> Request r'         `Bind` \h -> h r
+    Bind x f    ->  \r -> x `Bind` \y -> f y `Bind` \h -> h r
 
 connectVendorToVendor :: Functor m => Vendor a b m -> Vendor b c m -> Vendor a c m
 connectVendorToVendor up (Vendor down) =
-    Vendor $
-        connectVendorToClient up down <&> \case
-            Supply{ next = up', product = h } ->
-                \r ->
-                    connectVendorToClient up' (h r) <&>
-                        \Supply{ next = up'', product = Supply{ next = down', product = s } } ->
-                            Supply{ next = connectVendorToVendor up'' down', product = s }
+  Vendor $
+    connectVendorToClient up down <&> \s r ->
+      connectVendorToClient (supplyNext s) (supplyProduct s r) <&>
+        supplyJoin
+
+supplyJoin :: Functor action => Supply a b action (Supply b c action product) -> Supply a c action product
+supplyJoin s =
+  Supply
+    { supplyNext = connectVendorToVendor (supplyNext s) (supplyNext (supplyProduct s))
+    , supplyProduct = supplyProduct (supplyProduct s)
+    }

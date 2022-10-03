@@ -43,7 +43,7 @@ class Connect a b m downstream result | a b m downstream -> result where
     (>->) :: Vendor a b m -> downstream -> result
 
 instance Functor m => Connect a b m (Client b m r) (Client a m r) where
-    up >-> down = connectVendorToClient up down <&> product
+    up >-> down = connectVendorToClient up down <&> supplyProduct
 
 instance Functor m => Connect a b m (Vendor b c m) (Vendor a c m) where
     (>->) = connectVendorToVendor

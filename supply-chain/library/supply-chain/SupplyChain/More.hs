@@ -42,8 +42,8 @@ data Either' a b product = Left' (a product) | Right' (b product)
 -- | Combination of two vendors
 bivend :: Functor m => Vendor u a m -> Vendor u b m -> Vendor u (Either' a b) m
 bivend a b = vend $ pure \case
-    Left'  req -> runVendor a >>= \f -> f req <&> \s -> s{ next = bivend (next s) b }
-    Right' req -> runVendor b >>= \f -> f req <&> \s -> s{ next = bivend a (next s) }
+    Left'  req -> runVendor a >>= \f -> f req <&> \s -> s{ supplyNext = bivend (supplyNext s) b }
+    Right' req -> runVendor b >>= \f -> f req <&> \s -> s{ supplyNext = bivend a (supplyNext s) }
 
 ---
 
