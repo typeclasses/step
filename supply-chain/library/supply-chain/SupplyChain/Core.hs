@@ -103,3 +103,14 @@ supplyJoin s =
     { supplyNext = connectVendorToVendor (supplyNext s) (supplyNext (supplyProduct s))
     , supplyProduct = supplyProduct (supplyProduct s)
     }
+
+run :: forall up action product. Monad action =>
+    (forall x. up x -> action x) -> Client up action product -> action product
+run handle = go
+  where
+    go :: forall product'. Client up action product' -> action product'
+    go = \case
+      Pure    product      ->  pure product
+      Perform action       ->  action
+      Bind    step1 step2  ->  go step1 >>= (go . step2)
+      Request request      ->  handle request
