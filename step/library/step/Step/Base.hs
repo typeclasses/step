@@ -64,11 +64,10 @@ newtype Client req a = Client (forall m. Monad m => (forall b. req b -> m b) -> 
     deriving stock Functor
 
 instance Applicative (Client req) where
-    pure = return
+    pure x = Client (\_ -> pure x)
     (<*>) = Monad.ap
 
 instance Monad (Client req) where
-    return x = Client (\_ -> return x)
     Client a >>= f = Client \send -> a send >>= \x -> let Client b = f x in b send
 
 -- Client transformations
