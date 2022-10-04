@@ -1,11 +1,10 @@
 module SupplyChain.Base
   (
     {- * Kinds        -} Interface, Action,
-    {- * Client       -} Client, perform, order,
+    {- * Client       -} Client, perform, order, run,
     {- * Vendor       -} Vendor, vend, runVendor,
     {- * Supply       -} Supply, supplyNext, supplyProduct, (+>),
     {- * Composition  -} Connect ((>->)),
-    {- * Elimination  -} run,
   )
   where
 

@@ -7,7 +7,7 @@ module SupplyChain.Core where
 
 import Control.Applicative (Applicative (pure, (*>), (<*>)), (<$>))
 import Control.Monad (Monad ((>>=)), Functor (fmap))
-import Data.Function (($), (.))
+import Data.Function (($), (.), fix)
 import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
 
@@ -15,9 +15,13 @@ import Data.Kind (Type)
 
     If @i@ is the downstream interface of vendor @a@ and the upstream
     interface of client @b@, then we can form the composition @a '>->' b@.
-
     When the client makes a request of type @i x@, the vendor replies with a
     response of type @x@.
+
+    Values of a type of this kind represent requests. Each constructors will
+    typically have a constraint that specifies what type of response is
+    expected in return. Types of this kind are therefore often
+    <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html GADTs>.
 -}
 
 type Interface = Type -> Type
@@ -40,35 +44,78 @@ data Client (up :: Interface) (action :: Action) (product :: Type)
          -> (x -> Client up action product)
          ->       Client up action product
 
--- | Send a request via the client's upstream 'Interface'
-perform :: action product -> Client up action product
-perform = Perform
-
--- | Perform an action in a client's 'Action' context
-order :: up response -> Client up action response
-order = Request
-
 instance Functor action => Functor (Client up action)
-  where
-    fmap f = client_fmap_f
-      where
-        client_fmap_f = \case
-          Pure product      ->  Pure (f product)
-          Perform action    ->  Perform (fmap f action)
-          Request request   ->  Bind (Request request) (Pure . f)
-          Bind step1 step2  ->  Bind step1 (client_fmap_f . step2)
+    where { fmap = mapClient }
 
 instance Functor action => Applicative (Client up action)
-  where
-    pure = Pure
-
-    a1 <*> a2 = a1 `Bind` \f -> (f $) <$> a2
-    a1  *> a2 = a1 `Bind` \_ ->           a2
+    where { pure = Pure; (<*>) = apClient; (*>) = apClient' }
 
 instance Functor action => Monad (Client up action)
-  where
-    (>>=) = Bind
+    where { (>>=) = Bind }
 
+
+-- | Send a request via the client's upstream 'Interface'
+
+perform :: forall (up :: Interface) (action :: Action) (product :: Type).
+    action product -> Client up action product
+
+perform = Perform
+
+
+-- | Perform an action in a client's 'Action' context
+
+order :: forall (up :: Interface) (action :: Action) (response :: Type).
+    up response -> Client up action response
+
+order = Request
+
+
+{-| Run a client in its 'Action' context
+
+    The first argument is a handler that specifies what to do each
+    time the client makes a request.
+-}
+
+run :: forall (up :: Interface) (action :: Action) (product :: Type). Monad action =>
+    (forall x. up x -> action x) -> Client up action product -> action product
+
+run handle = go
+  where
+    go :: forall x. Client up action x -> action x
+    go = \case
+      Pure    product      ->  pure product
+      Perform action       ->  action
+      Bind    step1 step2  ->  go step1 >>= (go . step2)
+      Request request      ->  handle request
+
+
+-- | 'fmap' for 'Client'
+
+mapClient :: forall a b up action. Functor action =>
+    (a -> b) -> Client up action a -> Client up action b
+
+mapClient f = fix \r -> \case
+    Pure product      ->  Pure (f product)
+    Perform action    ->  Perform (fmap f action)
+    Request request   ->  Bind (Request request) (Pure . f)
+    Bind step1 step2  ->  Bind step1 (r . step2)
+
+
+-- | '(<*>)' for 'Client'
+
+apClient :: forall a b up action. Functor action =>
+    Client up action (a -> b) -> Client up action a -> Client up action b
+apClient a1 a2 = a1 `Bind` \f -> (f $) <$> a2
+
+
+-- | '(*>)' for 'Client'
+
+apClient' :: forall a b up action.
+    Client up action a -> Client up action b -> Client up action b
+apClient' a1 a2 = Bind a1 (\_ -> a2)
+
+
+-- | Makes requests, responds to requests, and performs actions
 
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
@@ -138,14 +185,3 @@ instance Functor m => Connect a b m (Client b m r) (Client a m r) where
 
 instance Functor m => Connect a b m (Vendor b c m) (Vendor a c m) where
     (>->) = connectVendorToVendor
-
-run :: forall up action product. Monad action =>
-    (forall x. up x -> action x) -> Client up action product -> action product
-run handle = go
-  where
-    go :: forall product'. Client up action product' -> action product'
-    go = \case
-      Pure    product      ->  pure product
-      Perform action       ->  action
-      Bind    step1 step2  ->  go step1 >>= (go . step2)
-      Request request      ->  handle request
