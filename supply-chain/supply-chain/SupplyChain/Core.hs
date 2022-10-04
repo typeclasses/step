@@ -1,7 +1,7 @@
 {-| The innermost module of the supply-chain library
 
     It is recommended to instead use "SupplyChain.Base",
-    which exports 'Client' abstractly and adds a few more things.
+    which is slightly more abstract.
 -}
 module SupplyChain.Core where
 
@@ -39,13 +39,22 @@ data Client (up :: Interface) (action :: Action) (product :: Type) =
   | forall x. Bind (Client up action x) (x -> Client up action product)
 
 instance Functor action => Functor (Client up action)
-    where { fmap = mapClient }
+  where
+    fmap f = fix \r -> \case
+        Pure product      ->  Pure (f product)
+        Perform action    ->  Perform (fmap f action)
+        Request request   ->  Bind (Request request) (Pure . f)
+        Bind step1 step2  ->  Bind step1 (r . step2)
 
 instance Functor action => Applicative (Client up action)
-    where { pure = Pure; (<*>) = apClient; (*>) = apClient' }
+  where
+    pure = Pure
+    a1 <*> a2 = a1 `Bind` \f -> (f $) <$> a2
+    a1 *> a2 = Bind a1 (\_ -> a2)
 
 instance Functor action => Monad (Client up action)
-    where { (>>=) = Bind }
+  where
+    (>>=) = Bind
 
 
 -- | Send a request via the client's upstream 'Interface'
@@ -83,48 +92,18 @@ run handle = go
       Request request      ->  handle request
 
 
--- | 'fmap' for 'Client'
-
-mapClient :: forall a b up action. Functor action =>
-    (a -> b) -> Client up action a -> Client up action b
-
-mapClient f = fix \r -> \case
-    Pure product      ->  Pure (f product)
-    Perform action    ->  Perform (fmap f action)
-    Request request   ->  Bind (Request request) (Pure . f)
-    Bind step1 step2  ->  Bind step1 (r . step2)
-
-
--- | '(<*>)' for 'Client'
-
-apClient :: forall a b up action. Functor action =>
-    Client up action (a -> b) -> Client up action a -> Client up action b
-apClient a1 a2 = a1 `Bind` \f -> (f $) <$> a2
-
-
--- | '(*>)' for 'Client'
-
-apClient' :: forall a b up action.
-    Client up action a -> Client up action b -> Client up action b
-apClient' a1 a2 = Bind a1 (\_ -> a2)
-
-
 -- | Makes requests, responds to requests, and performs actions
 
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
-    (
-      Client up action
-        ( forall product.
-            down product -> Client up action (Supply up down action product)
-        )
-    )
+    { offer :: forall product.
+        down product -> Client up action (Supply up down action product) }
 
 
 -- | The conclusion of a vendor's handling of a client request
 
 data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
-  Supply
+  (:->)
     { supplyProduct :: product
         -- ^ The requested product
     , supplyNext :: Vendor up down action
@@ -133,52 +112,17 @@ data Supply (up :: Interface) (down :: Interface) (action :: Action) (product ::
 
 deriving stock instance Functor (Supply up down action)
 
+toClient :: forall up down action product. Functor action =>
+    Vendor up down action
+    -> Client down action product
+    -> Client up action (Supply up down action product)
 
--- | Infix alias for 'Supply'
-(+>) :: product -> Vendor up down action -> Supply up down action product
-(+>) = Supply
-
-
-connectVendorToClient :: forall up down action product. Functor action =>
-    Vendor up down action -> Client down action product -> Client up action (Supply up down action product)
-
-connectVendorToClient vendor =
-  \case
-    Pure product      ->  Pure $ product +> vendor
-    Perform action    ->  Perform (action <&> (+> vendor))
-    Request request   ->  connectVendorToRequest vendor request
-    Bind step1 step2  ->  connectVendorToClient vendor step1 `Bind` \supply ->
-                            connectVendorToClient (supplyNext supply) (step2 (supplyProduct supply))
-
-
-connectVendorToRequest :: forall up down action product.
-    Vendor up down action -> down product -> Client up action (Supply up down action product)
-
-connectVendorToRequest (Vendor up) =
-  case up of
-    Pure handle       ->  \request ->                                              handle request
-    Perform action    ->  \request -> Perform action             `Bind` \handle -> handle request
-    Request request'  ->  \request -> Request request'           `Bind` \handle -> handle request
-    Bind step1 step2  ->  \request -> step1 `Bind` \x -> step2 x `Bind` \handle -> handle request
-
-
-connectVendorToVendor :: forall up middle down action. Functor action =>
-    Vendor up middle action -> Vendor middle down action -> Vendor up down action
-
-connectVendorToVendor up (Vendor down) =
-  Vendor $
-    connectVendorToClient up down <&> \supply request ->
-      connectVendorToClient (supplyNext supply) (supplyProduct supply request) <&>
-        supplyJoin
-
-
-supplyJoin :: forall up middle down action product. Functor action =>
-    Supply up middle action (Supply middle down action product) -> Supply up down action product
-
-supplyJoin s =
-  supplyProduct (supplyProduct s)
-    +> connectVendorToVendor (supplyNext s) (supplyNext (supplyProduct s))
-
+toClient up = \case
+    Pure product      ->  Pure $ product :-> up
+    Perform action    ->  Perform (action <&> (:-> up))
+    Request request   ->  offer up request
+    Bind step1 step2  ->  (up `toClient` step1) `Bind` \supply ->
+                            supplyNext supply `toClient` step2 (supplyProduct supply)
 
 class Connect up down action client result
     | up client -> result
@@ -191,9 +135,18 @@ class Connect up down action client result
 instance Functor action =>
     Connect up down action (Client down action product) (Client up action product)
   where
-    up >-> down = connectVendorToClient up down <&> supplyProduct
+    up >-> down =
+        (up `toClient` down) <&> supplyProduct
 
 instance Functor action =>
     Connect up middle action (Vendor middle down action) (Vendor up down action)
   where
-    (>->) = connectVendorToVendor
+    up >-> down =
+        Vendor \request -> (up `toClient` offer down request) <&> joinSupply
+
+joinSupply :: Functor action =>
+    Supply up down1 action (Supply down1 down2 action product)
+    -> Supply up down2 action product
+
+joinSupply ((product :-> nextDown) :-> nextUp) =
+    product :-> (nextUp >-> nextDown)
