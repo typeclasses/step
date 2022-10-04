@@ -57,10 +57,9 @@ function f = go
 
 type InfiniteStream :: Type -> Interface
 
-data InfiniteStream item product
-  where
-    Next :: InfiniteStream item item
-      -- ^ The next item from a nonterminating input stream
+data InfiniteStream item product =
+    (item ~ product) => Next
+        -- ^ The next item from a nonterminating input stream
 
 iterate :: forall a m up. Functor m => a -> (a -> a) -> Vendor up (InfiniteStream a) m
 iterate = flip it
@@ -74,10 +73,9 @@ iterate = flip it
 
 type FiniteStream :: Type -> Interface
 
-data FiniteStream item product
-  where
-    NextMaybe :: FiniteStream item (Maybe item)
-      -- ^ The next item, or 'Nothing' if input is exhausted
+data FiniteStream item product =
+    (product ~ Maybe item) => NextMaybe
+        -- ^ The next item, or 'Nothing' if input is exhausted
 
 list :: forall a m up. Functor m => [a] -> Vendor up (FiniteStream a) m
 list = go
@@ -96,11 +94,10 @@ endOfList = go
 
 type Counting :: Interface -> Interface
 
-data Counting i product
-  where
-    Counting_order :: i product -> Counting i product
-      -- ^ The next item, or 'Nothing' if input is exhausted
-    Counting_count :: Counting i Natural
+data Counting i product =
+    Counting_order (i product)
+        -- ^ The next item, or 'Nothing' if input is exhausted
+  | (product ~ Natural) => Counting_count
       -- ^ How many items have been fetched so far
 
 counting :: forall i m. Functor m => Vendor i (Counting i) m
