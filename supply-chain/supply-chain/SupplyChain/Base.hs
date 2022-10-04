@@ -10,11 +10,7 @@ module SupplyChain.Base
 
 import SupplyChain.Core
 
-import Control.Applicative
-import Control.Monad
 import Data.Function
-import Data.Functor
-import Data.Kind
 
 vend :: Client a m (forall r. b r -> Client a m (Supply a b m r)) -> Vendor a b m
 vend = Vendor

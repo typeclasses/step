@@ -12,14 +12,13 @@ module SupplyChain.More
 
 import SupplyChain.Base
 
-import Control.Applicative
-import Control.Monad
-import Data.Function
-import Data.Functor
-import Data.Functor.Identity
-import Data.Kind
-import Data.Maybe
-import Numeric.Natural
+import Control.Applicative (pure)
+import Control.Monad ((>>=))
+import Data.Function (($), flip)
+import Data.Functor (Functor, (<&>))
+import Data.Kind (Type)
+import Data.Maybe (Maybe (..))
+import Numeric.Natural (Natural)
 import Prelude ((+))
 
 ---

@@ -5,8 +5,8 @@
 -}
 module SupplyChain.Core where
 
-import Control.Applicative (Applicative (pure, (*>), (<*>)), (<$>))
-import Control.Monad (Monad ((>>=)), Functor (fmap))
+import Control.Applicative (Applicative (pure, (*>), (<*>)))
+import Control.Monad (Monad ((>>=)))
 import Data.Function (($), (.), fix)
 import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
@@ -34,15 +34,11 @@ type Action = Type -> Type
 
 -- | Monadic context that supports making requests and performing actions
 
-data Client (up :: Interface) (action :: Action) (product :: Type)
-  where
-    Pure    ::        product -> Client up action product
-    Perform :: action product -> Client up action product
-    Request :: up     product -> Client up action product
-
-    Bind :: Client up action x
-         -> (x -> Client up action product)
-         ->       Client up action product
+data Client (up :: Interface) (action :: Action) (product :: Type) =
+    Pure product
+  | Perform (action product)
+  | Request (up product)
+  | forall x. Bind (Client up action x) (x -> Client up action product)
 
 instance Functor action => Functor (Client up action)
     where { fmap = mapClient }
