@@ -36,7 +36,6 @@ common base
 
     build-depends:
         base ^>= 4.16
-      , relude
 
 library
     import: base
