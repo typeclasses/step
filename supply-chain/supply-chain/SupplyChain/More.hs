@@ -122,3 +122,15 @@ counting = go 0
     go n = Vendor \case
         Counting_count    ->  pure $ n :-> go n
         Counting_order x  ->  order x <&> (:-> go (n + 1))
+
+---
+
+type Cursor :: Type -> Interface
+
+data Cursor char response =
+    (response ~ ()) => Cursor_reset
+  | (response ~ [char]) => Cursor_take Natural
+  | (response ~ ()) => Cursor_commit Natural
+
+finiteStreamCursor :: Vendor (FiniteStream char) (Cursor char) Maybe
+finiteStreamCursor = _
