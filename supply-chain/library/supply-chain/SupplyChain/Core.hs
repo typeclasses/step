@@ -6,10 +6,22 @@ import Data.Function (($), (.))
 import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
 
+{-| Defines the requests and responses exchanged between a vendor and a client
+
+    If @(i)@ is the downstream interface of vendor @(a)@ and the upstream
+    interface of client @(b)@, then we can form the composition @(a '>->' b)@.
+
+    When the client makes a request of type @(i x)@, the vendor replies with a
+    response of type @(x)@.
+-}
+
+type Interface = Type -> Type
+
+
+-- | A monadic context such as 'Data.Functor.Identity.Identity' or 'System.IO.IO'
 
 type Action = Type -> Type
 
-type Interface = Type -> Type
 
 
 data Client (up :: Interface) (action :: Action) (product :: Type)

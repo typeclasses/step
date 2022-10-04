@@ -1,9 +1,9 @@
 module SupplyChain.Base
   (
-    {- * Interface    -} Interface,
+    {- * Kinds        -} Interface, Action,
     {- * Client       -} Client, perform, request,
     {- * Vendor       -} Vendor, vend, runVendor,
-    {- * Supply       -} Supply (..), (+>),
+    {- * Supply       -} Supply, supplyNext, supplyProduct, (+>),
     {- * Composition  -} Connect ((>->)),
     {- * Elimination  -} run,
   )
