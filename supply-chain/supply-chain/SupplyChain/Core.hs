@@ -173,8 +173,12 @@ supplyJoin s =
     , supplyProduct = supplyProduct (supplyProduct s)
     }
 
-class Connect a b m downstream result | a b m downstream -> result where
-    (>->) :: Vendor a b m -> downstream -> result
+class Connect up down action client result
+    | up client -> result
+    , client -> down action
+    , result -> up action
+  where
+    (>->) :: Vendor up down action -> client -> result
 
 instance Functor m => Connect a b m (Client b m r) (Client a m r) where
     up >-> down = connectVendorToClient up down <&> supplyProduct
