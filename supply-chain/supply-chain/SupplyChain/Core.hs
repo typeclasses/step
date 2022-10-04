@@ -1,7 +1,7 @@
 {-| The innermost module of the supply-chain library
 
     It is recommended to instead use "SupplyChain.Base",
-    which exports the types abstractly.
+    which exports 'Client' abstractly and adds a few more things.
 -}
 module SupplyChain.Core where
 
@@ -13,12 +13,10 @@ import Data.Kind (Type)
 
 {-| The kind of requests and responses exchanged between a vendor and a client
 
-    If @i@ is the downstream interface of vendor @a@ and the upstream
-    interface of client @b@, then we can form the composition @a '>->' b@.
-    When the client makes a request of type @i x@, the vendor replies with a
-    response of type @x@.
+    If a client's upstream interface is @i@, then when the client makes a
+    request of type @i x@, it receives a response of type @x@.
 
-    Values of a type of this kind represent requests. Each constructors will
+    Values of a type of this kind represent requests. Each constructor will
     typically have a constraint that specifies what type of response is
     expected in return. Types of this kind are therefore often
     <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html GADTs>.
@@ -115,21 +113,30 @@ apClient' a1 a2 = Bind a1 (\_ -> a2)
 
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
-    { runVendor ::
-        Client up action
-          ( forall product.
-              down product -> Client up action (Supply up down action product)
-          )
-    }
+    (
+      Client up action
+        ( forall product.
+            down product -> Client up action (Supply up down action product)
+        )
+    )
 
+
+-- | The conclusion of a vendor's handling of a client request
 
 data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
   Supply
-    { supplyNext :: Vendor up down action
-    , supplyProduct :: product
+    { supplyProduct :: product
+        -- ^ The requested product
+    , supplyNext :: Vendor up down action
+        -- ^ A new vendor to handle subsequent requests
     }
 
 deriving stock instance Functor (Supply up down action)
+
+
+-- | Infix alias for 'Supply'
+(+>) :: product -> Vendor up down action -> Supply up down action product
+(+>) = Supply
 
 
 connectVendorToClient :: forall up down action product. Functor action =>
@@ -137,17 +144,18 @@ connectVendorToClient :: forall up down action product. Functor action =>
 
 connectVendorToClient vendor =
   \case
-    Pure product      ->  Pure Supply{ supplyNext = vendor, supplyProduct = product }
-    Perform action    ->  Perform (action <&> \product -> Supply{ supplyNext = vendor, supplyProduct = product })
+    Pure product      ->  Pure $ product +> vendor
+    Perform action    ->  Perform (action <&> (+> vendor))
     Request request   ->  connectVendorToRequest vendor request
     Bind step1 step2  ->  connectVendorToClient vendor step1 `Bind` \supply ->
                             connectVendorToClient (supplyNext supply) (step2 (supplyProduct supply))
 
+
 connectVendorToRequest :: forall up down action product.
     Vendor up down action -> down product -> Client up action (Supply up down action product)
 
-connectVendorToRequest up =
-  case runVendor up of
+connectVendorToRequest (Vendor up) =
+  case up of
     Pure handle       ->  \request ->                                              handle request
     Perform action    ->  \request -> Perform action             `Bind` \handle -> handle request
     Request request'  ->  \request -> Request request'           `Bind` \handle -> handle request
@@ -168,20 +176,24 @@ supplyJoin :: forall up middle down action product. Functor action =>
     Supply up middle action (Supply middle down action product) -> Supply up down action product
 
 supplyJoin s =
-  Supply
-    { supplyNext = connectVendorToVendor (supplyNext s) (supplyNext (supplyProduct s))
-    , supplyProduct = supplyProduct (supplyProduct s)
-    }
+  supplyProduct (supplyProduct s)
+    +> connectVendorToVendor (supplyNext s) (supplyNext (supplyProduct s))
+
 
 class Connect up down action client result
     | up client -> result
     , client -> down action
     , result -> up action
   where
+    -- | Connects a vendor to a client (or to another vendor)
     (>->) :: Vendor up down action -> client -> result
 
-instance Functor m => Connect a b m (Client b m r) (Client a m r) where
+instance Functor action =>
+    Connect up down action (Client down action product) (Client up action product)
+  where
     up >-> down = connectVendorToClient up down <&> supplyProduct
 
-instance Functor m => Connect a b m (Vendor b c m) (Vendor a c m) where
+instance Functor action =>
+    Connect up middle action (Vendor middle down action) (Vendor up down action)
+  where
     (>->) = connectVendorToVendor

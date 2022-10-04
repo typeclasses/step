@@ -2,7 +2,7 @@ module SupplyChain.More
   (
     module SupplyChain.Base,
     {- * Void request -} Nil, nil,
-    {- * Combining vendors -} Either' (..), bivend,
+    {- * Combining vendors -} Either' (..), offerEither,
     {- * Trivial vendors -} function,
     {- * Counting -} Counting (..), counting,
     {- * Infinite streams -} InfiniteStream (..), iterate,
@@ -39,11 +39,11 @@ type Either' :: Interface -> Interface -> Interface
 data Either' a b response = Left' (a response) | Right' (b response)
 
 -- | Combination of two vendors
-bivend :: forall up down1 down2 action. Functor action =>
+offerEither :: forall up down1 down2 action. Functor action =>
     Vendor up down1 action -> Vendor up down2 action -> Vendor up (Either' down1 down2) action
-bivend a b = vend $ pure \case
-    Left'  req -> runVendor a >>= \f -> f req <&> \s -> s{ supplyNext = bivend (supplyNext s) b }
-    Right' req -> runVendor b >>= \f -> f req <&> \s -> s{ supplyNext = bivend a (supplyNext s) }
+offerEither a@(Vendor a') b@(Vendor b') = Vendor $ pure \case
+    Left'  req -> a' >>= \f -> f req <&> \s -> s{ supplyNext = offerEither (supplyNext s) b }
+    Right' req -> b' >>= \f -> f req <&> \s -> s{ supplyNext = offerEither a (supplyNext s) }
 
 ---
 
@@ -52,7 +52,7 @@ function :: forall up down action. Functor action =>
     (forall response. down response -> response) -> Vendor up down action
 function f = go
   where
-    go = vend $ pure \x -> pure $ f x +> go
+    go = Vendor $ pure \x -> pure $ f x +> go
 
 ---
 
@@ -60,7 +60,7 @@ type InfiniteStream :: Type -> Interface
 
 data InfiniteStream item response =
     (response ~ item) => Next
-        -- ^ The next item from a nonterminating input stream
+        -- ^ The next item from a non-terminating input stream
 
 iterate :: forall up a action. Functor action =>
     a -> (a -> a) -> Vendor up (InfiniteStream a) action
@@ -69,7 +69,7 @@ iterate = flip it
     it f = go
       where
         go :: a -> Vendor up (InfiniteStream a) action
-        go x = vend $ pure \Next -> pure $ x +> go (f x)
+        go x = Vendor $ pure \Next -> pure $ x +> go (f x)
 
 ---
 
@@ -86,13 +86,13 @@ list = go
     go :: [a] -> Vendor up (FiniteStream a) action
     go = \case
         []      ->  endOfList
-        x : xs  ->  vend $ pure $ \NextMaybe -> pure $ Just x +> go xs
+        x : xs  ->  Vendor $ pure $ \NextMaybe -> pure $ Just x +> go xs
 
 endOfList :: forall up a action. Functor action =>
     Vendor up (FiniteStream a) action
 endOfList = go
   where
-    go = vend $ pure \NextMaybe -> pure $ Nothing +> go
+    go = Vendor $ pure \NextMaybe -> pure $ Nothing +> go
 
 ---
 
@@ -108,6 +108,6 @@ counting :: forall i action. Functor action => Vendor i (Counting i) action
 counting = go 0
   where
     go :: Natural -> Vendor i (Counting i) action
-    go n = vend $ pure \case
+    go n = Vendor $ pure \case
         Counting_count   ->  pure $ n +> go n
         Counting_order x  ->  order x <&> (+> go (n + 1))
