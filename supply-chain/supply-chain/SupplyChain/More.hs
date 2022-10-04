@@ -98,7 +98,7 @@ type Counting :: Interface -> Interface
 
 data Counting i product
   where
-    Counting_base :: i product -> Counting i product
+    Counting_order :: i product -> Counting i product
       -- ^ The next item, or 'Nothing' if input is exhausted
     Counting_count :: Counting i Natural
       -- ^ How many items have been fetched so far
@@ -109,4 +109,4 @@ counting = go 0
     go :: Natural -> Vendor i (Counting i) m
     go n = vend $ pure \case
         Counting_count   ->  pure $ n +> go n
-        Counting_base x  ->  request x <&> (+> go (n + 1))
+        Counting_order x  ->  order x <&> (+> go (n + 1))

@@ -1,3 +1,8 @@
+{-| The innermost module of the supply-chain library
+
+    It is recommended to instead use "SupplyChain.Base",
+    which exports the types abstractly.
+-}
 module SupplyChain.Core where
 
 import Control.Applicative (Applicative (pure, (*>), (<*>)), (<$>))
@@ -6,13 +11,13 @@ import Data.Function (($), (.))
 import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
 
-{-| Defines the requests and responses exchanged between a vendor and a client
+{-| The kind of requests and responses exchanged between a vendor and a client
 
-    If @(i)@ is the downstream interface of vendor @(a)@ and the upstream
-    interface of client @(b)@, then we can form the composition @(a '>->' b)@.
+    If @i@ is the downstream interface of vendor @a@ and the upstream
+    interface of client @b@, then we can form the composition @a '>->' b@.
 
-    When the client makes a request of type @(i x)@, the vendor replies with a
-    response of type @(x)@.
+    When the client makes a request of type @i x@, the vendor replies with a
+    response of type @x@.
 -}
 
 type Interface = Type -> Type
@@ -23,6 +28,7 @@ type Interface = Type -> Type
 type Action = Type -> Type
 
 
+-- | Monadic context that supports making requests and performing actions
 
 data Client (up :: Interface) (action :: Action) (product :: Type)
   where
@@ -33,6 +39,14 @@ data Client (up :: Interface) (action :: Action) (product :: Type)
     Bind :: Client up action x
          -> (x -> Client up action product)
          ->       Client up action product
+
+-- | Send a request via the client's upstream 'Interface'
+perform :: action product -> Client up action product
+perform = Perform
+
+-- | Perform an action in a client's 'Action' context
+order :: up response -> Client up action response
+order = Request
 
 instance Functor action => Functor (Client up action)
   where
@@ -115,6 +129,15 @@ supplyJoin s =
     { supplyNext = connectVendorToVendor (supplyNext s) (supplyNext (supplyProduct s))
     , supplyProduct = supplyProduct (supplyProduct s)
     }
+
+class Connect a b m downstream result | a b m downstream -> result where
+    (>->) :: Vendor a b m -> downstream -> result
+
+instance Functor m => Connect a b m (Client b m r) (Client a m r) where
+    up >-> down = connectVendorToClient up down <&> supplyProduct
+
+instance Functor m => Connect a b m (Vendor b c m) (Vendor a c m) where
+    (>->) = connectVendorToVendor
 
 run :: forall up action product. Monad action =>
     (forall x. up x -> action x) -> Client up action product -> action product
