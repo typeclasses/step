@@ -26,16 +26,14 @@ list = eval supplyChain @?= result
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
 terminableConcat1 :: Assertion
-terminableConcat1 =
-    eval supplyChain @?= result
+terminableConcat1 = eval supplyChain @?= result
   where
     supplyChain = SC.list ["a", "bc", "def", "ghij"] >-> SC.terminableConcat
                     >-> replicateM 5 (order SC.NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
 
 terminableConcat2 :: Assertion
-terminableConcat2 =
-    eval supplyChain @?= result
+terminableConcat2 = eval supplyChain @?= result
   where
     supplyChain = SC.list ["a", "bc"] >-> SC.terminableConcat
                     >-> replicateM 5 (order SC.NextMaybe)
