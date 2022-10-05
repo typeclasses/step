@@ -18,6 +18,8 @@ data TerminableStream item response =
 type TerminableStream :: Type -> Interface
 
 
+-- | Yields each item from the list, then stops
+
 list :: forall up a action. Functor action =>
     [a] -> Vendor up (TerminableStream a) action
 
@@ -25,18 +27,22 @@ list = go
   where
     go :: [a] -> Vendor up (TerminableStream a) action
     go = \case
-        []      ->  end
+        []      ->  nil
         x : xs  ->  Vendor \NextMaybe -> pure $ Just x :-> go xs
 
 
-end :: forall up a action. Functor action =>
+-- | The empty stream
+
+nil :: forall up a action. Functor action =>
     Vendor up (TerminableStream a) action
 
-end = go
+nil = go
   where
     go :: Vendor up (TerminableStream a) action
     go = Vendor \NextMaybe -> pure $ Nothing :-> go
 
+
+-- | Yields the longest stream prefix matching the predicate
 
 while :: forall a action. Functor action =>
     (a -> Bool)
@@ -47,8 +53,12 @@ while ok = v
     v = Vendor \NextMaybe ->
         order NextMaybe >>= \case
             Just x | ok x  ->  pure $ Just x  :-> v
-            _              ->  pure $ Nothing :-> end
+            _              ->  pure $ Nothing :-> nil
 
+
+{-| Applies the function to each result obtained from upstream,
+    and yields each result from the list to the downstream
+-}
 
 concatMap :: forall a b action. Functor action =>
     (a -> [b]) -> Vendor (TerminableStream a) (TerminableStream b) action
@@ -59,9 +69,11 @@ concatMap f = go []
     go bs = Vendor \NextMaybe -> case bs of
         b : bs' -> pure $ Just b :-> go bs'
         [] -> order NextMaybe >>= \case
-            Nothing -> pure $ Nothing :-> end
+            Nothing -> pure $ Nothing :-> nil
             Just a -> offer (go (f a)) NextMaybe
 
+
+-- | Flattens a stream of lists
 
 concat :: forall a action. Functor action =>
     Vendor (TerminableStream [a]) (TerminableStream a) action
