@@ -1,6 +1,6 @@
 module SupplyChain.More.TerminableStream.Spec (tests) where
 
-import Prelude
+import Prelude (Maybe (..))
 
 import Control.Monad (replicateM)
 
@@ -14,8 +14,8 @@ tests :: TestTree
 tests = testGroup "SupplyChain.More.TerminableStream"
     [ testCase "finiteList" listTest
     , testGroup "finiteConcat"
-        [ testCase "with more" terminableConcat1
-        , testCase "exhaustion" terminableConcat2
+        [ testCase "with more" concatTest1
+        , testCase "exhaustion" concatTest2
         ]
     ]
 
@@ -25,16 +25,16 @@ listTest = eval supplyChain @?= result
     supplyChain = list "abc" >-> replicateM 4 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
-terminableConcat1 :: Assertion
-terminableConcat1 = eval supplyChain @?= result
+concatTest1 :: Assertion
+concatTest1 = eval supplyChain @?= result
   where
-    supplyChain = list ["a", "bc", "def", "ghij"] >-> terminableConcat
+    supplyChain = list ["a", "bc", "def", "ghij"] >-> concat
                     >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
 
-terminableConcat2 :: Assertion
-terminableConcat2 = eval supplyChain @?= result
+concatTest2 :: Assertion
+concatTest2 = eval supplyChain @?= result
   where
-    supplyChain = list ["a", "bc"] >-> terminableConcat
+    supplyChain = list ["a", "bc"] >-> concat
                     >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]

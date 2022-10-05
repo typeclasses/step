@@ -10,9 +10,9 @@ import Prelude ((+))
 
 
 data Counting i response =
-    Counting_order (i response)
+    Order (i response)
         -- ^ The next item, or 'Nothing' if input is exhausted
-  | (response ~ Natural) => Counting_count
+  | (response ~ Natural) => Count
         -- ^ How many items have been fetched so far
 
 type Counting :: Interface -> Interface
@@ -25,5 +25,5 @@ counting = go 0
   where
     go :: Natural -> Vendor i (Counting i) action
     go n = Vendor \case
-        Counting_count    ->  pure $ n :-> go n
-        Counting_order x  ->  order x <&> (:-> go (n + 1))
+        Count    ->  pure $ n :-> go n
+        Order x  ->  order x <&> (:-> go (n + 1))

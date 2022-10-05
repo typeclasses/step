@@ -16,10 +16,10 @@ data InfiniteStream item response =
 type InfiniteStream :: Type -> Interface
 
 
-infiniteIterate :: forall up a action. Functor action =>
+iterate :: forall up a action. Functor action =>
     a -> (a -> a) -> Vendor up (InfiniteStream a) action
 
-infiniteIterate = flip it
+iterate = flip it
   where
     it f = go
       where
@@ -27,10 +27,10 @@ infiniteIterate = flip it
         go x = Vendor \Next -> pure $ x :-> go (f x)
 
 
-infiniteConcatMap :: forall a b action. Functor action =>
+concatMap :: forall a b action. Functor action =>
     (a -> [b]) -> Vendor (InfiniteStream a) (InfiniteStream b) action
 
-infiniteConcatMap f = go []
+concatMap f = go []
   where
     go :: [b] -> Vendor (InfiniteStream a) (InfiniteStream b) action
     go bs = Vendor \Next -> case bs of
@@ -38,7 +38,7 @@ infiniteConcatMap f = go []
         [] -> order Next >>= \a -> offer (go (f a)) Next
 
 
-infiniteConcat :: forall a action. Functor action =>
+concat :: forall a action. Functor action =>
     Vendor (InfiniteStream [a]) (InfiniteStream a) action
 
-infiniteConcat = infiniteConcatMap id
+concat = concatMap id

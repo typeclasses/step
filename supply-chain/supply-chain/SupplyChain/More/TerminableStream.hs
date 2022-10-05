@@ -25,45 +25,45 @@ list = go
   where
     go :: [a] -> Vendor up (TerminableStream a) action
     go = \case
-        []      ->  endOfStream
+        []      ->  end
         x : xs  ->  Vendor \NextMaybe -> pure $ Just x :-> go xs
 
 
-endOfStream :: forall up a action. Functor action =>
+end :: forall up a action. Functor action =>
     Vendor up (TerminableStream a) action
 
-endOfStream = go
+end = go
   where
     go :: Vendor up (TerminableStream a) action
     go = Vendor \NextMaybe -> pure $ Nothing :-> go
 
 
-terminableWhile :: forall a action. Functor action =>
+while :: forall a action. Functor action =>
     (a -> Bool)
     -> Vendor (TerminableStream a) (TerminableStream a) action
 
-terminableWhile ok = v
+while ok = v
   where
     v = Vendor \NextMaybe ->
         order NextMaybe >>= \case
             Just x | ok x  ->  pure $ Just x  :-> v
-            _              ->  pure $ Nothing :-> endOfStream
+            _              ->  pure $ Nothing :-> end
 
 
-terminableConcatMap :: forall a b action. Functor action =>
+concatMap :: forall a b action. Functor action =>
     (a -> [b]) -> Vendor (TerminableStream a) (TerminableStream b) action
 
-terminableConcatMap f = go []
+concatMap f = go []
   where
     go :: [b] -> Vendor (TerminableStream a) (TerminableStream b) action
     go bs = Vendor \NextMaybe -> case bs of
         b : bs' -> pure $ Just b :-> go bs'
         [] -> order NextMaybe >>= \case
-            Nothing -> pure $ Nothing :-> endOfStream
+            Nothing -> pure $ Nothing :-> end
             Just a -> offer (go (f a)) NextMaybe
 
 
-terminableConcat :: forall a action. Functor action =>
+concat :: forall a action. Functor action =>
     Vendor (TerminableStream [a]) (TerminableStream a) action
 
-terminableConcat = terminableConcatMap id
+concat = concatMap id
