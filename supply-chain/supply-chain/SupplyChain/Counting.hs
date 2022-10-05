@@ -1,4 +1,9 @@
-module SupplyChain.Counting where
+module SupplyChain.Counting
+  (
+    {- * Interface -} Counting (..),
+    {- * Vendor -} counting,
+  )
+  where
 
 import SupplyChain
 

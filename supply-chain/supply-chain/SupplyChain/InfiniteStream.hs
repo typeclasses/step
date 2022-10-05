@@ -1,4 +1,9 @@
-module SupplyChain.InfiniteStream where
+module SupplyChain.InfiniteStream
+  (
+    {- * Interface -} InfiniteStream (..),
+    {- * Vendors -} iterate, concatMap, concat,
+  )
+  where
 
 import SupplyChain
 

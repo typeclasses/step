@@ -1,4 +1,9 @@
-module SupplyChain.TerminableStream where
+module SupplyChain.TerminableStream
+  (
+    {- * Interface -} TerminableStream (..),
+    {- * Vendors -} list, nil, while, concatMap, concat,
+  )
+  where
 
 import SupplyChain
 

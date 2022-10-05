@@ -1,4 +1,9 @@
-module SupplyChain.Either where
+module SupplyChain.Either
+  (
+    {- * Interface -} Either (..),
+    {- * Vendor composition -} offerEither,
+  )
+  where
 
 import SupplyChain
 
