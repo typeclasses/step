@@ -13,6 +13,18 @@ import qualified SupplyChain.More as SC
 tests :: TestTree
 tests = testGroup "SupplyChain tests"
   [ testCase "list" $
-        eval SC.nil (SC.list "abc" >-> replicateM 4 (order SC.NextMaybe))
-            @?= [Just 'a', Just 'b', Just 'c', Nothing]
+      let
+        x =
+            SC.list "abc"
+            >-> replicateM 4 (order SC.NextMaybe)
+      in
+        SC.eval SC.nil x @?= [Just 'a', Just 'b', Just 'c', Nothing]
+  , testCase "parse" $
+      let
+        x =
+            SC.list "12,34ab"
+            >-> SC.finiteStreamCursor
+            >-> SC.commaSep SC.parseDigits
+      in
+        SC.eval SC.nil x @?= ["12", "34"]
   ]
