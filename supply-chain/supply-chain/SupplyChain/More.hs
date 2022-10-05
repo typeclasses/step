@@ -7,8 +7,8 @@ module SupplyChain.More
     {- * Combining vendors -}  Either' (..), offerEither,
     {- * Trivial vendors   -}  function,
     {- * Counting          -}  Counting (..), counting,
-    {- * Infinite streams  -}  InfiniteStream (..), iterate,
-    {- * Finite streams    -}  FiniteStream (..), list, while,
+    {- * Infinite streams  -}  InfiniteStream (..), iterate, infiniteConcatMap, infiniteConcat,
+    {- * Finite streams    -}  FiniteStream (..), list, while, finiteConcatMap, finiteConcat,
 
   )
   where
@@ -18,7 +18,7 @@ import SupplyChain.Base
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
-import Data.Function ((.), ($), flip)
+import Data.Function ((.), ($), flip, id)
 import Data.Functor (Functor, (<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.Kind (Type)
@@ -82,6 +82,19 @@ iterate = flip it
       where
         go :: a -> Vendor up (InfiniteStream a) action
         go x = Vendor \Next -> pure $ x :-> go (f x)
+
+infiniteConcatMap :: forall a b action. Functor action =>
+    (a -> [b]) -> Vendor (InfiniteStream a) (InfiniteStream b) action
+infiniteConcatMap f = go []
+  where
+    go :: [b] -> Vendor (InfiniteStream a) (InfiniteStream b) action
+    go bs = Vendor \Next -> case bs of
+        b : bs' -> pure $ b :-> go bs'
+        [] -> order Next >>= \a -> offer (go (f a)) Next
+
+infiniteConcat :: forall a action. Functor action =>
+    Vendor (InfiniteStream [a]) (InfiniteStream a) action
+infiniteConcat = infiniteConcatMap id
 
 ---
 
