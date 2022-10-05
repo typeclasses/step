@@ -23,8 +23,8 @@ module SupplyChain
     {- ** How to create a client -} {- $definingClients -} order, perform,
     {- ** How to use a client -} eval, run, evalWith, runWith,
 
-    {- * Vendor -} Vendor (..),
-    {- ** How to create a vendor -} {- $definingVendors -} Supply (..),
+    {- * Vendor -} Vendor (..), Supply (..),
+    {- ** How to create a vendor -} {- $definingVendors -}
     {- ** Some simple vendors -} functionVendor, actionVendor,
 
     {- * Connect -} Connect ((>->)), {- $connect -}
@@ -119,16 +119,44 @@ also keep in mind that 'Client' belongs to the 'Monad' class.
 We define vendors using the v'Vendor' constructor.
 Please inspect its type carefully.
 
-* A vendor is a function that accepts a request, whose type is
-  polymorphic but constrained by the vendor's downstream interface.
-* Since a vendor also has an upstream interface, vendors can act as
-  clients. The vendor therefore operates in a 'Client' context.
-  This allows the vendor to undertake a monadic sequence involving
-  'order' and 'perform' while fulfilling the request.
-* The final step in fulfilling a request is to construct a 'Supply'.
-  This consists of two things: the response, and also a new 'Vendor'.
-  This latter component is what allows vendors to be stateful, and it
-  is usually defined recursively.
+> forall product. down product -> Client up action (Supply up down action product)
+
+A vendor is a function that accepts a request. The request type is
+polymorphic but constrained by the vendor's downstream interface.
+
+> forall product. down product -> Client up action (Supply up down action product)
+>                 ^^^^^^^^^^^^
+
+Since a vendor also has an upstream interface, vendors can act as
+clients. The vendor therefore operates in a 'Client' context.
+
+> forall product. down product -> Client up action (Supply up down action product)
+>                                 ^^^^^^^^^^^^^^^^
+
+This allows the vendor to undertake a monadic sequence involving
+'order' and 'perform' while fulfilling the request.
+
+The final step in fulfilling a request is to return a 'Supply'.
+
+> forall product. down product -> Client up action (Supply up down action product)
+>                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A 'Supply' is written using its '(:->)' constructor, which has two parameters:
+
+> (:->) :: product -> Vendor up down action -> Supply up down action product
+
+The first is the vendor's response to the downstream's request.
+
+> (:->) :: product -> Vendor up down action -> Supply up down action product
+>          ^^^^^^^
+
+The second is a new 'Vendor'.
+
+> (:->) :: product -> Vendor up down action -> Supply up down action product
+>                     ^^^^^^^^^^^^^^^^^^^^^
+
+This latter component is what allows vendors to be stateful, and it is usually
+defined recursively.
 
 -}
 
