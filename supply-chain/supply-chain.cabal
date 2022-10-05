@@ -46,6 +46,7 @@ library
         SupplyChain.Counting
         SupplyChain.Either
         SupplyChain.InfiniteStream
+        SupplyChain.ListT
         SupplyChain.TerminableStream
 
 test-suite test-supply-chain
