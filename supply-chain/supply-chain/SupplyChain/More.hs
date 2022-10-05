@@ -9,23 +9,20 @@ module SupplyChain.More
     {- * Counting          -}  Counting (..), counting,
     {- * Infinite streams  -}  InfiniteStream (..), iterate,
     {- * Finite streams    -}  FiniteStream (..), list, while,
-    {- * Cursor            -}  Cursor (..), finiteStreamCursor, parseNat, commaSep, untilComma,
 
   )
   where
 
 import SupplyChain.Base
 
-import Control.Applicative (pure, (*>))
+import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
-import Data.Char (Char, isDigit)
 import Data.Function ((.), ($), flip)
 import Data.Functor (Functor, (<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
-import Data.Semigroup ((<>))
 import Numeric.Natural (Natural)
 import Prelude ((+))
 
@@ -137,49 +134,3 @@ counting = go 0
     go n = Vendor \case
         Counting_count    ->  pure $ n :-> go n
         Counting_order x  ->  order x <&> (:-> go (n + 1))
-
----
-
-type Cursor :: Type -> Interface
-
-data Cursor char response =
-    ( response ~ ()         ) => Cursor_reset
-  | ( response ~ Maybe char ) => Cursor_next
-  | ( response ~ ()         ) => Cursor_commit
-
-data CursorState char = CursorState{ unseen :: [char], uncommitted :: [char] }
-
-finiteStreamCursor :: forall char. Vendor (FiniteStream char) (Cursor char) Maybe
-finiteStreamCursor = go (CursorState [] [])
-  where
-    go :: CursorState char -> Vendor (FiniteStream char) (Cursor char) Maybe
-    go s = Vendor \case
-        Cursor_reset -> pure $ () :-> go s{ unseen = uncommitted s }
-        Cursor_next -> case unseen s of
-            x : xs -> pure $ Just x :-> go s{ unseen = xs }
-            [] -> order NextMaybe >>= \case
-                Nothing -> pure $ Nothing :-> go s
-                Just x -> pure $ Just x :-> go s{ uncommitted = uncommitted s <> [x] }
-        Cursor_commit ->
-            case uncommitted s of
-                _ : xs -> pure $ () :-> go s{ uncommitted = xs }
-                [] -> order NextMaybe >>= \case
-                    Nothing -> perform Nothing
-                    Just x -> pure $ () :-> go s{ unseen = unseen s <> [x] }
-
-parseNat :: forall action. Functor action =>
-    Client (Cursor Char) action Natural
-parseNat = _
-  where
-    parseDigits =
-      order Cursor_next >>= \case
-          Just x | isDigit x -> order Cursor_commit *> (parseDigits <&> (<> [x]))
-          _ -> pure []
-    parseDigitMaybe = _
-
-
-untilComma = _
-
-
-commaSep = _
-

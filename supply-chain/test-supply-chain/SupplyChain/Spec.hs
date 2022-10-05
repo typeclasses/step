@@ -19,12 +19,4 @@ tests = testGroup "SupplyChain tests"
             >-> replicateM 4 (order SC.NextMaybe)
       in
         SC.eval SC.nil x @?= [Just 'a', Just 'b', Just 'c', Nothing]
-  , testCase "parse" $
-      let
-        x =
-            SC.list "12,34ab"
-            >-> SC.finiteStreamCursor
-            >-> SC.commaSep SC.parseDigits
-      in
-        SC.eval SC.nil x @?= ["12", "34"]
   ]
