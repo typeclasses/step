@@ -8,33 +8,33 @@ import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
 
 import SupplyChain
-import qualified SupplyChain.More as SC
+import SupplyChain.More.TerminableStream
 
 tests :: TestTree
 tests = testGroup "SupplyChain.More.TerminableStream"
-    [ testCase "finiteList" list
+    [ testCase "finiteList" listTest
     , testGroup "finiteConcat"
         [ testCase "with more" terminableConcat1
         , testCase "exhaustion" terminableConcat2
         ]
     ]
 
-list :: Assertion
-list = eval supplyChain @?= result
+listTest :: Assertion
+listTest = eval supplyChain @?= result
   where
-    supplyChain = SC.list "abc" >-> replicateM 4 (order SC.NextMaybe)
+    supplyChain = list "abc" >-> replicateM 4 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
 terminableConcat1 :: Assertion
 terminableConcat1 = eval supplyChain @?= result
   where
-    supplyChain = SC.list ["a", "bc", "def", "ghij"] >-> SC.terminableConcat
-                    >-> replicateM 5 (order SC.NextMaybe)
+    supplyChain = list ["a", "bc", "def", "ghij"] >-> terminableConcat
+                    >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
 
 terminableConcat2 :: Assertion
 terminableConcat2 = eval supplyChain @?= result
   where
-    supplyChain = SC.list ["a", "bc"] >-> SC.terminableConcat
-                    >-> replicateM 5 (order SC.NextMaybe)
+    supplyChain = list ["a", "bc"] >-> terminableConcat
+                    >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]

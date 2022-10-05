@@ -23,7 +23,6 @@ import Data.Kind (Type)
     typically have a constraint that specifies what type of response is
     expected in return. Types of this kind are therefore often
     <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html GADTs>.
-    See "SupplyChain.More" for some examples.
 -}
 
 type Interface = Type -> Type

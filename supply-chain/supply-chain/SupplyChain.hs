@@ -29,8 +29,6 @@ module SupplyChain
 
     {- * Connect -} Connect ((>->)), {- $connect -}
 
-    {- * See also -} {- $seeAlso -}
-
   )
   where
 
@@ -187,14 +185,5 @@ Specializations:
 ('>->') :: 'Vendor' up down action   -> 'Client' down action product -> 'Client' up action product
 ('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action  -> 'Vendor' up down action
 @
-
--}
-
-
-{- $seeAlso
-
-This module aims to be more convenient than "SupplyChain.Core"
-(a slightly lower-level API) and more stable than "SupplyChain.More"
-(a wider collection of utilities with less clear inclusion criteria).
 
 -}
