@@ -1,4 +1,4 @@
-module SupplyChain.More.Either where
+module SupplyChain.Either where
 
 import SupplyChain
 

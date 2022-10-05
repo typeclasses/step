@@ -1,4 +1,4 @@
-module SupplyChain.More.InfiniteStream where
+module SupplyChain.InfiniteStream where
 
 import SupplyChain
 

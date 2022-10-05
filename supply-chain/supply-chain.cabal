@@ -43,10 +43,10 @@ library
     exposed-modules:
         SupplyChain
         SupplyChain.Core
-        SupplyChain.More.Counting
-        SupplyChain.More.Either
-        SupplyChain.More.InfiniteStream
-        SupplyChain.More.TerminableStream
+        SupplyChain.Counting
+        SupplyChain.Either
+        SupplyChain.InfiniteStream
+        SupplyChain.TerminableStream
 
 test-suite test-supply-chain
     import: base
@@ -60,4 +60,4 @@ test-suite test-supply-chain
       , tasty-hunit
     other-modules:
         SupplyChain.Spec
-        SupplyChain.More.TerminableStream.Spec
+        SupplyChain.TerminableStream.Spec

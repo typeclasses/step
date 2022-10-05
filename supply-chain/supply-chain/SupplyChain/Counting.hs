@@ -1,4 +1,4 @@
-module SupplyChain.More.Counting where
+module SupplyChain.Counting where
 
 import SupplyChain
 

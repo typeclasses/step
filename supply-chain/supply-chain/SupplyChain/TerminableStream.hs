@@ -1,4 +1,4 @@
-module SupplyChain.More.TerminableStream where
+module SupplyChain.TerminableStream where
 
 import SupplyChain
 
