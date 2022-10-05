@@ -130,6 +130,21 @@ while ok = v
             Just x | ok x  ->  pure $ Just x  :-> v
             _              ->  pure $ Nothing :-> endOfList
 
+finiteConcatMap :: forall a b action. Functor action =>
+    (a -> [b]) -> Vendor (FiniteStream a) (FiniteStream b) action
+finiteConcatMap f = go []
+  where
+    go :: [b] -> Vendor (FiniteStream a) (FiniteStream b) action
+    go bs = Vendor \NextMaybe -> case bs of
+        b : bs' -> pure $ Just b :-> go bs'
+        [] -> order NextMaybe >>= \case
+            Nothing -> pure $ Nothing :-> endOfList
+            Just a -> offer (go (f a)) NextMaybe
+
+finiteConcat :: forall a action. Functor action =>
+    Vendor (FiniteStream [a]) (FiniteStream a) action
+finiteConcat = finiteConcatMap id
+
 ---
 
 type Counting :: Interface -> Interface

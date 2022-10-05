@@ -19,20 +19,20 @@ tests = testGroup "SupplyChain tests"
             >-> replicateM 4 (order SC.NextMaybe)
       in
         SC.eval SC.nil x @?= [Just 'a', Just 'b', Just 'c', Nothing]
-  , testCase "finiteConcat 1" $
+  , testCase "finiteConcat with more" $
       let
         x =
             SC.list ["a", "bc", "def", "ghij"]
             >-> SC.finiteConcat
-            >-> replicateM 5 (order SC.Next)
+            >-> replicateM 5 (order SC.NextMaybe)
       in
         SC.eval SC.nil x @?= [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
-  , testCase "finiteConcat 2" $
+  , testCase "finiteConcat exhaustion" $
       let
         x =
             SC.list ["a", "bc"]
             >-> SC.finiteConcat
-            >-> replicateM 5 (order SC.Next)
+            >-> replicateM 5 (order SC.NextMaybe)
       in
         SC.eval SC.nil x @?= [Just 'a', Just 'b', Just 'c', Nothing, Nothing]
   ]
