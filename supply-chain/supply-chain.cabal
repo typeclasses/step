@@ -41,9 +41,13 @@ library
     import: base
     hs-source-dirs: supply-chain
     exposed-modules:
-        SupplyChain.Base
+        SupplyChain
         SupplyChain.Core
         SupplyChain.More
+        SupplyChain.More.Counting
+        SupplyChain.More.Either
+        SupplyChain.More.InfiniteStream
+        SupplyChain.More.TerminableStream
 
 test-suite test-supply-chain
     import: base

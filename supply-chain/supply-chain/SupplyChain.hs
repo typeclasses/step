@@ -1,0 +1,172 @@
+{- |
+
+A "supply chain" represents a flow of information from one
+'Vendor' to the next, and so on, ultimately reaching a 'Client'
+who returns a product.
+
+@
+(vendor1 '>->' vendor2 '>->' vendor3 '>->' client)
+@
+
+In the above example, @vendor2@ is said to be /downstream/ of @vendor1@.
+A client or vendor can place an 'order', which is fulfilled by the vendor
+directly /upstream/ of it. So, the orders made by the @client@ are served by
+@vendor3@, the orders made by @vendor3@ are served by @vendor2@, and so on.
+-}
+
+module SupplyChain
+  (
+
+    {- * Kinds -} Interface, Action,
+
+    {- * Client -} Client,
+    {- ** How to create a client -} {- $definingClients -} order, perform,
+    {- ** How to use a client -} eval, run, evalWith, runWith,
+
+    {- * Vendor -} Vendor (..),
+    {- ** How to create a vendor -} {- $definingVendors -} Supply (..),
+    {- ** Some simple vendors -} functionVendor, actionVendor,
+
+    {- * Connect -} Connect ((>->)), {- $connect -}
+
+    {- * See also -} {- $seeAlso -}
+
+  )
+  where
+
+import SupplyChain.Core
+
+import Control.Applicative (pure)
+import Control.Monad (Monad)
+import Data.Function ((.), ($))
+import Data.Functor (Functor, (<&>))
+import Data.Functor.Const (Const (getConst))
+import Data.Functor.Identity (Identity (..))
+import Data.Kind (Type)
+import Data.Void (absurd, Void)
+
+
+-- | Perform an action in a client's 'Action' context
+
+perform :: forall (up :: Interface) (action :: Action) (product :: Type).
+    action product -> Client up action product
+
+perform = Perform
+
+
+-- | Send a request via the client's upstream 'Interface'
+
+order :: forall (up :: Interface) (action :: Action) (response :: Type).
+    up response -> Client up action response
+
+order = Request
+
+
+-- | Run a client that makes no requests
+
+run :: forall (action :: Action) (product :: Type). Monad action =>
+    Client (Const Void) action product -> action product
+
+run = runWith (pure . absurd . getConst)
+
+
+-- | Run a client that makes no requests and performs no actions
+
+eval :: forall (product :: Type).
+    Client (Const Void) Identity product -> product
+
+eval = runIdentity . run
+
+
+-- | Run a client that performs no actions
+
+evalWith :: forall (up :: Interface) (product :: Type).
+    (forall x. up x -> x) -> Client up Identity product -> product
+
+evalWith f = runIdentity . runWith (pure . f)
+
+
+-- | A simple stateless vendor that responds to each request by applying a pure function
+
+functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action). Functor action =>
+    (forall response. down response -> response) -> Vendor up down action
+
+functionVendor f = go
+  where
+    go = Vendor \x -> pure $ f x :-> go
+
+
+-- | A simple stateless vendor that responds to each request by applying an effectful function
+
+actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action). Functor action =>
+    (forall response. down response -> action response) -> Vendor up down action
+
+actionVendor f = go
+  where
+    go = Vendor \x -> perform (f x) <&> (:-> go)
+
+
+{- $definingClients
+
+In addition to these functions for constructing clients,
+also keep in mind that 'Client' belongs to the 'Monad' class.
+
+-}
+
+
+{- $definingVendors
+
+We define vendors using the v'Vendor' constructor.
+Please inspect its type carefully.
+
+* A vendor is a function that accepts a request, whose type is
+  polymorphic but constrained by the vendor's downstream interface.
+* Since a vendor also has an upstream interface, vendors can act as
+  clients. The vendor therefore operates in a 'Client' context.
+  This allows the vendor to undertake a monadic sequence involving
+  'order' and 'perform' while fulfilling the request.
+* The final step in fulfilling a request is to construct a 'Supply'.
+  This consists of two things: the response, and also a new 'Vendor'.
+  This latter component is what allows vendors to be stateful, and it
+  is usually defined recursively.
+
+-}
+
+
+{- $connect
+
+If @i@ is the downstream interface of vendor @a@ and the upstream
+interface of client @b@, then we can form the composition @a '>->' b@.
+When the client makes a request of type @i x@, the vendor replies with a
+response of type @x@.
+
+> ┌───────────────────────────┐
+> │    Vendor up i action     │
+> └───────────────────────────┘
+>              ▲   │
+>         i x  │   │  x
+>              │   ▼
+> ┌───────────────────────────┐
+> │  Client i action product  │
+> └───────────────────────────┘
+
+The '(>->)' operation is associative; if @a@ and @b@ are vendors and @c@ is
+a client, then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
+
+Specializations:
+
+@
+('>->') :: 'Vendor' up down action   -> 'Client' down action product -> 'Client' up action product
+('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action  -> 'Vendor' up down action
+@
+
+-}
+
+
+{- $seeAlso
+
+This module aims to be more convenient than "SupplyChain.Core"
+(a slightly lower-level API) and more stable than "SupplyChain.More"
+(a wider collection of utilities with less clear inclusion criteria).
+
+-}

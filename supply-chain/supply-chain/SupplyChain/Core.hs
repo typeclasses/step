@@ -2,8 +2,8 @@
 
     This module's chief virtue is minimalism. It aims to implement
     only the most significant contributions of the library. If you
-    are new to supply-chain, start with "SupplyChain.Base" instead,
-    which is better documented and slightly more abstract.
+    are new to supply-chain, start with "SupplyChain" instead,
+    which is better documented and somewhat more abstract.
 -}
 module SupplyChain.Core where
 
@@ -23,7 +23,7 @@ import Data.Kind (Type)
     typically have a constraint that specifies what type of response is
     expected in return. Types of this kind are therefore often
     <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html GADTs>.
-    See the source code of "SupplyChain.More" for some examples.
+    See "SupplyChain.More" for some examples.
 -}
 
 type Interface = Type -> Type
