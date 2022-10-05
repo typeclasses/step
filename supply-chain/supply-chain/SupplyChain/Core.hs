@@ -1,7 +1,9 @@
 {-| The innermost module of the supply-chain library
 
-    It is recommended to instead use "SupplyChain.Base",
-    which is slightly more abstract.
+    This module's chief virtue is minimalism. It aims to implement
+    only the most significant contributions of the library. If you
+    are new to supply-chain, start with "SupplyChain.Base" instead,
+    which is better documented and slightly more abstract.
 -}
 module SupplyChain.Core where
 
@@ -10,6 +12,7 @@ import Control.Monad (Monad ((>>=)))
 import Data.Function (($), (.), fix)
 import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
+
 
 {-| The kind of requests and responses exchanged between a vendor and a client
 
@@ -20,6 +23,7 @@ import Data.Kind (Type)
     typically have a constraint that specifies what type of response is
     expected in return. Types of this kind are therefore often
     <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html GADTs>.
+    See the source code of "SupplyChain.More" for some examples.
 -}
 
 type Interface = Type -> Type
@@ -57,32 +61,16 @@ instance Functor action => Monad (Client up action)
     (>>=) = Bind
 
 
--- | Send a request via the client's upstream 'Interface'
-
-perform :: forall (up :: Interface) (action :: Action) (product :: Type).
-    action product -> Client up action product
-
-perform = Perform
-
-
--- | Perform an action in a client's 'Action' context
-
-order :: forall (up :: Interface) (action :: Action) (response :: Type).
-    up response -> Client up action response
-
-order = Request
-
-
 {-| Run a client in its 'Action' context
 
     The first argument is a handler that specifies what to do each
     time the client makes a request.
 -}
 
-run :: forall (up :: Interface) (action :: Action) (product :: Type). Monad action =>
+runWith :: forall (up :: Interface) (action :: Action) (product :: Type). Monad action =>
     (forall x. up x -> action x) -> Client up action product -> action product
 
-run handle = go
+runWith handle = go
   where
     go :: forall x. Client up action x -> action x
     go = \case
@@ -112,17 +100,6 @@ data Supply (up :: Interface) (down :: Interface) (action :: Action) (product ::
 
 deriving stock instance Functor (Supply up down action)
 
-toClient :: forall up down action product. Functor action =>
-    Vendor up down action
-    -> Client down action product
-    -> Client up action (Supply up down action product)
-
-toClient up = \case
-    Pure product      ->  Pure $ product :-> up
-    Perform action    ->  Perform (action <&> (:-> up))
-    Request request   ->  offer up request
-    Bind step1 step2  ->  (up `toClient` step1) `Bind` \supply ->
-                            supplyNext supply `toClient` step2 (supplyProduct supply)
 
 class Connect up down action client result
     | up client -> result
@@ -136,17 +113,46 @@ instance Functor action =>
     Connect up down action (Client down action product) (Client up action product)
   where
     up >-> down =
-        (up `toClient` down) <&> supplyProduct
+        (up >+> down) <&> supplyProduct
 
 instance Functor action =>
     Connect up middle action (Vendor middle down action) (Vendor up down action)
   where
     up >-> down =
-        Vendor \request -> (up `toClient` offer down request) <&> joinSupply
+        Vendor \request -> (up >+> offer down request) <&> joinSupply
+
+
+{-| Connect a vendor to a client, producing a client which ultimately
+    returns both the product and an updated vendor.
+
+    This function is used to implement '(>->)'.
+    Apart from that, perhaps it has no other use.
+-}
+(>+>) ::
+    forall
+      (up :: Interface) (down :: Interface) (action :: Action) (product :: Type).
+  Functor action =>
+    Vendor up down action -> Client down action product
+    -> Client up action (Supply up down action product)
+
+(>+>) up = \case
+    Pure product      ->  Pure $ product :-> up
+    Perform action    ->  Perform (action <&> (:-> up))
+    Request request   ->  offer up request
+    Bind step1 step2  ->  (up >+> step1) `Bind` \supply ->
+                            supplyNext supply >+> step2 (supplyProduct supply)
+
+
+{-| Sort of resembles what a 'Control.Monad.join' implementation for
+    'Supply' might look like, modulo a subtle difference in the types
+
+    This function is used to implement '(>->)'.
+    Apart from that, perhaps it has no other use.
+-}
 
 joinSupply :: Functor action =>
-    Supply up down1 action (Supply down1 down2 action product)
-    -> Supply up down2 action product
+    Supply up middle action (Supply middle down action product)
+    -> Supply up down action product
 
 joinSupply ((product :-> nextDown) :-> nextUp) =
     product :-> (nextUp >-> nextDown)

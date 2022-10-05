@@ -20,14 +20,14 @@ tests = testGroup "SupplyChain tests"
     ]
 
 list :: Assertion
-list = SC.eval SC.nil supplyChain @?= result
+list = SC.eval supplyChain @?= result
   where
     supplyChain = SC.list "abc" >-> replicateM 4 (order SC.NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
 finiteConcat1 :: Assertion
 finiteConcat1 =
-    SC.eval SC.nil supplyChain @?= result
+    SC.eval supplyChain @?= result
   where
     supplyChain = SC.list ["a", "bc", "def", "ghij"] >-> SC.finiteConcat
                     >-> replicateM 5 (order SC.NextMaybe)
@@ -35,7 +35,7 @@ finiteConcat1 =
 
 finiteConcat2 :: Assertion
 finiteConcat2 =
-    SC.eval SC.nil supplyChain @?= result
+    SC.eval supplyChain @?= result
   where
     supplyChain = SC.list ["a", "bc"] >-> SC.finiteConcat
                     >-> replicateM 5 (order SC.NextMaybe)
