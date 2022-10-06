@@ -22,10 +22,12 @@ module SupplyChain
     {- * Client -} Client,
     {- ** How to create a client -} {- $definingClients -} order, perform,
     {- ** How to use a client -} eval, run, evalWith, runWith,
+    {- ** Miscellany -} hoistClient,
 
     {- * Vendor -} Vendor (..), Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
-    {- ** Some simple vendors -} functionVendor, actionVendor, noVendor,
+    {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
+    {- ** Miscellany -} hoistVendor,
 
     {- * Connect -} Connect ((>->)), {- $connect -}
 
@@ -106,6 +108,36 @@ actionVendor f = go
 
 noVendor :: Vendor up (Const Void) action
 noVendor = Vendor \case{}
+
+
+map :: forall (up :: Interface) (down :: Interface) (action :: Action).
+    (forall x. down x -> up x) -> Vendor up down action
+map f = go
+  where
+    go = Vendor \x -> order (f x) <&> (:-> go)
+
+
+hoistClient :: forall (up :: Interface) (a :: Action) (b :: Action) (product :: Type).
+    (forall x. a x -> b x) -> Client up a product -> Client up b product
+
+hoistClient f = go
+  where
+    go :: forall x. Client up a x -> Client up b x
+    go = \case
+        Pure x     ->  Pure x
+        Request x  ->  Request x
+        Perform x  ->  Perform (f x)
+        Bind a b   ->  Bind (go a) (go . b)
+
+
+hoistVendor :: forall (up :: Interface) (down :: Interface) (a :: Action) (b :: Action).
+    (forall x. a x -> b x) -> Vendor up down a -> Vendor up down b
+
+hoistVendor f = go
+  where
+    go (Vendor v) = Vendor \request ->
+        hoistClient f (v request) <&> \(response :-> v') ->
+            response :-> hoistVendor f v'
 
 
 {- $definingClients

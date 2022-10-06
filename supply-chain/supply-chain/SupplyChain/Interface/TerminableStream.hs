@@ -7,7 +7,7 @@ module SupplyChain.Interface.TerminableStream
   )
   where
 
-import SupplyChain
+import SupplyChain hiding (map)
 
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
