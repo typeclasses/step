@@ -14,7 +14,7 @@ import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($), id)
-import Data.Functor (Functor, (<$>))
+import Data.Functor (Functor, (<$>), (<&>))
 import Data.Functor.Const (Const (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
@@ -43,7 +43,7 @@ list = go
     go :: [a] -> Vendor up (TerminableStream a) action
     go = \case
         []      ->  nil
-        x : xs  ->  Vendor \NextMaybe -> pure $ Just x :-> go xs
+        x : xs  ->  Vendor \NextMaybe -> pure (Just x :-> go xs)
 
 
 -- | The empty stream
@@ -54,7 +54,7 @@ nil :: forall up a action. Functor action =>
 nil = go
   where
     go :: Vendor up (TerminableStream a) action
-    go = Vendor \NextMaybe -> pure $ Nothing :-> go
+    go = Vendor \NextMaybe -> pure (Nothing :-> go)
 
 
 -- | Yields one item, then stops
@@ -62,7 +62,7 @@ nil = go
 singleton :: forall up a action. Functor action =>
     a -> Vendor up (TerminableStream a) action
 
-singleton x = Vendor \NextMaybe -> pure $ Just x :-> nil
+singleton x = Vendor \NextMaybe -> pure (Just x :-> nil)
 
 
 -- | Apply a function to each item in the stream
@@ -70,9 +70,9 @@ singleton x = Vendor \NextMaybe -> pure $ Just x :-> nil
 map :: forall a b action. Functor action =>
     (a -> b) -> Vendor (TerminableStream a) (TerminableStream b) action
 
-map f = Vendor \NextMaybe -> order NextMaybe >>= \case
-    Nothing -> pure $ Nothing :-> nil
-    Just a -> pure $ Just (f a) :-> map f
+map f = Vendor \NextMaybe -> order NextMaybe <&> \case
+    Nothing -> Nothing    :-> nil
+    Just a  -> Just (f a) :-> map f
 
 
 {-| Applies the function to each result obtained from upstream,
@@ -82,14 +82,15 @@ map f = Vendor \NextMaybe -> order NextMaybe >>= \case
 concatMap :: forall a b action. Functor action =>
     (a -> [b]) -> Vendor (TerminableStream a) (TerminableStream b) action
 
-concatMap f = go []
+concatMap f = Vendor \NextMaybe -> go []
   where
-    go :: [b] -> Vendor (TerminableStream a) (TerminableStream b) action
-    go bs = Vendor \NextMaybe -> case bs of
-        b : bs' -> pure $ Just b :-> go bs'
+    go :: [b] -> Client (TerminableStream a) action
+        (Supply (TerminableStream a) (TerminableStream b) action (Maybe b))
+    go = \case
+        b : bs' -> pure (Just b :-> Vendor \NextMaybe -> go bs')
         [] -> order NextMaybe >>= \case
-            Nothing -> pure $ Nothing :-> nil
-            Just a -> offer (go (f a)) NextMaybe
+            Nothing -> pure (Nothing :-> nil)
+            Just a  -> go (f a)
 
 
 -- | Like 'concatMap', but the function gives a vendor instead of a list
@@ -162,11 +163,8 @@ group = Vendor \NextMaybe ->
         Just x -> go 1 x
   where
     go :: Natural -> a -> Client (TerminableStream a) action
-        (
-            Supply
-                (TerminableStream a)
-                (TerminableStream (Natural, a))
-                action (Maybe (Natural, a))
+        ( Supply (TerminableStream a) (TerminableStream (Natural, a))
+          action (Maybe (Natural, a))
         )
     go n x = order NextMaybe >>= \case
         Nothing -> pure $ Just (n, x) :-> nil
