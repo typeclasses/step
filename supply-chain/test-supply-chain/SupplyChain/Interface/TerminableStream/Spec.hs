@@ -3,6 +3,8 @@ module SupplyChain.Interface.TerminableStream.Spec (tests) where
 import Prelude (Maybe (..))
 
 import Control.Monad (replicateM)
+import Data.Char (Char)
+import Numeric.Natural (Natural)
 
 import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
@@ -16,6 +18,10 @@ tests = testGroup "TerminableStream"
     , testGroup "finiteConcat"
         [ testCase "with more" concatTest1
         , testCase "exhaustion" concatTest2
+        ]
+    , testGroup "group"
+        [ testCase "empty" groupEmpty
+        , testCase "letters" groupLetters
         ]
     ]
 
@@ -38,3 +44,15 @@ concatTest2 = eval supplyChain @?= result
     supplyChain = list ["a", "bc"] >-> concat
                     >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]
+
+groupLetters :: Assertion
+groupLetters = eval supplyChain @?= result
+  where
+    supplyChain = (list "Hrmm..." >-> group >-> all)
+    result = [(1, 'H'), (1, 'r'), (2, 'm'), (3, '.')]
+
+groupEmpty :: Assertion
+groupEmpty = eval supplyChain @?= result
+  where
+    supplyChain = (nil >-> group >-> all)
+    result = [] :: [(Natural, Char)]
