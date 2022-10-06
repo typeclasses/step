@@ -117,7 +117,7 @@ library
     ghc-options: -fno-warn-unused-imports
     ghc-options: -fno-warn-missing-signatures
 
-    hs-source-dirs: library/step
+    hs-source-dirs: step
     build-depends:
         text
       , loc
@@ -134,7 +134,7 @@ library
 
 library step-v1
     import: base
-    hs-source-dirs: library/step-v1
+    hs-source-dirs: step-v1
     build-depends:
         step-internal
       , step-nontrivial
@@ -164,7 +164,7 @@ library step-v1
 
 library step-cursor
     import: base
-    hs-source-dirs: library/step-cursor
+    hs-source-dirs: step-cursor
     build-depends: step-internal, step-nontrivial, step-rst
     exposed-modules:
         Step.Cursor
@@ -177,7 +177,7 @@ library step-cursor
 
 library step-nontrivial
     import: base
-    hs-source-dirs: library/step-nontrivial
+    hs-source-dirs: step-nontrivial
     build-depends: step-internal
 
     exposed-modules:
@@ -196,7 +196,7 @@ library step-nontrivial
 
 library step-internal
     import: base
-    hs-source-dirs: library/step-internal
+    hs-source-dirs: step-internal
     exposed-modules:
         Step.Internal.Prelude
     other-modules:
@@ -208,7 +208,7 @@ library step-internal
 
 library step-rst
     import: base
-    hs-source-dirs: library/step-rst
+    hs-source-dirs: step-rst
     build-depends: step-internal
     exposed-modules:
         Step.RST
@@ -216,7 +216,7 @@ library step-rst
 test-suite test-step-v1
     import: base
     type: exitcode-stdio-1.0
-    hs-source-dirs: test/test-step-v1
+    hs-source-dirs: test-step-v1
     main-is: Main.hs
     build-depends:
         step-v1, step-internal, step-nontrivial, step-rst
