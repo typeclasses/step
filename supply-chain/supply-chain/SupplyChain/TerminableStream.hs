@@ -13,8 +13,10 @@ import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Function (($), id)
 import Data.Functor (Functor)
+import Data.Functor.Const (Const (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
+import Data.Void (Void)
 
 
 data TerminableStream item response =
@@ -77,14 +79,17 @@ concatMap f = go []
             Just a -> offer (go (f a)) NextMaybe
 
 
-concatMapVendor :: forall up a b action. Functor action =>
-    (a -> Vendor up (TerminableStream b) action)
+-- | Like 'concatMap', but the function gives a vendor instead of a list
+
+concatMapVendor :: forall a b action. Functor action =>
+    (a -> Vendor (Const Void) (TerminableStream b) action)
     -> Vendor (TerminableStream a) (TerminableStream b) action
 
-concatMapVendor f = Vendor \NextMaybe -> order NextMaybe >>= \case
-    Nothing -> pure $ Nothing :-> nil
-    Just x -> offer (append (f x) _) NextMaybe
-    --     Just x :-> v1' -> _ (f x <> (ListT v1' >>= f))
+concatMapVendor f = go
+  where
+    go = Vendor \NextMaybe -> order NextMaybe >>= \case
+        Nothing -> pure $ Nothing :-> nil
+        Just x -> offer (append (noVendor >-> f x) go) NextMaybe
 
 
 -- | Flattens a stream of lists

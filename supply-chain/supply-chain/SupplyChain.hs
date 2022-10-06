@@ -25,7 +25,7 @@ module SupplyChain
 
     {- * Vendor -} Vendor (..), Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
-    {- ** Some simple vendors -} functionVendor, actionVendor,
+    {- ** Some simple vendors -} functionVendor, actionVendor, noVendor,
 
     {- * Connect -} Connect ((>->)), {- $connect -}
 
@@ -102,6 +102,10 @@ actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
 actionVendor f = go
   where
     go = Vendor \x -> perform (f x) <&> (:-> go)
+
+
+noVendor :: Vendor up (Const Void) action
+noVendor = Vendor \case{}
 
 
 {- $definingClients
