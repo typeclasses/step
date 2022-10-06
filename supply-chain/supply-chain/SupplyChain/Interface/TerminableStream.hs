@@ -155,20 +155,39 @@ all = go
         Just x -> (x :) <$> go
 
 
+{-| Removes consecutive duplicate items, and yields each item along
+    with the number of duplicates that were removed.
+
+    For example:
+
+    @
+    'eval' ('list' "Hrmm..." '>->' 'group' '>->' 'all')
+    @
+
+    produces the result
+
+    @
+    [(0, \'H'), (0, \'r'), (1, \'m'), (2, \'.')]
+    @
+-}
+
 group :: forall a action. Eq a => Functor action =>
     Vendor (TerminableStream a) (TerminableStream (Natural, a)) action
+
 group = Vendor \NextMaybe ->
     order NextMaybe >>= \case
         Nothing -> pure $ Nothing :-> nil
-        Just x -> go 1 x
+        Just x -> start x
   where
-    go :: Natural -> a -> Client (TerminableStream a) action
+    start :: a -> Client (TerminableStream a) action
         ( Supply (TerminableStream a) (TerminableStream (Natural, a))
           action (Maybe (Natural, a))
         )
+    start = go 0
+
     go n x = order NextMaybe >>= \case
         Nothing -> pure $ Just (n, x) :-> nil
         Just y ->
           if y == x
           then go (n + 1) x
-          else pure $ Just (n, x) :-> Vendor \NextMaybe -> go 1 y
+          else pure $ Just (n, x) :-> Vendor \NextMaybe -> start y

@@ -49,7 +49,7 @@ groupLetters :: Assertion
 groupLetters = eval supplyChain @?= result
   where
     supplyChain = (list "Hrmm..." >-> group >-> all)
-    result = [(1, 'H'), (1, 'r'), (2, 'm'), (3, '.')]
+    result = [(0, 'H'), (0, 'r'), (1, 'm'), (2, '.')]
 
 groupEmpty :: Assertion
 groupEmpty = eval supplyChain @?= result
