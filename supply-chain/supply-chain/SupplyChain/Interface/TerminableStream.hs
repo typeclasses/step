@@ -14,7 +14,7 @@ import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($), id)
-import Data.Functor (Functor, (<$>), (<&>))
+import Data.Functor ((<$>), (<&>))
 import Data.Functor.Const (Const (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
@@ -35,7 +35,7 @@ type TerminableStream :: Type -> Interface
 
 -- | Yields each item from the list, then stops
 
-list :: forall up a action. Functor action =>
+list :: forall up a action.
     [a] -> Vendor up (TerminableStream a) action
 
 list = go
@@ -48,7 +48,7 @@ list = go
 
 -- | The empty stream
 
-nil :: forall up a action. Functor action =>
+nil :: forall up a action.
     Vendor up (TerminableStream a) action
 
 nil = go
@@ -59,7 +59,7 @@ nil = go
 
 -- | Yields one item, then stops
 
-singleton :: forall up a action. Functor action =>
+singleton :: forall up a action.
     a -> Vendor up (TerminableStream a) action
 
 singleton x = Vendor \NextMaybe -> pure (Just x :-> nil)
@@ -67,7 +67,7 @@ singleton x = Vendor \NextMaybe -> pure (Just x :-> nil)
 
 -- | Apply a function to each item in the stream
 
-map :: forall a b action. Functor action =>
+map :: forall a b action.
     (a -> b) -> Vendor (TerminableStream a) (TerminableStream b) action
 
 map f = Vendor \NextMaybe -> order NextMaybe <&> \case
@@ -79,7 +79,7 @@ map f = Vendor \NextMaybe -> order NextMaybe <&> \case
     and yields each result from the list to the downstream
 -}
 
-concatMap :: forall a b action. Functor action =>
+concatMap :: forall a b action.
     (a -> [b]) -> Vendor (TerminableStream a) (TerminableStream b) action
 
 concatMap f = Vendor \NextMaybe -> go []
@@ -95,7 +95,7 @@ concatMap f = Vendor \NextMaybe -> go []
 
 -- | Like 'concatMap', but the function gives a vendor instead of a list
 
-concatMapVendor :: forall a b action. Functor action =>
+concatMapVendor :: forall a b action.
     (a -> Vendor (Const Void) (TerminableStream b) action)
     -> Vendor (TerminableStream a) (TerminableStream b) action
 
@@ -108,7 +108,7 @@ concatMapVendor f = go
 
 -- | Flattens a stream of lists
 
-concat :: forall a action. Functor action =>
+concat :: forall a action.
     Vendor (TerminableStream [a]) (TerminableStream a) action
 
 concat = concatMap id
@@ -116,7 +116,7 @@ concat = concatMap id
 
 -- | Yields the longest stream prefix matching the predicate
 
-while :: forall a action. Functor action =>
+while :: forall a action.
     (a -> Bool)
     -> Vendor (TerminableStream a) (TerminableStream a) action
 
@@ -132,7 +132,7 @@ while ok = v
     followed by all the items of the second
 -}
 
-append :: forall up a action. Functor action =>
+append :: forall up a action.
        Vendor up (TerminableStream a) action
     -> Vendor up (TerminableStream a) action
     -> Vendor up (TerminableStream a) action
@@ -145,7 +145,7 @@ append a b = Vendor \NextMaybe ->
 
 -- | Collects everything from the stream
 
-all :: forall a action. Functor action =>
+all :: forall a action.
     Client (TerminableStream a) action [a]
 
 all = go
@@ -171,7 +171,7 @@ all = go
     @
 -}
 
-group :: forall a action. Eq a => Functor action =>
+group :: forall a action. Eq a =>
     Vendor (TerminableStream a) (TerminableStream (Natural, a)) action
 
 group = Vendor \NextMaybe ->

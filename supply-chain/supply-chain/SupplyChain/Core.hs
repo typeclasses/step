@@ -41,21 +41,21 @@ data Client (up :: Interface) (action :: Action) (product :: Type) =
   | Request (up product)
   | forall x. Bind (Client up action x) (x -> Client up action product)
 
-instance Functor action => Functor (Client up action)
+instance Functor (Client up action)
   where
     fmap f = fix \r -> \case
         Pure product      ->  Pure (f product)
-        Perform action    ->  Perform (fmap f action)
+        Perform action    ->  Bind (Perform action) (Pure . f)
         Request request   ->  Bind (Request request) (Pure . f)
         Bind step1 step2  ->  Bind step1 (r . step2)
 
-instance Functor action => Applicative (Client up action)
+instance Applicative (Client up action)
   where
     pure = Pure
     a1 <*> a2 = a1 `Bind` \f -> (f $) <$> a2
     a1 *> a2 = Bind a1 (\_ -> a2)
 
-instance Functor action => Monad (Client up action)
+instance Monad (Client up action)
   where
     (>>=) = Bind
 
@@ -108,14 +108,12 @@ class Connect up down action client result
     -- | Connects a vendor to a client (or to another vendor)
     (>->) :: Vendor up down action -> client -> result
 
-instance Functor action =>
-    Connect up down action (Client down action product) (Client up action product)
+instance Connect up down action (Client down action product) (Client up action product)
   where
     up >-> down =
         (up >+> down) <&> supplyProduct
 
-instance Functor action =>
-    Connect up middle action (Vendor middle down action) (Vendor up down action)
+instance Connect up middle action (Vendor middle down action) (Vendor up down action)
   where
     up >-> down =
         Vendor \request -> (up >+> offer down request) <&> joinSupply
@@ -130,13 +128,12 @@ instance Functor action =>
 (>+>) ::
     forall
       (up :: Interface) (down :: Interface) (action :: Action) (product :: Type).
-  Functor action =>
     Vendor up down action -> Client down action product
     -> Client up action (Supply up down action product)
 
 (>+>) up = \case
-    Pure product      ->  Pure $ product :-> up
-    Perform action    ->  Perform (action <&> (:-> up))
+    Pure product      ->  Pure (product :-> up)
+    Perform action    ->  Perform action <&> (:-> up)
     Request request   ->  offer up request
     Bind step1 step2  ->  (up >+> step1) `Bind` \supply ->
                             supplyNext supply >+> step2 (supplyProduct supply)
@@ -149,7 +146,7 @@ instance Functor action =>
     Apart from that, perhaps it has no other use.
 -}
 
-joinSupply :: Functor action =>
+joinSupply ::
     Supply up middle action (Supply middle down action product)
     -> Supply up down action product
 

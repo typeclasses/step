@@ -18,28 +18,28 @@ newtype List m a =
     { listVendor :: Vendor (Const Void) (TerminableStream a) m
     }
 
-instance Functor m => Semigroup (List m a)
+instance Semigroup (List m a)
   where
     VendorList a <> VendorList b = VendorList (append a b)
 
-instance Functor m => Monoid (List m a)
+instance Monoid (List m a)
   where
     mempty = VendorList nil
 
-instance Functor m => Functor (List m)
+instance Functor (List m)
   where
     fmap f (VendorList v) = VendorList (v >-> map f)
 
-instance Functor m => Applicative (List m)
+instance Applicative (List m)
   where
     pure = VendorList . singleton
     (<*>) = ap
 
-instance Functor m => Monad (List m)
+instance Monad (List m)
   where
     VendorList v1 >>= f = VendorList (v1 >-> concatMapVendor (listVendor . f))
 
-fromList :: Functor m => [a] -> List m a
+fromList :: [a] -> List m a
 fromList = VendorList . list
 
 toList :: List Identity a -> [a]

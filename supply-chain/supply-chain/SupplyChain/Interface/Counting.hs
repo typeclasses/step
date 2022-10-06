@@ -9,7 +9,7 @@ import SupplyChain
 
 import Control.Applicative (pure)
 import Data.Function (($))
-import Data.Functor (Functor, (<&>))
+import Data.Functor ((<&>))
 import Numeric.Natural (Natural)
 import Prelude ((+))
 
@@ -23,7 +23,7 @@ data Counting i response =
 type Counting :: Interface -> Interface
 
 
-counting :: forall i action. Functor action =>
+counting :: forall i action.
     Vendor i (Counting i) action
 
 counting = go 0

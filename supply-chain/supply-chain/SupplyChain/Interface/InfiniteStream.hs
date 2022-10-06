@@ -10,7 +10,6 @@ import SupplyChain
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Function (($), flip, id)
-import Data.Functor (Functor)
 import Data.Kind (Type)
 
 
@@ -21,7 +20,7 @@ data InfiniteStream item response =
 type InfiniteStream :: Type -> Interface
 
 
-iterate :: forall up a action. Functor action =>
+iterate :: forall up a action.
     a -> (a -> a) -> Vendor up (InfiniteStream a) action
 
 iterate = flip it
@@ -32,7 +31,7 @@ iterate = flip it
         go x = Vendor \Next -> pure $ x :-> go (f x)
 
 
-concatMap :: forall a b action. Functor action =>
+concatMap :: forall a b action.
     (a -> [b]) -> Vendor (InfiniteStream a) (InfiniteStream b) action
 
 concatMap f = go []
@@ -43,7 +42,7 @@ concatMap f = go []
         [] -> order Next >>= \a -> offer (go (f a)) Next
 
 
-concat :: forall a action. Functor action =>
+concat :: forall a action.
     Vendor (InfiniteStream [a]) (InfiniteStream a) action
 
 concat = concatMap id

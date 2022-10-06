@@ -7,7 +7,7 @@ module SupplyChain.Interface.Either
 
 import SupplyChain
 
-import Data.Functor (Functor, (<&>))
+import Data.Functor ((<&>))
 
 
 -- | Combination of two interfaces
@@ -19,7 +19,7 @@ type Either :: Interface -> Interface -> Interface
 
 -- | Combination of two vendors
 
-offerEither :: forall up down1 down2 action. Functor action =>
+offerEither :: forall up down1 down2 action.
     Vendor up down1 action -> Vendor up down2 action -> Vendor up (Either down1 down2) action
 
 offerEither a@(Vendor a') b@(Vendor b') = Vendor \case

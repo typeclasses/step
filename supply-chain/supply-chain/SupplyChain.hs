@@ -37,7 +37,7 @@ import SupplyChain.Core
 import Control.Applicative (pure)
 import Control.Monad (Monad)
 import Data.Function ((.), ($))
-import Data.Functor (Functor, (<&>))
+import Data.Functor ((<&>))
 import Data.Functor.Const (Const (getConst))
 import Data.Functor.Identity (Identity (..))
 import Data.Kind (Type)
@@ -86,7 +86,7 @@ evalWith f = runIdentity . runWith (pure . f)
 
 -- | A simple stateless vendor that responds to each request by applying a pure function
 
-functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action). Functor action =>
+functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
     (forall response. down response -> response) -> Vendor up down action
 
 functionVendor f = go
@@ -96,7 +96,7 @@ functionVendor f = go
 
 -- | A simple stateless vendor that responds to each request by applying an effectful function
 
-actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action). Functor action =>
+actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
     (forall response. down response -> action response) -> Vendor up down action
 
 actionVendor f = go
