@@ -1,7 +1,7 @@
 module SupplyChain.Interface.TerminableStream
   (
     {- * Interface -} TerminableStream (..),
-    {- * Vendors -} list, nil, map, concatMap, concat, while,
+    {- * Vendors -} nil, singleton, list, map, concatMap, concat, while,
     {- * Vendor composition -} append, concatMapVendor,
   )
   where
@@ -51,6 +51,13 @@ nil = go
   where
     go :: Vendor up (TerminableStream a) action
     go = Vendor \NextMaybe -> pure $ Nothing :-> go
+
+
+-- | Yields one item, then stops
+
+singleton :: forall up a action. Functor action =>
+    a -> Vendor up (TerminableStream a) action
+singleton x = Vendor \NextMaybe -> pure $ Just x :-> nil
 
 
 -- | Apply a function to each item in the stream

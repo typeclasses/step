@@ -5,12 +5,11 @@ import SupplyChain.Interface.TerminableStream
 
 import Control.Applicative (Applicative (..))
 import Control.Monad (Monad (..), ap)
-import Data.Function (($), (.))
+import Data.Function ((.))
 import Data.Functor (Functor (..))
 import Data.Functor.Const (Const (..))
 import Data.Monoid (Monoid (..))
 import Data.Semigroup (Semigroup (..))
-import Data.Maybe (Maybe (..))
 import Data.Void (Void)
 
 newtype List m a =
@@ -32,7 +31,7 @@ instance Functor m => Functor (List m)
 
 instance Functor m => Applicative (List m)
   where
-    pure x = VendorList $ Vendor \NextMaybe -> pure $ Just x :-> nil
+    pure = VendorList . singleton
     (<*>) = ap
 
 instance Functor m => Monad (List m)
