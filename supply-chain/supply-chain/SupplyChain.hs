@@ -22,14 +22,14 @@ module SupplyChain
     {- * Client -} Client,
     {- ** How to create a client -} {- $definingClients -} order, perform,
     {- ** How to use a client -} eval, run, evalWith, runWith,
-    {- ** Miscellany -} hoistClient,
 
     {- * Vendor -} Vendor (..), Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
-    {- ** Miscellany -} hoistVendor,
 
-    {- * Connect -} Connect ((>->)), {- $connect -}
+    {- * Connect (>->) -} Connect ((>->)), {- $connect -}
+
+    {- * Hoisting -} {- $hoist -} hoistClient, hoistVendor, hoistSupply,
 
   )
   where
@@ -140,6 +140,13 @@ hoistVendor f = go
             response :-> hoistVendor f v'
 
 
+hoistSupply :: forall (up :: Interface) (down :: Interface) (a :: Action) (b :: Action) (product :: Type).
+    (forall x. a x -> b x) -> Supply up down a product -> Supply up down b product
+
+hoistSupply f (x :-> v) =
+    x :-> hoistVendor f v
+
+
 {- $definingClients
 
 In addition to these functions for constructing clients,
@@ -221,5 +228,12 @@ Specializations:
 ('>->') :: 'Vendor' up down action   -> 'Client' down action product -> 'Client' up action product
 ('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action  -> 'Vendor' up down action
 @
+
+-}
+
+
+{- $hoist
+
+A /hoist/ operation changes a vendor or client's 'Action' context.
 
 -}
