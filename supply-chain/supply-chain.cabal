@@ -7,32 +7,23 @@ license: Apache-2.0
 license-file: license.txt
 
 common base
-    default-language: Haskell2010
+    default-language: GHC2021
+
     ghc-options:
         -Wall
         -Wmissing-deriving-strategies
         -fdefer-typed-holes
 
-    -- disabled defaults
-    default-extensions: NoMonomorphismRestriction NoImplicitPrelude
-
-    -- more explicit type variables
-    default-extensions: ScopedTypeVariables TypeApplications
-
-    -- fancy types
-    default-extensions: ExistentialQuantification ImpredicativeTypes RankNTypes TypeFamilies
-
-    -- simple syntax adjustments
-    default-extensions: BlockArguments EmptyCase LambdaCase
-
-    -- fancy kinds
-    default-extensions: DataKinds KindSignatures StandaloneKindSignatures
-
-    -- fancy classes
-    default-extensions: FunctionalDependencies FlexibleInstances
-
-    -- deriving
-    default-extensions: DeriveFunctor DerivingStrategies StandaloneDeriving
+    default-extensions:
+        BlockArguments
+        DataKinds
+        DerivingStrategies
+        FunctionalDependencies
+        ImpredicativeTypes
+        LambdaCase
+        NoImplicitPrelude
+        NoMonomorphismRestriction
+        TypeFamilies
 
     build-depends:
         base ^>= 4.16
