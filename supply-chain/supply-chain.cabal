@@ -65,4 +65,7 @@ test-suite test-supply-chain
       , tasty-hunit
     other-modules:
         SupplyChain.Spec
+
         SupplyChain.Interface.TerminableStream.Spec
+
+        SupplyChain.Extra.List.Spec

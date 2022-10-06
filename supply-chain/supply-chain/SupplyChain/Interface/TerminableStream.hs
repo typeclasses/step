@@ -3,6 +3,7 @@ module SupplyChain.Interface.TerminableStream
     {- * Interface -} TerminableStream (..),
     {- * Vendors -} nil, singleton, list, map, concatMap, concat, while,
     {- * Vendor composition -} append, concatMapVendor,
+    {- * Clients -} all,
   )
   where
 
@@ -12,7 +13,7 @@ import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Function (($), id)
-import Data.Functor (Functor)
+import Data.Functor (Functor, (<$>))
 import Data.Functor.Const (Const (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
@@ -57,6 +58,7 @@ nil = go
 
 singleton :: forall up a action. Functor action =>
     a -> Vendor up (TerminableStream a) action
+
 singleton x = Vendor \NextMaybe -> pure $ Just x :-> nil
 
 
@@ -64,6 +66,7 @@ singleton x = Vendor \NextMaybe -> pure $ Just x :-> nil
 
 map :: forall a b action. Functor action =>
     (a -> b) -> Vendor (TerminableStream a) (TerminableStream b) action
+
 map f = Vendor \NextMaybe -> order NextMaybe >>= \case
     Nothing -> pure $ Nothing :-> nil
     Just a -> pure $ Just (f a) :-> map f
@@ -134,3 +137,13 @@ append a b = Vendor \NextMaybe ->
     offer a NextMaybe >>= \case
         Nothing :-> _ -> offer b NextMaybe
         Just x :-> a' -> pure $ Just x :-> append a' b
+
+
+all :: forall a action. Functor action =>
+    Client (TerminableStream a) action [a]
+
+all = go
+  where
+    go = order NextMaybe >>= \case
+        Nothing -> pure []
+        Just x -> (x :) <$> go

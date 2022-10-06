@@ -8,6 +8,7 @@ import Control.Monad (Monad (..), ap)
 import Data.Function ((.))
 import Data.Functor (Functor (..))
 import Data.Functor.Const (Const (..))
+import Data.Functor.Identity (Identity (..))
 import Data.Monoid (Monoid (..))
 import Data.Semigroup (Semigroup (..))
 import Data.Void (Void)
@@ -37,3 +38,12 @@ instance Functor m => Applicative (List m)
 instance Functor m => Monad (List m)
   where
     VendorList v1 >>= f = VendorList (v1 >-> concatMapVendor (listVendor . f))
+
+fromList :: Functor m => [a] -> List m a
+fromList = VendorList . list
+
+toList :: List Identity a -> [a]
+toList (VendorList v) = eval (v >-> all)
+
+toListM :: Monad m => List m a -> m [a]
+toListM (VendorList v) = run (v >-> all)
