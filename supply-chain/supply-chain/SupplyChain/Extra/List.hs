@@ -14,27 +14,27 @@ import Data.Maybe (Maybe (..))
 import Data.Void (Void)
 
 newtype List m a =
-  List
+  VendorList
     { listVendor :: Vendor (Const Void) (TerminableStream a) m
     }
 
 instance Functor m => Semigroup (List m a)
   where
-    List a <> List b = List (append a b)
+    VendorList a <> VendorList b = VendorList (append a b)
 
 instance Functor m => Monoid (List m a)
   where
-    mempty = List nil
+    mempty = VendorList nil
 
 instance Functor m => Functor (List m)
   where
-    fmap f (List v) = List (v >-> map f)
+    fmap f (VendorList v) = VendorList (v >-> map f)
 
 instance Functor m => Applicative (List m)
   where
-    pure x = List $ Vendor \NextMaybe -> pure $ Just x :-> nil
+    pure x = VendorList $ Vendor \NextMaybe -> pure $ Just x :-> nil
     (<*>) = ap
 
 instance Functor m => Monad (List m)
   where
-    List v1 >>= f = List (v1 >-> concatMapVendor (listVendor . f))
+    VendorList v1 >>= f = VendorList (v1 >-> concatMapVendor (listVendor . f))
