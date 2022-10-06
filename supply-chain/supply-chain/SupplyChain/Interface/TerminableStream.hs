@@ -139,6 +139,8 @@ append a b = Vendor \NextMaybe ->
         Just x :-> a' -> pure $ Just x :-> append a' b
 
 
+-- | Collects everything from the stream
+
 all :: forall a action. Functor action =>
     Client (TerminableStream a) action [a]
 
