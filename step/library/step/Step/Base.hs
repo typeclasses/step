@@ -49,34 +49,17 @@ import Control.Monad.Reader (MonadReader)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Control.Monad.Reader as MTL
 import qualified Control.Monad.Trans.Maybe as MTL
+import qualified Control.Monad.Trans.Except as MTL
+import Control.Monad.Trans.Except (ExceptT (..))
 
 -- Streaming
-import qualified List.Transformer as ListT
-import List.Transformer (ListT)
+import SupplyChain (Vendor (..), Client, (>->))
+import qualified SupplyChain
+import qualified SupplyChain.Interface.TerminableStream as Stream
 
 -- Etc
 import GHC.TypeLits (TypeError, ErrorMessage (Text))
 import GHC.Exts (IsList (..))
-
--- ⭕ Client
-
-newtype Client req a = Client (forall m. Monad m => (forall b. req b -> m b) -> m a)
-    deriving stock Functor
-
-instance Applicative (Client req) where
-    pure x = Client (\_ -> pure x)
-    (<*>) = Monad.ap
-
-instance Monad (Client req) where
-    Client a >>= f = Client \send -> a send >>= \x -> let Client b = f x in b send
-
--- Client transformations
-
-mapRequest :: (forall b. req1 b -> req2 b) -> Client req1 a -> Client req2 a
-mapRequest f (Client a) = Client \send -> a (send . f)
-
-mapMaybeRequest :: (forall b. req1 b -> Maybe (req2 b)) -> Client req1 a -> Client req2 (Maybe a)
-mapMaybeRequest f (Client a) = Client \send -> MTL.runMaybeT $ a \r -> MaybeT $ traverse send $ f r
 
 -- ⭕ OneOf
 
@@ -84,23 +67,28 @@ type family OneOf (c :: Type) :: Type
 
 -- ⭕ Step
 
-data Step (nex :: Type) (res :: Type) (com :: Type) (c :: Type) (m :: Type -> Type) (e :: Type) (a :: Type)
-  where
-    StepCommit :: com -> Step nex res com c m e AdvanceResult
-    StepNext   :: nex -> Step nex res com c m e (Maybe c)
-    StepReset  :: res -> Step nex res com c m e ()
-    StepFail   :: e   -> Step nex res com c m e a
-    StepLift   :: m a -> Step nex res com c m e a
+data Step (c :: Type) (a :: Type) =
+    a ~ AdvanceResult => StepCommit (Positive Natural)
+  | a ~ Maybe c       => StepNext
+  | a ~ ()            => StepReset
 
-data Next = Next
+data QueryStep (c :: Type) (a :: Type) =
+    a ~ Maybe c       => QueryNext
+  | a ~ ()            => QueryReset
 
-data Reset = Reset
-
-newtype Commit = Commit (Positive Natural)
+type Step      :: Type -> SupplyChain.Interface
+type QueryStep :: Type -> SupplyChain.Interface
 
 data AdvanceResult =
     AdvanceSuccess
   | YouCanNotAdvance{ shortfall :: Positive Natural }
+
+stepCast :: QueryStep c a -> Step c a
+stepCast = \case
+    QueryNext -> StepNext
+    QueryReset -> StepReset
+
+{-
 
 -- Step conversions
 
@@ -129,13 +117,13 @@ tryStep = \case
     StepLift x -> Just (StepLift x)
 
 --
+-}
 
-failStepClientM :: m e -> Client (Step nex res com c m e) a
-failStepClientM x = Client \send -> send (StepLift x) >>= \e -> send (StepFail e)
 
 -- ⭕ Action
 
-type Action = Type -> (Type -> Type) -> Type -> Type -> Type
+type Action = Type -> SupplyChain.Action -> Type -> Type -> Type
+
 
 -- Simple actions that are just a newtype for an action with a Step effect
 
@@ -145,19 +133,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (Client (Step Next Reset Commit c m e) a)
+newtype Any c m e a = Any (ExceptT e (Client (Step c) m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (Client (Step Next Reset Void c m e) a)
+newtype Query c m e a = Query (ExceptT e (Client (QueryStep c) m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Client (Step Next Reset Commit c m Void) a)
+newtype Sure c m e a = Sure (Client (Step c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Client (Step Next Reset Void c m Void) a)
+newtype SureQuery c m e a = SureQuery (Client (QueryStep c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- Actions defined in terms of others
@@ -168,15 +156,15 @@ type AtomicMove :: Action
 
 -- | Fails noncommittally; see 'try'
 newtype Atom c m e a = Atom (Query c m e (Sure c m e a))
-    deriving stock (Functor)
+    deriving stock Functor
 
 -- | Always moves the cursor
 newtype Move c m e a = Move (Any c m e a)
-    deriving stock (Functor)
+    deriving stock Functor
 
 -- | Always moves the cursor, is atomic
 newtype AtomicMove c m e a = AtomicMove (Atom c m e a)
-    deriving stock (Functor)
+    deriving stock Functor
 
 instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom c m e) where
     pure = error "unreachable"
@@ -195,7 +183,7 @@ instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' woul
 -- Failure action
 
 newtype Failure c m e a = Failure (m e)
-    deriving stock (Functor)
+    deriving stock Functor
 
 instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m e) where
     pure = error "unreachable"
@@ -224,37 +212,45 @@ instance Trivial Atom where
 
 -- | Action that can fail
 class Fallible (act :: Action) where
+    failAction :: e -> act c m e a
     failActionM :: m e -> act c m e a
 
 instance Fallible Any where
-    failActionM = Any . failStepClientM
+    failAction e = Any (MTL.throwE e)
+    failActionM m = Any (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible Query where
-    failActionM = Query . failStepClientM
+    failAction e = Query (MTL.throwE e)
+    failActionM m = Query (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible Move where
-    failActionM = Move . Any . failStepClientM
+    failAction e = Move $ Any (MTL.throwE e)
+    failActionM m = Move $ Any (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible Atom where
-    failActionM = Atom . Query . failStepClientM
+    failAction e = Atom $ Query (MTL.throwE e)
+    failActionM m = Atom $ Query (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible AtomicMove where
-    failActionM = AtomicMove . Atom . Query . failStepClientM
+    failAction e = AtomicMove $ Atom $ Query (MTL.throwE e)
+    failActionM m = AtomicMove $ Atom $ Query (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
 
 -- | Action that can be tried noncommittally
 class Atomic (act :: Action) (try :: Action) | act -> try where
-    try :: act c m e a -> try c m e (Maybe a)
+    try :: act c m e a -> try c m e (Either e a)
 
 instance Atomic Atom Sure where
     try (Atom (Query q)) =
-        Sure (mapMaybeRequest (tryStep . mapStepCommit absurd) q)
-        >>= maybe (return Nothing) (fmap Just)
+        Sure (SupplyChain.map stepCast >-> MTL.runExceptT q) >>= \case
+            Left e -> pure (Left e)
+            Right x -> fmap Right x
 
 instance Atomic AtomicMove Sure where
     try (AtomicMove a) = try a
 
 instance Atomic Query SureQuery where
-    try (Query q) = SureQuery (mapMaybeRequest tryStep q)
+    try (Query q) = SureQuery (MTL.runExceptT q)
+
 
 -- | Unsafe coercion to action that always moves
 class Is act2 act1 => AssumeMovement (act1 :: Action) (act2 :: Action) | act1 -> act2 where
@@ -267,6 +263,7 @@ instance AssumeMovement Atom AtomicMove where
     assumeMovement = AtomicMove
 
 -- ⭕ Action subtype relationship
+
 
 class Is (act1 :: Action) (act2 :: Action) where
     cast :: act1 c es e a -> act2 c es e a
@@ -286,19 +283,19 @@ instance {-# overlappable #-} Is a a where
 -- Casting actions via casting steps
 
 instance Is SureQuery Sure where
-    cast (SureQuery x) = Sure (mapRequest (mapStepCommit absurd) x)
+    cast (SureQuery x) = Sure (SupplyChain.map stepCast >-> x)
 
 instance Is Query Any where
-    cast (Query x) = Any (mapRequest (mapStepCommit absurd) x)
+    cast (Query (ExceptT x)) = Any (ExceptT (SupplyChain.map stepCast >-> x))
 
 instance Is SureQuery Query where
-    cast (SureQuery x) = Query (mapRequest (mapStepFail absurd) x)
+    cast (SureQuery x) = Query (MTL.lift x)
 
 instance Is Sure Any where
-    cast (Sure x) = Any (mapRequest (mapStepFail absurd) x)
+    cast (Sure x) = Any (MTL.lift x)
 
 instance Is SureQuery Any where
-    cast (SureQuery x) = Any (mapRequest (mapStepFail absurd . mapStepCommit absurd) x)
+    cast (SureQuery x) = Any (MTL.lift (SupplyChain.map stepCast >-> x))
 
 -- Casting to Atom
 
@@ -336,6 +333,7 @@ instance Is AtomicMove Any where
 
 instance Fallible a => Is Failure a where
     cast (Failure x) = failActionM x
+
 
 -- ⭕ Join
 
@@ -728,27 +726,33 @@ one = PositiveUnsafe 1
 
 -- ⭕ Prelude of actions
 
-commit :: forall c es e. Positive Natural -> AtomicMove c es e ()
-commit n = AtomicMove $ Atom $ Query $ return $ Sure $ void $ Client \send -> send $ StepCommit $ Commit n
+reset :: forall c es e. SureQuery c es e ()
+reset = SureQuery $ SupplyChain.order QueryReset
+
+commit :: forall c es e. Positive Natural -> AtomicMove c es e AdvanceResult
+commit n = AtomicMove $ Atom $ Query $ return $ Sure $ SupplyChain.order $ StepCommit n
 
 fail :: MonadReader e m => Failure c m e a
 fail = Failure MTL.ask
 
-takeCharMaybe :: Chunk c => MonadReader e m => Sure c m e (Maybe (OneOf c))
-takeCharMaybe = try takeChar
-
-takeChar :: Chunk c => MonadReader e m => AtomicMove c m e (OneOf c)
-takeChar = nextChar `bindAction` \x -> commit one $> x
-
-nextChar :: Chunk c => MonadReader e m => Query c m e (OneOf c)
-nextChar = nextCharMaybe `bindAction` maybe (castTo @Query fail) return
+-- | Like 'nextMaybe', but doesn't reset first
+nextMaybe' :: forall c m e. SureQuery c m e (Maybe c)
+nextMaybe' = SureQuery $ SupplyChain.order QueryNext
 
 nextMaybe :: SureQuery c m e (Maybe c)
 nextMaybe = reset `bindAction` \() -> nextMaybe'
 
--- | Like 'nextMaybe', but doesn't reset first
-nextMaybe' :: forall c m e. SureQuery c m e (Maybe c)
-nextMaybe' = SureQuery $ Client \send -> send (StepNext Next)
+nextCharMaybe :: Chunk c => SureQuery c m e (Maybe (OneOf c))
+nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . view leftView)
+
+nextChar :: Chunk c => MonadReader e m => Query c m e (OneOf c)
+nextChar = nextCharMaybe `bindAction` maybe (castTo @Query fail) return
+
+takeChar :: Chunk c => MonadReader e m => AtomicMove c m e (OneOf c)
+takeChar = nextChar `bindAction` \x -> commit one $> x
+
+takeCharMaybe :: Chunk c => MonadReader e m => Sure c m e (Either e (OneOf c))
+takeCharMaybe = try takeChar
 
 next :: MonadReader e m => Query c m e c
 next = nextMaybe `bindAction` maybe (castTo @Query fail) return
@@ -760,30 +764,21 @@ next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
 takeNext :: forall c e m. Chunk c => MonadReader e m => AtomicMove c m e c
 takeNext = next `bindAction` \c -> commit (length @c c) $> c
 
-takeNextMaybe :: Chunk c => MonadReader e m => Sure c m e (Maybe c)
+takeNextMaybe :: Chunk c => MonadReader e m => Sure c m e (Either e c)
 takeNextMaybe = try takeNext
-
-nextCharMaybe :: Chunk c => SureQuery c m e (Maybe (OneOf c))
-nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . view leftView)
 
 satisfyJust :: Chunk c => MonadReader e m => (OneOf c -> Maybe a) -> AtomicMove c m e a
 satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
 
-skip0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Any c m e ()
-skip0 = maybe (return ()) (castTo @Any . skip)  . preview Positive.refine
-
-skip :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Move c m e ()
+skip :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Move c m e AdvanceResult
 skip n = next `bindAction` \x ->
     case Positive.minus (length @c x) n of
         Signed.Minus n' ->
             commit (length @c x) `bindAction` \_ -> skip n'
         _ -> castTo @Move (commit n)
 
-skipAtomically0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Atom c m e ()
-skipAtomically0 = maybe (trivial ()) (castTo @Atom . skipAtomically)  . preview Positive.refine
-
-skipAtomically :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> AtomicMove c m e ()
-skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
+skip0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Any c m e AdvanceResult
+skip0 = maybe (return AdvanceSuccess) (castTo @Any . skip)  . preview Positive.refine
 
 ensureAtLeast :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Query c m e ()
 ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
@@ -794,14 +789,17 @@ ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
             Signed.Plus n' -> go n'
             _ -> return ()
 
+skipAtomically :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> AtomicMove c m e AdvanceResult
+skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
+
+skipAtomically0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Atom c m e AdvanceResult
+skipAtomically0 = maybe (trivial AdvanceSuccess) (castTo @Atom . skipAtomically)  . preview Positive.refine
+
 atEnd :: SureQuery c es e Bool
 atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
 end :: MonadReader e m => Query c m e ()
 end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
-
-reset :: forall c es e. SureQuery c es e ()
-reset = SureQuery $ Client \send -> send (StepReset Reset)
 
 -- ⭕ The Buffer effect
 
@@ -874,14 +872,3 @@ reset = SureQuery $ Client \send -> send (StepReset Reset)
 -- bufferMore = load @c >>= \case
 --     Nothing -> return False
 --     Just x -> do{ feedBuffer @'CommitBuffer x; feedBuffer @'ViewBuffer x; return True }
-
--- parseOnlyListT :: forall k c x es e a. Chunk c x => Is k Any => k c x es e a -> ListT (Eff es) c -> Eff es (Either e a)
--- parseOnlyListT a c = let Any eff = cast a in
---     _
---     $ runError
---     $ runStep @c @x @e
---     $ swapEff4123
---     $ addEffect @(Error e)
---     $ addEffect @(Load c)
---     $ addEffect @(Buffer 'CommitBuffer c)
---     $ eff

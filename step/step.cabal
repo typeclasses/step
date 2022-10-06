@@ -126,7 +126,7 @@ library
       , base
       , containers
       , ListLike
-      , list-transformer
+      , supply-chain
       , mtl
       , transformers
     exposed-modules:
