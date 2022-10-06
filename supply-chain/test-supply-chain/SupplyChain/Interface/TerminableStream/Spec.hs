@@ -1,4 +1,4 @@
-module SupplyChain.TerminableStream.Spec (tests) where
+module SupplyChain.Interface.TerminableStream.Spec (tests) where
 
 import Prelude (Maybe (..))
 
@@ -8,7 +8,7 @@ import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
 
 import SupplyChain
-import SupplyChain.TerminableStream
+import SupplyChain.Interface.TerminableStream
 
 tests :: TestTree
 tests = testGroup "TerminableStream"

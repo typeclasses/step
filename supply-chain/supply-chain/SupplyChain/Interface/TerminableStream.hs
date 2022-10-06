@@ -1,4 +1,4 @@
-module SupplyChain.TerminableStream
+module SupplyChain.Interface.TerminableStream
   (
     {- * Interface -} TerminableStream (..),
     {- * Vendors -} list, nil, map, concatMap, concat, while,

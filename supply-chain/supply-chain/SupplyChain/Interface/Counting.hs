@@ -1,4 +1,4 @@
-module SupplyChain.Counting
+module SupplyChain.Interface.Counting
   (
     {- * Interface -} Counting (..),
     {- * Vendor -} counting,

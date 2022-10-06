@@ -1,7 +1,7 @@
 module SupplyChain.ListT where
 
 import SupplyChain
-import SupplyChain.TerminableStream
+import SupplyChain.Interface.TerminableStream
 
 import Control.Applicative (Applicative (..))
 import Control.Monad (Monad (..), ap)

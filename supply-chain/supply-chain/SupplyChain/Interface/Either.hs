@@ -1,4 +1,4 @@
-module SupplyChain.Either
+module SupplyChain.Interface.Either
   (
     {- * Interface -} Either (..),
     {- * Vendor composition -} offerEither,

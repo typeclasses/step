@@ -1,4 +1,4 @@
-module SupplyChain.InfiniteStream
+module SupplyChain.Interface.InfiniteStream
   (
     {- * Interface -} InfiniteStream (..),
     {- * Vendors -} iterate, concatMap, concat,
