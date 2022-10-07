@@ -117,7 +117,7 @@ library
         -Wmissing-deriving-strategies
 
     -- Temporary for early stage development
-    -- ghc-options: -fno-warn-unused-imports
+    ghc-options: -fno-warn-unused-imports
     ghc-options: -fno-warn-missing-signatures
 
     default-extensions:
@@ -142,9 +142,12 @@ library
       , supply-chain
       , mtl
       , transformers
+
     exposed-modules:
         Step.Base
+
         Step.Chunk.Core
+        Step.Chunk.ListLike
 
 library step-v1
     import: base

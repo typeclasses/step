@@ -4,27 +4,21 @@ import Step.Chunk.Core
 
 -- The basics
 import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..), maybe, isNothing, fromMaybe)
+import Data.Maybe (Maybe (..), maybe, isNothing)
 import Data.Functor (Functor (..), (<&>), ($>), (<$>))
-import Data.Function (($), (&), (.), id, on)
+import Data.Function (($), (.), id)
 import Data.Either (Either (..))
 import Control.Monad (Monad (..))
 import qualified Control.Monad as Monad
 import Control.Applicative (Applicative (..))
 import Data.Kind (Type)
 import Prelude (error)
-import Data.Functor.Contravariant (Predicate (..))
-import Data.Eq (Eq ((==)))
-import Data.Ord (Ord (compare))
-import Text.Show (Show (showsPrec))
 
 -- Containers
 import Data.Sequence (Seq (..))
-import qualified Data.ListLike as LL
-import Data.ListLike (ListLike)
 
 -- Optics
-import Optics (view, preview, review, iso, Lens', use, assign, modifying)
+import Optics (view, preview, Lens', use, assign, modifying)
 
 -- Math
 import Numeric.Natural (Natural)
@@ -32,7 +26,6 @@ import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
-import Prelude (fromIntegral)
 
 -- Transformers
 import Control.Monad.Reader (MonadReader)
@@ -49,7 +42,6 @@ import qualified SupplyChain.Interface.TerminableStream as Stream
 
 -- Etc
 import GHC.TypeLits (TypeError, ErrorMessage (Text))
-import GHC.Exts (IsList (..))
 
 -- ⭕ Step
 
@@ -550,95 +542,6 @@ instance Join SureQuery SureQuery where
     join = Monad.join
 
 -- ListLike chunks
-
-data NonEmptyListLike c =
-  NonEmptyListLike
-    { nonEmptyListLike :: !c
-    , nonEmptyListLikeLength :: !(Positive Natural)
-    }
-
-assumeNonEmptyListLike :: ListLike c (Item c) => c -> NonEmptyListLike c
-assumeNonEmptyListLike c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
-
-maybeNonEmptyListLike :: ListLike c (Item c) => c -> Maybe (NonEmptyListLike c)
-maybeNonEmptyListLike c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
-
-instance Eq c => Eq (NonEmptyListLike c) where
-    (==) = (==) `on` nonEmptyListLike
-
-instance Ord c => Ord (NonEmptyListLike c) where
-    compare = compare `on` nonEmptyListLike
-
-instance Show c => Show (NonEmptyListLike c) where
-    showsPrec p = showsPrec p . nonEmptyListLike
-
-type instance OneOf (NonEmptyListLike c) = Item c
-
-instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
-  where
-
-    length = nonEmptyListLikeLength
-
-    span = \f whole ->
-        tupleSpan (LL.span (getPredicate f) (nonEmptyListLike whole))
-      where
-        tupleSpan (a, b) =
-            if LL.null b then SpanAll else
-            if LL.null a then SpanNone else
-            SpanPart (assumeNonEmptyListLike a) (assumeNonEmptyListLike b)
-
-    drop = \n whole ->
-        case Positive.minus (nonEmptyListLikeLength whole) n of
-            Signed.Zero ->
-                DropAll
-            Signed.Plus _ ->
-                DropPart
-                  { dropRemainder = assumeNonEmptyListLike $
-                      LL.drop (fromIntegral (review Positive.refine n)) (nonEmptyListLike whole)
-                  }
-            Signed.Minus dropShortfall ->
-                DropInsufficient{ dropShortfall }
-
-    while = \f x ->
-        case maybeNonEmptyListLike
-              (LL.takeWhile (getPredicate f) (nonEmptyListLike x))
-          of
-            Nothing -> WhileNone
-            Just y ->
-                if nonEmptyListLikeLength y == nonEmptyListLikeLength x
-                then WhileAll
-                else WhilePrefix y
-
-    split = \n whole ->
-        case Positive.minus (nonEmptyListLikeLength whole) n of
-            Signed.Plus _ -> Split (assumeNonEmptyListLike a) (assumeNonEmptyListLike b)
-              where
-                (a, b) = LL.splitAt
-                    (fromIntegral (review Positive.refine n))
-                    (nonEmptyListLike whole)
-            _ -> SplitInsufficient
-
-    leftView = iso f g
-      where
-        f :: NonEmptyListLike c -> Pop (NonEmptyListLike c)
-        f a = a
-            & nonEmptyListLike
-            & LL.uncons
-            & fromMaybe (error "ListLike leftViewIso")
-            & \(x, b) -> Pop
-                { popItem = x
-                , popRemainder =
-                    case Positive.minus (nonEmptyListLikeLength a) (PositiveUnsafe 1) of
-                        Signed.Plus n -> Just (NonEmptyListLike b n )
-                        _ -> Nothing
-                }
-
-        g :: Pop (NonEmptyListLike c) -> NonEmptyListLike c
-        g Pop{ popItem, popRemainder } = case popRemainder of
-            Nothing -> NonEmptyListLike (LL.singleton popItem) (PositiveUnsafe 1)
-            Just b -> NonEmptyListLike (LL.cons popItem (nonEmptyListLike b)) (Positive.plus (nonEmptyListLikeLength b) (PositiveUnsafe 1))
-
--- ⭕
 
 one :: Positive Natural
 one = PositiveUnsafe 1
