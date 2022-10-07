@@ -1,4 +1,20 @@
-module Step.Action.Core where
+module Step.Action.Core
+  (
+    {- * Step -}
+    Step (..), Mode (..), AdvanceResult (..), stepCast,
+
+    {- * Actions -} Action,
+    Any (..), Query (..), Sure (..), SureQuery (..),
+    Atom (..), Move (..), AtomicMove (..), Failure (..),
+
+    {- * Classes -}
+    Trivial (..), Fallible (..), Atomic (..), AssumeMovement (..),
+
+    {- * Subtyping -} Is (..), castTo,
+
+    {- * Composition -} type (>>), Join (..), bindAction,
+  )
+  where
 
 -- The basics
 import Data.Maybe (Maybe (..))
