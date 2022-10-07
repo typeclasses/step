@@ -89,29 +89,6 @@ instance Loop1 SureQuery SureQuery
 --     -> act1 xs x e m a -> act2 xs x e m a
 -- while = _
 
-
--- todo: add an atomic version of 'text'
-
--- text :: Nontrivial xs x -> Move xs x e m ()
--- text = someOfNontrivialText A.>=> (maybe (return ()) (castTo @Any . text) . Nontrivial.refine)
---   where
---     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
---         CursorRW{ init, input, commit } -> run $ Cursor.next input >>= \case
---             Nothing -> return (Left F.failure)
---             Just y ->
---                 if x `Nontrivial.isPrefixOf` y
---                 then commit (Nontrivial.length x) $> Right ListLike.empty
---                 else
---                 if y `Nontrivial.isPrefixOf` x
---                 then commit (Nontrivial.length y) $>
---                       Right
---                         (
---                           ListLike.drop
---                               (ListLike.length (Nontrivial.generalize y))
---                               (Nontrivial.generalize x)
---                         )
---                 else return (Left F.failure)
-
 count0 :: forall act1 act2 xs x e m a. Monad m =>
     Loop0 act1 act2 => Natural -> act1 xs x e m a -> act2 xs x e m [a]
 count0 = \n a -> go a n
