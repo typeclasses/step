@@ -7,7 +7,7 @@ Description: The 'TerminableStream' interface, for consuming lists one item at a
 module SupplyChain.Interface.TerminableStream
   (
     {- * Interface -} TerminableStream (..),
-    {- * Vendors -} nil, singleton, list, map, concatMap, concat, while, group,
+    {- * Vendors -} nil, singleton, actionSingleton, list, map, concatMap, concat, while, group,
     {- * Vendor composition -} append, concatMapVendor,
     {- * Clients -} all,
   )
@@ -69,6 +69,15 @@ singleton :: forall up a action.
     a -> Vendor up (TerminableStream a) action
 
 singleton x = Vendor \NextMaybe -> pure (Just x :-> nil)
+
+
+-- | Performs one action, yields the resulting item, then stops
+
+actionSingleton :: forall up a action.
+    action a -> Vendor up (TerminableStream a) action
+
+actionSingleton mx =
+    Vendor \NextMaybe -> perform mx <&> \x -> Just x :-> nil
 
 
 -- | Apply a function to each item in the stream
