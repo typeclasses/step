@@ -1,3 +1,9 @@
+{- |
+
+Description: The 'Either' interface, a general way to connect a client to two vendors by merging them into one
+
+-}
+
 module SupplyChain.Interface.Either
   (
     {- * Interface -} Either (..),

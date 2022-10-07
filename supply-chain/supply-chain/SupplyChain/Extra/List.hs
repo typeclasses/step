@@ -4,7 +4,13 @@ Description: A streaming 'List' type based on the 'TerminableStream' interface
 
 -}
 
-module SupplyChain.Extra.List where
+module SupplyChain.Extra.List
+  (
+    {- * Type -} List (..),
+    {- * Introduction -} fromList,
+    {- * Elimination -} toList, toListM,
+  )
+  where
 
 import SupplyChain
 import SupplyChain.Interface.TerminableStream (TerminableStream)

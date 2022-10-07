@@ -1,3 +1,9 @@
+{- |
+
+Description: The 'Counting' interface, for a vendor that keeps track of how many requests it has served
+
+-}
+
 module SupplyChain.Interface.Counting
   (
     {- * Interface -} Counting (..),
