@@ -34,7 +34,7 @@ import qualified Data.ListLike as LL
 import Data.ListLike (ListLike)
 
 -- Optics
-import Optics (view, preview, review, re, (%), iso, Iso, Iso')
+import Optics (view, preview, review, re, (%), iso, Iso, Iso', Lens', use, assign, modifying)
 
 -- Math
 import Numeric.Natural (Natural)
@@ -48,12 +48,15 @@ import Prelude (fromIntegral)
 import Control.Monad.Reader (MonadReader)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Control.Monad.Reader as MTL
+import Control.Monad.Trans.Except (ExceptT (..))
+import Control.Monad.State.Strict (MonadState)
+import qualified Control.Monad.State.Strict as MTL
 import qualified Control.Monad.Trans.Maybe as MTL
 import qualified Control.Monad.Trans.Except as MTL
-import Control.Monad.Trans.Except (ExceptT (..))
 
 -- Streaming
-import SupplyChain (Vendor (..), Client, (>->))
+import SupplyChain (Vendor (..), Client, Supply ((:->)), (>->))
+import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
@@ -83,42 +86,9 @@ stepCast = \case
     StepNext -> StepNext
     StepReset -> StepReset
 
-{-
-
--- Step conversions
-
-mapStepCommit :: (com1 -> com2) -> Step nex res com1 c m e a -> Step nex res com2 c m e a
-mapStepCommit f = \case
-    StepNext x -> StepNext x
-    StepReset x -> StepReset x
-    StepFail x -> StepFail x
-    StepLift x -> StepLift x
-    StepCommit x -> StepCommit (f x)
-
-mapStepFail :: (e1 -> e2) -> Step nex res com c m e1 a -> Step nex res com c m e2 a
-mapStepFail f = \case
-    StepNext x -> StepNext x
-    StepReset x -> StepReset x
-    StepCommit x -> StepCommit x
-    StepLift x -> StepLift x
-    StepFail x -> StepFail (f x)
-
-tryStep :: Step nex res com c m e a -> Maybe (Step nex res com c m e' a)
-tryStep = \case
-    StepFail _ -> Nothing
-    StepNext x -> Just (StepNext x)
-    StepReset x -> Just (StepReset x)
-    StepCommit n -> Just (StepCommit n)
-    StepLift x -> Just (StepLift x)
-
---
--}
-
-
 -- ⭕ Action
 
 type Action = Type -> SupplyChain.Action -> Type -> Type -> Type
-
 
 -- Simple actions that are just a newtype for an action with a Step effect
 
@@ -796,74 +766,71 @@ atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 end :: MonadReader e m => Query c m e ()
 end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
 
--- ⭕ The Buffer effect
+-- ⭕ Buffer
 
--- data Buffer (bt :: BufferType) (c :: Type) :: Effect
+newtype Buffer c = Buffer{ bufferSeq :: Seq c }
 
--- data BufferType = CommitBuffer | ViewBuffer
+data ViewBuffer c =
+    Start -- ^ The unseen and unviewed buffers are the same
+  | Unviewed (Buffer c) -- ^ The unviewed buffer, which may differ from the uncommitted buffer
 
--- type instance DispatchOf (Buffer bt c) = 'Static 'NoSideEffects
+bufferedStepper :: forall s action c. Chunk c => MonadState s action =>
+    Lens' s (Buffer c) -> Vendor (TerminableStream c) (Step 'RW c) action
+bufferedStepper buffer = go Start
+  where
+    go :: ViewBuffer c -> Vendor (TerminableStream c) (Step 'RW c) action
+    go unviewed = Vendor \case
+        StepReset -> pure (() :-> go Start)
+        StepNext -> getUnviewedChunks >>= handleNext
+        StepCommit n -> getUncommittedChunks >>= handleCommit unviewed n
+      where
+        getUncommittedChunks :: Client (TerminableStream c) action (Seq c)
+        getUncommittedChunks = bufferSeq <$> SupplyChain.perform (use buffer)
 
--- newtype instance StaticRep (Buffer bt c) = BufferSeq{ bufferSeq :: Seq c }
---     deriving newtype (Semigroup, Monoid)
+        getUnviewedChunks :: Client (TerminableStream c) action (Seq c)
+        getUnviewedChunks = case unviewed of
+            Unviewed b -> pure (bufferSeq b)
+            Start -> getUncommittedChunks
 
--- instance IsList (StaticRep (Buffer bt c)) where
---     type Item (StaticRep (Buffer bt c)) = c
---     fromList = BufferSeq . fromList
---     toList = toList . bufferSeq
+    handleNext ::
+        Seq c -- unviewed chunks
+        -> Client (TerminableStream c) action
+              (Supply (TerminableStream c) (Step 'RW c) action (Maybe c))
+    handleNext = \case
+        x :<| xs -> pure (Just x :-> goUnviewed xs)
+        Empty -> SupplyChain.order Stream.NextMaybe >>= \case
+            Nothing -> pure (Nothing :-> goUnviewed Empty)
+            Just x -> feedCommitBuffer x $> (Just x :-> goUnviewed Empty)
+      where
+        goUnviewed :: Seq c -> Vendor (TerminableStream c) (Step 'RW c) action
+        goUnviewed unviewed = go (Unviewed (Buffer unviewed))
 
--- runBuffer :: forall bt c es a. Eff (Buffer bt c ': es) a -> Eff es a
--- runBuffer = runBuffer' mempty
+        feedCommitBuffer :: c -> Client (TerminableStream c) action ()
+        feedCommitBuffer x = SupplyChain.perform $
+            modifying buffer \(Buffer xs) -> Buffer (xs :|> x)
 
--- runBuffer' :: forall bt c es a. Seq c -> Eff (Buffer bt c ': es) a -> Eff es a
--- runBuffer' = evalStaticRep . BufferSeq
+    handleCommit ::
+        ViewBuffer c
+        -> Positive Natural -- how much to commit
+        -> Seq c -- uncommitted chunks
+        -> Client (TerminableStream c) action
+              (Supply (TerminableStream c) (Step 'RW c) action AdvanceResult)
+    handleCommit unviewed n = \case
+        x :<| xs -> case drop n x of
+            DropAll -> setUncommittedChunks xs $> (AdvanceSuccess :-> go unviewed)
+            DropPart{ dropRemainder = x' } -> returnToCommitBuffer x' $> (AdvanceSuccess :-> go unviewed)
+            DropInsufficient{ dropShortfall = n' } -> handleCommit unviewed n' xs
+        Empty -> SupplyChain.order Stream.NextMaybe >>= \case
+            Nothing -> pure (YouCanNotAdvance{ shortfall = n } :-> go unviewed)
+            Just x -> handleCommit unviewed' n (x :<| Empty)
+              where
+                unviewed' = case unviewed of
+                    Start -> Unviewed (Buffer (x :<| Empty))
+                    Unviewed (Buffer xs) -> Unviewed (Buffer (x :<| xs))
+      where
+        setUncommittedChunks :: Seq c -> Client (TerminableStream c) action ()
+        setUncommittedChunks xs = SupplyChain.perform $ assign buffer (Buffer xs)
 
--- getBufferSeq :: forall bt c es. Buffer bt c :> es => Eff es (Seq c)
--- getBufferSeq = getStaticRep @(Buffer bt c) <&> bufferSeq
-
--- putBufferSeq :: forall bt c es. Buffer bt c :> es => Seq c -> Eff es ()
--- putBufferSeq = putStaticRep @(Buffer bt c) . BufferSeq
-
--- feedBuffer :: forall bt c es. Buffer bt c :> es => c -> Eff es ()
--- feedBuffer x = getBufferSeq @bt @c >>= \c -> putBufferSeq @bt @c (c :|> x)
-
--- returnToBuffer :: forall bt c es. Buffer bt c :> es => c -> Eff es ()
--- returnToBuffer x = getBufferSeq @bt >>= \c -> putBufferSeq @bt (x :<| c)
-
--- takeBufferChunk :: forall bt c es. Buffer bt c :> es => Eff es (Maybe c)
--- takeBufferChunk = getBufferSeq @bt >>= \case
---     Empty -> return Nothing
---     y :<| ys -> putBufferSeq @bt ys $> Just y
-
--- dropFromBuffer :: forall bt c x es. Chunk c x => Buffer bt c :> es => Positive Natural -> Eff es AdvanceResult
--- dropFromBuffer = fix \r n -> getBufferSeq @bt @c >>= \case
---     Empty -> return YouCanNotAdvance{ shortfall = n }
---     x :<| c -> case drop @c @x n x of
---         DropAll -> putBufferSeq @bt c $> AdvanceSuccess
---         DropPart{ dropRemainder } -> putBufferSeq @bt (dropRemainder :<| c) $> AdvanceSuccess
---         DropInsufficient{ dropShortfall } -> putBufferSeq @bt c *> r dropShortfall
-
--- ⭕
-
--- stepHandler :: forall c x es e. Chunk c x => '[Load c, Buffer 'CommitBuffer c, Error e] :>> es =>
---     EffectHandler (Step 'ReadWrite 'Imperfect c x e) (Buffer 'ViewBuffer c ': es)
--- stepHandler _env = \case
---     StepFail e -> throwError e
---     StepReset -> getBufferSeq @'CommitBuffer @c >>= putBufferSeq @'ViewBuffer @c
---     StepNext -> runStepNext @c
---     StepCommit n -> runStepCommit @c @x n
-
--- runStepNext :: forall c es. '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Eff es (Maybe c)
--- runStepNext = takeBufferChunk @'ViewBuffer >>= \case
---     Just x -> return (Just x)
---     Nothing -> bufferMore @c >>= \case{ True -> takeBufferChunk @'ViewBuffer; False -> return Nothing }
-
--- runStepCommit :: forall c x es. Chunk c x => '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Positive Natural -> Eff es AdvanceResult
--- runStepCommit n = dropFromBuffer @'CommitBuffer @c @x n >>= \case
---     r@AdvanceSuccess -> return r
---     r@YouCanNotAdvance{ shortfall = n' } -> bufferMore @c >>= \case{ True -> dropFromBuffer @'CommitBuffer @c @x n'; False -> return r }
-
--- bufferMore :: forall c es. '[Load c, Buffer 'ViewBuffer c, Buffer 'CommitBuffer c] :>> es => Eff es Bool
--- bufferMore = load @c >>= \case
---     Nothing -> return False
---     Just x -> do{ feedBuffer @'CommitBuffer x; feedBuffer @'ViewBuffer x; return True }
+        returnToCommitBuffer :: c -> Client (TerminableStream c) action ()
+        returnToCommitBuffer x = SupplyChain.perform $
+            modifying buffer \(Buffer xs) -> Buffer (x :<| xs)
