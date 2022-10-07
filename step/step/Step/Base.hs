@@ -339,7 +339,7 @@ instance Fallible a => Is Failure a where
 
 -- | The type @a >> b@ is type of the expression @a >> b@.
 --
--- This function is mostly not commutative (@a >> b@ is not the same as @b >> a@) because whether an atomic action'atomicity is preserved depends on the order of the composition in some cases.
+-- This function is mostly not commutative (@a >> b@ is not the same as @b >> a@) because whether an atomic action's atomicity is preserved depends on the order of the composition in some cases.
 
 type family (act1 :: Action) >> (act2 :: Action) :: Action
   where
