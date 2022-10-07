@@ -12,37 +12,46 @@ module Step.Do
   )
   where
 
-import qualified BasePrelude
-import BasePrelude (fmap, (<$>), Monad)
+import qualified Prelude
+import Prelude (Functor, fmap, (<$>), Monad)
 
-import Step.Action
+import Step.Action.Core
 
 infixl 1 >>=
-(>>=) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x e m a -> (a -> act2 xs x e m b) -> act3 xs x e m b
+(>>=) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    act1 c m e a -> (a -> act2 c m e b) -> act3 c m e b
 (>>=) = bindAction
 
 infixr 1 >=>
-(>=>) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => (a -> act1 xs x e m b) -> (b -> act2 xs x e m c) -> a -> act3 xs x e m c
+(>=>) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    (a -> act1 c m e b) -> (b -> act2 c m e c) -> a -> act3 c m e c
 a >=> b = \x -> a x >>= b
 
 infixl 4 <*
-(<*) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x e m a -> act2 xs x e m b -> act3 xs x e m a
+(<*) :: Functor (act1 c m e) => Functor (act2 c m e) => Join act1 act2 =>
+    act1 >> act2 ~ act3 => act1 c m e a -> act2 c m e b -> act3 c m e a
 a <* b = join (fmap (\x -> fmap (\_ -> x) b) a)
 
 infixl 4 *>
-(*>) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x e m a -> act2 xs x e m b -> act3 xs x e m b
+(*>) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    act1 c m e a -> act2 c m e b -> act3 c m e b
 a *> b = join (fmap (\_ -> b) a)
 
 infixl 1 >>
+(>>) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    act1 c m e a -> act2 c m e b -> act3 c m e b
 (>>) = (*>)
 
 infixl 4 <*>
-(<*>) :: Monad m => Join act1 act2 => act1 >> act2 ~ act3 => act1 xs x e m (a -> b) -> act2 xs x e m a -> act3 xs x e m b
+(<*>) :: Functor (act1 c m e) => Functor (act2 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    act1 c m e (a -> b) -> act2 c m e a -> act3 c m e b
 f <*> x = join (fmap (\f' -> fmap f' x) f)
 
-return :: Monad m => a -> SureQuery xs x e m a
-return = BasePrelude.return
+return :: a -> SureQuery c m e a
+return = Prelude.return
 
+pure :: a -> SureQuery c m e a
 pure = return
 
+(<&>) :: Functor f => f a -> (a -> b) -> f b
 x <&> f = f <$> x
