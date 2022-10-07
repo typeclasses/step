@@ -110,12 +110,25 @@ common base
       , text (Data.Text as Text)
 
 library
-    default-language: Haskell2010
-    ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
+    default-language: GHC2021
+    ghc-options:
+        -Wall
+        -fdefer-typed-holes
+        -Wmissing-deriving-strategies
 
     -- Temporary for early stage development
     ghc-options: -fno-warn-unused-imports
     ghc-options: -fno-warn-missing-signatures
+
+    default-extensions:
+        BlockArguments
+        DataKinds
+        DerivingStrategies
+        FunctionalDependencies
+        LambdaCase
+        NoImplicitPrelude
+        TypeFamilies
+        UndecidableInstances
 
     hs-source-dirs: step
     build-depends:

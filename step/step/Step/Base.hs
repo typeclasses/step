@@ -1,9 +1,3 @@
-{-# language UndecidableInstances #-}
-{-# language DataKinds, KindSignatures, InstanceSigs, StandaloneDeriving, GeneralizedNewtypeDeriving #-}
-{-# language ConstraintKinds, DataKinds, FlexibleContexts, KindSignatures, QuantifiedConstraints, TypeOperators #-}
-{-# language DataKinds, StandaloneKindSignatures, FunctionalDependencies, FlexibleInstances, BlockArguments, LambdaCase #-}
-{-# language DeriveAnyClass, DeriveFunctor, DerivingVia, GeneralizedNewtypeDeriving, EmptyCase, GADTs, AllowAmbiguousTypes, NoImplicitPrelude, TypeApplications, ScopedTypeVariables, NamedFieldPuns, TypeFamilies, RankNTypes #-}
-
 module Step.Base where
 
 -- The basics
