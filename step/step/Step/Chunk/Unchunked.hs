@@ -1,3 +1,9 @@
+{- |
+
+Description: This is probably useless
+
+-}
+
 module Step.Chunk.Unchunked where
 
 import Step.Chunk.Core
