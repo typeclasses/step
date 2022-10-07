@@ -42,7 +42,7 @@ library
         SupplyChain.Interface.InfiniteStream
         SupplyChain.Interface.TerminableStream
 
-        SupplyChain.Extra.List
+        SupplyChain.Extra.ActionList
 
 test-suite test-supply-chain
     import: base
@@ -59,4 +59,4 @@ test-suite test-supply-chain
 
         SupplyChain.Interface.TerminableStream.Spec
 
-        SupplyChain.Extra.List.Spec
+        SupplyChain.Extra.ActionList.Spec

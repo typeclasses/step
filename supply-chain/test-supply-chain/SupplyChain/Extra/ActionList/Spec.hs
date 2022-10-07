@@ -1,14 +1,14 @@
-module SupplyChain.Extra.List.Spec (tests) where
+module SupplyChain.Extra.ActionList.Spec (tests) where
 
 import Prelude ((<$>), (<*>))
 
 import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
 
-import SupplyChain.Extra.List
+import SupplyChain.Extra.ActionList
 
 tests :: TestTree
-tests = testGroup "List"
+tests = testGroup "ActionList"
     [ testCase "<*>" apTest
     ]
 

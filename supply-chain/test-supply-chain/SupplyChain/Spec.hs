@@ -2,7 +2,7 @@ module SupplyChain.Spec (tests) where
 
 import Test.Tasty
 
-import qualified SupplyChain.Extra.List.Spec
+import qualified SupplyChain.Extra.ActionList.Spec
 import qualified SupplyChain.Interface.TerminableStream.Spec
 
 tests :: TestTree
@@ -11,6 +11,6 @@ tests = testGroup "SupplyChain"
       [ SupplyChain.Interface.TerminableStream.Spec.tests
       ]
   , testGroup "Extra"
-      [ SupplyChain.Extra.List.Spec.tests
+      [ SupplyChain.Extra.ActionList.Spec.tests
       ]
   ]
