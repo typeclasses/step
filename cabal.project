@@ -1,4 +1,4 @@
-packages: supply-chain, step
+packages: supply-chain, step, step-v1
 
 with-compiler: ghc-9.2.4
 

@@ -1,0 +1,205 @@
+cabal-version: 3.0
+
+name: step-v1
+version: 0
+
+license: Apache-2.0
+license-file: license.txt
+
+common base
+    default-language: Haskell2010
+    ghc-options: -Wall -fdefer-typed-holes -Wmissing-deriving-strategies
+
+    -- Temporary for early stage development
+    ghc-options: -fno-warn-unused-imports
+    ghc-options: -fno-warn-missing-signatures
+
+    default-extensions:
+        BlockArguments
+        DerivingStrategies
+        LambdaCase
+        NoMonomorphismRestriction
+        NoImplicitPrelude
+        NamedFieldPuns
+        OverloadedLists
+        RankNTypes
+        ScopedTypeVariables
+        TypeApplications
+        TypeFamilies
+    build-depends:
+        base ^>= 4.16
+      , bytestring
+      , containers
+      , data-default-class
+      , free
+      , hedgehog
+      , ListLike ^>= 4.7
+      , loc ^>= 0.1.4
+      , mmorph
+      , mtl
+      , transformers
+      , nat-optics ^>= 1.0.1.0
+      , optics ^>= 0.4
+      , text
+    mixins:
+        base
+          ( Data.Bool as Bool
+          , Data.Char as Char
+          , Data.Coerce as Coerce
+          , Data.Either as Either
+          , Data.Functor.Compose as Functor.Compose
+          , Data.Kind as Kind
+          , Data.Word as Word
+          , Text.Show as Show
+          , Control.Monad as Monad
+          , Prelude as BasePrelude
+          , Data.Function as Function
+          , Numeric.Natural as Natural
+          , Control.Applicative as Applicative
+          , Data.Functor.Contravariant as Contravariant
+          , Data.Maybe as Maybe
+          , Data.Foldable as Foldable
+          , Data.String as String
+          , Data.Functor as Functor
+          , Data.Functor.Identity as Identity
+          , Data.List as List
+          , Data.Semigroup as Semigroup
+          , Data.Monoid as Monoid
+          , Data.Void as Void
+          , Data.List.NonEmpty as NonEmpty
+          , GHC.Exts
+          , GHC.Generics as Generic
+          , GHC.TypeLits as TypeLits
+          )
+      , bytestring
+          ( Data.ByteString as ByteString
+          , Data.ByteString.Lazy as LByteString
+          )
+      , containers
+          ( Data.Set as Set
+          , Data.Sequence as Seq
+          , Data.Map.Strict as Map
+          , Data.IntMap.Strict as IntMap
+          )
+      , data-default-class (Data.Default.Class as Default)
+      , free (Control.Monad.Free.Church as Monad.Free)
+      , ListLike (Data.ListLike as ListLike)
+      , mmorph
+          ( Control.Monad.Morph as Morph
+          , Control.Monad.Trans.Compose as Functor.ComposeT
+          )
+      , nat-optics
+          ( NatOptics.Positive as Positive
+          , NatOptics.Positive.Math as Positive.Math
+          , NatOptics.Positive.Unsafe as Positive.Unsafe
+          , NatOptics.Signed as Signed
+          )
+      , mtl
+          ( Control.Monad.State as State
+          , Control.Monad.Reader as Reader
+          )
+      , transformers
+          ( Control.Monad.Trans.Class as MonadTrans
+          , Control.Monad.Trans.Except as Except
+          , Control.Monad.Trans.Maybe as MaybeT
+          )
+      , loc (Data.Loc as Loc, Data.Loc.SpanOrLoc as SpanOrLoc)
+      , optics (Optics)
+      , text (Data.Text as Text)
+
+library
+    import: base
+    hs-source-dirs: step-v1
+    build-depends:
+        step-internal
+      , step-nontrivial
+      , step-cursor
+      , step-rst
+    mixins: step-internal (Step.Internal.Prelude)
+    exposed-modules:
+        Step.Action
+        Step.Action.Do
+
+        Step.Buffer
+        Step.ContextStack
+        Step.GeneralCursors
+        Step.LineHistory
+        Step.RunAction
+
+        Step.Document
+        Step.Document.Actions
+        Step.Document.Base
+
+        Step.Competitors.Attoparsec.Text
+
+    reexported-modules:
+        Step.Cursor
+      , Step.Nontrivial
+      , Step.Nontrivial.Unsafe
+
+library step-cursor
+    import: base
+    hs-source-dirs: step-cursor
+    build-depends: step-internal, step-nontrivial, step-rst
+    exposed-modules:
+        Step.Cursor
+        Step.Cursor.Cursor
+    other-modules:
+        Step.Cursor.AdvanceResult
+        Step.Cursor.InputChunking
+        Step.Cursor.Stream
+        Step.Cursor.StreamCompletion
+
+library step-nontrivial
+    import: base
+    hs-source-dirs: step-nontrivial
+    build-depends: step-internal
+
+    exposed-modules:
+        Step.Nontrivial
+        Step.Nontrivial.Unsafe
+
+        Step.Nontrivial.ListLike
+        Step.Nontrivial.ListLike.Unsafe
+
+        Step.Nontrivial.Operations
+
+    other-modules:
+        Step.Nontrivial.ListLike.Construction
+        Step.Nontrivial.Misc
+        Step.Nontrivial.Type
+
+library step-internal
+    import: base
+    hs-source-dirs: step-internal
+    exposed-modules:
+        Step.Internal.Prelude
+    other-modules:
+        Step.Internal.Contravariant
+        Step.Internal.Dependencies
+        Step.Internal.LocOptics
+        Step.Internal.Positive
+        Step.Internal.Times
+
+library step-rst
+    import: base
+    hs-source-dirs: step-rst
+    build-depends: step-internal
+    exposed-modules:
+        Step.RST
+
+test-suite test-step-v1
+    import: base
+    type: exitcode-stdio-1.0
+    hs-source-dirs: test-step-v1
+    main-is: Main.hs
+    build-depends:
+        step-v1, step-internal, step-nontrivial, step-rst
+      , tasty, tasty-hedgehog, tasty-hunit, text
+    mixins:
+        step-internal (Step.Internal.Prelude)
+      , text (Data.Text as Text)
+    other-modules:
+        Step.Spec.DocumentParsing
+        Step.Spec.LineHistory
+        Step.Spec.Nontrivial

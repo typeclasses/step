@@ -3,14 +3,14 @@ module Step.Action.Core
     {- * Step -}
     Step (..), Mode (..), AdvanceResult (..), stepCast,
 
-    {- * Actions -} Action,
+    {- * Actions -} Action, {- $types -}
     Any (..), Query (..), Sure (..), SureQuery (..),
     Atom (..), Move (..), AtomicMove (..), Failure (..),
 
     {- * Classes -}
     Trivial (..), Fallible (..), Atomic (..), AssumeMovement (..),
 
-    {- * Subtyping -} Is (..), castTo,
+    {- * Subtyping -} {- $subtyping -} Is (..), castTo,
 
     {- * Composition -} type (>>), Join (..), bindAction,
   )
@@ -554,3 +554,38 @@ instance Join SureQuery Sure where
 
 instance Join SureQuery SureQuery where
     join = Monad.join
+
+
+{- $subtyping
+
+Arrows in the graph below indicate permitted use of 'cast'. (Not pictured: 'Fail')
+
+![Action subtyping graph](graphics/action-subtyping.svg)
+
+-}
+
+
+{- $types
+
++--------------+----------+------------+------------+
+|              | Succeeds | Advances   | Advances   |
+|              |          | on success | on failure |
++--------------+----------+------------+------------+
+| 'Move'       |          | Yes        |            |
++--------------+----------+------------+------------+
+| 'Query'      |          | No         | No         |
++--------------+----------+------------+------------+
+| 'Atom'       |          |            | No         |
++--------------+----------+------------+------------+
+| 'AtomicMove' |          | Yes        | No         |
++--------------+----------+------------+------------+
+| 'Sure'       | Yes      |            |            |
++--------------+----------+------------+------------+
+| 'SureQuery'  | Yes      | No         | No         |
++--------------+----------+------------+------------+
+| 'Fail'       | No       | No         | No         |
++--------------+----------+------------+------------+
+| 'Any'        |          |            |            |
++--------------+----------+------------+------------+
+
+-}

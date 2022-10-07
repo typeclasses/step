@@ -31,43 +31,6 @@ import qualified NonEmpty
 
 -- ⭕
 
-{- $types
-
-+--------------+----------+------------+------------+
-|              | Succeeds | Advances   | Advances   |
-|              |          | on success | on failure |
-+--------------+----------+------------+------------+
-| 'Move'       |          | Yes        |            |
-+--------------+----------+------------+------------+
-| 'Query'      |          | No         | No         |
-+--------------+----------+------------+------------+
-| 'Atom'       |          |            | No         |
-+--------------+----------+------------+------------+
-| 'AtomicMove' |          | Yes        | No         |
-+--------------+----------+------------+------------+
-| 'Sure'       | Yes      |            |            |
-+--------------+----------+------------+------------+
-| 'SureQuery'  | Yes      | No         | No         |
-+--------------+----------+------------+------------+
-| 'Fail'       | No       | No         | No         |
-+--------------+----------+------------+------------+
-| 'Any'        |          |            |            |
-+--------------+----------+------------+------------+
-
--}
-
--- ⭕
-
-{- $subtypes
-
-Arrows in the graph below indicate permitted use of 'cast'. (Not pictured: 'Fail')
-
-![Action subtyping graph](graphics/action-subtyping.svg)
-
--}
-
--- ⭕
-
 -- | The kind of all the action types
 type Action =
        Type           -- ^ @xs@ - text
