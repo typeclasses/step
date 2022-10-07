@@ -55,7 +55,6 @@ library
 
         Step.Chunk.Core
         Step.Chunk.ListLike
-        Step.Chunk.Unchunked
 
         Step.Toy
 
