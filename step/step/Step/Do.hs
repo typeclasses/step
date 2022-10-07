@@ -13,7 +13,7 @@ module Step.Do
   where
 
 import qualified Prelude
-import Prelude (Functor, fmap, (<$>), Monad)
+import Prelude (Functor, fmap, (<$>))
 
 import Step.Action.Core
 

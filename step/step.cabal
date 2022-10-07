@@ -145,6 +145,9 @@ library
 
     exposed-modules:
         Step.Base
+        Step.Do
+
+        Step.Action.Core
 
         Step.Chunk.Core
         Step.Chunk.ListLike
