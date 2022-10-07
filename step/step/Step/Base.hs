@@ -541,12 +541,10 @@ instance Join SureQuery Sure where
 instance Join SureQuery SureQuery where
     join = Monad.join
 
--- ListLike chunks
+-- ⭕ Prelude of actions
 
 one :: Positive Natural
 one = PositiveUnsafe 1
-
--- ⭕ Prelude of actions
 
 reset :: forall c es e. SureQuery c es e ()
 reset = SureQuery $ SupplyChain.order StepReset
