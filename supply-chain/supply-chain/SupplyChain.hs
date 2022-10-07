@@ -27,9 +27,9 @@ module SupplyChain
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
 
-    {- * Connect (>->) -} Connect ((>->)), {- $connect -}
+    {- * Connect (>->) -} Connect ((>->)), {- $connect -} (>+>),
 
-    {- * Hoisting -} {- $hoist -} hoistClient, hoistVendor, hoistSupply,
+    {- * Changing the Action context -} ActionFunctor (..),
 
   )
   where
@@ -117,36 +117,6 @@ map f = go
     go = Vendor \x -> order (f x) <&> (:-> go)
 
 
-hoistClient :: forall (up :: Interface) (a :: Action) (b :: Action) (product :: Type).
-    (forall x. a x -> b x) -> Client up a product -> Client up b product
-
-hoistClient f = go
-  where
-    go :: forall x. Client up a x -> Client up b x
-    go = \case
-        Pure x     ->  Pure x
-        Request x  ->  Request x
-        Perform x  ->  Perform (f x)
-        Bind a b   ->  Bind (go a) (go . b)
-
-
-hoistVendor :: forall (up :: Interface) (down :: Interface) (a :: Action) (b :: Action).
-    (forall x. a x -> b x) -> Vendor up down a -> Vendor up down b
-
-hoistVendor f = go
-  where
-    go (Vendor v) = Vendor \request ->
-        hoistClient f (v request) <&> \(response :-> v') ->
-            response :-> hoistVendor f v'
-
-
-hoistSupply :: forall (up :: Interface) (down :: Interface) (a :: Action) (b :: Action) (product :: Type).
-    (forall x. a x -> b x) -> Supply up down a product -> Supply up down b product
-
-hoistSupply f (x :-> v) =
-    x :-> hoistVendor f v
-
-
 {- $definingClients
 
 In addition to these functions for constructing clients,
@@ -228,12 +198,5 @@ Specializations:
 ('>->') :: 'Vendor' up down action   -> 'Client' down action product -> 'Client' up action product
 ('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action  -> 'Vendor' up down action
 @
-
--}
-
-
-{- $hoist
-
-A /hoist/ operation changes a vendor or client's 'Action' context.
 
 -}

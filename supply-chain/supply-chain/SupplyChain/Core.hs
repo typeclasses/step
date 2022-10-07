@@ -120,10 +120,10 @@ instance Connect up middle action (Vendor middle down action) (Vendor up down ac
 
 
 {-| Connect a vendor to a client, producing a client which ultimately
-    returns both the product and an updated vendor.
+    returns both the product and a new version of the vendor.
 
-    This function is used to implement '(>->)'.
-    Apart from that, perhaps it has no other use.
+    Use this function instead of '(>->)' if you need to attach a
+    succession of clients to one stateful vendor.
 -}
 (>+>) ::
     forall
@@ -143,7 +143,7 @@ instance Connect up middle action (Vendor middle down action) (Vendor up down ac
     'Supply' might look like, modulo a subtle difference in the types
 
     This function is used to implement '(>->)'.
-    Apart from that, perhaps it has no other use.
+    Apart from that, perhaps it has no other use?
 -}
 
 joinSupply ::
@@ -152,3 +152,43 @@ joinSupply ::
 
 joinSupply ((product :-> nextDown) :-> nextUp) =
     product :-> (nextUp >-> nextDown)
+
+
+class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: Type)
+    | x1 action1 x2 -> action2
+    , x1 x2 action2 -> action1
+    , x1 action1 action2 -> x2
+    , x2 action1 action2 -> x1
+  where
+    -- | Changes the 'Action' context
+    actionMap :: (forall x. action1 x -> action2 x) -> x1 -> x2
+
+instance ActionFunctor action1 action2
+    (Client up action1 product)
+    (Client up action2 product)
+  where
+    actionMap f = go
+      where
+        go :: forall x. Client up action1 x -> Client up action2 x
+        go = \case
+            Pure x     ->  Pure x
+            Request x  ->  Request x
+            Perform x  ->  Perform (f x)
+            Bind a b   ->  Bind (go a) (go . b)
+
+instance ActionFunctor action1 action2
+    (Vendor up down action1)
+    (Vendor up down action2)
+  where
+    actionMap f = go
+      where
+        go (Vendor v) = Vendor \request ->
+            actionMap f (v request) <&> \(response :-> v') ->
+                response :-> go v'
+
+instance ActionFunctor action1 action2
+    (Supply up down action1 product)
+    (Supply up down action2 product)
+  where
+    actionMap f (x :-> v) =
+        x :-> actionMap f v
