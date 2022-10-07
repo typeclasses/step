@@ -1,26 +1,22 @@
 module Step.Base where
 
+import Step.Chunk.Core
+
 -- The basics
 import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..), maybe, isJust, isNothing, fromMaybe)
-import Data.Functor (Functor (..), (<&>), ($>), (<$>), void)
-import Data.Function (($), (&), (.), id, fix, on)
-import Data.Either (Either (..), either)
-import Control.Monad (Monad (..), (=<<))
+import Data.Maybe (Maybe (..), maybe, isNothing, fromMaybe)
+import Data.Functor (Functor (..), (<&>), ($>), (<$>))
+import Data.Function (($), (&), (.), id, on)
+import Data.Either (Either (..))
+import Control.Monad (Monad (..))
 import qualified Control.Monad as Monad
 import Control.Applicative (Applicative (..))
-import System.IO (IO)
 import Data.Kind (Type)
-import Data.Semigroup (Semigroup (..))
-import Data.Monoid (Monoid (..))
-import Prelude ((+), (-), error)
-import Data.Functor.Contravariant (Predicate (..), contramap)
+import Prelude (error)
+import Data.Functor.Contravariant (Predicate (..))
 import Data.Eq (Eq ((==)))
 import Data.Ord (Ord (compare))
 import Text.Show (Show (showsPrec))
-import Data.Foldable (traverse_)
-import Data.Traversable (traverse)
-import Data.Void (Void, absurd)
 
 -- Containers
 import Data.Sequence (Seq (..))
@@ -28,7 +24,7 @@ import qualified Data.ListLike as LL
 import Data.ListLike (ListLike)
 
 -- Optics
-import Optics (view, preview, review, re, (%), iso, Iso, Iso', Lens', use, assign, modifying)
+import Optics (view, preview, review, iso, Lens', use, assign, modifying)
 
 -- Math
 import Numeric.Natural (Natural)
@@ -40,12 +36,9 @@ import Prelude (fromIntegral)
 
 -- Transformers
 import Control.Monad.Reader (MonadReader)
-import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Control.Monad.Reader as MTL
 import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.State.Strict (MonadState)
-import qualified Control.Monad.State.Strict as MTL
-import qualified Control.Monad.Trans.Maybe as MTL
 import qualified Control.Monad.Trans.Except as MTL
 
 -- Streaming
@@ -57,10 +50,6 @@ import qualified SupplyChain.Interface.TerminableStream as Stream
 -- Etc
 import GHC.TypeLits (TypeError, ErrorMessage (Text))
 import GHC.Exts (IsList (..))
-
--- ⭕ OneOf
-
-type family OneOf (c :: Type) :: Type
 
 -- ⭕ Step
 
@@ -559,35 +548,6 @@ instance Join SureQuery Sure where
 
 instance Join SureQuery SureQuery where
     join = Monad.join
-
--- ⭕ Chunk
-
-class Chunk c where
-    leftView :: Iso' c (Pop c)
-    span :: Predicate (OneOf c) -> c -> Span c
-    split :: Positive Natural -> c -> Split c
-    drop :: Positive Natural -> c -> Drop c
-    while :: Predicate (OneOf c) -> c -> While c
-    length :: c -> Positive Natural
-
-data Pop c = Pop{ popItem :: OneOf c, popRemainder :: Maybe c }
-
-data Span c =
-    SpanAll
-  | SpanNone
-  | SpanPart{ spannedPart :: c, spanRemainder :: c }
-  deriving stock (Eq, Ord, Show)
-
-data Split c = SplitInsufficient | Split c c
-  deriving stock (Eq, Ord, Show)
-
-data Drop c =
-    DropAll
-  | DropInsufficient{ dropShortfall :: Positive Natural }
-  | DropPart{ dropRemainder :: c }
-  deriving stock (Eq, Ord, Show)
-
-data While c = WhileNone | WhilePrefix c | WhileAll
 
 -- ListLike chunks
 
