@@ -29,7 +29,7 @@ module SupplyChain
 
     {- * Connect (>->) -} Connect ((>->)), {- $connect -} (>+>),
 
-    {- * Changing the Action context -} ActionFunctor (..),
+    {- * Changing the Action context -} ActionFunctor (..), {- $actionMap -}
 
   )
   where
@@ -197,6 +197,19 @@ Specializations:
 @
 ('>->') :: 'Vendor' up down action   -> 'Client' down action product -> 'Client' up action product
 ('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action  -> 'Vendor' up down action
+@
+
+-}
+
+
+{- $actionMap
+
+Specializations:
+
+@
+'actionMap' :: (forall x. action1 x -> action2 x) -> 'Client' up action1 product      -> 'Client' up action2 product
+'actionMap' :: (forall x. action1 x -> action2 x) -> 'Vendor' up down action1         -> 'Vendor' up down action2
+'actionMap' :: (forall x. action1 x -> action2 x) -> 'Supply' up down action1 product -> 'Supply' up down action2 product
 @
 
 -}
