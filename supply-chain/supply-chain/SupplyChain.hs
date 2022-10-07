@@ -1,5 +1,7 @@
 {- |
 
+Description: The main API of the supply-chain library
+
 A "supply chain" represents a flow of information from one
 'Vendor' to the next, and so on, ultimately reaching a 'Client'
 who returns a product.
@@ -12,6 +14,7 @@ In the above example, @vendor2@ is said to be /downstream/ of @vendor1@.
 A client or vendor can place an 'order', which is fulfilled by the vendor
 directly /upstream/ of it. So, the orders made by the @client@ are served by
 @vendor3@, the orders made by @vendor3@ are served by @vendor2@, and so on.
+
 -}
 
 module SupplyChain

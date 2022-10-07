@@ -1,9 +1,12 @@
-{-| The innermost module of the supply-chain library
+{- |
 
-    This module's chief virtue is minimalism. It aims to implement
-    only the most significant contributions of the library. If you
-    are new to supply-chain, start with "SupplyChain" instead,
-    which is better documented and somewhat more abstract.
+Description: The innermost module of the supply-chain library
+
+This module's chief virtue is minimalism. It aims to implement
+only the most significant contributions of the library. If you
+are new to supply-chain, start with "SupplyChain" instead,
+which is better documented and somewhat more abstract.
+
 -}
 module SupplyChain.Core where
 

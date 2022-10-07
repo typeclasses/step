@@ -1,3 +1,9 @@
+{- |
+
+Description: A streaming 'List' type based on the 'TerminableStream' interface
+
+-}
+
 module SupplyChain.Extra.List where
 
 import SupplyChain

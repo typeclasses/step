@@ -1,3 +1,9 @@
+{- |
+
+Description: The 'InfiniteStream' interface, like 'TerminableStream' but for lists that never end
+
+-}
+
 module SupplyChain.Interface.InfiniteStream
   (
     {- * Interface -} InfiniteStream (..),

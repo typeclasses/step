@@ -1,3 +1,9 @@
+{- |
+
+Description: The 'TerminableStream' interface, for consuming lists one item at a time
+
+-}
+
 module SupplyChain.Interface.TerminableStream
   (
     {- * Interface -} TerminableStream (..),
