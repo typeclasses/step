@@ -16,7 +16,7 @@ import Control.Applicative (Applicative (..))
 import Data.Sequence (Seq (..))
 
 -- Optics
-import Optics (view, preview, Lens', use, assign, modifying)
+import Optics (preview, Lens', use, assign, modifying)
 
 -- Math
 import Numeric.Natural (Natural)
@@ -56,7 +56,7 @@ nextMaybe :: SureQuery c m e (Maybe c)
 nextMaybe = reset `bindAction` \() -> nextMaybe'
 
 nextCharMaybe :: Chunk c => SureQuery c m e (Maybe (OneOf c))
-nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . view leftView)
+nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . leftView)
 
 nextChar :: Chunk c => MonadReader e m => Query c m e (OneOf c)
 nextChar = nextCharMaybe `bindAction` maybe (castTo @Query fail) return

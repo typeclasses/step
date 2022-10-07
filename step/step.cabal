@@ -151,6 +151,7 @@ library
 
         Step.Chunk.Core
         Step.Chunk.ListLike
+        Step.Chunk.Unchunked
 
 library step-v1
     import: base

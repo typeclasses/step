@@ -7,14 +7,13 @@ import Data.Maybe (Maybe (..))
 import Data.Ord (Ord)
 import NatOptics.Positive.Unsafe (Positive)
 import Numeric.Natural (Natural)
-import Optics (Iso')
 import Text.Show (Show)
 
 type family OneOf (c :: Type) :: Type
 
 class Chunk c
   where
-    leftView :: Iso' c (Pop c)
+    leftView :: c -> Pop c
     span :: Predicate (OneOf c) -> c -> Span c
     split :: Positive Natural -> c -> Split c
     drop :: Positive Natural -> c -> Drop c

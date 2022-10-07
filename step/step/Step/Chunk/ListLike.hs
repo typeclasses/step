@@ -12,7 +12,7 @@ import Data.Ord (Ord (compare))
 import GHC.Exts (IsList (..))
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import Numeric.Natural (Natural)
-import Optics (preview, review, iso)
+import Optics (preview, review)
 import Prelude (error)
 import Prelude (fromIntegral)
 import Text.Show (Show (showsPrec))
@@ -89,22 +89,14 @@ instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
                     (nonEmptyListLike whole)
             _ -> SplitInsufficient
 
-    leftView = iso f g
-      where
-        f :: NonEmptyListLike c -> Pop (NonEmptyListLike c)
-        f a = a
-            & nonEmptyListLike
-            & LL.uncons
-            & fromMaybe (error "ListLike leftViewIso")
-            & \(x, b) -> Pop
-                { popItem = x
-                , popRemainder =
-                    case Positive.minus (nonEmptyListLikeLength a) (PositiveUnsafe 1) of
-                        Signed.Plus n -> Just (NonEmptyListLike b n )
-                        _ -> Nothing
-                }
-
-        g :: Pop (NonEmptyListLike c) -> NonEmptyListLike c
-        g Pop{ popItem, popRemainder } = case popRemainder of
-            Nothing -> NonEmptyListLike (LL.singleton popItem) (PositiveUnsafe 1)
-            Just b -> NonEmptyListLike (LL.cons popItem (nonEmptyListLike b)) (Positive.plus (nonEmptyListLikeLength b) (PositiveUnsafe 1))
+    leftView a = a
+        & nonEmptyListLike
+        & LL.uncons
+        & fromMaybe (error "ListLike leftViewIso")
+        & \(x, b) -> Pop
+            { popItem = x
+            , popRemainder =
+                case Positive.minus (nonEmptyListLikeLength a) (PositiveUnsafe 1) of
+                    Signed.Plus n -> Just (NonEmptyListLike b n )
+                    _ -> Nothing
+            }
