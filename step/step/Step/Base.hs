@@ -67,26 +67,21 @@ type family OneOf (c :: Type) :: Type
 
 -- ⭕ Step
 
-data Step (c :: Type) (a :: Type) =
-    a ~ AdvanceResult => StepCommit (Positive Natural)
-  | a ~ Maybe c       => StepNext
-  | a ~ ()            => StepReset
+data Mode = R | RW
 
-data QueryStep (c :: Type) (a :: Type) =
-    a ~ Maybe c       => QueryNext
-  | a ~ ()            => QueryReset
-
-type Step      :: Type -> SupplyChain.Interface
-type QueryStep :: Type -> SupplyChain.Interface
+data Step (mo :: Mode) (c :: Type) (a :: Type) =
+    (a ~ AdvanceResult, mo ~ 'RW) => StepCommit (Positive Natural)
+  | a ~ Maybe c => StepNext
+  | a ~ () => StepReset
 
 data AdvanceResult =
     AdvanceSuccess
   | YouCanNotAdvance{ shortfall :: Positive Natural }
 
-stepCast :: QueryStep c a -> Step c a
+stepCast :: Step 'R c a -> Step 'RW c a
 stepCast = \case
-    QueryNext -> StepNext
-    QueryReset -> StepReset
+    StepNext -> StepNext
+    StepReset -> StepReset
 
 {-
 
@@ -133,19 +128,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (ExceptT e (Client (Step c) m) a)
+newtype Any c m e a = Any (ExceptT e (Client (Step 'RW c) m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (ExceptT e (Client (QueryStep c) m) a)
+newtype Query c m e a = Query (ExceptT e (Client (Step 'R c) m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Client (Step c) m a)
+newtype Sure c m e a = Sure (Client (Step 'RW c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Client (QueryStep c) m a)
+newtype SureQuery c m e a = SureQuery (Client (Step 'R c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- Actions defined in terms of others
@@ -727,7 +722,7 @@ one = PositiveUnsafe 1
 -- ⭕ Prelude of actions
 
 reset :: forall c es e. SureQuery c es e ()
-reset = SureQuery $ SupplyChain.order QueryReset
+reset = SureQuery $ SupplyChain.order StepReset
 
 commit :: forall c es e. Positive Natural -> AtomicMove c es e AdvanceResult
 commit n = AtomicMove $ Atom $ Query $ return $ Sure $ SupplyChain.order $ StepCommit n
@@ -737,7 +732,7 @@ fail = Failure MTL.ask
 
 -- | Like 'nextMaybe', but doesn't reset first
 nextMaybe' :: forall c m e. SureQuery c m e (Maybe c)
-nextMaybe' = SureQuery $ SupplyChain.order QueryNext
+nextMaybe' = SureQuery $ SupplyChain.order StepNext
 
 nextMaybe :: SureQuery c m e (Maybe c)
 nextMaybe = reset `bindAction` \() -> nextMaybe'
