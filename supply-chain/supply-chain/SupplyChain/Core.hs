@@ -42,7 +42,7 @@ data Client (up :: Interface) (action :: Action) (product :: Type) =
     Pure product
   | Perform (action product)
   | Request (up product)
-  | forall x. Bind (Client up action x) (x -> Client up action product)
+  | forall (x :: Type). Bind (Client up action x) (x -> Client up action product)
 
 instance Functor (Client up action)
   where
@@ -70,7 +70,7 @@ instance Monad (Client up action)
 -}
 
 runWith :: forall (up :: Interface) (action :: Action) (product :: Type). Monad action =>
-    (forall x. up x -> action x) -> Client up action product -> action product
+    (forall (x :: Type). up x -> action x) -> Client up action product -> action product
 
 runWith handle = go
   where
@@ -86,7 +86,7 @@ runWith handle = go
 
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
-    { offer :: forall product.
+    { offer :: forall (product :: Type).
         down product -> Client up action (Supply up down action product) }
 
 
@@ -103,7 +103,8 @@ data Supply (up :: Interface) (down :: Interface) (action :: Action) (product ::
 deriving stock instance Functor (Supply up down action)
 
 
-class Connect up down action client result
+class Connect (up :: Interface) (down :: Interface)
+    (action :: Action) (client :: Type) (result :: Type)
     | up client -> result
     , client -> down action
     , result -> up action
@@ -164,7 +165,7 @@ class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: 
     , x2 action1 action2 -> x1
   where
     -- | Changes the 'Action' context
-    actionMap :: (forall x. action1 x -> action2 x) -> x1 -> x2
+    actionMap :: (forall (x :: Type). action1 x -> action2 x) -> x1 -> x2
 
 instance ActionFunctor action1 action2
     (Client up action1 product)
@@ -172,7 +173,7 @@ instance ActionFunctor action1 action2
   where
     actionMap f = go
       where
-        go :: forall x. Client up action1 x -> Client up action2 x
+        go :: forall (x :: Type). Client up action1 x -> Client up action2 x
         go = \case
             Pure x     ->  Pure x
             Request x  ->  Request x

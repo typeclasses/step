@@ -109,7 +109,8 @@ actionVendor f = go
     go = Vendor \x -> perform (f x) <&> (:-> go)
 
 
-noVendor :: Vendor up (Const Void) action
+noVendor :: forall (up :: Interface) (action :: Action).
+    Vendor up (Const Void) action
 noVendor = Vendor \case{}
 
 
