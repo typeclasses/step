@@ -114,8 +114,8 @@ atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 end :: MonadReader e m => Query c m e ()
 end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
 
-text :: c -> Move c m e ()
-text = _
+-- text :: c -> Move c m e ()
+-- text = _
 
 -- text :: Nontrivial xs x -> Move xs x e m ()
 -- text = someOfNontrivialText A.>=> (maybe (return ()) (castTo @Any . text) . Nontrivial.refine)
