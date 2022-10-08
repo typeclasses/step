@@ -22,11 +22,11 @@ module SupplyChain
 
     {- * Kinds -} Interface, Action,
 
-    {- * Client -} Client,
+    {- * Client -} Client, {- $client -}
     {- ** How to create a client -} {- $definingClients -} order, perform,
     {- ** How to use a client -} eval, run, evalWith, runWith,
 
-    {- * Vendor -} Vendor (..), Supply (..),
+    {- * Vendor -} Vendor (..), {- $vendor -} Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
 
@@ -120,10 +120,37 @@ map f = go
     go = Vendor \x -> order (f x) <&> (:-> go)
 
 
+{- $client
+
+>              ▲   │
+>        up x  │   │  x
+>              │   ▼
+> ┌────────────────────────────┐
+> │  Client up action product  │
+> └────────────────────────────┘
+
+-}
+
+
 {- $definingClients
 
 In addition to these functions for constructing clients,
 also keep in mind that 'Client' belongs to the 'Monad' class.
+
+-}
+
+
+{- $vendor
+
+>              ▲   │
+>        up x  │   │  x
+>              │   ▼
+> ┌───────────────────────────┐
+> │   Vendor up down action   │
+> └───────────────────────────┘
+>              ▲   │
+>      down y  │   │  y
+>              │   ▼
 
 -}
 
