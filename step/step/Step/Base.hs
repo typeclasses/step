@@ -187,7 +187,7 @@ bufferedStepper buffer = go Start
     handleCommit unviewed n = \case
         x :<| xs -> case drop n x of
             DropAll -> setUncommittedChunks xs $> (AdvanceSuccess :-> go unviewed)
-            DropPart{ dropRemainder = x' } -> returnToCommitBuffer x' $> (AdvanceSuccess :-> go unviewed)
+            DropPart{ dropRemainder = x' } -> setUncommittedChunks (x' :<| xs) $> (AdvanceSuccess :-> go unviewed)
             DropInsufficient{ dropShortfall = n' } -> handleCommit unviewed n' xs
         Empty -> SupplyChain.order Stream.NextMaybe >>= \case
             Nothing -> pure (YouCanNotAdvance{ shortfall = n } :-> go unviewed)
@@ -199,7 +199,3 @@ bufferedStepper buffer = go Start
       where
         setUncommittedChunks :: Seq c -> Client (TerminableStream c) action ()
         setUncommittedChunks xs = SupplyChain.perform $ assign buffer (Buffer xs)
-
-        returnToCommitBuffer :: c -> Client (TerminableStream c) action ()
-        returnToCommitBuffer x = SupplyChain.perform $
-            modifying buffer \(Buffer xs) -> Buffer (x :<| xs)

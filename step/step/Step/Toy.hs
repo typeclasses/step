@@ -1,4 +1,4 @@
-module Step.Toy (parse) where
+module Step.Toy (parse, actionParse) where
 
 import Step.Action.Core
 import Step.Chunk.Core
@@ -11,6 +11,7 @@ import Data.Either (Either)
 import Data.Foldable (toList)
 import Data.Function (($))
 import Data.Functor (fmap, (<&>))
+import Data.Functor.Identity
 import Data.Sequence (Seq (..))
 import Optics (simple, castOptic)
 import SupplyChain ((>->), Client, Vendor)
@@ -21,9 +22,16 @@ import qualified Control.Monad.Trans as MTL
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
-parse :: forall c m e a. Chunk c => Monad m =>
-    Any c m e a -> [c] -> m (Either e a, [c])
-parse (Any (ExceptT parser)) xs =
+parse :: forall p c e a. Chunk c => Is p Any =>
+    p c Identity e a -> [c] -> (Either e a, [c])
+parse p xs = runIdentity (actionParse p xs)
+
+actionParse :: forall p c m e a. Chunk c => Monad m => Is p Any =>
+    p c m e a -> [c] -> m (Either e a, [c])
+actionParse p xs =
+  let
+    Any (ExceptT parser) = cast p
+  in
     runStateT (SupplyChain.run (cursor xs >-> liftClient parser)) (Buffer Empty)
         <&> fmap bufferList
 

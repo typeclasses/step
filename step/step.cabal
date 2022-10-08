@@ -60,6 +60,7 @@ library
 
 test-suite test-step
     import: base
+    default-extensions: OverloadedStrings
     type: exitcode-stdio-1.0
     hs-source-dirs: test-step
     main-is: Main.hs

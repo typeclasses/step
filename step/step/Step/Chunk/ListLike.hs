@@ -9,6 +9,7 @@ import Data.Functor.Contravariant (Predicate (..))
 import Data.ListLike (ListLike)
 import Data.Maybe (Maybe (..), fromMaybe)
 import Data.Ord (Ord (compare))
+import Data.String (IsString (..))
 import GHC.Exts (IsList (..))
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import Numeric.Natural (Natural)
@@ -27,6 +28,12 @@ data NonEmptyListLike c =
     { nonEmptyListLike :: !c
     , nonEmptyListLikeLength :: !(Positive Natural)
     }
+
+instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c)
+  where
+    fromString x =
+        fromMaybe (error "NonEmptyListLike fromString: empty") $
+            maybeNonEmptyListLike (fromString x)
 
 assumeNonEmptyListLike :: ListLike c (Item c) => c -> NonEmptyListLike c
 assumeNonEmptyListLike c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
