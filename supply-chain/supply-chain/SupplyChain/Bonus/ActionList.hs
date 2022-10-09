@@ -1,6 +1,6 @@
 {- |
 
-Description: A streaming 'List' type based on the 'TerminableStream' interface
+Description: A streaming list type based on the 'TerminableStream' interface
 
 -}
 
