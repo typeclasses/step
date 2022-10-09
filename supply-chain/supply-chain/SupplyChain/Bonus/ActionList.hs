@@ -4,7 +4,7 @@ Description: A streaming 'List' type based on the 'TerminableStream' interface
 
 -}
 
-module SupplyChain.Extra.ActionList
+module SupplyChain.Bonus.ActionList
   (
     {- * Type -} ActionList (..),
     {- * Introduction -} fromList, perform,
