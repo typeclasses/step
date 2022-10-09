@@ -90,7 +90,7 @@ newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
         down product -> Factory up action (Supply up down action product) }
 
 
--- | The conclusion of a vendor's handling of a factory request
+-- | The conclusion of a vendor's handling of a client request
 
 data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
   (:->)
