@@ -21,7 +21,9 @@ and so on.
 module SupplyChain
   (
 
-    {- * Kinds -} Interface, Action,
+    {- * Kinds -}
+    {- ** Interface -} Interface, NoInterface,
+    {- ** Action -} Action, NoAction,
 
     {- * Factory -} Factory, {- $factory -}
     {- ** How to create a factory -} {- $definingFactories -} order, perform,
@@ -50,6 +52,20 @@ import Data.Kind (Type)
 import Data.Void (absurd, Void)
 
 
+-- | An 'Interface' that admits no requests
+
+type NoInterface = Const Void
+
+type NoInterface :: Interface
+
+
+-- | An 'Action' that permits no action
+
+type NoAction = Identity
+
+type NoAction :: Action
+
+
 -- | Perform an action in a factory's 'Action' context
 
 perform :: forall (up :: Interface) (action :: Action) (product :: Type).
@@ -69,7 +85,7 @@ order = Request
 -- | Run a factory that makes no requests
 
 run :: forall (action :: Action) (product :: Type). Monad action =>
-    Factory (Const Void) action product -> action product
+    Factory NoInterface action product -> action product
 
 run = runWith (pure . absurd . getConst)
 
@@ -77,7 +93,7 @@ run = runWith (pure . absurd . getConst)
 -- | Run a factory that makes no requests and performs no actions
 
 eval :: forall (product :: Type).
-    Factory (Const Void) Identity product -> product
+    Factory NoInterface NoAction product -> product
 
 eval = runIdentity . run
 
@@ -85,7 +101,7 @@ eval = runIdentity . run
 -- | Run a factory that performs no actions
 
 evalWith :: forall (up :: Interface) (product :: Type).
-    (forall x. up x -> x) -> Factory up Identity product -> product
+    (forall x. up x -> x) -> Factory up NoAction product -> product
 
 evalWith f = runIdentity . runWith (pure . f)
 
@@ -111,7 +127,7 @@ actionVendor f = go
 
 
 noVendor :: forall (up :: Interface) (action :: Action).
-    Vendor up (Const Void) action
+    Vendor up NoInterface action
 noVendor = Vendor \case{}
 
 

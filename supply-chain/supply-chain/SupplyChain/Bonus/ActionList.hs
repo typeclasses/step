@@ -12,7 +12,7 @@ module SupplyChain.Bonus.ActionList
   )
   where
 
-import SupplyChain (Connect((>->)), Vendor, eval, run)
+import SupplyChain (Connect((>->)), Vendor, eval, run, NoInterface, NoAction)
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
@@ -20,15 +20,12 @@ import Control.Applicative (Applicative (..))
 import Control.Monad (Monad (..), ap)
 import Data.Function ((.))
 import Data.Functor (Functor (..))
-import Data.Functor.Const (Const (..))
-import Data.Functor.Identity (Identity (..))
 import Data.Monoid (Monoid (..))
 import Data.Semigroup (Semigroup (..))
-import Data.Void (Void)
 
 newtype ActionList m a =
   VendorActionList
-    { actionListVendor :: Vendor (Const Void) (TerminableStream a) m
+    { actionListVendor :: Vendor NoInterface (TerminableStream a) m
     }
 
 instance Semigroup (ActionList m a)
@@ -64,7 +61,7 @@ perform :: m a -> ActionList m a
 perform x = VendorActionList (Stream.actionSingleton x)
 
 -- | Converts an 'ActionList' into an ordinary list
-toList :: ActionList Identity a -> [a]
+toList :: ActionList NoAction a -> [a]
 toList (VendorActionList v) = eval (v >-> Stream.all)
 
 -- | Converts an 'ActionList' into an action that returns all the items at once

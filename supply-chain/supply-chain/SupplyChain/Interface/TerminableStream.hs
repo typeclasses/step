@@ -21,10 +21,8 @@ import Data.Bool (Bool (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($), id)
 import Data.Functor ((<$>), (<&>))
-import Data.Functor.Const (Const (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
-import Data.Void (Void)
 import Numeric.Natural (Natural)
 import Prelude ((+))
 
@@ -111,7 +109,7 @@ concatMap f = Vendor \NextMaybe -> go []
 -- | Like 'concatMap', but the function gives a vendor instead of a list
 
 concatMapVendor :: forall a b action.
-    (a -> Vendor (Const Void) (TerminableStream b) action)
+    (a -> Vendor NoInterface (TerminableStream b) action)
     -> Vendor (TerminableStream a) (TerminableStream b) action
 
 concatMapVendor f = go
