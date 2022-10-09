@@ -17,9 +17,9 @@ import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
 
 
-{-| The kind of requests and responses exchanged between a vendor and a client
+{-| The kind of requests and responses exchanged between a vendor and a factory
 
-    If a client's upstream interface is @i@, then when the client makes a
+    If a factory's upstream interface is @i@, then when the factory makes a
     request of type @i x@, it receives a response of type @x@.
 
     Values of a type of this kind represent requests. Each constructor will
@@ -38,13 +38,13 @@ type Action = Type -> Type
 
 -- | Monadic context that supports making requests and performing actions
 
-data Client (up :: Interface) (action :: Action) (product :: Type) =
+data Factory (up :: Interface) (action :: Action) (product :: Type) =
     Pure product
   | Perform (action product)
   | Request (up product)
-  | forall (x :: Type). Bind (Client up action x) (x -> Client up action product)
+  | forall (x :: Type). Bind (Factory up action x) (x -> Factory up action product)
 
-instance Functor (Client up action)
+instance Functor (Factory up action)
   where
     fmap f = fix \r -> \case
         Pure product      ->  Pure (f product)
@@ -52,29 +52,29 @@ instance Functor (Client up action)
         Request request   ->  Bind (Request request) (Pure . f)
         Bind step1 step2  ->  Bind step1 (r . step2)
 
-instance Applicative (Client up action)
+instance Applicative (Factory up action)
   where
     pure = Pure
     a1 <*> a2 = a1 `Bind` \f -> (f $) <$> a2
     a1 *> a2 = Bind a1 (\_ -> a2)
 
-instance Monad (Client up action)
+instance Monad (Factory up action)
   where
     (>>=) = Bind
 
 
-{-| Run a client in its 'Action' context
+{-| Run a factory in its 'Action' context
 
     The first argument is a handler that specifies what to do each
-    time the client makes a request.
+    time the factory makes a request.
 -}
 
 runWith :: forall (up :: Interface) (action :: Action) (product :: Type). Monad action =>
-    (forall (x :: Type). up x -> action x) -> Client up action product -> action product
+    (forall (x :: Type). up x -> action x) -> Factory up action product -> action product
 
 runWith handle = go
   where
-    go :: forall x. Client up action x -> action x
+    go :: forall x. Factory up action x -> action x
     go = \case
       Pure    product      ->  pure product
       Perform action       ->  action
@@ -87,10 +87,10 @@ runWith handle = go
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
     { offer :: forall (product :: Type).
-        down product -> Client up action (Supply up down action product) }
+        down product -> Factory up action (Supply up down action product) }
 
 
--- | The conclusion of a vendor's handling of a client request
+-- | The conclusion of a vendor's handling of a factory request
 
 data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
   (:->)
@@ -109,10 +109,10 @@ class Connect (up :: Interface) (down :: Interface)
     , client -> down action
     , result -> up action
   where
-    -- | Connects a vendor to a client (or to another vendor)
+    -- | Connects a vendor to a client (a factory or another vendor)
     (>->) :: Vendor up down action -> client -> result
 
-instance Connect up down action (Client down action product) (Client up action product)
+instance Connect up down action (Factory down action product) (Factory up action product)
   where
     up >-> down =
         (up >+> down) <&> supplyProduct
@@ -123,17 +123,17 @@ instance Connect up middle action (Vendor middle down action) (Vendor up down ac
         Vendor \request -> (up >+> offer down request) <&> joinSupply
 
 
-{-| Connect a vendor to a client, producing a client which ultimately
+{-| Connect a vendor to a factory, producing a factory which ultimately
     returns both the product and a new version of the vendor.
 
     Use this function instead of '(>->)' if you need to attach a
-    succession of clients to one stateful vendor.
+    succession of factories to one stateful vendor.
 -}
 (>+>) ::
     forall
       (up :: Interface) (down :: Interface) (action :: Action) (product :: Type).
-    Vendor up down action -> Client down action product
-    -> Client up action (Supply up down action product)
+    Vendor up down action -> Factory down action product
+    -> Factory up action (Supply up down action product)
 
 (>+>) up = \case
     Pure product      ->  Pure (product :-> up)
@@ -168,12 +168,12 @@ class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: 
     actionMap :: (forall (x :: Type). action1 x -> action2 x) -> x1 -> x2
 
 instance ActionFunctor action1 action2
-    (Client up action1 product)
-    (Client up action2 product)
+    (Factory up action1 product)
+    (Factory up action2 product)
   where
     actionMap f = go
       where
-        go :: forall (x :: Type). Client up action1 x -> Client up action2 x
+        go :: forall (x :: Type). Factory up action1 x -> Factory up action2 x
         go = \case
             Pure x     ->  Pure x
             Request x  ->  Request x

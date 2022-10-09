@@ -31,7 +31,7 @@ import qualified Control.Monad.Reader as MTL
 import Control.Monad.State.Strict (MonadState)
 
 -- Streaming
-import SupplyChain (Vendor (..), Client, Supply ((:->)))
+import SupplyChain (Vendor (..), Factory, Supply ((:->)))
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
@@ -153,17 +153,17 @@ bufferedStepper buffer = go Start
         StepNext -> getUnviewedChunks >>= handleNext
         StepCommit n -> getUncommittedChunks >>= handleCommit unviewed n
       where
-        getUncommittedChunks :: Client (TerminableStream c) action (Seq c)
+        getUncommittedChunks :: Factory (TerminableStream c) action (Seq c)
         getUncommittedChunks = bufferSeq <$> SupplyChain.perform (use buffer)
 
-        getUnviewedChunks :: Client (TerminableStream c) action (Seq c)
+        getUnviewedChunks :: Factory (TerminableStream c) action (Seq c)
         getUnviewedChunks = case unviewed of
             Unviewed b -> pure (bufferSeq b)
             Start -> getUncommittedChunks
 
     handleNext ::
         Seq c -- unviewed chunks
-        -> Client (TerminableStream c) action
+        -> Factory (TerminableStream c) action
               (Supply (TerminableStream c) (Step 'RW c) action (Maybe c))
     handleNext = \case
         x :<| xs -> pure (Just x :-> goUnviewed xs)
@@ -174,7 +174,7 @@ bufferedStepper buffer = go Start
         goUnviewed :: Seq c -> Vendor (TerminableStream c) (Step 'RW c) action
         goUnviewed unviewed = go (Unviewed (Buffer unviewed))
 
-        feedCommitBuffer :: c -> Client (TerminableStream c) action ()
+        feedCommitBuffer :: c -> Factory (TerminableStream c) action ()
         feedCommitBuffer x = SupplyChain.perform $
             modifying buffer \(Buffer xs) -> Buffer (xs :|> x)
 
@@ -182,7 +182,7 @@ bufferedStepper buffer = go Start
         ViewBuffer c
         -> Positive Natural -- how much to commit
         -> Seq c -- uncommitted chunks
-        -> Client (TerminableStream c) action
+        -> Factory (TerminableStream c) action
               (Supply (TerminableStream c) (Step 'RW c) action AdvanceResult)
     handleCommit unviewed n = \case
         x :<| xs -> case drop n x of
@@ -197,5 +197,5 @@ bufferedStepper buffer = go Start
                     Start -> Unviewed (Buffer (x :<| Empty))
                     Unviewed (Buffer xs) -> Unviewed (Buffer (x :<| xs))
       where
-        setUncommittedChunks :: Seq c -> Client (TerminableStream c) action ()
+        setUncommittedChunks :: Seq c -> Factory (TerminableStream c) action ()
         setUncommittedChunks xs = SupplyChain.perform $ assign buffer (Buffer xs)

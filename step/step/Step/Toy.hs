@@ -14,7 +14,7 @@ import Data.Functor (fmap, (<&>))
 import Data.Functor.Identity
 import Data.Sequence (Seq (..))
 import Optics (simple, castOptic)
-import SupplyChain ((>->), Client, Vendor)
+import SupplyChain ((>->), Factory, Vendor)
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import Prelude (String, Char)
 
@@ -32,12 +32,12 @@ actionParse p xs =
   let
     Any (ExceptT parser) = cast p
   in
-    runStateT (SupplyChain.run (cursor xs >-> liftClient parser)) (Buffer Empty)
+    runStateT (SupplyChain.run (cursor xs >-> liftFactory parser)) (Buffer Empty)
         <&> fmap bufferList
 
-liftClient :: forall up m m' a. Monad m =>
-    MTL.MonadTrans m' => Client up m a -> Client up (m' m) a
-liftClient = SupplyChain.actionMap (\(x :: m z) -> MTL.lift x)
+liftFactory :: forall up m m' a. Monad m =>
+    MTL.MonadTrans m' => Factory up m a -> Factory up (m' m) a
+liftFactory = SupplyChain.actionMap (\(x :: m z) -> MTL.lift x)
 
 cursor :: Chunk c => Monad m =>
     [c] -> Vendor up (Step 'RW c) (StateT (Buffer c) m)

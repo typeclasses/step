@@ -9,7 +9,7 @@ module SupplyChain.Interface.TerminableStream
     {- * Interface -} TerminableStream (..),
     {- * Vendors -} nil, singleton, actionSingleton, list, map, concatMap, concat, while, group,
     {- * Vendor composition -} append, concatMapVendor,
-    {- * Clients -} all,
+    {- * Factories -} all,
   )
   where
 
@@ -99,7 +99,7 @@ concatMap :: forall a b action.
 
 concatMap f = Vendor \NextMaybe -> go []
   where
-    go :: [b] -> Client (TerminableStream a) action
+    go :: [b] -> Factory (TerminableStream a) action
         (Supply (TerminableStream a) (TerminableStream b) action (Maybe b))
     go = \case
         b : bs' -> pure (Just b :-> Vendor \NextMaybe -> go bs')
@@ -161,7 +161,7 @@ append a b = Vendor \NextMaybe ->
 -- | Collects everything from the stream
 
 all :: forall a action.
-    Client (TerminableStream a) action [a]
+    Factory (TerminableStream a) action [a]
 
 all = go
   where
@@ -194,7 +194,7 @@ group = Vendor \NextMaybe ->
         Nothing -> pure $ Nothing :-> nil
         Just x -> start x
   where
-    start :: a -> Client (TerminableStream a) action
+    start :: a -> Factory (TerminableStream a) action
         ( Supply (TerminableStream a) (TerminableStream (Natural, a))
           action (Maybe (Natural, a))
         )

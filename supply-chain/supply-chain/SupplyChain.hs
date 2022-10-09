@@ -3,16 +3,16 @@
 Description: The main API of the supply-chain library
 
 A "supply chain" represents a flow of information from one
-'Vendor' to the next, and so on, ultimately reaching a 'Client'
+'Vendor' to the next, and so on, ultimately reaching a 'Factory'
 who returns a product.
 
 @
-(vendor1 '>->' vendor2 '>->' vendor3 '>->' client)
+(vendor1 '>->' vendor2 '>->' vendor3 '>->' factory)
 @
 
 In the above example, @vendor2@ is said to be /downstream/ of @vendor1@.
-A client or vendor can place an 'order', which is fulfilled by the vendor
-directly /upstream/ of it. So, the orders made by the @client@ are served by
+A factory or vendor can place an 'order', which is fulfilled by the vendor
+directly /upstream/ of it. So, the orders made by the @factory@ are served by
 @vendor3@, the orders made by @vendor3@ are served by @vendor2@, and so on.
 
 -}
@@ -22,9 +22,9 @@ module SupplyChain
 
     {- * Kinds -} Interface, Action,
 
-    {- * Client -} Client, {- $client -}
-    {- ** How to create a client -} {- $definingClients -} order, perform,
-    {- ** How to use a client -} eval, run, evalWith, runWith,
+    {- * Factory -} Factory, {- $factory -}
+    {- ** How to create a factory -} {- $definingFactories -} order, perform,
+    {- ** How to use a factory -} eval, run, evalWith, runWith,
 
     {- * Vendor -} Vendor (..), {- $vendor -} Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
@@ -49,42 +49,42 @@ import Data.Kind (Type)
 import Data.Void (absurd, Void)
 
 
--- | Perform an action in a client's 'Action' context
+-- | Perform an action in a factory's 'Action' context
 
 perform :: forall (up :: Interface) (action :: Action) (product :: Type).
-    action product -> Client up action product
+    action product -> Factory up action product
 
 perform = Perform
 
 
--- | Send a request via the client's upstream 'Interface'
+-- | Send a request via the factory's upstream 'Interface'
 
 order :: forall (up :: Interface) (action :: Action) (response :: Type).
-    up response -> Client up action response
+    up response -> Factory up action response
 
 order = Request
 
 
--- | Run a client that makes no requests
+-- | Run a factory that makes no requests
 
 run :: forall (action :: Action) (product :: Type). Monad action =>
-    Client (Const Void) action product -> action product
+    Factory (Const Void) action product -> action product
 
 run = runWith (pure . absurd . getConst)
 
 
--- | Run a client that makes no requests and performs no actions
+-- | Run a factory that makes no requests and performs no actions
 
 eval :: forall (product :: Type).
-    Client (Const Void) Identity product -> product
+    Factory (Const Void) Identity product -> product
 
 eval = runIdentity . run
 
 
--- | Run a client that performs no actions
+-- | Run a factory that performs no actions
 
 evalWith :: forall (up :: Interface) (product :: Type).
-    (forall x. up x -> x) -> Client up Identity product -> product
+    (forall x. up x -> x) -> Factory up Identity product -> product
 
 evalWith f = runIdentity . runWith (pure . f)
 
@@ -121,22 +121,22 @@ map f = go
     go = Vendor \x -> order (f x) <&> (:-> go)
 
 
-{- $client
+{- $factory
 
 >              ▲   │
 >        up x  │   │  x
 >              │   ▼
-> ┌────────────────────────────┐
-> │  Client up action product  │
-> └────────────────────────────┘
+> ┌─────────────────────────────┐
+> │  Factory up action product  │
+> └─────────────────────────────┘
 
 -}
 
 
-{- $definingClients
+{- $definingFactories
 
-In addition to these functions for constructing clients,
-also keep in mind that 'Client' belongs to the 'Monad' class.
+In addition to these functions for constructing factories,
+also keep in mind that 'Factory' belongs to the 'Monad' class.
 
 -}
 
@@ -161,27 +161,27 @@ also keep in mind that 'Client' belongs to the 'Monad' class.
 We define vendors using the v'Vendor' constructor.
 Please inspect its type carefully.
 
-> forall product. down product -> Client up action (Supply up down action product)
+> forall product. down product -> Factory up action (Supply up down action product)
 
 A vendor is a function that accepts a request. The request type is
 polymorphic but constrained by the vendor's downstream interface.
 
-> forall product. down product -> Client up action (Supply up down action product)
+> forall product. down product -> Factory up action (Supply up down action product)
 >                 ^^^^^^^^^^^^
 
-Since a vendor also has an upstream interface, vendors can act as
-clients. The vendor therefore operates in a 'Client' context.
+A vendor has an upstream interface and can do everything a factory can,
+therefore the request handler operates in a 'Factory' context.
 
-> forall product. down product -> Client up action (Supply up down action product)
->                                 ^^^^^^^^^^^^^^^^
+> forall product. down product -> Factory up action (Supply up down action product)
+>                                 ^^^^^^^^^^^^^^^^^
 
 This allows the vendor to undertake a monadic sequence involving
 'order' and 'perform' while fulfilling the request.
 
 The final step in fulfilling a request is to return a 'Supply'.
 
-> forall product. down product -> Client up action (Supply up down action product)
->                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> forall product. down product -> Factory up action (Supply up down action product)
+>                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A 'Supply' is written using its '(:->)' constructor, which has two parameters:
 
@@ -206,27 +206,27 @@ defined recursively.
 {- $connect
 
 If @i@ is the downstream interface of vendor @a@ and the upstream
-interface of client @b@, then we can form the composition @a '>->' b@.
-When the client makes a request of type @i x@, the vendor replies with a
+interface of factory @b@, then we can form the composition @a '>->' b@.
+When the factory makes a request of type @i x@, the vendor replies with a
 response of type @x@.
 
-> ┌───────────────────────────┐
-> │    Vendor up i action     │
-> └───────────────────────────┘
+> ┌────────────────────────────┐
+> │     Vendor up i action     │
+> └────────────────────────────┘
 >              ▲   │
 >         i x  │   │  x
 >              │   ▼
-> ┌───────────────────────────┐
-> │  Client i action product  │
-> └───────────────────────────┘
+> ┌────────────────────────────┐
+> │  Factory i action product  │
+> └────────────────────────────┘
 
 The '(>->)' operation is associative; if @a@ and @b@ are vendors and @c@ is
-a client, then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
+a factory, then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
 
 Specializations:
 
 @
-('>->') :: 'Vendor' up down action   -> 'Client' down action product -> 'Client' up action product
+('>->') :: 'Vendor' up down action   -> 'Factory' down action product -> 'Factory' up action product
 ('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action  -> 'Vendor' up down action
 @
 
@@ -238,7 +238,7 @@ Specializations:
 Specializations:
 
 @
-'actionMap' :: (forall x. action1 x -> action2 x) -> 'Client' up action1 product      -> 'Client' up action2 product
+'actionMap' :: (forall x. action1 x -> action2 x) -> 'Factory' up action1 product      -> 'Factory' up action2 product
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Vendor' up down action1         -> 'Vendor' up down action2
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Supply' up down action1 product -> 'Supply' up down action2 product
 @

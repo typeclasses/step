@@ -37,7 +37,7 @@ import Control.Monad.Trans.Except (ExceptT (..))
 import qualified Control.Monad.Trans.Except as MTL
 
 -- Streaming
-import SupplyChain (Client, (>->))
+import SupplyChain (Factory, (>->))
 import qualified SupplyChain
 
 -- Etc
@@ -77,19 +77,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (ExceptT e (Client (Step 'RW c) m) a)
+newtype Any c m e a = Any (ExceptT e (Factory (Step 'RW c) m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (ExceptT e (Client (Step 'R c) m) a)
+newtype Query c m e a = Query (ExceptT e (Factory (Step 'R c) m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Client (Step 'RW c) m a)
+newtype Sure c m e a = Sure (Factory (Step 'RW c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Client (Step 'R c) m a)
+newtype SureQuery c m e a = SureQuery (Factory (Step 'R c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 
