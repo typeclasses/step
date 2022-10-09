@@ -1,4 +1,9 @@
-module Step.Chunk.ListLike where
+module Step.Chunk.ListLike
+  (
+    NonEmptyListLike (..),
+    assume, refine,
+  )
+  where
 
 import Step.Chunk.Core
 
@@ -33,13 +38,13 @@ instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c)
   where
     fromString x =
         fromMaybe (error "NonEmptyListLike fromString: empty") $
-            maybeNonEmptyListLike (fromString x)
+            refine (fromString x)
 
-assumeNonEmptyListLike :: ListLike c (Item c) => c -> NonEmptyListLike c
-assumeNonEmptyListLike c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
+assume :: ListLike c (Item c) => c -> NonEmptyListLike c
+assume c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
 
-maybeNonEmptyListLike :: ListLike c (Item c) => c -> Maybe (NonEmptyListLike c)
-maybeNonEmptyListLike c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
+refine :: ListLike c (Item c) => c -> Maybe (NonEmptyListLike c)
+refine c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
 
 instance Eq c => Eq (NonEmptyListLike c) where
     (==) = (==) `on` nonEmptyListLike
@@ -57,44 +62,38 @@ instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
 
     length = nonEmptyListLikeLength
 
-    span = \f whole ->
-        tupleSpan (LL.span (getPredicate f) (nonEmptyListLike whole))
+    span = \f whole -> tupleSpan (LL.span (getPredicate f) (nonEmptyListLike whole))
       where
         tupleSpan (a, b) =
             if LL.null b then SpanAll else
             if LL.null a then SpanNone else
-            SpanPart (assumeNonEmptyListLike a) (assumeNonEmptyListLike b)
+            SpanPart (assume a) (assume b)
 
-    drop = \n whole ->
-        case Positive.minus (nonEmptyListLikeLength whole) n of
-            Signed.Zero ->
-                DropAll
-            Signed.Plus _ ->
-                DropPart
-                  { dropRemainder = assumeNonEmptyListLike $
-                      LL.drop (fromIntegral (review Positive.refine n)) (nonEmptyListLike whole)
-                  }
-            Signed.Minus dropShortfall ->
-                DropInsufficient{ dropShortfall }
+    drop = \n whole -> case Positive.minus (nonEmptyListLikeLength whole) n of
+        Signed.Zero ->
+            DropAll
+        Signed.Plus _ ->
+            DropPart
+              { dropRemainder = assume $
+                  LL.drop (fromIntegral (review Positive.refine n)) (nonEmptyListLike whole)
+              }
+        Signed.Minus dropShortfall ->
+            DropInsufficient{ dropShortfall }
 
-    while = \f x ->
-        case maybeNonEmptyListLike
-              (LL.takeWhile (getPredicate f) (nonEmptyListLike x))
-          of
-            Nothing -> WhileNone
-            Just y ->
-                if nonEmptyListLikeLength y == nonEmptyListLikeLength x
-                then WhileAll
-                else WhilePrefix y
+    while = \f x -> case refine (LL.takeWhile (getPredicate f) (nonEmptyListLike x)) of
+        Nothing -> WhileNone
+        Just y ->
+            if nonEmptyListLikeLength y == nonEmptyListLikeLength x
+            then WhileAll
+            else WhilePrefix y
 
-    split = \n whole ->
-        case Positive.minus (nonEmptyListLikeLength whole) n of
-            Signed.Plus _ -> Split (assumeNonEmptyListLike a) (assumeNonEmptyListLike b)
-              where
-                (a, b) = LL.splitAt
-                    (fromIntegral (review Positive.refine n))
-                    (nonEmptyListLike whole)
-            _ -> SplitInsufficient
+    split = \n whole -> case Positive.minus (nonEmptyListLikeLength whole) n of
+        Signed.Plus _ -> Split (assume a) (assume b)
+          where
+            (a, b) = LL.splitAt
+                (fromIntegral (review Positive.refine n))
+                (nonEmptyListLike whole)
+        _ -> SplitInsufficient
 
     leftView a = a
         & nonEmptyListLike
