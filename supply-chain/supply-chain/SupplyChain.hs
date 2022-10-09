@@ -10,10 +10,11 @@ who returns a product.
 (vendor1 '>->' vendor2 '>->' vendor3 '>->' factory)
 @
 
-In the above example, @vendor2@ is said to be /downstream/ of @vendor1@.
-A factory or vendor can place an 'order', which is fulfilled by the vendor
-directly /upstream/ of it. So, the orders made by the @factory@ are served by
-@vendor3@, the orders made by @vendor3@ are served by @vendor2@, and so on.
+In the above example, @vendor2@ is said to be the /client/ which is immediately
+/downstream/ of @vendor1@. A factory or vendor can place an 'order', which is
+fulfilled by the vendor /upstream/ of it. So, the orders made by the @factory@
+are served by @vendor3@, the orders made by @vendor3@ are served by @vendor2@,
+and so on.
 
 -}
 
@@ -187,7 +188,7 @@ A 'Supply' is written using its '(:->)' constructor, which has two parameters:
 
 > (:->) :: product -> Vendor up down action -> Supply up down action product
 
-The first is the vendor's response to the downstream's request.
+The first is the vendor's response to the client's request.
 
 > (:->) :: product -> Vendor up down action -> Supply up down action product
 >          ^^^^^^^
@@ -227,7 +228,7 @@ Specializations:
 
 @
 ('>->') :: 'Vendor' up down action   -> 'Factory' down action product -> 'Factory' up action product
-('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action  -> 'Vendor' up down action
+('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action   -> 'Vendor' up down action
 @
 
 -}
@@ -238,7 +239,7 @@ Specializations:
 Specializations:
 
 @
-'actionMap' :: (forall x. action1 x -> action2 x) -> 'Factory' up action1 product      -> 'Factory' up action2 product
+'actionMap' :: (forall x. action1 x -> action2 x) -> 'Factory' up action1 product     -> 'Factory' up action2 product
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Vendor' up down action1         -> 'Vendor' up down action2
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Supply' up down action1 product -> 'Supply' up down action2 product
 @
