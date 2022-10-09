@@ -1,12 +1,14 @@
 module Step.Chunk.ListLike
   (
     NonEmptyListLike (..),
-    assume, refine,
+    {- * Conversion -} assume, refine,
+    {- * Testing -} genChunks,
   )
   where
 
 import Step.Chunk.Core
 
+import Control.Applicative (pure, (<*>))
 import Data.Eq (Eq ((==)))
 import Data.Function (($), (&), (.), on)
 import Data.Functor ((<&>))
@@ -14,8 +16,11 @@ import Data.Functor.Contravariant (Predicate (..))
 import Data.ListLike (ListLike)
 import Data.Maybe (Maybe (..), fromMaybe)
 import Data.Ord (Ord (compare))
+import Data.Sequence (Seq (..))
+import Data.Semigroup ((<>))
 import Data.String (IsString (..))
 import GHC.Exts (IsList (..))
+import Hedgehog (Gen)
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import Numeric.Natural (Natural)
 import Optics (preview, review)
@@ -24,6 +29,8 @@ import Prelude (fromIntegral)
 import Text.Show (Show (showsPrec))
 
 import qualified Data.ListLike as LL
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
@@ -106,3 +113,29 @@ instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
                     Signed.Plus n -> Just (NonEmptyListLike b n )
                     _ -> Nothing
             }
+
+{-| Break up a text into a list of texts
+
+    This can be useful for generating parser inputs for testing
+-}
+genChunks :: ListLike xs x => xs -> Gen [NonEmptyListLike xs]
+genChunks x = case refine x of
+    Nothing -> pure []
+    Just y -> genChunks' y <&> LL.toList
+
+genChunks' :: ListLike xs x => NonEmptyListLike xs -> Gen (Seq (NonEmptyListLike xs))
+genChunks' x = Gen.recursive Gen.choice [pure (x :<| Empty)] [genChunks'' x]
+
+genChunks'' :: ListLike xs x => NonEmptyListLike xs -> Gen (Seq (NonEmptyListLike xs))
+genChunks'' x = case Positive.minus (length x) one of
+    Signed.Zero -> pure (x :<| Empty)
+    Signed.Plus len -> do
+      Just i <- Gen.integral (Range.constant 1 (review Positive.refine len))
+                  <&> preview Positive.refine
+      case split i x of
+          SplitInsufficient -> error "genChunks: SplitInsufficient"
+          Split a b -> pure (<>) <*> genChunks' a <*> genChunks' b
+    Signed.Minus _ -> error "Step.Chunk.ListLike: minus one cannot be negative"
+
+one :: Positive Natural
+one = PositiveUnsafe 1
