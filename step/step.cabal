@@ -48,13 +48,18 @@ library
     hs-source-dirs: step
 
     exposed-modules:
-        Step.Base
         Step.Do
 
+        Step.Action
         Step.Action.Core
 
-        Step.Chunk.Core
+        Step.Interface
+        Step.Interface.Core
+
+        Step.Chunk
         Step.Chunk.ListLike
+
+        Step.Error
 
         Step.Toy
 

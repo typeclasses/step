@@ -1,7 +1,21 @@
-module Step.Base where
+module Step.Interface
+  (
+    -- * The interface
+    Mode (..), Step (..), AdvanceResult (..), stepCast,
 
-import Step.Action.Core
-import Step.Chunk.Core
+    -- * Factories
+    commit, reset,
+    nextCharMaybe,
+     -- takeCharMaybe,
+
+    -- * Vendors
+    Buffer (..), bufferedStepper, pureStepper,
+
+  )
+  where
+
+import Step.Chunk
+import Step.Interface.Core
 
 -- The basics
 import Data.Bool (Bool (..))
@@ -39,80 +53,70 @@ import qualified SupplyChain.Interface.TerminableStream as Stream
 one :: Positive Natural
 one = PositiveUnsafe 1
 
-reset :: forall c es e. SureQuery c es e ()
-reset = SureQuery $ SupplyChain.order StepReset
+reset :: forall c m mode. Factory (Step mode c) m ()
+reset = SupplyChain.order StepReset
 
-commit :: forall c es e. Positive Natural -> AtomicMove c es e AdvanceResult
-commit n = AtomicMove $ Atom $ Query $ return $ Sure $ SupplyChain.order $ StepCommit n
+commit :: forall c m. Positive Natural -> Factory (Step 'RW c) m AdvanceResult
+commit n = SupplyChain.order (StepCommit n)
 
-fail :: MonadReader e m => Failure c m e a
-fail = Failure MTL.ask
+nextMaybe :: forall c m mode. Factory (Step mode c) m (Maybe c)
+nextMaybe = SupplyChain.order StepNext
 
--- | Like 'nextMaybe', but doesn't reset first
-nextMaybe' :: forall c m e. SureQuery c m e (Maybe c)
-nextMaybe' = SureQuery $ SupplyChain.order StepNext
-
-nextMaybe :: SureQuery c m e (Maybe c)
-nextMaybe = reset `bindAction` \() -> nextMaybe'
-
-nextCharMaybe :: Chunk c => SureQuery c m e (Maybe (OneOf c))
+nextCharMaybe :: forall c m mode. Chunk c => Factory (Step mode c) m (Maybe (OneOf c))
 nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . leftView)
 
-nextChar :: Chunk c => MonadReader e m => Query c m e (OneOf c)
-nextChar = nextCharMaybe `bindAction` maybe (castTo @Query fail) return
+-- nextChar :: Chunk c => MonadReader e m => Query c m e (OneOf c)
+-- nextChar = Query $ nextCharMaybe `bindAction` maybe (castTo @Query fail) return
 
-takeChar :: Chunk c => MonadReader e m => AtomicMove c m e (OneOf c)
-takeChar = nextChar `bindAction` \x -> commit one $> x
+-- takeCharMaybe :: Chunk c => MonadReader e m => Factory (Step 'RW c) m (Maybe (OneOf c))
+-- takeCharMaybe = try takeChar
 
-takeCharMaybe :: Chunk c => MonadReader e m => Sure c m e (Either e (OneOf c))
-takeCharMaybe = try takeChar
+-- next :: MonadReader e m => Query c m e c
+-- next = nextMaybe `bindAction` maybe (castTo @Query fail) return
 
-next :: MonadReader e m => Query c m e c
-next = nextMaybe `bindAction` maybe (castTo @Query fail) return
+-- -- | Like 'next', but doesn't reset first
+-- next' :: MonadReader e m => Query c m e c
+-- next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
 
--- | Like 'next', but doesn't reset first
-next' :: MonadReader e m => Query c m e c
-next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
+-- takeNext :: forall c e m. Chunk c => MonadReader e m => AtomicMove c m e c
+-- takeNext = next `bindAction` \c -> commit (length @c c) $> c
 
-takeNext :: forall c e m. Chunk c => MonadReader e m => AtomicMove c m e c
-takeNext = next `bindAction` \c -> commit (length @c c) $> c
+-- takeNextMaybe :: Chunk c => MonadReader e m => Sure c m e (Either e c)
+-- takeNextMaybe = try takeNext
 
-takeNextMaybe :: Chunk c => MonadReader e m => Sure c m e (Either e c)
-takeNextMaybe = try takeNext
+-- satisfyJust :: Chunk c => MonadReader e m => (OneOf c -> Maybe a) -> AtomicMove c m e a
+-- satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
 
-satisfyJust :: Chunk c => MonadReader e m => (OneOf c -> Maybe a) -> AtomicMove c m e a
-satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
+-- skip :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Move c m e AdvanceResult
+-- skip n = next `bindAction` \x ->
+--     case Positive.minus (length @c x) n of
+--         Signed.Minus n' ->
+--             commit (length @c x) `bindAction` \_ -> skip n'
+--         _ -> castTo @Move (commit n)
 
-skip :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Move c m e AdvanceResult
-skip n = next `bindAction` \x ->
-    case Positive.minus (length @c x) n of
-        Signed.Minus n' ->
-            commit (length @c x) `bindAction` \_ -> skip n'
-        _ -> castTo @Move (commit n)
+-- skip0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Any c m e AdvanceResult
+-- skip0 = maybe (return AdvanceSuccess) (castTo @Any . skip)  . preview Positive.refine
 
-skip0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Any c m e AdvanceResult
-skip0 = maybe (return AdvanceSuccess) (castTo @Any . skip)  . preview Positive.refine
+-- ensureAtLeast :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Query c m e ()
+-- ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
+--   where
+--     go :: MonadReader e m => Positive Natural -> Query c m e ()
+--     go n = next' `bindAction` \x ->
+--         case Positive.minus n (length @c x) of
+--             Signed.Plus n' -> go n'
+--             _ -> return ()
 
-ensureAtLeast :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Query c m e ()
-ensureAtLeast = \n -> castTo @Query reset `bindAction` \() -> go n
-  where
-    go :: MonadReader e m => Positive Natural -> Query c m e ()
-    go n = next' `bindAction` \x ->
-        case Positive.minus n (length @c x) of
-            Signed.Plus n' -> go n'
-            _ -> return ()
+-- skipAtomically :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> AtomicMove c m e AdvanceResult
+-- skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
 
-skipAtomically :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> AtomicMove c m e AdvanceResult
-skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
+-- skipAtomically0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Atom c m e AdvanceResult
+-- skipAtomically0 = maybe (trivial AdvanceSuccess) (castTo @Atom . skipAtomically)  . preview Positive.refine
 
-skipAtomically0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Atom c m e AdvanceResult
-skipAtomically0 = maybe (trivial AdvanceSuccess) (castTo @Atom . skipAtomically)  . preview Positive.refine
+-- atEnd :: SureQuery c es e Bool
+-- atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
-atEnd :: SureQuery c es e Bool
-atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
-
-end :: MonadReader e m => Query c m e ()
-end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
+-- end :: MonadReader e m => Query c m e ()
+-- end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
 
 -- text :: c -> Move c m e ()
 -- text = _

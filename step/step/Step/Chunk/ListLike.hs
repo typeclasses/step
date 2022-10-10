@@ -7,7 +7,7 @@ module Step.Chunk.ListLike
   )
   where
 
-import Step.Chunk.Core
+import Step.Chunk
 
 import Control.Applicative (pure, (<*>))
 import Data.Eq (Eq ((==)))

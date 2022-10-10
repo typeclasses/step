@@ -1,4 +1,4 @@
-module Step.Chunk.Core where
+module Step.Chunk where
 
 import Data.Eq (Eq)
 import Data.Functor.Contravariant (Predicate (..))

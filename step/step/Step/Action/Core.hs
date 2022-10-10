@@ -1,26 +1,12 @@
-module Step.Action.Core
-  (
-    {- * Step -}
-    Step (..), Mode (..), AdvanceResult (..), stepCast,
+module Step.Action.Core where
 
-    {- * Actions -} Action, {- $types -}
-    Any (..), Query (..), Sure (..), SureQuery (..),
-    Atom (..), Move (..), AtomicMove (..), Failure (..),
-
-    {- * Classes -}
-    Trivial (..), Fallible (..), Atomic (..), AssumeMovement (..),
-
-    {- * Subtyping -} {- $subtyping -} Is (..), castTo,
-
-    {- * Composition -} type (>>), Join (..), bindAction,
-  )
-  where
+import Step.Interface.Core
 
 -- The basics
 import Data.Maybe (Maybe (..))
-import Data.Functor (Functor (..), (<$>))
+import Data.Functor (Functor (..), (<$>), (<&>))
 import Data.Function (($), (.), id)
-import Data.Either (Either (..))
+import Data.Either (Either (..), either)
 import Control.Monad (Monad (..))
 import qualified Control.Monad as Monad
 import Control.Applicative (Applicative (..))
@@ -42,23 +28,6 @@ import qualified SupplyChain
 
 -- Etc
 import GHC.TypeLits (TypeError, ErrorMessage (Text))
-
-
-data Mode = R | RW
-
-data Step (mo :: Mode) (c :: Type) (a :: Type) =
-    (a ~ AdvanceResult, mo ~ 'RW) => StepCommit (Positive Natural)
-  | a ~ Maybe c => StepNext
-  | a ~ () => StepReset
-
-data AdvanceResult =
-    AdvanceSuccess
-  | YouCanNotAdvance{ shortfall :: Positive Natural }
-
-stepCast :: Step 'R c a -> Step 'RW c a
-stepCast = \case
-    StepNext -> StepNext
-    StepReset -> StepReset
 
 
 type Action =
@@ -187,19 +156,19 @@ instance Fallible AtomicMove where
 -- | Action that can be tried noncommittally
 
 class Atomic (act :: Action) (try :: Action) | act -> try where
-    try :: act c m e a -> try c m e (Either e a)
+    try :: act c m e a -> try c m e (Maybe a)
 
 instance Atomic Atom Sure where
     try (Atom (Query q)) =
         Sure (SupplyChain.map stepCast >-> MTL.runExceptT q) >>= \case
-            Left e -> pure (Left e)
-            Right x -> fmap Right x
+            Left _ -> pure Nothing
+            Right x -> fmap Just x
 
 instance Atomic AtomicMove Sure where
     try (AtomicMove a) = try a
 
 instance Atomic Query SureQuery where
-    try (Query q) = SureQuery (MTL.runExceptT q)
+    try (Query q) = SureQuery (MTL.runExceptT q <&> either (\_ -> Nothing) Just)
 
 
 -- | Unsafe coercion to action that always moves
