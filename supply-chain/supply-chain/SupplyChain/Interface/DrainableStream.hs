@@ -9,6 +9,7 @@ Description:
 module SupplyChain.Interface.DrainableStream where
 
 import SupplyChain hiding (map)
+import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
 
 import Control.Applicative (pure)
 import Data.Functor (Functor, (<&>), fmap)
@@ -41,6 +42,11 @@ data DrainableStream (list :: Type -> Type) item response =
   | (response ~ list item) => Drain
 
 type DrainableStream :: (Type -> Type) -> Type -> Interface
+
+
+instance IsTerminableStream item (DrainableStream list item)
+  where
+    nextMaybe = NextMaybe
 
 
 -- | Yields each item from the list, then stops

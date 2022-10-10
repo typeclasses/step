@@ -6,7 +6,7 @@ Description: The 'TerminableStream' interface, for consuming lists one item at a
 
 module SupplyChain.Interface.TerminableStream
   (
-    {- * Interface -} TerminableStream (..),
+    {- * Interface -} TerminableStream (..), IsTerminableStream (..),
     {- * Vendors -} nil, singleton, actionSingleton, list, map, concatMap, concat, while, group,
     {- * Vendor composition -} append, concatMapVendor,
     {- * Factories -} all,
@@ -25,6 +25,15 @@ import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import Prelude ((+))
+
+
+class IsTerminableStream item (i :: Interface)
+  where
+    nextMaybe :: i (Maybe item)
+
+instance IsTerminableStream item (TerminableStream item)
+  where
+    nextMaybe = NextMaybe
 
 
 data TerminableStream item response =
