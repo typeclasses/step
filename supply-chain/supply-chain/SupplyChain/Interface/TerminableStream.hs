@@ -83,9 +83,11 @@ actionSingleton mx =
 map :: forall a b action.
     (a -> b) -> Vendor (TerminableStream a) (TerminableStream b) action
 
-map f = Vendor \NextMaybe -> order NextMaybe <&> \case
-    Nothing -> Nothing    :-> nil
-    Just a  -> Just (f a) :-> map f
+map f = go
+  where
+    go = Vendor \NextMaybe -> order NextMaybe <&> \case
+        Nothing -> Nothing    :-> nil
+        Just a  -> Just (f a) :-> go
 
 
 {-| Applies the function to each result obtained from upstream,

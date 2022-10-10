@@ -38,6 +38,7 @@ library
         SupplyChain.Core
 
         SupplyChain.Interface.Counting
+        SupplyChain.Interface.DrainableStream
         SupplyChain.Interface.Either
         SupplyChain.Interface.InfiniteStream
         SupplyChain.Interface.TerminableStream
