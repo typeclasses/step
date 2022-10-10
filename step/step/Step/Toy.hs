@@ -18,6 +18,7 @@ import SupplyChain ((>->), Factory, Vendor)
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import Prelude (String, Char)
 
+import qualified Data.Sequence as Seq
 import qualified Control.Monad.Trans as MTL
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
@@ -32,16 +33,12 @@ actionParse p xs =
   let
     Any (ExceptT parser) = cast p
   in
-    runStateT (SupplyChain.run (cursor xs >-> liftFactory parser)) (Buffer Empty)
+    runStateT (SupplyChain.run (pureStepper (castOptic simple) >-> liftFactory parser)) (Buffer (Seq.fromList xs))
         <&> fmap bufferList
 
 liftFactory :: forall up m m' a. Monad m =>
     MTL.MonadTrans m' => Factory up m a -> Factory up (m' m) a
 liftFactory = SupplyChain.actionMap (\(x :: m z) -> MTL.lift x)
-
-cursor :: Chunk c => Monad m =>
-    [c] -> Vendor up (Step 'RW c) (StateT (Buffer c) m)
-cursor xs = Stream.list xs >-> bufferedStepper (castOptic simple)
 
 bufferList :: Buffer c -> [c]
 bufferList (Buffer ys) = toList ys

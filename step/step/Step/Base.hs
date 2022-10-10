@@ -31,8 +31,8 @@ import qualified Control.Monad.Reader as MTL
 import Control.Monad.State.Strict (MonadState)
 
 -- Streaming
-import SupplyChain (Vendor (..), Factory, Supply ((:->)))
-import SupplyChain.Interface.TerminableStream (IsTerminableStream)
+import SupplyChain (Vendor (..), Factory, Supply ((:->)), (>->))
+import SupplyChain.Interface.TerminableStream (IsTerminableStream, TerminableStream)
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
@@ -142,6 +142,12 @@ newtype Buffer c = Buffer{ bufferSeq :: Seq c }
 data ViewBuffer c =
     Start -- ^ The unseen and unviewed buffers are the same
   | Unviewed (Buffer c) -- ^ The unviewed buffer, which may differ from the uncommitted buffer
+
+pureStepper :: forall s up action c. Chunk c => MonadState s action =>
+    Lens' s (Buffer c) -> Vendor up (Step 'RW c) action
+pureStepper buffer =
+    (Stream.nil :: Vendor up (TerminableStream c) action)
+    >-> bufferedStepper buffer
 
 bufferedStepper :: forall s up action c. Chunk c => MonadState s action =>
     IsTerminableStream c up =>

@@ -2,6 +2,7 @@ module Step.Chunk.ListLike
   (
     NonEmptyListLike (..),
     {- * Conversion -} assume, refine,
+    {- * Fold -} fold,
     {- * Testing -} genChunks,
   )
   where
@@ -10,6 +11,7 @@ import Step.Chunk.Core
 
 import Control.Applicative (pure, (<*>))
 import Data.Eq (Eq ((==)))
+import Data.Foldable (Foldable)
 import Data.Function (($), (&), (.), on)
 import Data.Functor ((<&>))
 import Data.Functor.Contravariant (Predicate (..))
@@ -28,6 +30,7 @@ import Prelude (error)
 import Prelude (fromIntegral)
 import Text.Show (Show (showsPrec))
 
+import qualified Data.Foldable as Foldable
 import qualified Data.ListLike as LL
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -52,6 +55,9 @@ assume c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
 
 refine :: ListLike c (Item c) => c -> Maybe (NonEmptyListLike c)
 refine c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
+
+fold :: Foldable t => ListLike c (Item c) => t (NonEmptyListLike c) -> c
+fold = Foldable.foldMap nonEmptyListLike
 
 instance Eq c => Eq (NonEmptyListLike c) where
     (==) = (==) `on` nonEmptyListLike
