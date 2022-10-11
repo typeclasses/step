@@ -11,7 +11,7 @@ module Step.Action
     {- ** Type family (>>) -} type (>>),
     {- ** Monad-like operations -} {- $do -} Join (..), bindAction,
 
-    {- * Some actions -}
+    {- * Examples -}
     {- ** Single characters -}
       peekCharMaybe, peekChar, takeChar, takeCharMaybe, satisfyJust,
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
