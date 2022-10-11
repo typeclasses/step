@@ -68,7 +68,7 @@ instance Ord c => Ord (NonEmptyListLike c) where
 instance Show c => Show (NonEmptyListLike c) where
     showsPrec p = showsPrec p . nonEmptyListLike
 
-type instance OneOf (NonEmptyListLike c) = Item c
+type instance One (NonEmptyListLike c) = Item c
 
 instance ListLike c (Item c) => Chunk (NonEmptyListLike c)
   where

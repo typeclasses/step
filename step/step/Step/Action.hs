@@ -52,21 +52,21 @@ fail = Failure getError
 one :: Positive Natural
 one = PositiveUnsafe 1
 
-peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (OneOf c))
+peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
 peekCharMaybe = act $ Interface.nextMaybe <&> fmap @Maybe head
 
-peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (OneOf c)
+peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case
     Nothing -> castTo @Query fail
     Just x  -> pure x
 
-takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (OneOf c))
+takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (One c))
 takeCharMaybe = act do
     xm <- Interface.nextMaybe <&> fmap @Maybe head
     when (isJust xm) $ void $ Interface.commit one
     pure xm
 
-takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (OneOf c)
+takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (One c)
 takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Nothing -> castTo @Atom fail
     Just x  -> castTo @Atom (commit one) $> x

@@ -10,20 +10,20 @@ import NatOptics.Positive.Unsafe (Positive)
 import Numeric.Natural (Natural)
 import Text.Show (Show)
 
-type family OneOf (c :: Type) :: Type
+type family One (c :: Type) :: Type
 
 class Chunk c
   where
     leftView :: c -> Pop c
-    span :: Predicate (OneOf c) -> c -> Span c
+    span :: Predicate (One c) -> c -> Span c
     split :: Positive Natural -> c -> Split c
     drop :: Positive Natural -> c -> Drop c
-    while :: Predicate (OneOf c) -> c -> While c
+    while :: Predicate (One c) -> c -> While c
     length :: c -> Positive Natural
 
 data Pop c =
   Pop
-    { popItem :: OneOf c
+    { popItem :: One c
     , popRemainder :: Maybe c
     }
 
@@ -56,5 +56,5 @@ data While c =
   | WhilePrefix c
   | WhileAll
 
-head :: Chunk c => c -> OneOf c
+head :: Chunk c => c -> One c
 head = popItem . leftView
