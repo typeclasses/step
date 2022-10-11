@@ -18,6 +18,8 @@ import Data.String (fromString)
 import Text.Show (Show)
 import Data.Void (Void)
 
+import qualified Data.Text as Text
+
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 import Test.Tasty.HUnit ((@?=), testCase)
@@ -46,8 +48,13 @@ testPure parser input expectedResult expectedRemainder = do
     (result, fold remainder) === (expectedResult, expectedRemainder)
 
 prop_nextCharMaybe :: Property
-prop_nextCharMaybe = property $ testPureSureQuery nextCharMaybe "abc" (Just 'a')
+prop_nextCharMaybe = property do
+    x <- forAll Gen.lower
+    xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
+    testPureSureQuery nextCharMaybe (Text.cons x xs) (Just x)
 
 prop_takeCharMaybe :: Property
 prop_takeCharMaybe = property do
-    testPure @() takeCharMaybe "abc" (Right (Just 'a')) "bc"
+    x <- forAll Gen.lower
+    xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
+    testPure @() takeCharMaybe (Text.cons x xs) (Right (Just x)) xs
