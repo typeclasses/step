@@ -15,7 +15,7 @@ module Step.Action
 
     {- * Some actions -}
     {- ** Single characters -} peekCharMaybe, peekChar, takeChar, takeCharMaybe,
-    {- ** Chunks -} peekSome, takeSome,
+    {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
     {- ** Failure -} fail,
   )
   where
@@ -31,9 +31,10 @@ import qualified Step.Interface as Interface
 import Control.Applicative (pure, (<*))
 import Control.Monad ((>>=), when)
 import Data.Either (Either (..))
+import Data.Foldable (for_)
 import Data.Function (($), (.))
 import Data.Functor (($>), void, (<&>), fmap)
-import Data.Maybe (Maybe (..), isJust)
+import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import SupplyChain (Factory, perform)
@@ -63,7 +64,7 @@ peekChar = peekCharMaybe P.>>= \case
 takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (One c))
 takeCharMaybe = act do
     xm <- Interface.nextMaybe <&> fmap @Maybe head
-    when (isJust xm) $ void $ Interface.commit one
+    _ <- for_ xm \_ -> Interface.commit one
     pure xm
 
 takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (One c)
@@ -76,10 +77,19 @@ peekSome = act $ Interface.nextMaybe >>= \case
     Nothing -> perform getError <&> Left
     Just x  -> pure (Right x)
 
-takeSome :: forall c e m. Chunk c => ErrorContext e m => AtomicMove c m e c
+peekSomeMaybe :: forall c m e. ErrorContext e m => SureQuery c m e (Maybe c)
+peekSomeMaybe = act Interface.nextMaybe
+
+takeSome :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e c
 takeSome = assumeMovement $ Atom $ act $ Interface.nextMaybe >>= \case
     Nothing -> perform getError <&> Left
     Just x  -> pure $ Right $ commit (length @c x) $> x
+
+takeSomeMaybe :: forall c m e. Chunk c => Sure c m e (Maybe c)
+takeSomeMaybe = act do
+    xm <- Interface.nextMaybe
+    _ <- for_ xm \x -> Interface.commit (length @c x)
+    pure xm
 
 {- $do
 

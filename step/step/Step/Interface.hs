@@ -63,9 +63,6 @@ commit n = SupplyChain.order (StepCommit n)
 nextMaybe :: forall c m mode. Factory (Step mode c) m (Maybe c)
 nextMaybe = SupplyChain.order StepNext
 
--- takeNextMaybe :: Chunk c => MonadReader e m => Sure c m e (Either e c)
--- takeNextMaybe = try takeNext
-
 -- satisfyJust :: Chunk c => MonadReader e m => (OneOf c -> Maybe a) -> AtomicMove c m e a
 -- satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
 
