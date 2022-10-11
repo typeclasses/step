@@ -1,4 +1,4 @@
-module Step.Toy (parse, actionParse, parseSure, actionParseSure) where
+module Step.Toy (parse, actionParse, parseQuery, actionParseQuery, parseSure, actionParseSure, actionParseSureQuery, parseSureQuery) where
 
 import Step.Action
 import Step.Chunk
@@ -7,7 +7,7 @@ import Step.Interface
 import Control.Monad (Monad)
 import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
 import Control.Monad.State.Strict (runStateT, StateT)
-import Data.Either (Either, either)
+import Data.Either (Either (..), either)
 import Data.Foldable (toList)
 import Data.Function (($), id)
 import Data.Functor (fmap, (<&>))
@@ -28,6 +28,10 @@ parse :: forall p c e a. Chunk c => Is p Any =>
     p c Identity e a -> [c] -> (Either e a, [c])
 parse p xs = runIdentity (actionParse p xs)
 
+parseQuery :: forall p c e a. Chunk c => Is p Query =>
+    p c Identity e a -> [c] -> Either e a
+parseQuery p xs = runIdentity (actionParseQuery p xs)
+
 parseSure :: forall p c a. Chunk c => Is p Sure =>
     p c Identity Void a -> [c] -> (a, [c])
 parseSure p xs = runIdentity (actionParseSure p xs)
@@ -36,9 +40,21 @@ actionParse :: forall p c m e a. Chunk c => Monad m => Is p Any =>
     p c m e a -> [c] -> m (Either e a, [c])
 actionParse p xs = z (run (castTo @Any p)) xs
 
+actionParseQuery :: forall p c m e a. Chunk c => Monad m => Is p Query =>
+    p c m e a -> [c] -> m (Either e a)
+actionParseQuery p xs = actionParse (castTo @Any (castTo @Query p)) xs <&> \(r, _) -> r
+
 actionParseSure :: forall p c m a. Chunk c => Monad m => Is p Sure =>
     p c m Void a -> [c] -> m (a, [c])
 actionParseSure p xs = z (run (castTo @Sure p)) xs
+
+parseSureQuery :: forall p c a. Chunk c => Is p SureQuery =>
+    p c Identity Void a -> [c] -> a
+parseSureQuery p xs = runIdentity (actionParseSureQuery p xs)
+
+actionParseSureQuery :: forall p c m a. Chunk c => Monad m => Is p SureQuery =>
+    p c m Void a -> [c] -> m a
+actionParseSureQuery p xs = z (run (castTo @Sure (castTo @SureQuery p))) xs <&> \(r, _) -> r
 
 z :: (Chunk c, Monad f) => Factory (Step 'RW c) f a -> [c] -> f (a, [c])
 z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >-> liftFactory parser)) (Buffer (Seq.fromList xs))
