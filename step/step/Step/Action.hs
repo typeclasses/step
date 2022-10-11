@@ -18,6 +18,7 @@ module Step.Action
     {- ** Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
       remainsAtLeastPositive, remainsAtLeastNatural,
+      ensureAtLeastPositive, ensureAtLeastNatural,
     {- ** Failure -} fail,
   )
   where
@@ -69,23 +70,23 @@ peekCharMaybe = act Interface.peekCharMaybe
 
 trySkipNatural :: forall c m e. Natural -> Sure c m e Interface.AdvanceResult
 trySkipNatural n = case Optics.preview Positive.refine n of
-    Nothing -> pure AdvanceSuccess
-    Just p -> trySkipPositive p
+    Nothing  ->  pure AdvanceSuccess
+    Just p   ->  trySkipPositive p
 
 skipPositive :: forall c e m. ErrorContext e m => Positive Natural -> Move c m e ()
 skipPositive n = assumeMovement $ trySkipPositive n P.>>= \case
-    AdvanceSuccess -> pure ()
-    YouCanNotAdvance{} -> castTo @Any fail
+    AdvanceSuccess      ->  pure ()
+    YouCanNotAdvance{}  ->  castTo @Any fail
 
 skipNatural :: forall c m e. ErrorContext e m => Natural -> Any c m e ()
 skipNatural n = case Optics.preview Positive.refine n of
-    Nothing -> pure ()
-    Just p -> castTo @Any (skipPositive p)
+    Nothing  ->  pure ()
+    Just p   ->  castTo @Any (skipPositive p)
 
 peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case
-    Nothing -> castTo @Query fail
-    Just x  -> pure x
+    Nothing  ->  castTo @Query fail
+    Just x   ->  pure x
 
 takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (One c))
 takeCharMaybe = act do
@@ -95,18 +96,18 @@ takeCharMaybe = act do
 
 takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (One c)
 takeChar = assumeMovement $ peekCharMaybe P.>>= \case
-    Nothing -> castTo @Atom fail
-    Just x  -> castTo @Atom (trySkipPositive one) $> x
+    Nothing  ->  castTo @Atom fail
+    Just x   ->  castTo @Atom (trySkipPositive one) $> x
 
 peekSome :: forall c m e. ErrorContext e m => Query c m e c
 peekSome = act $ Interface.peekSomeMaybe >>= \case
-    Nothing -> perform getError <&> Left
-    Just x  -> pure (Right x)
+    Nothing  ->  perform getError <&> Left
+    Just x   ->  pure (Right x)
 
 takeSome :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e c
 takeSome = assumeMovement $ Atom $ act $ Interface.peekSomeMaybe >>= \case
-    Nothing -> perform getError <&> Left
-    Just x  -> pure $ Right $ trySkipPositive (length @c x) $> x
+    Nothing  ->  perform getError <&> Left
+    Just x   ->  pure $ Right $ trySkipPositive (length @c x) $> x
 
 takeSomeMaybe :: forall c m e. Chunk c => Sure c m e (Maybe c)
 takeSomeMaybe = act do
@@ -117,8 +118,8 @@ takeSomeMaybe = act do
 satisfyJust :: forall c m e a. Chunk c => ErrorContext e m =>
     (One c -> Maybe a) -> AtomicMove c m e a
 satisfyJust ok = assumeMovement $ Atom $ act $ Interface.peekCharMaybe >>= \case
-    Just (ok -> Just x) -> pure $ Right $ act $ Interface.commit one $> x
-    _ -> perform getError <&> Left
+    Just (ok -> Just x)  ->  pure $ Right $ act $ Interface.commit one $> x
+    _                    ->  perform getError <&> Left
 
 remainsAtLeastPositive :: forall c e m. Chunk c =>
     Positive Natural -> SureQuery c m e Bool
@@ -134,8 +135,20 @@ remainsAtLeastPositive = \n -> act @SureQuery (go n)
 remainsAtLeastNatural :: forall c e m. Chunk c =>
     Natural -> SureQuery c m e Bool
 remainsAtLeastNatural n = case Optics.preview Positive.refine n of
-    Nothing -> pure True
-    Just p -> remainsAtLeastPositive p
+    Nothing  ->  pure True
+    Just p   ->  remainsAtLeastPositive p
+
+ensureAtLeastPositive :: forall c e m. Chunk c => ErrorContext e m =>
+    Positive Natural -> Query c m e ()
+ensureAtLeastPositive n = remainsAtLeastPositive n P.>>= \case
+    False  ->  castTo @Query fail
+    True   ->  pure ()
+
+ensureAtLeastNatural :: forall c e m. Chunk c => ErrorContext e m =>
+    Natural -> Query c m e ()
+ensureAtLeastNatural n = case Optics.preview Positive.refine n of
+    Nothing  ->  pure ()
+    Just p   ->  ensureAtLeastPositive p
 
 {- $do
 
