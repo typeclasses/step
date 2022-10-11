@@ -132,6 +132,22 @@ instance Run AtomicMove c m e a 'RW (Either e a) where
     run = run . castTo @Any
 
 
+class Act p c m e a mode result | p c m e a -> mode result where
+    act :: Factory (Step mode c) m result -> p c m e a
+
+instance Act Any c m e a 'RW (Either e a) where
+    act = Any . Walk
+
+instance Act Query c m e a 'R (Either e a) where
+    act = Query . Walk
+
+instance Act Sure c m e a 'RW a where
+    act = Sure . Walk
+
+instance Act SureQuery c m e a 'R a where
+    act = SureQuery . Walk
+
+
 -- | Action that can be tried noncommittally
 
 class Atomic (act :: Action) (try :: Action) | act -> try where
@@ -139,7 +155,7 @@ class Atomic (act :: Action) (try :: Action) | act -> try where
 
 instance Atomic Atom Sure where
     try (Atom q) =
-        Sure (Walk (SupplyChain.map stepCast >-> run q)) >>= \case
+        act (SupplyChain.map stepCast >-> run q) >>= \case
             Left _ -> pure Nothing
             Right x -> fmap Just x
 
@@ -147,7 +163,7 @@ instance Atomic AtomicMove Sure where
     try (AtomicMove a) = try a
 
 instance Atomic Query SureQuery where
-    try (Query q) = SureQuery (q <&> either (\_ -> Nothing) Just)
+    try q = act (run q <&> either (\_ -> Nothing) Just)
 
 
 -- | Unsafe coercion to action that always moves
@@ -182,19 +198,19 @@ instance {-# overlappable #-} Is a a where
 -- Casting actions via casting steps
 
 instance Is SureQuery Sure where
-    cast x = Sure (Walk (SupplyChain.map stepCast >-> run x))
+    cast x = act (SupplyChain.map stepCast >-> run x)
 
 instance Is Query Any where
-    cast x = Any (Walk (SupplyChain.map stepCast >-> run x))
+    cast x = act (SupplyChain.map stepCast >-> run x)
 
 instance Is SureQuery Query where
-    cast (SureQuery x) = Query (x <&> Right)
+    cast x = act (run x <&> Right)
 
 instance Is Sure Any where
-    cast (Sure x) = Any (x <&> Right)
+    cast x = act (run x <&> Right)
 
 instance Is SureQuery Any where
-    cast x = Any (Walk (SupplyChain.map stepCast >-> run x) <&> Right)
+    cast x = act ((SupplyChain.map stepCast >-> run x) <&> Right)
 
 -- Casting to Atom
 
@@ -231,19 +247,19 @@ instance Is AtomicMove Any where
 -- Casting out of failure
 
 instance Is Failure Any where
-    cast (Failure x) = Any (Walk (SupplyChain.perform x <&> Left))
+    cast (Failure x) = act (SupplyChain.perform x <&> Left)
 
 instance Is Failure Query where
-    cast (Failure x) = Query (Walk (SupplyChain.perform x <&> Left))
+    cast (Failure x) = act (SupplyChain.perform x <&> Left)
 
 instance Is Failure Move where
-    cast (Failure x) = Move $ Any (Walk (SupplyChain.perform x <&> Left))
+    cast (Failure x) = Move $ act (SupplyChain.perform x <&> Left)
 
 instance Is Failure Atom where
-    cast (Failure x) = Atom $ Query (Walk (SupplyChain.perform x <&> Left))
+    cast (Failure x) = Atom $ act (SupplyChain.perform x <&> Left)
 
 instance Is Failure AtomicMove where
-    cast (Failure x) = AtomicMove $ Atom $ Query (Walk (SupplyChain.perform x <&> Left))
+    cast (Failure x) = AtomicMove $ Atom $ act (SupplyChain.perform x <&> Left)
 
 
 {-| The type @a >> b@ is type of the expression @a >> b@.

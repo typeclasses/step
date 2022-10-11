@@ -1,16 +1,11 @@
 module Step.Action
   (
     {- * Actions -} Action, {- $types -}
-    {- ** Any -} Any, any,
-    {- ** Query -} Query, query,
-    {- ** Sure -} Sure, sure,
-    {- ** SureQuery -} SureQuery, sureQuery,
-    {- ** Atom -} Atom (..),
-    {- ** Move -} Move,
-    {- ** AtomicMove -} AtomicMove,
-    {- ** Failure -} Failure (..),
+    Any, Query, Sure, SureQuery,
+    Atom (..), Move, AtomicMove,
+    Failure (..),
 
-    {- * Classes -} Atomic (..), AssumeMovement (..), Run (..),
+    {- * Classes -} Atomic (..), AssumeMovement (..), Run (..), Act (..),
 
     {- * Subtyping -} {- $subtyping -} Is (..), castTo,
 
@@ -43,27 +38,11 @@ import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
 
----
-
-any :: Factory (Step 'RW c) m (Either e a) -> Any c m e a
-any = Any . Walk
-
-query :: Factory (Step 'R c) m (Either e a) -> Query c m e a
-query = Query . Walk
-
-sure :: Factory (Step 'RW c) m a -> Sure c m e a
-sure = Sure . Walk
-
-sureQuery :: Factory (Step 'R c) m a -> SureQuery c m e a
-sureQuery = SureQuery . Walk
-
----
-
 nextCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (OneOf c))
-nextCharMaybe = sureQuery Interface.nextCharMaybe
+nextCharMaybe = act Interface.nextCharMaybe
 
 takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (OneOf c))
-takeCharMaybe = sure do
+takeCharMaybe = act do
     xm <- Interface.nextCharMaybe
     when (isJust xm) $ void $ Interface.commit one
     pure xm
@@ -74,7 +53,7 @@ takeChar = assumeMovement $ nextCharMaybe P.>>= \case
     Just x  -> castTo @Atom (trySkip one) $> x
 
 trySkip :: Positive Natural -> Sure c m e Interface.AdvanceResult
-trySkip n = sure $ Interface.commit n
+trySkip n = act $ Interface.commit n
 
 fail :: forall c m e a. ErrorContext e m => Failure c m e a
 fail = Failure getError
