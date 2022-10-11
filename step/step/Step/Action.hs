@@ -17,6 +17,7 @@ module Step.Action
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
     {- ** Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
+      skipPositiveAtomic, skipNaturalAtomic,
       remainsAtLeastPositive, remainsAtLeastNatural,
       ensureAtLeastPositive, ensureAtLeastNatural,
     {- ** Failure -} fail,
@@ -149,6 +150,17 @@ ensureAtLeastNatural :: forall c e m. Chunk c => ErrorContext e m =>
 ensureAtLeastNatural n = case Optics.preview Positive.refine n of
     Nothing  ->  pure ()
     Just p   ->  ensureAtLeastPositive p
+
+skipPositiveAtomic :: forall c e m. Chunk c => ErrorContext e m =>
+    Positive Natural -> AtomicMove c m e ()
+skipPositiveAtomic n = assumeMovement $
+    ensureAtLeastPositive n P.<* trySkipPositive n
+
+skipNaturalAtomic :: forall c e m. Chunk c => ErrorContext e m =>
+    Natural -> Atom c m e ()
+skipNaturalAtomic n = case Optics.preview Positive.refine n of
+    Nothing  ->  castTo @Atom (P.pure ())
+    Just p   ->  castTo @Atom (skipPositiveAtomic p)
 
 {- $do
 

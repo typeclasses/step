@@ -66,12 +66,6 @@ peekSomeMaybe = SupplyChain.order StepNext
 peekCharMaybe :: forall c m mode. Chunk c => Factory (Step mode c) m (Maybe (One c))
 peekCharMaybe = peekSomeMaybe <&> fmap @Maybe head
 
--- skipAtomically :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> AtomicMove c m e AdvanceResult
--- skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
-
--- skipAtomically0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Atom c m e AdvanceResult
--- skipAtomically0 = maybe (pure AdvanceSuccess) (castTo @Atom . skipAtomically)  . preview Positive.refine
-
 -- atEnd :: SureQuery c es e Bool
 -- atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
