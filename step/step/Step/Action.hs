@@ -33,6 +33,7 @@ import Step.Interface (Step, Mode (..), AdvanceResult (..))
 
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
+import qualified Step.Walk as Walk
 
 import Data.Bool (Bool (..))
 import Control.Applicative (pure, (<*), (*>))
@@ -60,18 +61,18 @@ one = PositiveUnsafe 1
 
 ---
 
-trySkipPositive :: forall c m e. Positive Natural -> Sure c m e Interface.AdvanceResult
-trySkipPositive n = act (Interface.commit n)
+trySkipPositive :: forall c m e. Positive Natural -> Sure c m e AdvanceResult
+trySkipPositive n = Sure (Walk.commit n)
 
 peekSomeMaybe :: forall c m e. ErrorContext e m => SureQuery c m e (Maybe c)
-peekSomeMaybe = act Interface.peekSomeMaybe
+peekSomeMaybe = SureQuery Walk.peekSomeMaybe
 
 peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
-peekCharMaybe = act Interface.peekCharMaybe
+peekCharMaybe = SureQuery Walk.peekCharMaybe
 
 ---
 
-trySkipNatural :: forall c m e. Natural -> Sure c m e Interface.AdvanceResult
+trySkipNatural :: forall c m e. Natural -> Sure c m e AdvanceResult
 trySkipNatural n = case Optics.preview Positive.refine n of
     Nothing  ->  pure AdvanceSuccess
     Just p   ->  trySkipPositive p
@@ -174,7 +175,7 @@ require = \case
 ---
 
 atEnd :: SureQuery c m e Bool
-atEnd = act Interface.atEnd
+atEnd = SureQuery Walk.atEnd
 
 end :: forall c m e. ErrorContext e m => Query c m e ()
 end = atEnd P.>>= require
@@ -182,28 +183,10 @@ end = atEnd P.>>= require
 ---
 
 takeText :: forall c m e. Chunk c => ErrorContext e m => c -> Move c m e ()
-takeText = \t -> assumeMovement $ act @Any (go t)
-  where
-    go :: c -> Factory (Step 'RW c) m (Either e ())
-    go t = Interface.peekSomeMaybe >>= \case
-        Nothing -> perform getError <&> Left
-        Just x -> case stripEitherPrefix x t of
-            StripEitherPrefixFail           ->  perform getError <&> Left
-            StripEitherPrefixAll            ->  Interface.commit (length t) <&> \_ -> Right ()
-            IsPrefixedBy{}                  ->  Interface.commit (length t) <&> \_ -> Right ()
-            IsPrefixOf{ afterPrefix = t' }  ->  Interface.commit (length x) *> go t'
+takeText t = assumeMovement $ Any (Walk.takeText t <&> Right) P.>>= require
 
 nextTextIs :: forall c m e. Chunk c => c -> SureQuery c m e Bool
-nextTextIs = \t -> act (go t)
-  where
-    go :: c -> Factory (Step 'R c) m Bool
-    go t = Interface.peekSomeMaybe >>= \case
-        Nothing -> pure False
-        Just x -> case stripEitherPrefix x t of
-            StripEitherPrefixFail           ->  pure False
-            StripEitherPrefixAll            ->  pure True
-            IsPrefixedBy{}                  ->  pure True
-            IsPrefixOf{ afterPrefix = t' }  ->  go t'
+nextTextIs t = SureQuery (Walk.nextTextIs t)
 
 takeTextAtomic :: forall c m e. Chunk c =>
     ErrorContext e m => c -> AtomicMove c m e ()
