@@ -15,7 +15,8 @@ module Step.Action
     {- ** Single characters -}
       peekCharMaybe, peekChar, takeChar, takeCharMaybe, satisfyJust,
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
-    {- ** Fixed-length -} trySkipPositive, skipPositive,
+    {- ** Fixed-length -}
+      trySkipPositive, skipPositive, trySkipNatural, skipNatural,
     {- ** Failure -} fail,
   )
   where
@@ -43,6 +44,7 @@ import Control.Monad.Except (ExceptT (..))
 import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
+import qualified Optics
 
 fail :: forall c m e a. ErrorContext e m => Failure c m e a
 fail = Failure getError
@@ -63,10 +65,20 @@ peekCharMaybe = act Interface.peekCharMaybe
 
 ---
 
-skipPositive :: forall c e m. Chunk c => ErrorContext e m => Positive Natural -> Move c m e ()
+trySkipNatural :: forall c m e. Natural -> Sure c m e Interface.AdvanceResult
+trySkipNatural n = case Optics.preview Positive.refine n of
+    Nothing -> pure AdvanceSuccess
+    Just p -> trySkipPositive p
+
+skipPositive :: forall c e m. ErrorContext e m => Positive Natural -> Move c m e ()
 skipPositive n = assumeMovement $ trySkipPositive n P.>>= \case
     AdvanceSuccess -> pure ()
     YouCanNotAdvance{} -> castTo @Any fail
+
+skipNatural :: forall c m e. ErrorContext e m => Natural -> Any c m e ()
+skipNatural n = case Optics.preview Positive.refine n of
+    Nothing -> pure ()
+    Just p -> castTo @Any (skipPositive p)
 
 peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case
