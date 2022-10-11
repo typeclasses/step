@@ -37,8 +37,30 @@ type Action =
   -> Type -- ^ Result
   -> Type
 
+{- |
+    A Walk is a factory with 'Step' as its upstream interface, with the
+    additional implication that a walk is implicitly preceded and followed
+    by a 'StepReset'. Sequencing operations like '(<*>)' and '(>>=)' insert
+    resets between the operations. (The implicit resets and the idempotency
+    of 'StepReset' are essentual to arguing that the 'Applicative' and
+    'Monad' class laws are respected.)
+-}
+newtype Walk mode chunk action a =
+    Walk (Factory (Step mode chunk) action a)
+    deriving newtype Functor
 
--- Simple actions that are just a newtype for an action with a Step effect:
+instance Applicative (Walk mode chunk action)
+  where
+    pure = Walk . pure
+    (<*>) = Monad.ap
+
+instance Monad (Walk mode chunk action)
+  where
+    Walk a >>= b = Walk $
+        (a <* SupplyChain.order StepReset) >>= ((\(Walk b') -> b') . b)
+
+
+-- Simple actions that are just a newtype for Walk:
 
 type Any :: Action
 type Query :: Action
@@ -46,19 +68,19 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (ExceptT e (Factory (Step 'RW c) m) a)
+newtype Any c m e a = Any (ExceptT e (Walk 'RW c m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (ExceptT e (Factory (Step 'R c) m) a)
+newtype Query c m e a = Query (ExceptT e (Walk 'R c m) a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Factory (Step 'RW c) m a)
+newtype Sure c m e a = Sure (Walk 'RW c m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Factory (Step 'R c) m a)
+newtype SureQuery c m e a = SureQuery (Walk 'R c m a)
     deriving newtype (Functor, Applicative, Monad)
 
 
@@ -134,23 +156,23 @@ class Fallible (act :: Action) where
 
 instance Fallible Any where
     failAction e = Any (MTL.throwE e)
-    failActionM m = Any (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
+    failActionM m = Any (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible Query where
     failAction e = Query (MTL.throwE e)
-    failActionM m = Query (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
+    failActionM m = Query (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible Move where
     failAction e = Move $ Any (MTL.throwE e)
-    failActionM m = Move $ Any (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
+    failActionM m = Move $ Any (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible Atom where
     failAction e = Atom $ Query (MTL.throwE e)
-    failActionM m = Atom $ Query (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
+    failActionM m = Atom $ Query (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
 
 instance Fallible AtomicMove where
     failAction e = AtomicMove $ Atom $ Query (MTL.throwE e)
-    failActionM m = AtomicMove $ Atom $ Query (MTL.lift (SupplyChain.perform m) >>= MTL.throwE)
+    failActionM m = AtomicMove $ Atom $ Query (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
 
 
 -- | Action that can be tried noncommittally
@@ -160,7 +182,7 @@ class Atomic (act :: Action) (try :: Action) | act -> try where
 
 instance Atomic Atom Sure where
     try (Atom (Query q)) =
-        Sure (SupplyChain.map stepCast >-> MTL.runExceptT q) >>= \case
+        Sure (Walk (SupplyChain.map stepCast >-> (let Walk q' = MTL.runExceptT q in q'))) >>= \case
             Left _ -> pure Nothing
             Right x -> fmap Just x
 
@@ -203,10 +225,10 @@ instance {-# overlappable #-} Is a a where
 -- Casting actions via casting steps
 
 instance Is SureQuery Sure where
-    cast (SureQuery x) = Sure (SupplyChain.map stepCast >-> x)
+    cast (SureQuery (Walk x)) = Sure (Walk (SupplyChain.map stepCast >-> x))
 
 instance Is Query Any where
-    cast (Query (ExceptT x)) = Any (ExceptT (SupplyChain.map stepCast >-> x))
+    cast (Query (ExceptT (Walk x))) = Any (ExceptT (Walk (SupplyChain.map stepCast >-> x)))
 
 instance Is SureQuery Query where
     cast (SureQuery x) = Query (MTL.lift x)
@@ -215,7 +237,7 @@ instance Is Sure Any where
     cast (Sure x) = Any (MTL.lift x)
 
 instance Is SureQuery Any where
-    cast (SureQuery x) = Any (MTL.lift (SupplyChain.map stepCast >-> x))
+    cast (SureQuery (Walk x)) = Any (MTL.lift (Walk (SupplyChain.map stepCast >-> x)))
 
 -- Casting to Atom
 

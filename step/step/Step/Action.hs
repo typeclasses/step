@@ -1,6 +1,6 @@
 module Step.Action
   (
-    {- * Actions -} Action, {- $types -}
+    {- * Actions -} Action, Walk (..), {- $types -}
     Any (..), Query (..), Sure (..), SureQuery (..),
     Atom (..), Move (..), AtomicMove (..), Failure (..),
 
@@ -36,15 +36,12 @@ import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
 
 nextCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (OneOf c))
-nextCharMaybe = SureQuery $
-    Interface.nextCharMaybe <* Interface.reset
+nextCharMaybe = SureQuery $ Walk Interface.nextCharMaybe
 
 takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (OneOf c))
-takeCharMaybe = Sure $
-    ( Interface.nextCharMaybe >>= \case
-        Nothing -> pure Nothing
-        Just x  -> Interface.commit one $> Just x
-    ) <* Interface.reset
+takeCharMaybe = Sure $ Walk $ Interface.nextCharMaybe >>= \case
+    Nothing -> pure Nothing
+    Just x  -> Interface.commit one $> Just x
 
 takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (OneOf c)
 takeChar = assumeMovement $ nextCharMaybe P.>>= \case
@@ -52,7 +49,7 @@ takeChar = assumeMovement $ nextCharMaybe P.>>= \case
     Just x  -> castTo @Atom (trySkip one) $> x
 
 trySkip :: Positive Natural -> Sure c m e Interface.AdvanceResult
-trySkip n = Sure (Interface.commit n)
+trySkip n = Sure $ Walk $ Interface.commit n
 
 fail :: forall c m e a. ErrorContext e m => Failure c m e a
 fail = Failure getError
