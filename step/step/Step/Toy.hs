@@ -5,7 +5,7 @@ import Step.Chunk
 import Step.Interface
 
 import Control.Monad (Monad)
-import Control.Monad.Except (ExceptT(ExceptT) )
+import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
 import Control.Monad.State.Strict (runStateT, StateT)
 import Data.Either (Either, either)
 import Data.Foldable (toList)
@@ -34,11 +34,11 @@ parseSure p xs = runIdentity (actionParseSure p xs)
 
 actionParse :: forall p c m e a. Chunk c => Monad m => Is p Any =>
     p c m e a -> [c] -> m (Either e a, [c])
-actionParse p xs = let Any (ExceptT (Walk parser)) = cast p in z parser xs
+actionParse p xs = z (runExceptT $ runAny p) xs
 
 actionParseSure :: forall p c m a. Chunk c => Monad m => Is p Sure =>
     p c m Void a -> [c] -> m (a, [c])
-actionParseSure p xs = let Sure (Walk parser) = cast p in z parser xs
+actionParseSure p xs = z (runSure p) xs
 
 z :: (Chunk c, Monad f) => Factory (Step 'RW c) f a -> [c] -> f (a, [c])
 z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >-> liftFactory parser)) (Buffer (Seq.fromList xs))

@@ -37,28 +37,6 @@ type Action =
   -> Type -- ^ Result
   -> Type
 
-{- |
-    A Walk is a factory with 'Step' as its upstream interface, with the
-    additional implication that a walk is implicitly preceded and followed
-    by a 'StepReset'. Sequencing operations like '(<*>)' and '(>>=)' insert
-    resets between the operations. (The implicit resets and the idempotency
-    of 'StepReset' are essential to arguing that the 'Applicative' and
-    'Monad' class laws are respected.)
--}
-newtype Walk mode chunk action a =
-    Walk (Factory (Step mode chunk) action a)
-    deriving newtype Functor
-
-instance Applicative (Walk mode chunk action)
-  where
-    pure = Walk . pure
-    (<*>) = Monad.ap
-
-instance Monad (Walk mode chunk action)
-  where
-    Walk a >>= b = Walk $
-        (a <* SupplyChain.order StepReset) >>= ((\(Walk b') -> b') . b)
-
 
 -- Simple actions that are just a newtype for Walk:
 
