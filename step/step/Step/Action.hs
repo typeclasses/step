@@ -20,6 +20,7 @@ module Step.Action
       skipPositiveAtomic, skipNaturalAtomic,
       remainsAtLeastPositive, remainsAtLeastNatural,
       ensureAtLeastPositive, ensureAtLeastNatural,
+    {- ** End of input -} end, atEnd,
     {- ** Failure -} fail,
   )
   where
@@ -74,7 +75,7 @@ trySkipNatural n = case Optics.preview Positive.refine n of
     Nothing  ->  pure AdvanceSuccess
     Just p   ->  trySkipPositive p
 
-skipPositive :: forall c e m. ErrorContext e m => Positive Natural -> Move c m e ()
+skipPositive :: forall c m e. ErrorContext e m => Positive Natural -> Move c m e ()
 skipPositive n = assumeMovement $ trySkipPositive n P.>>= \case
     AdvanceSuccess      ->  pure ()
     YouCanNotAdvance{}  ->  castTo @Any fail
@@ -122,7 +123,7 @@ satisfyJust ok = assumeMovement $ Atom $ act $ Interface.peekCharMaybe >>= \case
     Just (ok -> Just x)  ->  pure $ Right $ act $ Interface.commit one $> x
     _                    ->  perform getError <&> Left
 
-remainsAtLeastPositive :: forall c e m. Chunk c =>
+remainsAtLeastPositive :: forall c m e. Chunk c =>
     Positive Natural -> SureQuery c m e Bool
 remainsAtLeastPositive = \n -> act @SureQuery (go n)
   where
@@ -133,34 +134,44 @@ remainsAtLeastPositive = \n -> act @SureQuery (go n)
             Signed.Plus n' -> go n'
             _ -> pure True
 
-remainsAtLeastNatural :: forall c e m. Chunk c =>
+remainsAtLeastNatural :: forall c m e. Chunk c =>
     Natural -> SureQuery c m e Bool
 remainsAtLeastNatural n = case Optics.preview Positive.refine n of
     Nothing  ->  pure True
     Just p   ->  remainsAtLeastPositive p
 
-ensureAtLeastPositive :: forall c e m. Chunk c => ErrorContext e m =>
+ensureAtLeastPositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Query c m e ()
 ensureAtLeastPositive n = remainsAtLeastPositive n P.>>= \case
     False  ->  castTo @Query fail
     True   ->  pure ()
 
-ensureAtLeastNatural :: forall c e m. Chunk c => ErrorContext e m =>
+ensureAtLeastNatural :: forall c m e. Chunk c => ErrorContext e m =>
     Natural -> Query c m e ()
 ensureAtLeastNatural n = case Optics.preview Positive.refine n of
     Nothing  ->  pure ()
     Just p   ->  ensureAtLeastPositive p
 
-skipPositiveAtomic :: forall c e m. Chunk c => ErrorContext e m =>
+skipPositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> AtomicMove c m e ()
 skipPositiveAtomic n = assumeMovement $
     ensureAtLeastPositive n P.<* trySkipPositive n
 
-skipNaturalAtomic :: forall c e m. Chunk c => ErrorContext e m =>
+skipNaturalAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     Natural -> Atom c m e ()
 skipNaturalAtomic n = case Optics.preview Positive.refine n of
     Nothing  ->  castTo @Atom (P.pure ())
     Just p   ->  castTo @Atom (skipPositiveAtomic p)
+
+---
+
+atEnd :: SureQuery c m e Bool
+atEnd = act Interface.atEnd
+
+end :: forall c m e. ErrorContext e m => Query c m e ()
+end = atEnd P.>>= \case
+    True -> castTo @Query (P.pure ())
+    False -> castTo @Query fail
 
 {- $do
 

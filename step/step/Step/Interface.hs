@@ -4,7 +4,7 @@ module Step.Interface
     Mode (..), Step (..), AdvanceResult (..), stepCast,
 
     -- * Factories
-    commit, reset, peekSomeMaybe, peekCharMaybe,
+    commit, reset, peekSomeMaybe, peekCharMaybe, atEnd,
 
     -- * Vendors
     Buffer (..), bufferedStepper, pureStepper,
@@ -51,9 +51,6 @@ import SupplyChain.Interface.TerminableStream (IsTerminableStream, TerminableStr
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
-one :: Positive Natural
-one = PositiveUnsafe 1
-
 reset :: forall c m mode. Factory (Step mode c) m ()
 reset = SupplyChain.order StepReset
 
@@ -66,11 +63,8 @@ peekSomeMaybe = SupplyChain.order StepNext
 peekCharMaybe :: forall c m mode. Chunk c => Factory (Step mode c) m (Maybe (One c))
 peekCharMaybe = peekSomeMaybe <&> fmap @Maybe head
 
--- atEnd :: SureQuery c es e Bool
--- atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
-
--- end :: MonadReader e m => Query c m e ()
--- end = atEnd `bindAction` \e -> if e then pure () else castTo @Query fail
+atEnd :: forall c m mode. Factory (Step mode c) m Bool
+atEnd = peekSomeMaybe <&> isNothing
 
 -- text :: c -> Move c m e ()
 -- text = _
