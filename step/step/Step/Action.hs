@@ -1,14 +1,16 @@
 module Step.Action
   (
     {- * Actions -} Action, {- $types -}
-    Any, any, runAny,
-    Query, query, runQuery,
-    Sure, sure, runSure,
-    SureQuery, sureQuery, runSureQuery,
-    Atom (..), Move, AtomicMove, Failure (..),
+    {- ** Any -} Any, any, runAny,
+    {- ** Query -} Query, query, runQuery,
+    {- ** Sure -} Sure, sure, runSure,
+    {- ** SureQuery -} SureQuery, sureQuery, runSureQuery,
+    {- ** Atom -} Atom (..),
+    {- ** Move -} Move,
+    {- ** AtomicMove -} AtomicMove,
+    {- ** Failure -} Failure (..),
 
-    {- * Classes -}
-    Atomic (..), AssumeMovement (..),
+    {- * Classes -} Atomic (..), AssumeMovement (..),
 
     {- * Subtyping -} {- $subtyping -} Is (..), castTo,
 
