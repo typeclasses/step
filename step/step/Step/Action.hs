@@ -1,16 +1,16 @@
 module Step.Action
   (
     {- * Actions -} Action, {- $types -}
-    {- ** Any -} Any, any, runAny,
-    {- ** Query -} Query, query, runQuery,
-    {- ** Sure -} Sure, sure, runSure,
-    {- ** SureQuery -} SureQuery, sureQuery, runSureQuery,
+    {- ** Any -} Any, any,
+    {- ** Query -} Query, query,
+    {- ** Sure -} Sure, sure,
+    {- ** SureQuery -} SureQuery, sureQuery,
     {- ** Atom -} Atom (..),
     {- ** Move -} Move,
     {- ** AtomicMove -} AtomicMove,
     {- ** Failure -} Failure (..),
 
-    {- * Classes -} Atomic (..), AssumeMovement (..),
+    {- * Classes -} Atomic (..), AssumeMovement (..), Run (..),
 
     {- * Subtyping -} {- $subtyping -} Is (..), castTo,
 
@@ -56,20 +56,6 @@ sure = Sure . Walk
 
 sureQuery :: Factory (Step 'R c) m a -> SureQuery c m e a
 sureQuery = SureQuery . Walk
-
----
-
-runAny :: Is p Any => p c m e a -> Factory (Step 'RW c) m (Either e a)
-runAny x = case castTo @Any x of Any (Walk y) -> y
-
-runSure :: Is p Sure => p c m e a -> Factory (Step 'RW c) m a
-runSure x = case castTo @Sure x of Sure (Walk y) -> y
-
-runQuery :: Is p Query => p c m e a -> Factory (Step 'R c) m (Either e a)
-runQuery x = case castTo @Query x of Query (Walk y) -> y
-
-runSureQuery :: Is p SureQuery => p c m e a -> Factory (Step 'R c) m a
-runSureQuery x = case castTo @SureQuery x of SureQuery (Walk y) -> y
 
 ---
 

@@ -34,11 +34,11 @@ parseSure p xs = runIdentity (actionParseSure p xs)
 
 actionParse :: forall p c m e a. Chunk c => Monad m => Is p Any =>
     p c m e a -> [c] -> m (Either e a, [c])
-actionParse p xs = z (runAny p) xs
+actionParse p xs = z (run (castTo @Any p)) xs
 
 actionParseSure :: forall p c m a. Chunk c => Monad m => Is p Sure =>
     p c m Void a -> [c] -> m (a, [c])
-actionParseSure p xs = z (runSure p) xs
+actionParseSure p xs = z (run (castTo @Sure p)) xs
 
 z :: (Chunk c, Monad f) => Factory (Step 'RW c) f a -> [c] -> f (a, [c])
 z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >-> liftFactory parser)) (Buffer (Seq.fromList xs))

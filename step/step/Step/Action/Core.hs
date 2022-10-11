@@ -107,14 +107,39 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
     (<*>) = error "unreachable"
 
 
+class Run p c m e a mode product | p c m e a -> mode product where
+    run :: p c m e a -> Factory (Step mode c) m product
+
+instance Run Any c m e a 'RW (Either e a) where
+    run (Any (Walk x)) = x
+
+instance Run Sure c m e a 'RW a where
+    run (Sure (Walk x)) = x
+
+instance Run Query c m e a 'R (Either e a) where
+    run (Query (Walk x)) = x
+
+instance Run SureQuery c m e a 'R a where
+    run (SureQuery (Walk x)) = x
+
+instance Run Atom c m e a 'RW (Either e a) where
+    run = run . castTo @Any
+
+instance Run Move c m e a 'RW (Either e a) where
+    run = run . castTo @Any
+
+instance Run AtomicMove c m e a 'RW (Either e a) where
+    run = run . castTo @Any
+
+
 -- | Action that can be tried noncommittally
 
 class Atomic (act :: Action) (try :: Action) | act -> try where
     try :: act c m e a -> try c m e (Maybe a)
 
 instance Atomic Atom Sure where
-    try (Atom (Query q)) =
-        Sure (Walk (SupplyChain.map stepCast >-> (let Walk q' = q in q'))) >>= \case
+    try (Atom q) =
+        Sure (Walk (SupplyChain.map stepCast >-> run q)) >>= \case
             Left _ -> pure Nothing
             Right x -> fmap Just x
 
@@ -157,10 +182,10 @@ instance {-# overlappable #-} Is a a where
 -- Casting actions via casting steps
 
 instance Is SureQuery Sure where
-    cast (SureQuery (Walk x)) = Sure (Walk (SupplyChain.map stepCast >-> x))
+    cast x = Sure (Walk (SupplyChain.map stepCast >-> run x))
 
 instance Is Query Any where
-    cast (Query (Walk x)) = Any (Walk (SupplyChain.map stepCast >-> x))
+    cast x = Any (Walk (SupplyChain.map stepCast >-> run x))
 
 instance Is SureQuery Query where
     cast (SureQuery x) = Query (x <&> Right)
@@ -169,7 +194,7 @@ instance Is Sure Any where
     cast (Sure x) = Any (x <&> Right)
 
 instance Is SureQuery Any where
-    cast (SureQuery (Walk x)) = Any (Walk (SupplyChain.map stepCast >-> x) <&> Right)
+    cast x = Any (Walk (SupplyChain.map stepCast >-> run x) <&> Right)
 
 -- Casting to Atom
 
