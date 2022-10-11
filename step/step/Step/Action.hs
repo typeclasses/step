@@ -1,9 +1,7 @@
 module Step.Action
   (
     {- * Actions -} Action, {- $types -}
-    Any, Query, Sure, SureQuery,
-    Atom (..), Move, AtomicMove,
-    Failure (..),
+      Any, Query, Sure, SureQuery, Atom (..), Move, AtomicMove, Failure (..),
 
     {- * Classes -} Atomic (..), AssumeMovement (..), Run (..), Act (..),
 
@@ -14,7 +12,8 @@ module Step.Action
     {- ** Monad-like operations -} {- $do -} Join (..), bindAction,
 
     {- * Some actions -}
-    {- ** Single characters -} peekCharMaybe, peekChar, takeChar, takeCharMaybe,
+    {- ** Single characters -}
+      peekCharMaybe, peekChar, takeChar, takeCharMaybe, satisfyJust,
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
     {- ** Failure -} fail,
   )
@@ -44,17 +43,24 @@ import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
 
-commit :: forall c m e. Positive Natural -> Sure c m e Interface.AdvanceResult
-commit n = act $ Interface.commit n
-
 fail :: forall c m e a. ErrorContext e m => Failure c m e a
 fail = Failure getError
 
 one :: Positive Natural
 one = PositiveUnsafe 1
 
+---
+
+commit :: forall c m e. Positive Natural -> Sure c m e Interface.AdvanceResult
+commit n = act (Interface.commit n)
+
+peekSomeMaybe :: forall c m e. ErrorContext e m => SureQuery c m e (Maybe c)
+peekSomeMaybe = act Interface.peekSomeMaybe
+
 peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
-peekCharMaybe = act $ Interface.nextMaybe <&> fmap @Maybe head
+peekCharMaybe = act Interface.peekCharMaybe
+
+---
 
 peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case
@@ -63,7 +69,7 @@ peekChar = peekCharMaybe P.>>= \case
 
 takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (One c))
 takeCharMaybe = act do
-    xm <- Interface.nextMaybe <&> fmap @Maybe head
+    xm <- Interface.peekCharMaybe
     _ <- for_ xm \_ -> Interface.commit one
     pure xm
 
@@ -73,23 +79,26 @@ takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Just x  -> castTo @Atom (commit one) $> x
 
 peekSome :: forall c m e. ErrorContext e m => Query c m e c
-peekSome = act $ Interface.nextMaybe >>= \case
+peekSome = act $ Interface.peekSomeMaybe >>= \case
     Nothing -> perform getError <&> Left
     Just x  -> pure (Right x)
 
-peekSomeMaybe :: forall c m e. ErrorContext e m => SureQuery c m e (Maybe c)
-peekSomeMaybe = act Interface.nextMaybe
-
 takeSome :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e c
-takeSome = assumeMovement $ Atom $ act $ Interface.nextMaybe >>= \case
+takeSome = assumeMovement $ Atom $ act $ Interface.peekSomeMaybe >>= \case
     Nothing -> perform getError <&> Left
     Just x  -> pure $ Right $ commit (length @c x) $> x
 
 takeSomeMaybe :: forall c m e. Chunk c => Sure c m e (Maybe c)
 takeSomeMaybe = act do
-    xm <- Interface.nextMaybe
+    xm <- Interface.peekSomeMaybe
     _ <- for_ xm \x -> Interface.commit (length @c x)
     pure xm
+
+satisfyJust :: forall c m e a. Chunk c => ErrorContext e m => (One c -> Maybe a) -> AtomicMove c m e a
+satisfyJust ok = assumeMovement $ Atom $ act $
+    Interface.peekCharMaybe >>= \case
+        Just (ok -> Just x) -> pure $ Right $ act $ Interface.commit one $> x
+        _ -> perform getError <&> Left
 
 {- $do
 

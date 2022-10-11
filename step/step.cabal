@@ -28,6 +28,7 @@ common base
         NoImplicitPrelude
         TypeFamilies
         UndecidableInstances
+        ViewPatterns
 
     build-depends:
         text

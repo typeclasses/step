@@ -4,7 +4,7 @@ module Step.Interface
     Mode (..), Step (..), AdvanceResult (..), stepCast,
 
     -- * Factories
-    commit, reset, nextMaybe,
+    commit, reset, peekSomeMaybe, peekCharMaybe,
 
     -- * Vendors
     Buffer (..), bufferedStepper, pureStepper,
@@ -60,11 +60,11 @@ reset = SupplyChain.order StepReset
 commit :: forall c m. Positive Natural -> Factory (Step 'RW c) m AdvanceResult
 commit n = SupplyChain.order (StepCommit n)
 
-nextMaybe :: forall c m mode. Factory (Step mode c) m (Maybe c)
-nextMaybe = SupplyChain.order StepNext
+peekSomeMaybe :: forall c m mode. Factory (Step mode c) m (Maybe c)
+peekSomeMaybe = SupplyChain.order StepNext
 
--- satisfyJust :: Chunk c => MonadReader e m => (OneOf c -> Maybe a) -> AtomicMove c m e a
--- satisfyJust ok = nextCharMaybe `bindAction` \x -> case x >>= ok of Nothing -> castTo fail; Just y -> commit one $> y
+peekCharMaybe :: forall c m mode. Chunk c => Factory (Step mode c) m (Maybe (One c))
+peekCharMaybe = peekSomeMaybe <&> fmap @Maybe head
 
 -- skip :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Move c m e AdvanceResult
 -- skip n = next `bindAction` \x ->
