@@ -113,13 +113,13 @@ nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . leftView)
 -- skipAtomically n = ensureAtLeast n `bindAction` \() -> commit n
 
 -- skipAtomically0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Atom c m e AdvanceResult
--- skipAtomically0 = maybe (trivial AdvanceSuccess) (castTo @Atom . skipAtomically)  . preview Positive.refine
+-- skipAtomically0 = maybe (pure AdvanceSuccess) (castTo @Atom . skipAtomically)  . preview Positive.refine
 
 -- atEnd :: SureQuery c es e Bool
 -- atEnd = reset `bindAction` \() -> nextMaybe' <&> isNothing
 
 -- end :: MonadReader e m => Query c m e ()
--- end = atEnd `bindAction` \e -> if e then trivial () else castTo @Query fail
+-- end = atEnd `bindAction` \e -> if e then pure () else castTo @Query fail
 
 -- text :: c -> Move c m e ()
 -- text = _

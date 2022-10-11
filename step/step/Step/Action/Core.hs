@@ -107,27 +107,6 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
     (<*>) = error "unreachable"
 
 
--- | Action that can return a value and do nothing else
-
-class Trivial (act :: Action) where
-    trivial :: a -> act c e m a
-
-instance Trivial Any where
-    trivial x = Any (pure (Right x))
-
-instance Trivial Query where
-    trivial x = Query (pure (Right x))
-
-instance Trivial Sure where
-    trivial x = Sure (pure x)
-
-instance Trivial SureQuery where
-    trivial x = SureQuery (pure x)
-
-instance Trivial Atom where
-    trivial x = Atom (Query (pure (Right (trivial x))))
-
-
 -- | Action that can fail
 
 class Fallible (act :: Action) where
