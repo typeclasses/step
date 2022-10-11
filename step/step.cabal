@@ -22,7 +22,7 @@ common base
     default-extensions:
         BlockArguments
         DataKinds
-        DerivingStrategies
+        DerivingVia
         FunctionalDependencies
         LambdaCase
         NoImplicitPrelude

@@ -46,12 +46,14 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (ExceptT e (Walk 'RW c m) a)
-    deriving newtype (Functor, Applicative, Monad)
+newtype Any c m e a = Any (Walk 'RW c m (Either e a))
+    deriving (Functor, Applicative, Monad)
+        via ExceptT e (Walk 'RW c m)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (ExceptT e (Walk 'R c m) a)
-    deriving newtype (Functor, Applicative, Monad)
+newtype Query c m e a = Query (Walk 'R c m (Either e a))
+    deriving (Functor, Applicative, Monad)
+        via ExceptT e (Walk 'R c m)
 
 -- | Always succeeds
 newtype Sure c m e a = Sure (Walk 'RW c m a)
@@ -111,19 +113,19 @@ class Trivial (act :: Action) where
     trivial :: a -> act c e m a
 
 instance Trivial Any where
-    trivial x = Any (return x)
+    trivial x = Any (pure (Right x))
 
 instance Trivial Query where
-    trivial x = Query (return x)
+    trivial x = Query (pure (Right x))
 
 instance Trivial Sure where
-    trivial x = Sure (return x)
+    trivial x = Sure (pure x)
 
 instance Trivial SureQuery where
-    trivial x = SureQuery (return x)
+    trivial x = SureQuery (pure x)
 
 instance Trivial Atom where
-    trivial x = Atom (Query (return (trivial x)))
+    trivial x = Atom (Query (pure (Right (trivial x))))
 
 
 -- | Action that can fail
@@ -133,24 +135,24 @@ class Fallible (act :: Action) where
     failActionM :: m e -> act c m e a
 
 instance Fallible Any where
-    failAction e = Any (MTL.throwE e)
-    failActionM m = Any (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
+    failAction e = Any (pure (Left e))
+    failActionM m = Any (Walk (SupplyChain.perform m <&> Left))
 
 instance Fallible Query where
-    failAction e = Query (MTL.throwE e)
-    failActionM m = Query (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
+    failAction e = Query (pure (Left e))
+    failActionM m = Query (Walk (SupplyChain.perform m <&> Left))
 
 instance Fallible Move where
-    failAction e = Move $ Any (MTL.throwE e)
-    failActionM m = Move $ Any (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
+    failAction e = Move $ Any (pure (Left e))
+    failActionM m = Move $ Any (Walk (SupplyChain.perform m <&> Left))
 
 instance Fallible Atom where
-    failAction e = Atom $ Query (MTL.throwE e)
-    failActionM m = Atom $ Query (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
+    failAction e = Atom $ Query (pure (Left e))
+    failActionM m = Atom $ Query (Walk (SupplyChain.perform m <&> Left))
 
 instance Fallible AtomicMove where
-    failAction e = AtomicMove $ Atom $ Query (MTL.throwE e)
-    failActionM m = AtomicMove $ Atom $ Query (MTL.lift (Walk $ SupplyChain.perform m) >>= MTL.throwE)
+    failAction e = AtomicMove $ Atom $ Query (pure (Left e))
+    failActionM m = AtomicMove $ Atom $ Query (Walk (SupplyChain.perform m <&> Left))
 
 
 -- | Action that can be tried noncommittally
@@ -160,7 +162,7 @@ class Atomic (act :: Action) (try :: Action) | act -> try where
 
 instance Atomic Atom Sure where
     try (Atom (Query q)) =
-        Sure (Walk (SupplyChain.map stepCast >-> (let Walk q' = MTL.runExceptT q in q'))) >>= \case
+        Sure (Walk (SupplyChain.map stepCast >-> (let Walk q' = q in q'))) >>= \case
             Left _ -> pure Nothing
             Right x -> fmap Just x
 
@@ -168,7 +170,7 @@ instance Atomic AtomicMove Sure where
     try (AtomicMove a) = try a
 
 instance Atomic Query SureQuery where
-    try (Query q) = SureQuery (MTL.runExceptT q <&> either (\_ -> Nothing) Just)
+    try (Query q) = SureQuery (q <&> either (\_ -> Nothing) Just)
 
 
 -- | Unsafe coercion to action that always moves
@@ -206,16 +208,16 @@ instance Is SureQuery Sure where
     cast (SureQuery (Walk x)) = Sure (Walk (SupplyChain.map stepCast >-> x))
 
 instance Is Query Any where
-    cast (Query (ExceptT (Walk x))) = Any (ExceptT (Walk (SupplyChain.map stepCast >-> x)))
+    cast (Query (Walk x)) = Any (Walk (SupplyChain.map stepCast >-> x))
 
 instance Is SureQuery Query where
-    cast (SureQuery x) = Query (MTL.lift x)
+    cast (SureQuery x) = Query (x <&> Right)
 
 instance Is Sure Any where
-    cast (Sure x) = Any (MTL.lift x)
+    cast (Sure x) = Any (x <&> Right)
 
 instance Is SureQuery Any where
-    cast (SureQuery (Walk x)) = Any (MTL.lift (Walk (SupplyChain.map stepCast >-> x)))
+    cast (SureQuery (Walk x)) = Any (Walk (SupplyChain.map stepCast >-> x) <&> Right)
 
 -- Casting to Atom
 

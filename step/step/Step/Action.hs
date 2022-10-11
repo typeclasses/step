@@ -44,10 +44,10 @@ import qualified NatOptics.Signed as Signed
 ---
 
 any :: ExceptT e (Factory (Step 'RW c) m) a -> Any c m e a
-any (ExceptT a) = Any (ExceptT (Walk a))
+any (ExceptT a) = Any (Walk a)
 
 query :: ExceptT e (Factory (Step 'R c) m) a -> Query c m e a
-query (ExceptT a) = Query (ExceptT (Walk a))
+query (ExceptT a) = Query (Walk a)
 
 sure :: Factory (Step 'RW c) m a -> Sure c m e a
 sure a = Sure (Walk a)
@@ -58,13 +58,13 @@ sureQuery a = SureQuery (Walk a)
 ---
 
 runAny :: Is p Any => p c m e a -> ExceptT e (Factory (Step 'RW c) m) a
-runAny x = case castTo @Any x of Any (ExceptT (Walk y)) -> ExceptT y
+runAny x = case castTo @Any x of Any (Walk y) -> ExceptT y
 
 runSure :: Is p Sure => p c m e a -> Factory (Step 'RW c) m a
 runSure x = case castTo @Sure x of Sure (Walk y) -> y
 
 runQuery :: Is p Query => p c m e a -> ExceptT e (Factory (Step 'R c) m) a
-runQuery x = case castTo @Query x of Query (ExceptT (Walk y)) -> ExceptT y
+runQuery x = case castTo @Query x of Query (Walk y) -> ExceptT y
 
 runSureQuery :: Is p SureQuery => p c m e a -> Factory (Step 'R c) m a
 runSureQuery x = case castTo @SureQuery x of SureQuery (Walk y) -> y
