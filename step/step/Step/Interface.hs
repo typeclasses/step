@@ -66,29 +66,6 @@ peekCharMaybe = peekSomeMaybe <&> fmap @Maybe head
 atEnd :: forall c m mode. Factory (Step mode c) m Bool
 atEnd = peekSomeMaybe <&> isNothing
 
--- text :: c -> Move c m e ()
--- text = _
-
--- text :: Nontrivial xs x -> Move xs x e m ()
--- text = someOfNontrivialText A.>=> (maybe (return ()) (castTo @Any . text) . Nontrivial.refine)
---   where
---     someOfNontrivialText x = Action.Unsafe.AtomicMove $ case curse of
---         CursorRW{ init, input, commit } -> run $ Cursor.next input >>= \case
---             Nothing -> return (Left F.failure)
---             Just y ->
---                 if x `Nontrivial.isPrefixOf` y
---                 then commit (Nontrivial.length x) $> Right ListLike.empty
---                 else
---                 if y `Nontrivial.isPrefixOf` x
---                 then commit (Nontrivial.length y) $>
---                       Right
---                         (
---                           ListLike.drop
---                               (ListLike.length (Nontrivial.generalize y))
---                               (Nontrivial.generalize x)
---                         )
---                 else return (Left F.failure)
-
 newtype Buffer c = Buffer{ bufferSeq :: Seq c }
 
 data ViewBuffer c =

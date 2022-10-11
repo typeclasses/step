@@ -15,6 +15,7 @@ module Step.Action
     {- ** Single characters -}
       peekCharMaybe, peekChar, takeChar, takeCharMaybe, satisfyJust,
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
+    {- ** Particular text -} nextTextIs, takeText, takeTextAtomic,
     {- ** Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
       skipPositiveAtomic, skipNaturalAtomic,
@@ -165,13 +166,49 @@ skipNaturalAtomic n = case Optics.preview Positive.refine n of
 
 ---
 
+require :: forall c m e. ErrorContext e m => Bool -> Query c m e ()
+require = \case
+    True -> castTo @Query (P.pure ())
+    False -> castTo @Query fail
+
+---
+
 atEnd :: SureQuery c m e Bool
 atEnd = act Interface.atEnd
 
 end :: forall c m e. ErrorContext e m => Query c m e ()
-end = atEnd P.>>= \case
-    True -> castTo @Query (P.pure ())
-    False -> castTo @Query fail
+end = atEnd P.>>= require
+
+---
+
+takeText :: forall c m e. Chunk c => ErrorContext e m => c -> Move c m e ()
+takeText = \t -> assumeMovement $ act @Any (go t)
+  where
+    go :: c -> Factory (Step 'RW c) m (Either e ())
+    go t = Interface.peekSomeMaybe >>= \case
+        Nothing -> perform getError <&> Left
+        Just x -> case stripEitherPrefix x t of
+            StripEitherPrefixFail           ->  perform getError <&> Left
+            StripEitherPrefixAll            ->  Interface.commit (length t) <&> \_ -> Right ()
+            IsPrefixedBy{}                  ->  Interface.commit (length t) <&> \_ -> Right ()
+            IsPrefixOf{ afterPrefix = t' }  ->  Interface.commit (length x) *> go t'
+
+nextTextIs :: forall c m e. Chunk c => c -> SureQuery c m e Bool
+nextTextIs = \t -> act (go t)
+  where
+    go :: c -> Factory (Step 'R c) m Bool
+    go t = Interface.peekSomeMaybe >>= \case
+        Nothing -> pure False
+        Just x -> case stripEitherPrefix x t of
+            StripEitherPrefixFail           ->  pure False
+            StripEitherPrefixAll            ->  pure True
+            IsPrefixedBy{}                  ->  pure True
+            IsPrefixOf{ afterPrefix = t' }  ->  go t'
+
+takeTextAtomic :: forall c m e. Chunk c =>
+    ErrorContext e m => c -> AtomicMove c m e ()
+takeTextAtomic t = assumeMovement $
+    (nextTextIs t P.>>= require) P.<* trySkipPositive (length t)
 
 {- $do
 

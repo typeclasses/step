@@ -20,6 +20,13 @@ class Chunk c
     drop :: Positive Natural -> c -> Drop c
     while :: Predicate (One c) -> c -> While c
     length :: c -> Positive Natural
+    stripEitherPrefix :: c -> c -> StripEitherPrefix c
+
+data StripEitherPrefix c =
+    StripEitherPrefixAll
+  | StripEitherPrefixFail
+  | IsPrefixOf   { afterPrefix :: c }
+  | IsPrefixedBy { afterPrefix :: c }
 
 data Pop c =
   Pop
