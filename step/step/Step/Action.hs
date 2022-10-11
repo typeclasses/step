@@ -17,6 +17,7 @@ module Step.Action
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
     {- ** Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
+      remainsAtLeastPositive, remainsAtLeastNatural,
     {- ** Failure -} fail,
   )
   where
@@ -29,6 +30,7 @@ import Step.Interface (Walk (..), Step, Mode (..), AdvanceResult (..))
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
 
+import Data.Bool (Bool (..))
 import Control.Applicative (pure, (<*), (*>))
 import Control.Monad ((>>=), when)
 import Data.Either (Either (..))
@@ -112,22 +114,28 @@ takeSomeMaybe = act do
     _ <- for_ xm \x -> Interface.commit (length @c x)
     pure xm
 
-satisfyJust :: forall c m e a. Chunk c => ErrorContext e m => (One c -> Maybe a) -> AtomicMove c m e a
-satisfyJust ok = assumeMovement $ Atom $ act $
-    Interface.peekCharMaybe >>= \case
-        Just (ok -> Just x) -> pure $ Right $ act $ Interface.commit one $> x
-        _ -> perform getError <&> Left
+satisfyJust :: forall c m e a. Chunk c => ErrorContext e m =>
+    (One c -> Maybe a) -> AtomicMove c m e a
+satisfyJust ok = assumeMovement $ Atom $ act $ Interface.peekCharMaybe >>= \case
+    Just (ok -> Just x) -> pure $ Right $ act $ Interface.commit one $> x
+    _ -> perform getError <&> Left
 
--- skipPositive :: forall c e m. Chunk c => ErrorContext e m => Positive Natural -> Move c m e ()
--- skipPositive = \n -> assumeMovement $ act @Any $ go n
---   where
---     go :: Positive Natural -> Factory (Step 'RW c) m (Either e ())
---     go n = Interface.peekSomeMaybe >>= \case
---         Nothing -> perform getError <&> Left
---         Just x -> case Positive.minus n (length @c x) of
---             Signed.Plus n' -> Interface.commit (length @c x) *> go n'
---             _ -> Interface.commit n $> Right ()
+remainsAtLeastPositive :: forall c e m. Chunk c =>
+    Positive Natural -> SureQuery c m e Bool
+remainsAtLeastPositive = \n -> act @SureQuery (go n)
+  where
+    go :: Positive Natural -> Factory (Step 'R c) m Bool
+    go n = Interface.peekSomeMaybe >>= \case
+        Nothing -> pure False
+        Just x -> case Positive.minus n (length @c x) of
+            Signed.Plus n' -> go n'
+            _ -> pure True
 
+remainsAtLeastNatural :: forall c e m. Chunk c =>
+    Natural -> SureQuery c m e Bool
+remainsAtLeastNatural n = case Optics.preview Positive.refine n of
+    Nothing -> pure True
+    Just p -> remainsAtLeastPositive p
 
 {- $do
 
