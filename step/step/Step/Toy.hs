@@ -34,7 +34,7 @@ parseSure p xs = runIdentity (actionParseSure p xs)
 
 actionParse :: forall p c m e a. Chunk c => Monad m => Is p Any =>
     p c m e a -> [c] -> m (Either e a, [c])
-actionParse p xs = z (runExceptT $ runAny p) xs
+actionParse p xs = z (runAny p) xs
 
 actionParseSure :: forall p c m a. Chunk c => Monad m => Is p Sure =>
     p c m Void a -> [c] -> m (a, [c])
