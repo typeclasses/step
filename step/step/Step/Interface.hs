@@ -66,13 +66,6 @@ peekSomeMaybe = SupplyChain.order StepNext
 peekCharMaybe :: forall c m mode. Chunk c => Factory (Step mode c) m (Maybe (One c))
 peekCharMaybe = peekSomeMaybe <&> fmap @Maybe head
 
--- skip :: forall c e m. Chunk c => MonadReader e m => Positive Natural -> Move c m e AdvanceResult
--- skip n = next `bindAction` \x ->
---     case Positive.minus (length @c x) n of
---         Signed.Minus n' ->
---             commit (length @c x) `bindAction` \_ -> skip n'
---         _ -> castTo @Move (commit n)
-
 -- skip0 :: forall c e m. Chunk c => MonadReader e m => Natural -> Any c m e AdvanceResult
 -- skip0 = maybe (return AdvanceSuccess) (castTo @Any . skip)  . preview Positive.refine
 

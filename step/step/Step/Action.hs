@@ -15,6 +15,7 @@ module Step.Action
     {- ** Single characters -}
       peekCharMaybe, peekChar, takeChar, takeCharMaybe, satisfyJust,
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
+    {- ** Fixed-length -} trySkipPositive, skipPositive,
     {- ** Failure -} fail,
   )
   where
@@ -22,12 +23,12 @@ module Step.Action
 import Step.Action.Core
 import Step.Chunk
 import Step.Error
-import Step.Interface (Walk (..), Step, Mode (..))
+import Step.Interface (Walk (..), Step, Mode (..), AdvanceResult (..))
 
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
 
-import Control.Applicative (pure, (<*))
+import Control.Applicative (pure, (<*), (*>))
 import Control.Monad ((>>=), when)
 import Data.Either (Either (..))
 import Data.Foldable (for_)
@@ -51,8 +52,8 @@ one = PositiveUnsafe 1
 
 ---
 
-commit :: forall c m e. Positive Natural -> Sure c m e Interface.AdvanceResult
-commit n = act (Interface.commit n)
+trySkipPositive :: forall c m e. Positive Natural -> Sure c m e Interface.AdvanceResult
+trySkipPositive n = act (Interface.commit n)
 
 peekSomeMaybe :: forall c m e. ErrorContext e m => SureQuery c m e (Maybe c)
 peekSomeMaybe = act Interface.peekSomeMaybe
@@ -61,6 +62,11 @@ peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
 peekCharMaybe = act Interface.peekCharMaybe
 
 ---
+
+skipPositive :: forall c e m. Chunk c => ErrorContext e m => Positive Natural -> Move c m e ()
+skipPositive n = assumeMovement $ trySkipPositive n P.>>= \case
+    AdvanceSuccess -> pure ()
+    YouCanNotAdvance{} -> castTo @Any fail
 
 peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case
@@ -76,7 +82,7 @@ takeCharMaybe = act do
 takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (One c)
 takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Nothing -> castTo @Atom fail
-    Just x  -> castTo @Atom (commit one) $> x
+    Just x  -> castTo @Atom (trySkipPositive one) $> x
 
 peekSome :: forall c m e. ErrorContext e m => Query c m e c
 peekSome = act $ Interface.peekSomeMaybe >>= \case
@@ -86,7 +92,7 @@ peekSome = act $ Interface.peekSomeMaybe >>= \case
 takeSome :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e c
 takeSome = assumeMovement $ Atom $ act $ Interface.peekSomeMaybe >>= \case
     Nothing -> perform getError <&> Left
-    Just x  -> pure $ Right $ commit (length @c x) $> x
+    Just x  -> pure $ Right $ trySkipPositive (length @c x) $> x
 
 takeSomeMaybe :: forall c m e. Chunk c => Sure c m e (Maybe c)
 takeSomeMaybe = act do
@@ -99,6 +105,17 @@ satisfyJust ok = assumeMovement $ Atom $ act $
     Interface.peekCharMaybe >>= \case
         Just (ok -> Just x) -> pure $ Right $ act $ Interface.commit one $> x
         _ -> perform getError <&> Left
+
+-- skipPositive :: forall c e m. Chunk c => ErrorContext e m => Positive Natural -> Move c m e ()
+-- skipPositive = \n -> assumeMovement $ act @Any $ go n
+--   where
+--     go :: Positive Natural -> Factory (Step 'RW c) m (Either e ())
+--     go n = Interface.peekSomeMaybe >>= \case
+--         Nothing -> perform getError <&> Left
+--         Just x -> case Positive.minus n (length @c x) of
+--             Signed.Plus n' -> Interface.commit (length @c x) *> go n'
+--             _ -> Interface.commit n $> Right ()
+
 
 {- $do
 
