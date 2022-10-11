@@ -29,7 +29,7 @@ module Step.Action
 import Step.Action.Core
 import Step.Chunk
 import Step.Error
-import Step.Interface (Walk (..), Step, Mode (..), AdvanceResult (..))
+import Step.Interface (Step, Mode (..), AdvanceResult (..))
 
 import qualified Step.Do as P
 import qualified Step.Interface as Interface

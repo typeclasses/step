@@ -9,9 +9,6 @@ module Step.Interface
     -- * Vendors
     Buffer (..), bufferedStepper, pureStepper,
 
-    -- * Walk
-    Walk (..),
-
   )
   where
 

@@ -55,11 +55,14 @@ library
         Step.Action
         Step.Action.Core
 
+        Step.Chunk
+        Step.Chunk.ListLike
+
         Step.Interface
         Step.Interface.Core
 
-        Step.Chunk
-        Step.Chunk.ListLike
+        Step.Walk
+        Step.Walk.Core
 
         Step.Error
 
