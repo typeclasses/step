@@ -4,9 +4,7 @@ module Step.Interface
     Mode (..), Step (..), AdvanceResult (..), stepCast,
 
     -- * Factories
-    commit, reset,
-    nextCharMaybe,
-     -- takeCharMaybe,
+    commit, reset, nextMaybe,
 
     -- * Vendors
     Buffer (..), bufferedStepper, pureStepper,
@@ -64,25 +62,6 @@ commit n = SupplyChain.order (StepCommit n)
 
 nextMaybe :: forall c m mode. Factory (Step mode c) m (Maybe c)
 nextMaybe = SupplyChain.order StepNext
-
-nextCharMaybe :: forall c m mode. Chunk c => Factory (Step mode c) m (Maybe (OneOf c))
-nextCharMaybe = nextMaybe <&> fmap @Maybe (popItem . leftView)
-
--- nextChar :: Chunk c => MonadReader e m => Query c m e (OneOf c)
--- nextChar = Query $ nextCharMaybe `bindAction` maybe (castTo @Query fail) return
-
--- takeCharMaybe :: Chunk c => MonadReader e m => Factory (Step 'RW c) m (Maybe (OneOf c))
--- takeCharMaybe = try takeChar
-
--- next :: MonadReader e m => Query c m e c
--- next = nextMaybe `bindAction` maybe (castTo @Query fail) return
-
--- -- | Like 'next', but doesn't reset first
--- next' :: MonadReader e m => Query c m e c
--- next' = nextMaybe' `bindAction` maybe (castTo @Query fail) return
-
--- takeNext :: forall c e m. Chunk c => MonadReader e m => AtomicMove c m e c
--- takeNext = next `bindAction` \c -> commit (length @c c) $> c
 
 -- takeNextMaybe :: Chunk c => MonadReader e m => Sure c m e (Either e c)
 -- takeNextMaybe = try takeNext

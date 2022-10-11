@@ -1,6 +1,6 @@
 module Step.Toy.Spec (tests) where
 
-import Step.Action (AtomicMove, SureQuery, Is, Any, nextCharMaybe, takeCharMaybe)
+import Step.Action (AtomicMove, SureQuery, Is, Any, peekCharMaybe, takeCharMaybe)
 import Step.Toy (parse, parseSure)
 import Step.Chunk.ListLike (NonEmptyListLike, genChunks, fold)
 
@@ -47,11 +47,11 @@ testPure parser input expectedResult expectedRemainder = do
     let (result :: Either e a, remainder :: [T]) = parse parser chunkedInput
     (result, fold remainder) === (expectedResult, expectedRemainder)
 
-prop_nextCharMaybe :: Property
-prop_nextCharMaybe = property do
+prop_peekCharMaybe :: Property
+prop_peekCharMaybe = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    testPureSureQuery nextCharMaybe (Text.cons x xs) (Just x)
+    testPureSureQuery peekCharMaybe (Text.cons x xs) (Just x)
 
 prop_takeCharMaybe :: Property
 prop_takeCharMaybe = property do

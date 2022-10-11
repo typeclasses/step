@@ -99,6 +99,8 @@ instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' woul
 
 -- Failure action:
 
+type Failure :: Action
+
 newtype Failure c m e a = Failure (m e)
     deriving stock Functor
 
@@ -318,10 +320,11 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
 class Join (act1 :: Action) (act2 :: Action) where
     join :: act1 c es e (act2 c es e a) -> (act1 >> act2) c es e a
 
-infixl 1 `bindAction`
+-- | See also: '(Step.Do.>>=)'
 bindAction :: (Join act1 act2, Functor (act1 c es e), act1 >> act2 ~ act3) =>
     act1 c es e a -> (a -> act2 c es e b) -> act3 c es e b
 bindAction x f = join (fmap f x)
+infixl 1 `bindAction`
 
 -- Any >> ...
 

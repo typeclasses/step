@@ -1,6 +1,7 @@
 module Step.Chunk where
 
 import Data.Eq (Eq)
+import Data.Function ((.))
 import Data.Functor.Contravariant (Predicate (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
@@ -54,3 +55,6 @@ data While c =
     WhileNone
   | WhilePrefix c
   | WhileAll
+
+head :: Chunk c => c -> OneOf c
+head = popItem . leftView
