@@ -107,33 +107,6 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
     (<*>) = error "unreachable"
 
 
--- | Action that can fail
-
-class Fallible (act :: Action) where
-    failAction :: e -> act c m e a
-    failActionM :: m e -> act c m e a
-
-instance Fallible Any where
-    failAction e = Any (pure (Left e))
-    failActionM m = Any (Walk (SupplyChain.perform m <&> Left))
-
-instance Fallible Query where
-    failAction e = Query (pure (Left e))
-    failActionM m = Query (Walk (SupplyChain.perform m <&> Left))
-
-instance Fallible Move where
-    failAction e = Move $ Any (pure (Left e))
-    failActionM m = Move $ Any (Walk (SupplyChain.perform m <&> Left))
-
-instance Fallible Atom where
-    failAction e = Atom $ Query (pure (Left e))
-    failActionM m = Atom $ Query (Walk (SupplyChain.perform m <&> Left))
-
-instance Fallible AtomicMove where
-    failAction e = AtomicMove $ Atom $ Query (pure (Left e))
-    failActionM m = AtomicMove $ Atom $ Query (Walk (SupplyChain.perform m <&> Left))
-
-
 -- | Action that can be tried noncommittally
 
 class Atomic (act :: Action) (try :: Action) | act -> try where
@@ -232,8 +205,20 @@ instance Is AtomicMove Any where
 
 -- Casting out of failure
 
-instance Fallible a => Is Failure a where
-    cast (Failure x) = failActionM x
+instance Is Failure Any where
+    cast (Failure x) = Any (Walk (SupplyChain.perform x <&> Left))
+
+instance Is Failure Query where
+    cast (Failure x) = Query (Walk (SupplyChain.perform x <&> Left))
+
+instance Is Failure Move where
+    cast (Failure x) = Move $ Any (Walk (SupplyChain.perform x <&> Left))
+
+instance Is Failure Atom where
+    cast (Failure x) = Atom $ Query (Walk (SupplyChain.perform x <&> Left))
+
+instance Is Failure AtomicMove where
+    cast (Failure x) = AtomicMove $ Atom $ Query (Walk (SupplyChain.perform x <&> Left))
 
 
 {-| The type @a >> b@ is type of the expression @a >> b@.

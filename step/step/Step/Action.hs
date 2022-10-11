@@ -8,7 +8,7 @@ module Step.Action
     Atom (..), Move, AtomicMove, Failure (..),
 
     {- * Classes -}
-    Fallible (..), Atomic (..), AssumeMovement (..),
+    Atomic (..), AssumeMovement (..),
 
     {- * Subtyping -} {- $subtyping -} Is (..), castTo,
 
