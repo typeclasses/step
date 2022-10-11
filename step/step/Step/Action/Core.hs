@@ -42,7 +42,7 @@ type Action =
     additional implication that a walk is implicitly preceded and followed
     by a 'StepReset'. Sequencing operations like '(<*>)' and '(>>=)' insert
     resets between the operations. (The implicit resets and the idempotency
-    of 'StepReset' are essentual to arguing that the 'Applicative' and
+    of 'StepReset' are essential to arguing that the 'Applicative' and
     'Monad' class laws are respected.)
 -}
 newtype Walk mode chunk action a =
