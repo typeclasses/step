@@ -103,51 +103,65 @@ data Supply (up :: Interface) (down :: Interface) (action :: Action) (product ::
 deriving stock instance Functor (Supply up down action)
 
 
-class Connect (up :: Interface) (down :: Interface)
-    (action :: Action) (client :: Type) (result :: Type)
-    | up client -> result
-    , client -> down action
-    , result -> up action
-  where
-    -- | Connects a vendor to a client (a factory or another vendor)
-    (>->) :: Vendor up down action -> client -> result
+{-|
 
-instance Connect up down action (Factory down action product) (Factory up action product)
-  where
-    up >-> down =
-        (up >+> down) <&> supplyProduct
+If @i@ is the downstream interface of vendor @a@ and the upstream interface
+of factory @b@, then we can form the composition @'vendorToFactory' a b@.
+When the 'Factory' makes a request of type @i x@, the 'Vendor' replies with a
+response of type @x@.
 
-instance Connect up middle action (Vendor middle down action) (Vendor up down action)
-  where
-    up >-> down =
-        Vendor \request -> (up >+> offer down request) <&> joinSupply
+> ┌────────────────────────────┐
+> │     Vendor up i action     │
+> └────────────────────────────┘
+>              ▲   │
+>         i x  │   │  x
+>              │   ▼
+> ┌────────────────────────────┐
+> │  Factory i action product  │
+> └────────────────────────────┘
+
+-}
+
+vendorToFactory ::
+    Vendor up down action
+    -> Factory down action product
+    -> Factory up action product
+
+vendorToFactory up down =
+    vendorToFactory' up down <&> supplyProduct
+
+
+vendorToVendor ::
+    Vendor up middle action
+    -> Vendor middle down action
+    -> Vendor up down action
+vendorToVendor up down =
+    Vendor \request -> vendorToFactory' up (offer down request) <&> joinSupply
 
 
 {-| Connect a vendor to a factory, producing a factory which ultimately
     returns both the product and a new version of the vendor.
 
-    Use this function instead of '(>->)' if you need to attach a
-    succession of factories to one stateful vendor.
+    Use this function instead of 'vendorToFactory' if you need to attach
+    a succession of factories to one stateful vendor.
 -}
-(>+>) ::
+vendorToFactory' ::
     forall
       (up :: Interface) (down :: Interface) (action :: Action) (product :: Type).
     Vendor up down action -> Factory down action product
     -> Factory up action (Supply up down action product)
 
-(>+>) up = \case
+vendorToFactory' up = \case
     Pure product      ->  Pure (Supply product up)
     Perform action    ->  Perform action <&> (`Supply` up)
     Request request   ->  offer up request
-    Bind step1 step2  ->  (up >+> step1) `Bind` \supply ->
-                            supplyNext supply >+> step2 (supplyProduct supply)
+    Bind step1 step2  ->  (vendorToFactory' up step1) `Bind` \supply ->
+                            vendorToFactory' (supplyNext supply)
+                              (step2 (supplyProduct supply))
 
 
 {-| Sort of resembles what a 'Control.Monad.join' implementation for
     'Supply' might look like, modulo a subtle difference in the types
-
-    This function is used to implement '(>->)'.
-    Apart from that, perhaps it has no other use?
 -}
 
 joinSupply ::
@@ -155,7 +169,7 @@ joinSupply ::
     -> Supply up down action product
 
 joinSupply (Supply (Supply product nextDown) nextUp) =
-    Supply product (nextUp >-> nextDown)
+    Supply product (vendorToVendor nextUp nextDown)
 
 
 class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: Type)

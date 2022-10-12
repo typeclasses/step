@@ -25,15 +25,20 @@ module SupplyChain
     {- ** Interface -} Interface, NoInterface,
     {- ** Action -} Action, NoAction,
 
-    {- * Factory -} Factory, {- $factory -}
+    {- * Factory -}
+    {- ** Type -} Factory, {- $factory -}
     {- ** How to create a factory -} {- $definingFactories -} order, perform,
     {- ** How to use a factory -} eval, run, evalWith, runWith,
 
-    {- * Vendor -} Vendor (..), {- $vendor -} Supply (..),
+    {- * Vendor -}
+    {- ** Type -} Vendor (..), {- $vendor -} Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
 
-    {- * Connect (>->) -} Connect ((>->)), {- $connect -} (>+>),
+    {- * Connection -}
+    {- ** Functions -} vendorToFactory, vendorToVendor,
+    {- ** Polymorphically (>->) -} Connect (..),
+    {- ** Reusing vendors -} vendorToFactory',
 
     {- * Changing the Action context -} ActionFunctor (..), {- $actionMap -}
 
@@ -138,6 +143,32 @@ map f = go
     go = Vendor \x -> order (f x) <&> (`Supply` go)
 
 
+class Connect (up :: Interface) (down :: Interface)
+    (action :: Action) (client :: Type) (result :: Type)
+    | up client -> result
+    , client -> down action
+    , result -> up action
+  where
+    {-| Generalizes 'vendorToVendor' and 'vendorToFactory'
+
+        This operation is associative; if @a@ and @b@ are vendors and @c@ is a factory,
+        then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
+    -}
+    (>->) :: Vendor up down action -> client -> result
+
+instance Connect up down action
+    (Factory down action product)
+    (Factory up   action product)
+  where
+    (>->) = vendorToFactory
+
+instance Connect up middle action
+    (Vendor middle down action)
+    (Vendor up down action)
+  where
+    (>->) = vendorToVendor
+
+
 {- $factory
 
 >              ▲   │
@@ -216,36 +247,6 @@ The second is a new 'Vendor'.
 
 This latter component is what allows vendors to be stateful, and it is usually
 defined recursively.
-
--}
-
-
-{- $connect
-
-If @i@ is the downstream interface of vendor @a@ and the upstream
-interface of factory @b@, then we can form the composition @a '>->' b@.
-When the factory makes a request of type @i x@, the vendor replies with a
-response of type @x@.
-
-> ┌────────────────────────────┐
-> │     Vendor up i action     │
-> └────────────────────────────┘
->              ▲   │
->         i x  │   │  x
->              │   ▼
-> ┌────────────────────────────┐
-> │  Factory i action product  │
-> └────────────────────────────┘
-
-The '(>->)' operation is associative; if @a@ and @b@ are vendors and @c@ is
-a factory, then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
-
-Specializations:
-
-@
-('>->') :: 'Vendor' up down action   -> 'Factory' down action product -> 'Factory' up action product
-('>->') :: 'Vendor' up middle action -> 'Vendor' middle down action   -> 'Vendor' up down action
-@
 
 -}
 
