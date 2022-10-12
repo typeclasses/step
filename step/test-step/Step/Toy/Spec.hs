@@ -20,8 +20,8 @@ import Data.Void (Void)
 
 import qualified Data.Text as Text
 
-import Test.Tasty (TestTree)
-import Test.Tasty.Hedgehog (fromGroup)
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.Hedgehog (testPropertyNamed)
 import Test.Tasty.HUnit ((@?=), testCase)
 
 import Hedgehog
@@ -34,7 +34,22 @@ noInput :: [T]
 noInput = []
 
 tests :: TestTree
-tests = fromGroup $$(discover)
+tests =
+  testGroup "Toy"
+    [ testGroup "peekChar"
+      [ testPropertyNamed "empty" "prop_peekChar_empty" prop_peekChar_empty
+      , testPropertyNamed "non-empty" "prop_peekChar_nonEmpty" prop_peekChar_nonEmpty
+      ]
+    , testGroup "peekCharMaybe"
+      [ testPropertyNamed "empty" "prop_peekCharMaybe_empty" prop_peekCharMaybe_empty
+      , testPropertyNamed "non-empty" "prop_peekCharMaybe_nonEmpty" prop_peekCharMaybe_nonEmpty
+      ]
+    , testGroup "takeCharMaybe"
+      [ testPropertyNamed "empty" "prop_takeCharMaybe_empty" prop_takeCharMaybe_empty
+      , testPropertyNamed "non-empty" "prop_takeCharMaybe_nonEmpty" prop_takeCharMaybe_nonEmpty
+      ]
+    ]
+
 
 testPureQuery :: forall m a. Monad m => Eq a => Show a =>
     Query (NonEmptyListLike Text) Identity () a -> Text -> Maybe a -> PropertyT m ()
