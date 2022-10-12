@@ -93,7 +93,7 @@ newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
 -- | The conclusion of a vendor's handling of a client request
 
 data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
-  (:->)
+  Supply
     { supplyProduct :: product
         -- ^ The requested product
     , supplyNext :: Vendor up down action
@@ -136,8 +136,8 @@ instance Connect up middle action (Vendor middle down action) (Vendor up down ac
     -> Factory up action (Supply up down action product)
 
 (>+>) up = \case
-    Pure product      ->  Pure (product :-> up)
-    Perform action    ->  Perform action <&> (:-> up)
+    Pure product      ->  Pure (Supply product up)
+    Perform action    ->  Perform action <&> (`Supply` up)
     Request request   ->  offer up request
     Bind step1 step2  ->  (up >+> step1) `Bind` \supply ->
                             supplyNext supply >+> step2 (supplyProduct supply)
@@ -154,8 +154,8 @@ joinSupply ::
     Supply up middle action (Supply middle down action product)
     -> Supply up down action product
 
-joinSupply ((product :-> nextDown) :-> nextUp) =
-    product :-> (nextUp >-> nextDown)
+joinSupply (Supply (Supply product nextDown) nextUp) =
+    Supply product (nextUp >-> nextDown)
 
 
 class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: Type)
@@ -187,12 +187,11 @@ instance ActionFunctor action1 action2
     actionMap f = go
       where
         go (Vendor v) = Vendor \request ->
-            actionMap f (v request) <&> \(response :-> v') ->
-                response :-> go v'
+            actionMap f (v request) <&> \(Supply response v') ->
+                Supply response (go v')
 
 instance ActionFunctor action1 action2
     (Supply up down action1 product)
     (Supply up down action2 product)
   where
-    actionMap f (x :-> v) =
-        x :-> actionMap f v
+    actionMap f (Supply x v) = Supply x (actionMap f v)

@@ -36,5 +36,5 @@ counting = go 0
   where
     go :: Natural -> Vendor i (Counting i) action
     go n = Vendor \case
-        Count    ->  pure $ n :-> go n
-        Order x  ->  order x <&> (:-> go (n + 1))
+        Count    ->  pure $ Supply n (go n)
+        Order x  ->  order x <&> (`Supply` go (n + 1))

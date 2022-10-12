@@ -113,7 +113,7 @@ functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action
 
 functionVendor f = go
   where
-    go = Vendor \x -> pure $ f x :-> go
+    go = Vendor \x -> pure $ Supply (f x) go
 
 
 -- | A simple stateless vendor that responds to each request by applying an effectful function
@@ -123,7 +123,7 @@ actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
 
 actionVendor f = go
   where
-    go = Vendor \x -> perform (f x) <&> (:-> go)
+    go = Vendor \x -> perform (f x) <&> (`Supply` go)
 
 
 noVendor :: forall (up :: Interface) (action :: Action).
@@ -135,7 +135,7 @@ map :: forall (up :: Interface) (down :: Interface) (action :: Action).
     (forall x. down x -> up x) -> Vendor up down action
 map f = go
   where
-    go = Vendor \x -> order (f x) <&> (:-> go)
+    go = Vendor \x -> order (f x) <&> (`Supply` go)
 
 
 {- $factory

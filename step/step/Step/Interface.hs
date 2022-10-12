@@ -43,7 +43,7 @@ import qualified Control.Monad.Reader as MTL
 import Control.Monad.State.Strict (MonadState)
 
 -- Streaming
-import SupplyChain (Vendor (..), Factory, Supply ((:->)), (>->))
+import SupplyChain (Vendor (..), Factory, Supply (..), (>->))
 import SupplyChain.Interface.TerminableStream (IsTerminableStream, TerminableStream)
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
@@ -66,8 +66,10 @@ atEnd = peekSomeMaybe <&> isNothing
 newtype Buffer c = Buffer{ bufferSeq :: Seq c }
 
 data ViewBuffer c =
-    Start -- ^ The unseen and unviewed buffers are the same
-  | Unviewed (Buffer c) -- ^ The unviewed buffer, which may differ from the uncommitted buffer
+    Start
+      -- ^ The unseen and unviewed buffers are the same
+  | Unviewed (Buffer c)
+      -- ^ The unviewed buffer, which may differ from the uncommitted buffer
 
 pureStepper :: forall s up action c. Chunk c => MonadState s action =>
     Lens' s (Buffer c) -> Vendor up (Step 'RW c) action
@@ -82,7 +84,7 @@ bufferedStepper buffer = go Start
   where
     go :: ViewBuffer c -> Vendor up (Step 'RW c) action
     go unviewed = Vendor \case
-        StepReset -> pure (() :-> go Start)
+        StepReset -> pure $ Supply () (go Start)
         StepNext -> getUnviewedChunks >>= handleNext
         StepCommit n -> getUncommittedChunks >>= handleCommit unviewed n
       where
@@ -99,10 +101,10 @@ bufferedStepper buffer = go Start
         -> Factory up action
               (Supply up (Step 'RW c) action (Maybe c))
     handleNext = \case
-        x :<| xs -> pure (Just x :-> goUnviewed xs)
+        x :<| xs -> pure $ Supply (Just x) (goUnviewed xs)
         Empty -> SupplyChain.order Stream.nextMaybe >>= \case
-            Nothing -> pure (Nothing :-> goUnviewed Empty)
-            Just x -> feedCommitBuffer x $> (Just x :-> goUnviewed Empty)
+            Nothing -> pure $ Supply Nothing (goUnviewed Empty)
+            Just x -> feedCommitBuffer x $> Supply (Just x) (goUnviewed Empty)
       where
         goUnviewed :: Seq c -> Vendor up (Step 'RW c) action
         goUnviewed unviewed = go (Unviewed (Buffer unviewed))
@@ -119,11 +121,13 @@ bufferedStepper buffer = go Start
               (Supply up (Step 'RW c) action AdvanceResult)
     handleCommit unviewed n = \case
         x :<| xs -> case drop n x of
-            DropAll -> setUncommittedChunks xs $> (AdvanceSuccess :-> go unviewed)
-            DropPart{ dropRemainder = x' } -> setUncommittedChunks (x' :<| xs) $> (AdvanceSuccess :-> go unviewed)
+            DropAll ->
+                setUncommittedChunks xs $> Supply AdvanceSuccess (go unviewed)
+            DropPart{ dropRemainder = x' } ->
+                setUncommittedChunks (x' :<| xs) $> Supply AdvanceSuccess (go unviewed)
             DropInsufficient{ dropShortfall = n' } -> handleCommit unviewed n' xs
         Empty -> SupplyChain.order Stream.nextMaybe >>= \case
-            Nothing -> pure (YouCanNotAdvance{ shortfall = n } :-> go unviewed)
+            Nothing -> pure $ Supply YouCanNotAdvance{ shortfall = n } (go unviewed)
             Just x -> handleCommit unviewed' n (x :<| Empty)
               where
                 unviewed' = case unviewed of

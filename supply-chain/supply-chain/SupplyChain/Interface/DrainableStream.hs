@@ -12,6 +12,7 @@ import SupplyChain hiding (map)
 import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
 
 import Control.Applicative (pure)
+import Data.Function (($))
 import Data.Functor (Functor, (<&>), fmap)
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
@@ -61,8 +62,8 @@ list = go
     go xs = case unconsList xs of
         Nothing -> nil
         Just (x, xs') -> Vendor \case
-            NextMaybe -> pure (Just x :-> go xs')
-            Drain     -> pure (xs     :-> nil)
+            NextMaybe  ->  pure $ Supply (Just x) (go xs')
+            Drain      ->  pure $ Supply xs nil
 
 
 -- | The empty stream
@@ -74,8 +75,8 @@ nil = go
   where
     go :: Vendor up (DrainableStream list a) action
     go = Vendor \case
-        NextMaybe -> pure (Nothing   :-> go)
-        Drain     -> pure (emptyList :-> go)
+        NextMaybe  ->  pure $ Supply Nothing   go
+        Drain      ->  pure $ Supply emptyList go
 
 
 -- | Yields one item, then stops
@@ -84,8 +85,8 @@ singleton :: forall up list a action. List list =>
     a -> Vendor up (DrainableStream list a) action
 
 singleton x = Vendor \case
-    NextMaybe -> pure (Just x          :-> nil)
-    Drain     -> pure (singletonList x :-> nil)
+    NextMaybe  ->  pure $ Supply (Just x)          nil
+    Drain      ->  pure $ Supply (singletonList x) nil
 
 
 -- | Performs one action, yields the resulting item, then stops
@@ -95,8 +96,8 @@ actionSingleton :: forall up list a action. List list =>
 
 actionSingleton mx =
     Vendor \case
-        NextMaybe -> perform mx <&> \x -> Just x          :-> nil
-        Drain     -> perform mx <&> \x -> singletonList x :-> nil
+        NextMaybe  ->  perform mx <&> \x -> Supply (Just x)          nil
+        Drain      ->  perform mx <&> \x -> Supply (singletonList x) nil
 
 
 -- | Apply a function to each item in the stream
@@ -109,10 +110,10 @@ map f = go
   where
     go = Vendor \case
         NextMaybe -> order NextMaybe <&> \case
-            Nothing -> Nothing    :-> nil
-            Just a  -> Just (f a) :-> go
+            Nothing  ->  Supply Nothing      nil
+            Just a   ->  Supply (Just (f a)) go
         Drain -> order Drain <&> \xs ->
-            fmap f xs :-> nil
+            Supply (fmap f xs) nil
 
 
 -- | Collects everything from the stream
