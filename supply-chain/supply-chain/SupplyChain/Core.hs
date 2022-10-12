@@ -15,6 +15,8 @@ import Control.Monad (Monad ((>>=)))
 import Data.Function (($), (.), fix)
 import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
+import Data.Functor.Const (Const (..))
+import Data.Void (absurd, Void)
 
 
 {-| The kind of requests and responses exchanged between a vendor and a factory
@@ -63,23 +65,26 @@ instance Monad (Factory up action)
     (>>=) = Bind
 
 
-{-| Run a factory in its 'Action' context
+-- | An 'Interface' that admits no requests
 
-    The first argument is a handler that specifies what to do each
-    time the factory makes a request.
--}
+type NoInterface = Const Void
 
-runWith :: forall (up :: Interface) (action :: Action) (product :: Type). Monad action =>
-    (forall (x :: Type). up x -> action x) -> Factory up action product -> action product
+type NoInterface :: Interface
 
-runWith handle = go
+
+-- | Run a factory in its 'Action' context
+
+run :: forall (action :: Action) (product :: Type). Monad action =>
+    Factory NoInterface action product -> action product
+
+run = go
   where
-    go :: forall x. Factory up action x -> action x
+    go :: forall x. Factory NoInterface action x -> action x
     go = \case
       Pure    product      ->  pure product
       Perform action       ->  action
       Bind    step1 step2  ->  go step1 >>= (go . step2)
-      Request request      ->  handle request
+      Request (Const x)    ->  absurd x
 
 
 -- | Makes requests, responds to requests, and performs actions

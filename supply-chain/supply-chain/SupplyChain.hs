@@ -28,7 +28,7 @@ module SupplyChain
     {- * Factory -}
     {- ** Type -} Factory, {- $factory -}
     {- ** How to create a factory -} {- $definingFactories -} order, perform,
-    {- ** How to use a factory -} eval, run, evalWith, runWith,
+    {- ** How to use a factory -} run, eval,
 
     {- * Vendor -}
     {- ** Type -} Vendor (..), {- $vendor -} Supply (..),
@@ -48,20 +48,10 @@ module SupplyChain
 import SupplyChain.Core
 
 import Control.Applicative (pure)
-import Control.Monad (Monad)
 import Data.Function ((.), ($))
 import Data.Functor ((<&>))
-import Data.Functor.Const (Const (getConst))
 import Data.Functor.Identity (Identity (..))
 import Data.Kind (Type)
-import Data.Void (absurd, Void)
-
-
--- | An 'Interface' that admits no requests
-
-type NoInterface = Const Void
-
-type NoInterface :: Interface
 
 
 -- | An 'Action' that permits no action
@@ -87,28 +77,12 @@ order :: forall (up :: Interface) (action :: Action) (response :: Type).
 order = Request
 
 
--- | Run a factory that makes no requests
-
-run :: forall (action :: Action) (product :: Type). Monad action =>
-    Factory NoInterface action product -> action product
-
-run = runWith (pure . absurd . getConst)
-
-
--- | Run a factory that makes no requests and performs no actions
+-- | Run a factory that performs no actions
 
 eval :: forall (product :: Type).
     Factory NoInterface NoAction product -> product
 
 eval = runIdentity . run
-
-
--- | Run a factory that performs no actions
-
-evalWith :: forall (up :: Interface) (product :: Type).
-    (forall x. up x -> x) -> Factory up NoAction product -> product
-
-evalWith f = runIdentity . runWith (pure . f)
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function
