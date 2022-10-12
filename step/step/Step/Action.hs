@@ -61,12 +61,19 @@ one = PositiveUnsafe 1
 
 ---
 
+{-| Advance over the next /n/ characters (if possible)
+
+    If the end of input is reached in fewer than /n/ characters,
+    cursor advances to the end of input, and the returned
+    'AdvanceResult' gives the size of the difference.
+-}
 trySkipPositive :: forall c m e. Positive Natural -> Sure c m e AdvanceResult
 trySkipPositive n = Sure (Walk.commit n)
 
 peekSomeMaybe :: forall c m e. ErrorContext e m => SureQuery c m e (Maybe c)
 peekSomeMaybe = SureQuery Walk.peekSomeMaybe
 
+-- | Take a peek at the next character (if possible) without advancing
 peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
 peekCharMaybe = SureQuery Walk.peekCharMaybe
 
@@ -92,12 +99,14 @@ peekChar = peekCharMaybe P.>>= \case
     Nothing  ->  castTo @Query fail
     Just x   ->  pure x
 
+-- | Advance over the next character (if possible) and return it
 takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (One c))
 takeCharMaybe = act do
     xm <- Interface.peekCharMaybe
     _ <- for_ xm \_ -> Interface.commit one
     pure xm
 
+-- | Advance over the next character and return it; fail if end of input
 takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (One c)
 takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Nothing  ->  castTo @Atom fail
