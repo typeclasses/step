@@ -5,18 +5,21 @@ import Step.Toy (parse, parseSure, parseQuery, parseSureQuery)
 import Step.Chunk.ListLike (NonEmptyListLike, genChunks, fold)
 
 import qualified Step.Do as P
+import qualified Step.Chunk.ListLike as LL
 
 import Control.Monad ((>>=), Monad)
 import Data.Char (Char)
 import Data.Either (Either (..), either)
 import Data.Eq (Eq)
 import Data.Function (($), id)
+import Data.Functor ((<$>))
 import Data.Functor.Identity (Identity)
 import Data.Maybe (Maybe (..))
 import Data.Text (Text)
 import Data.String (fromString)
 import Text.Show (Show)
 import Data.Void (Void)
+import Data.Semigroup ((<>))
 
 import qualified Data.Char as Char
 import qualified Data.Text as Text
@@ -38,6 +41,7 @@ tests :: TestTree
 tests =
   testGroup "Toy"
     [ singleCharacterTests
+    , particularTextTests
     ]
 
 singleCharacterTests = testGroup "Single characters"
@@ -62,6 +66,15 @@ singleCharacterTests = testGroup "Single characters"
     , testPropertyNamed "yes" "prop_satisfyJust_yes" prop_satisfyJust_yes
     , testPropertyNamed "no" "prop_satisfyJust_no" prop_satisfyJust_no
     ]
+  ]
+
+particularTextTests = testGroup "Particular text"
+  [ testGroup "takeText"
+      [ testPropertyNamed "empty" "prop_takeText_empty" prop_takeText_empty
+      , testPropertyNamed "not enough input" "prop_takeText_notEnoughInput" prop_takeText_notEnoughInput
+      , testPropertyNamed "exact" "prop_takeText_exact" prop_takeText_exact
+      , testPropertyNamed "okay and more" "prop_takeText_okayAndMore" prop_takeText_okayAndMore
+      ]
   ]
 
 testPureQuery :: forall m a. Monad m => Eq a => Show a =>
@@ -128,6 +141,31 @@ prop_satisfyJust_yes = property do
     testPure (satisfyJust upperOrd) (Text.cons x xs) (Just (Char.ord x)) xs
 
 prop_satisfyJust_no = property do
-    x <-forAll Gen.lower
+    x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
     testPure (satisfyJust upperOrd) (Text.cons x xs) Nothing (Text.cons x xs)
+
+prop_takeText_empty = property do
+    xs <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    parse (takeText xs) [] === (Left (), [])
+
+prop_takeText_notEnoughInput = property do
+    a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    i <- forAll (genChunks (LL.nonEmptyListLike a))
+    let (r, _) = parse (takeText (a <> b)) i
+    r === Left ()
+
+prop_takeText_exact = property do
+    a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    i <- forAll (genChunks (LL.nonEmptyListLike a))
+    let (r, _) = parse (takeText a) i
+    r === Right ()
+
+prop_takeText_okayAndMore = property do
+    a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    i <- forAll (genChunks (LL.nonEmptyListLike (a <> b)))
+    let (x, r) = parse (takeText a) i
+    x === Right ()
+    LL.fold r === LL.nonEmptyListLike b

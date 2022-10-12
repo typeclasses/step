@@ -30,6 +30,7 @@ import Optics (preview, review)
 import Prelude (error)
 import Prelude (fromIntegral)
 import Text.Show (Show (showsPrec))
+import Data.Semigroup (Semigroup (..))
 
 import qualified Data.Foldable as Foldable
 import qualified Data.ListLike as LL
@@ -50,6 +51,11 @@ instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c)
     fromString x =
         fromMaybe (error "NonEmptyListLike fromString: empty") $
             refine (fromString x)
+
+instance Semigroup c => Semigroup (NonEmptyListLike c)
+  where
+    NonEmptyListLike c1 l1 <> NonEmptyListLike c2 l2 =
+        NonEmptyListLike (c1 <> c2) (Positive.plus l1 l2)
 
 assume :: ListLike c (Item c) => c -> NonEmptyListLike c
 assume c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
