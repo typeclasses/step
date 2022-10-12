@@ -9,17 +9,19 @@ module SupplyChain.Bonus.ActionList
     {- * Type -} ActionList (..),
     {- * Introduction -} fromList, perform,
     {- * Elimination -} toList, runActionList,
+    {- * Use -} next,
   )
   where
 
-import SupplyChain (Connect((>->)), Vendor, eval, run, NoInterface, NoAction)
+import SupplyChain (Connect((>->)), Vendor, evalFactory, runFactory, runVendor, NoInterface, NoAction, Supply (..))
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
 import Control.Applicative (Applicative (..))
+import Data.Maybe (Maybe (..))
 import Control.Monad (Monad (..), ap)
 import Data.Function ((.))
-import Data.Functor (Functor (..))
+import Data.Functor (Functor (..), (<&>))
 import Data.Monoid (Monoid (..))
 import Data.Semigroup (Semigroup (..))
 
@@ -62,8 +64,13 @@ perform x = VendorActionList (Stream.actionSingleton x)
 
 -- | Converts an 'ActionList' into an ordinary list
 toList :: ActionList NoAction a -> [a]
-toList (VendorActionList v) = eval (v >-> Stream.all)
+toList (VendorActionList v) = evalFactory (v >-> Stream.all)
 
 -- | Converts an 'ActionList' into an action that returns all the items at once
 runActionList :: Monad m => ActionList m a -> m [a]
-runActionList (VendorActionList v) = run (v >-> Stream.all)
+runActionList (VendorActionList v) = runFactory (v >-> Stream.all)
+
+next :: Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
+next (VendorActionList v) =
+    SupplyChain.runVendor v Stream.NextMaybe <&> \(Supply xm v') ->
+        xm <&> (, VendorActionList v')

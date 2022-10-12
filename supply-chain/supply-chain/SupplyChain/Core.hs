@@ -74,10 +74,10 @@ type NoInterface :: Interface
 
 -- | Run a factory in its 'Action' context
 
-run :: forall (action :: Action) (product :: Type). Monad action =>
+runFactory :: forall (action :: Action) (product :: Type). Monad action =>
     Factory NoInterface action product -> action product
 
-run = go
+runFactory = go
   where
     go :: forall x. Factory NoInterface action x -> action x
     go = \case
@@ -85,6 +85,20 @@ run = go
       Perform action       ->  action
       Bind    step1 step2  ->  go step1 >>= (go . step2)
       Request (Const x)    ->  absurd x
+
+
+{-| An action in which a vendor handles a single request
+
+    The action returns a 'Supply', which contains two things:
+
+    - The response to the request
+    - A new version of the vendor
+-}
+
+runVendor :: forall (action :: Action) (down :: Interface) (x :: Type). Monad action =>
+    Vendor NoInterface down action -> down x -> action (Supply NoInterface down action x)
+
+runVendor v r = runFactory $ vendorToFactory' v (Request r)
 
 
 -- | Makes requests, responds to requests, and performs actions
@@ -144,7 +158,7 @@ vendorToVendor up down =
     Vendor \request -> vendorToFactory' up (offer down request) <&> joinSupply
 
 
-{-| Connect a vendor to a factory, producing a factory which ultimately
+{-| Connect a vendor to a factory, producing a factory which
     returns both the product and a new version of the vendor.
 
     Use this function instead of 'vendorToFactory' if you need to attach

@@ -28,11 +28,12 @@ module SupplyChain
     {- * Factory -}
     {- ** Type -} Factory, {- $factory -}
     {- ** How to create a factory -} {- $definingFactories -} order, perform,
-    {- ** How to use a factory -} run, eval,
+    {- ** How to use a factory -} runFactory, evalFactory,
 
     {- * Vendor -}
     {- ** Type -} Vendor (..), {- $vendor -} Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
+    {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
     {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
 
     {- * Connection -}
@@ -48,7 +49,7 @@ module SupplyChain
 import SupplyChain.Core
 
 import Control.Applicative (pure)
-import Data.Function ((.), ($))
+import Data.Function (($))
 import Data.Functor ((<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.Kind (Type)
@@ -79,10 +80,16 @@ order = Request
 
 -- | Run a factory that performs no actions
 
-eval :: forall (product :: Type).
+evalFactory :: forall (product :: Type).
     Factory NoInterface NoAction product -> product
 
-eval = runIdentity . run
+evalFactory f = runIdentity (runFactory f)
+
+
+evalVendor :: forall (down :: Interface) (x :: Type).
+    Vendor NoInterface down NoAction -> down x -> Supply NoInterface down NoAction x
+
+evalVendor v r = runIdentity (runVendor v r)
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function
@@ -234,5 +241,12 @@ Specializations:
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Vendor' up down action1         -> 'Vendor' up down action2
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Supply' up down action1 product -> 'Supply' up down action2 product
 @
+
+-}
+
+{- $usingVendors
+
+The most common way to use a 'Vendor' is to connect it to a 'Factory' using
+'vendorToFactory'. However, a vendor can also be used by itself with 'runVendor'.
 
 -}

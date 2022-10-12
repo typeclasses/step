@@ -62,7 +62,7 @@ actionParseSureQuery :: forall p c m a. Chunk c => Monad m => Is p SureQuery =>
 actionParseSureQuery p xs = z (run (castTo @Sure (castTo @SureQuery p))) xs <&> \(r, _) -> r
 
 z :: (Chunk c, Monad f) => Factory (Step 'RW c) f a -> [c] -> f (a, [c])
-z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >-> liftFactory parser)) (Buffer (Seq.fromList xs))
+z parser xs = runStateT (SupplyChain.runFactory (pureStepper (castOptic simple) >-> liftFactory parser)) (Buffer (Seq.fromList xs))
         <&> \(a, rem) -> (a, bufferList rem)
 
 liftFactory :: forall up m m' a. Monad m =>

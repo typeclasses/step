@@ -26,33 +26,33 @@ tests = testGroup "TerminableStream"
     ]
 
 listTest :: Assertion
-listTest = eval supplyChain @?= result
+listTest = evalFactory factory @?= result
   where
-    supplyChain = list "abc" >-> replicateM 4 (order NextMaybe)
+    factory = list "abc" >-> replicateM 4 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
 concatTest1 :: Assertion
-concatTest1 = eval supplyChain @?= result
+concatTest1 = evalFactory factory @?= result
   where
-    supplyChain = list ["a", "bc", "def", "ghij"] >-> concat
+    factory = list ["a", "bc", "def", "ghij"] >-> concat
                     >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
 
 concatTest2 :: Assertion
-concatTest2 = eval supplyChain @?= result
+concatTest2 = evalFactory factory @?= result
   where
-    supplyChain = list ["a", "bc"] >-> concat
+    factory = list ["a", "bc"] >-> concat
                     >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]
 
 groupLetters :: Assertion
-groupLetters = eval supplyChain @?= result
+groupLetters = evalFactory factory @?= result
   where
-    supplyChain = (list "Hrmm..." >-> group >-> all)
+    factory = (list "Hrmm..." >-> group >-> all)
     result = [(0, 'H'), (0, 'r'), (1, 'm'), (2, '.')]
 
 groupEmpty :: Assertion
-groupEmpty = eval supplyChain @?= result
+groupEmpty = evalFactory factory @?= result
   where
-    supplyChain = (nil >-> group >-> all)
+    factory = nil >-> group >-> all
     result = [] :: [(Natural, Char)]
