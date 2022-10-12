@@ -1,4 +1,4 @@
-module Step.Toy (parse, actionParse, parseQuery, actionParseQuery, parseSure, actionParseSure, actionParseSureQuery, parseSureQuery) where
+module Step.Toy (parse, actionParse, parseQuery, actionParseQuery, parseSure, actionParseSure, actionParseSureQuery, parseSureQuery, parseMaybe) where
 
 import Step.Action
 import Step.Chunk
@@ -9,9 +9,10 @@ import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
 import Control.Monad.State.Strict (runStateT, StateT)
 import Data.Either (Either (..), either)
 import Data.Foldable (toList)
-import Data.Function (($), id)
+import Data.Function (($), id, (&))
 import Data.Functor (fmap, (<&>))
 import Data.Functor.Identity (Identity (runIdentity))
+import Data.Maybe (Maybe (..))
 import Data.Sequence (Seq (..))
 import Data.Void (Void, absurd)
 import Optics (simple, castOptic)
@@ -27,6 +28,10 @@ import qualified SupplyChain.Interface.TerminableStream as Stream
 parse :: forall p c e a. Chunk c => Is p Any =>
     p c Identity e a -> [c] -> (Either e a, [c])
 parse p xs = runIdentity (actionParse p xs)
+
+parseMaybe :: forall p c a. Chunk c => Is p Any =>
+    p c Identity () a -> [c] -> (Maybe a, [c])
+parseMaybe p xs = parse p xs & \(x, r) -> (either (\_ -> Nothing) Just x, r)
 
 parseQuery :: forall p c e a. Chunk c => Is p Query =>
     p c Identity e a -> [c] -> Either e a

@@ -1,8 +1,8 @@
 module Step.Toy.Spec (tests) where
 
 import Step.Action
-import Step.Toy (parse, parseSure, parseQuery, parseSureQuery)
-import Step.Chunk.ListLike (NonEmptyListLike, genChunks, fold)
+import Step.Toy
+import Step.Chunk.ListLike (NonEmptyListLike, genChunks)
 
 import qualified Step.Do as P
 import qualified Step.Chunk.ListLike as LL
@@ -77,34 +77,14 @@ particularTextTests = testGroup "Particular text"
       ]
   ]
 
-testPureQuery :: forall m a. Monad m => Eq a => Show a =>
-    Query (NonEmptyListLike Text) Identity () a -> Text -> Maybe a -> PropertyT m ()
-testPureQuery parser input expectedResult = do
-    chunkedInput :: [T] <- forAll (genChunks input)
-    let (either (\() -> Nothing) Just -> result :: Maybe a) = parseQuery parser chunkedInput
-    result === expectedResult
-
-testPureSureQuery :: forall m a. Monad m => Eq a => Show a =>
-    SureQuery (NonEmptyListLike Text) Identity Void a -> Text -> a -> PropertyT m ()
-testPureSureQuery parser input expectedResult = do
-    chunkedInput :: [T] <- forAll (genChunks input)
-    let (result :: a, remainder :: [T]) = parseSure parser chunkedInput
-    (result, remainder) === (expectedResult, chunkedInput)
-
-testPure :: forall m a act. Monad m => Eq a => Show a => Is act Any =>
-    act (NonEmptyListLike Text) Identity () a -> Text -> Maybe a -> Text -> PropertyT m ()
-testPure parser input expectedResult expectedRemainder = do
-    chunkedInput :: [T] <- forAll (genChunks input)
-    let (either (\() -> Nothing) Just -> result :: Maybe a, remainder :: [T]) = parse parser chunkedInput
-    (result, fold remainder) === (expectedResult, expectedRemainder)
-
 prop_peekChar_empty = withTests 1 $ property do
     parseQuery peekChar noInput === Left ()
 
 prop_peekChar_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    testPureQuery peekChar (Text.cons x xs) (Just x)
+    i <- forAll (genChunks (Text.cons x xs))
+    parseQuery peekChar i === Right x
 
 prop_peekCharMaybe_empty = withTests 1 $ property do
     parseSureQuery peekCharMaybe noInput === Nothing
@@ -112,7 +92,8 @@ prop_peekCharMaybe_empty = withTests 1 $ property do
 prop_peekCharMaybe_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    testPureSureQuery peekCharMaybe (Text.cons x xs) (Just x)
+    i <- forAll (genChunks (Text.cons x xs))
+    parseSureQuery peekCharMaybe i === Just x
 
 prop_takeCharMaybe_empty = withTests 1 $ property do
     parse takeCharMaybe [] === (Right Nothing :: Either () (Maybe Char), noInput)
@@ -120,7 +101,10 @@ prop_takeCharMaybe_empty = withTests 1 $ property do
 prop_takeCharMaybe_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    testPure takeCharMaybe (Text.cons x xs) (Just (Just x)) xs
+    i <- forAll (genChunks (Text.cons x xs))
+    let (e, r) = parseMaybe takeCharMaybe i
+    e === Just (Just x)
+    LL.fold r === xs
 
 prop_takeChar_empty = withTests 1 $ property do
     parse takeChar [] === (Left (), noInput)
@@ -128,7 +112,10 @@ prop_takeChar_empty = withTests 1 $ property do
 prop_takeChar_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    testPure takeChar (Text.cons x xs) (Just x) xs
+    i <- forAll (genChunks (Text.cons x xs))
+    let (e, r) = parseMaybe takeChar i
+    e === Just x
+    LL.fold r === xs
 
 upperOrd x = if Char.isUpper x then Just (Char.ord x) else Nothing
 
@@ -138,12 +125,18 @@ prop_satisfyJust_empty = withTests 1 $ property do
 prop_satisfyJust_yes = property do
     x <-forAll Gen.upper
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    testPure (satisfyJust upperOrd) (Text.cons x xs) (Just (Char.ord x)) xs
+    i <- forAll (genChunks (Text.cons x xs))
+    let (e, r) = parseMaybe (satisfyJust upperOrd) i
+    e === Just (Char.ord x)
+    LL.fold r === xs
 
 prop_satisfyJust_no = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    testPure (satisfyJust upperOrd) (Text.cons x xs) Nothing (Text.cons x xs)
+    i <- forAll (genChunks (Text.cons x xs))
+    let (e, r) = parseMaybe (satisfyJust upperOrd) i
+    e === Nothing
+    r === i
 
 prop_takeText_empty = property do
     xs <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
