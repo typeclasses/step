@@ -1,6 +1,6 @@
 module Step.Toy.Spec (tests) where
 
-import Step.Action (AtomicMove, SureQuery, Is, Any, Query, peekCharMaybe, takeCharMaybe, peekChar, takeChar)
+import Step.Action
 import Step.Toy (parse, parseSure, parseQuery, parseSureQuery)
 import Step.Chunk.ListLike (NonEmptyListLike, genChunks, fold)
 
@@ -18,6 +18,7 @@ import Data.String (fromString)
 import Text.Show (Show)
 import Data.Void (Void)
 
+import qualified Data.Char as Char
 import qualified Data.Text as Text
 
 import Test.Tasty (TestTree, testGroup)
@@ -36,24 +37,32 @@ noInput = []
 tests :: TestTree
 tests =
   testGroup "Toy"
-    [ testGroup "peekChar"
-      [ testPropertyNamed "empty" "prop_peekChar_empty" prop_peekChar_empty
-      , testPropertyNamed "non-empty" "prop_peekChar_nonEmpty" prop_peekChar_nonEmpty
-      ]
-    , testGroup "peekCharMaybe"
-      [ testPropertyNamed "empty" "prop_peekCharMaybe_empty" prop_peekCharMaybe_empty
-      , testPropertyNamed "non-empty" "prop_peekCharMaybe_nonEmpty" prop_peekCharMaybe_nonEmpty
-      ]
-    , testGroup "takeCharMaybe"
-      [ testPropertyNamed "empty" "prop_takeCharMaybe_empty" prop_takeCharMaybe_empty
-      , testPropertyNamed "non-empty" "prop_takeCharMaybe_nonEmpty" prop_takeCharMaybe_nonEmpty
-      ]
-    , testGroup "takeChar"
-      [ testPropertyNamed "empty" "prop_takeChar_empty" prop_takeChar_empty
-      , testPropertyNamed "non-empty" "prop_takeChar_nonEmpty" prop_takeChar_nonEmpty
-      ]
+    [ singleCharacterTests
     ]
 
+singleCharacterTests = testGroup "Single characters"
+  [ testGroup "peekChar"
+    [ testPropertyNamed "empty" "prop_peekChar_empty" prop_peekChar_empty
+    , testPropertyNamed "non-empty" "prop_peekChar_nonEmpty" prop_peekChar_nonEmpty
+    ]
+  , testGroup "peekCharMaybe"
+    [ testPropertyNamed "empty" "prop_peekCharMaybe_empty" prop_peekCharMaybe_empty
+    , testPropertyNamed "non-empty" "prop_peekCharMaybe_nonEmpty" prop_peekCharMaybe_nonEmpty
+    ]
+  , testGroup "takeCharMaybe"
+    [ testPropertyNamed "empty" "prop_takeCharMaybe_empty" prop_takeCharMaybe_empty
+    , testPropertyNamed "non-empty" "prop_takeCharMaybe_nonEmpty" prop_takeCharMaybe_nonEmpty
+    ]
+  , testGroup "takeChar"
+    [ testPropertyNamed "empty" "prop_takeChar_empty" prop_takeChar_empty
+    , testPropertyNamed "non-empty" "prop_takeChar_nonEmpty" prop_takeChar_nonEmpty
+    ]
+  , testGroup "satisfyJust"
+    [ testPropertyNamed "empty" "prop_satisfyJust_empty" prop_satisfyJust_empty
+    , testPropertyNamed "yes" "prop_satisfyJust_yes" prop_satisfyJust_yes
+    , testPropertyNamed "no" "prop_satisfyJust_no" prop_satisfyJust_no
+    ]
+  ]
 
 testPureQuery :: forall m a. Monad m => Eq a => Show a =>
     Query (NonEmptyListLike Text) Identity () a -> Text -> Maybe a -> PropertyT m ()
@@ -107,3 +116,18 @@ prop_takeChar_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
     testPure takeChar (Text.cons x xs) (Just x) xs
+
+upperOrd x = if Char.isUpper x then Just (Char.ord x) else Nothing
+
+prop_satisfyJust_empty = withTests 1 $ property do
+    parse (satisfyJust upperOrd) [] === (Left (), noInput)
+
+prop_satisfyJust_yes = property do
+    x <-forAll Gen.upper
+    xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
+    testPure (satisfyJust upperOrd) (Text.cons x xs) (Just (Char.ord x)) xs
+
+prop_satisfyJust_no = property do
+    x <-forAll Gen.lower
+    xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
+    testPure (satisfyJust upperOrd) (Text.cons x xs) Nothing (Text.cons x xs)
