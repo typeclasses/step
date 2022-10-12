@@ -18,6 +18,10 @@ import Prelude (error)
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
 
+-- Optics
+import Optics (Iso', iso)
+import qualified Optics
+
 -- Transformers
 import qualified Control.Monad.Reader as MTL
 import Control.Monad.Trans.Except (ExceptT (..))
@@ -110,45 +114,28 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
     (<*>) = error "unreachable"
 
 
-class Run p c m e a mode product | p c m e a -> mode product where
-    run :: p c m e a -> Factory (Step mode c) m product
+class IsWalk p c m e a mode product | p c m e a -> mode product where
+    walk :: Iso' (p c m e a) (Walk mode c m product)
 
-instance Run Any c m e a 'RW (Either e a) where
-    run (Any (Walk x)) = x
+instance IsWalk Any c m e a 'RW (Either e a) where
+    walk = Optics.coerced
 
-instance Run Sure c m e a 'RW a where
-    run (Sure (Walk x)) = x
+instance IsWalk Sure c m e a 'RW a where
+    walk = Optics.coerced
 
-instance Run Query c m e a 'R (Either e a) where
-    run (Query (Walk x)) = x
+instance IsWalk Query c m e a 'R (Either e a) where
+    walk = Optics.coerced
 
-instance Run SureQuery c m e a 'R a where
-    run (SureQuery (Walk x)) = x
-
-instance Run Atom c m e a 'RW (Either e a) where
-    run = run . castTo @Any
-
-instance Run Move c m e a 'RW (Either e a) where
-    run = run . castTo @Any
-
-instance Run AtomicMove c m e a 'RW (Either e a) where
-    run = run . castTo @Any
+instance IsWalk SureQuery c m e a 'R a where
+    walk = Optics.coerced
 
 
-class Act p c m e a mode result | p c m e a -> mode result where
-    act :: Factory (Step mode c) m result -> p c m e a
+run :: IsWalk p c m e a mode product => p c m e a -> Factory (Step mode c) m product
+run = (\(Walk x) -> x) . Optics.view walk
 
-instance Act Any c m e a 'RW (Either e a) where
-    act = Any . Walk
 
-instance Act Query c m e a 'R (Either e a) where
-    act = Query . Walk
-
-instance Act Sure c m e a 'RW a where
-    act = Sure . Walk
-
-instance Act SureQuery c m e a 'R a where
-    act = SureQuery . Walk
+act :: IsWalk p c m e a mode product => Factory (Step mode c) m product -> p c m e a
+act = Optics.review walk . Walk
 
 
 -- | Action that can be tried noncommittally
