@@ -69,6 +69,7 @@ library
         Step.Toy
 
         Step.Package.AttoparsecText
+        Step.Package.Document
 
 test-suite test-step
     import: base
