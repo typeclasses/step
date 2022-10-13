@@ -1,6 +1,14 @@
 {-# language DataKinds, KindSignatures, FlexibleContexts, OverloadedStrings, QualifiedDo #-}
 
--- | Modeled after "Data.Attoparsec.Text" in the @attoparse@ package version @0.14.4@.
+{-|
+
+Description: An approximation of Attoparsec's Text interface
+
+See "Data.Attoparsec.Text" in the @attoparsec@ package.
+
+Attoparsec version: @0.14.4@
+
+-}
 
 module Step.Package.AttoparsecText where
 

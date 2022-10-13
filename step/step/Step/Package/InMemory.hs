@@ -1,3 +1,9 @@
+{- |
+
+Description: For consuming in-memory input streams
+
+-}
+
 module Step.Package.InMemory
   (
     {- * Any -} parse, actionParse, parseMaybe,
