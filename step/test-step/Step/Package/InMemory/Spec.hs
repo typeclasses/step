@@ -1,7 +1,7 @@
 module Step.Package.InMemory.Spec (tests) where
 
 import Step.Action
-import Step.Package.InMemory
+import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
 import Step.Chunk.ListLike (NonEmptyListLike, genChunks)
 
 import qualified Step.Do as P
@@ -9,7 +9,6 @@ import qualified Step.Chunk.ListLike as LL
 
 import Control.Monad ((>>=), Monad)
 import Data.Char (Char)
-import Data.Either (Either (..), either)
 import Data.Eq (Eq)
 import Data.Function (($), id)
 import Data.Functor ((<$>))
@@ -46,7 +45,7 @@ tests = fromGroup $$(discover)
 prop_peekChar_empty = withTests 1 $ property do
 
     -- peekChar, on empty input, should fail
-    parseQuery peekChar noInput === Left ()
+    parseQueryMaybe peekChar noInput === Nothing
 
 prop_peekChar_nonEmpty = property do
     x <- forAll Gen.lower
@@ -54,7 +53,7 @@ prop_peekChar_nonEmpty = property do
     i <- forAll (genChunks (Text.cons x xs))
 
     -- peekChar, on non-empty input, should return the first character
-    parseQuery peekChar i === Right x
+    parseQueryMaybe peekChar i === Just x
 
 prop_peekCharMaybe_empty = withTests 1 $ property do
 
@@ -70,10 +69,10 @@ prop_peekCharMaybe_nonEmpty = property do
     parseSureQuery (try peekChar) i === Just x
 
 prop_takeCharMaybe_empty = withTests 1 $ property do
-    let (x, r) = parse (try takeChar) []
+    let (x, r) = parseMaybe (try takeChar) []
 
     -- (try takeChar), on empty input, should succeed and return Nothing
-    x === (Right Nothing :: Either () (Maybe Char))
+    x === Just Nothing
 
     -- there should, of course, still be no input remaining
     r === noInput
@@ -91,10 +90,10 @@ prop_takeCharMaybe_nonEmpty = property do
     LL.fold r === xs
 
 prop_takeChar_empty = withTests 1 $ property do
-    let (x, r) = parse takeChar []
+    let (x, r) = parseMaybe takeChar []
 
     -- takeChar, on empty input, should fail
-    x === Left ()
+    x === Nothing
 
     -- there should, of course, still be no input remaining
     r === noInput
@@ -114,10 +113,10 @@ prop_takeChar_nonEmpty = property do
 upperOrd x = if Char.isUpper x then Just (Char.ord x) else Nothing
 
 prop_satisfyJust_empty = withTests 1 $ property do
-    let (x, r) = parse (satisfyJust upperOrd) []
+    let (x, r) = parseMaybe (satisfyJust upperOrd) []
 
     -- satisfyJust, on empty input, should always fail
-    x === Left ()
+    x === Nothing
 
     -- there should, of course, still be no input remaining
     r === noInput
@@ -151,10 +150,10 @@ prop_satisfyJust_no = property do
 
 prop_takeText_empty = property do
     xs <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    let (x, r) = parse (takeText xs) []
+    let (x, r) = parseMaybe (takeText xs) []
 
     -- takeText, on empty input, should always fail
-    x === Left ()
+    x === Nothing
 
     -- there should, of course, still be no input remaining
     r === noInput
@@ -163,18 +162,18 @@ prop_takeText_notEnoughInput = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (LL.nonEmptyListLike a))
-    let (r, _) = parse (takeText (a <> b)) i
+    let (r, _) = parseMaybe (takeText (a <> b)) i
 
     -- takeText, when the input is a proper prefix of the desired text, should fail
-    r === Left ()
+    r === Nothing
 
 prop_takeText_exact = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (LL.nonEmptyListLike a))
-    let (x, r) = parse (takeText a) i
+    let (x, r) = parseMaybe (takeText a) i
 
     -- takeText, when the input is exactly the desired text, should succeed
-    x === Right ()
+    x === Just ()
 
     -- all of the input should have been taken
     r === noInput
@@ -183,10 +182,10 @@ prop_takeText_okayAndMore = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (LL.nonEmptyListLike (a <> b)))
-    let (x, r) = parse (takeText a) i
+    let (x, r) = parseMaybe (takeText a) i
 
     -- takeText, when the input begins with the desired text and contains more thereafter, should succeed
-    x === Right ()
+    x === Just ()
 
     -- the remainder should consist of the input with the desired prefix stripped from it
     LL.fold r === LL.nonEmptyListLike b

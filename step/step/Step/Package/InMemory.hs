@@ -1,4 +1,11 @@
-module Step.Package.InMemory (parse, actionParse, parseQuery, actionParseQuery, parseSure, actionParseSure, actionParseSureQuery, parseSureQuery, parseMaybe) where
+module Step.Package.InMemory
+  (
+    {- * Any -} parse, actionParse, parseMaybe,
+    {- * Query -} parseQuery, actionParseQuery, parseQueryMaybe,
+    {- * Sure -} parseSure, actionParseSure,
+    {- * SureQuery -} actionParseSureQuery, parseSureQuery,
+  )
+  where
 
 import Step.Action
 import Step.Chunk
@@ -36,6 +43,10 @@ parseMaybe p xs = parse p xs & \(x, r) -> (either (\_ -> Nothing) Just x, r)
 parseQuery :: forall p c e a. Chunk c => Is p Query =>
     p c Identity e a -> [c] -> Either e a
 parseQuery p xs = runIdentity (actionParseQuery p xs)
+
+parseQueryMaybe :: forall p c a. Chunk c => Is p Query =>
+    p c Identity () a -> [c] -> Maybe a
+parseQueryMaybe p xs = parseQuery p xs & either (\_ -> Nothing) Just
 
 parseSure :: forall p c a. Chunk c => Is p Sure =>
     p c Identity Void a -> [c] -> (a, [c])
