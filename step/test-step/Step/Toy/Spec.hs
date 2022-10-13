@@ -70,9 +70,9 @@ prop_peekCharMaybe_nonEmpty = property do
     parseSureQuery peekCharMaybe i === Just x
 
 prop_takeCharMaybe_empty = withTests 1 $ property do
-    let (x, r) = parse takeCharMaybe []
+    let (x, r) = parse (try takeChar) []
 
-    -- takeCharMaybe, on empty input, should succeed and return Nothing
+    -- (try takeChar), on empty input, should succeed and return Nothing
     x === (Right Nothing :: Either () (Maybe Char))
 
     -- there should, of course, still be no input remaining
@@ -82,9 +82,9 @@ prop_takeCharMaybe_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
     i <- forAll (genChunks (Text.cons x xs))
-    let (e, r) = parseMaybe takeCharMaybe i
+    let (e, r) = parseMaybe (try takeChar) i
 
-    -- takeCharMaybe, on non-empty input, should succeed and return Just the first character
+    -- (try takeChar), on non-empty input, should succeed and return Just the first character
     e === Just (Just x)
 
     -- the remainder should be only the tail of the original input

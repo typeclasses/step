@@ -13,7 +13,7 @@ module Step.Action
 
     {- * Examples -}
     {- ** Single characters -}
-      peekCharMaybe, peekChar, takeChar, takeCharMaybe, satisfyJust,
+      peekCharMaybe, peekChar, takeChar, satisfyJust,
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
     {- ** Particular text -} nextTextIs, takeText, takeTextAtomic,
     {- ** Fixed-length -}
@@ -98,13 +98,6 @@ peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case
     Nothing  ->  castTo @Query fail
     Just x   ->  pure x
-
--- | Advance over the next character (if possible) and return it
-takeCharMaybe :: forall c m e. Chunk c => Sure c m e (Maybe (One c))
-takeCharMaybe = act do
-    xm <- Interface.peekCharMaybe
-    _ <- for_ xm \_ -> Interface.commit one
-    pure xm
 
 -- | Advance over the next character and return it; fail if end of input
 takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (One c)
