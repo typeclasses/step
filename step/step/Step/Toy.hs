@@ -49,16 +49,16 @@ actionParseQuery :: forall p c m e a. Chunk c => Monad m => Is p Query =>
     p c m e a -> [c] -> m (Either e a)
 actionParseQuery p xs = actionParse (castTo @Any (castTo @Query p)) xs <&> \(r, _) -> r
 
-actionParseSure :: forall p c m a. Chunk c => Monad m => Is p Sure =>
-    p c m Void a -> [c] -> m (a, [c])
+actionParseSure :: forall p c m e a. Chunk c => Monad m => Is p Sure =>
+    p c m e a -> [c] -> m (a, [c])
 actionParseSure p xs = z (run (castTo @Sure p)) xs
 
-parseSureQuery :: forall p c a. Chunk c => Is p SureQuery =>
-    p c Identity Void a -> [c] -> a
+parseSureQuery :: forall p c e a. Chunk c => Is p SureQuery =>
+    p c Identity e a -> [c] -> a
 parseSureQuery p xs = runIdentity (actionParseSureQuery p xs)
 
-actionParseSureQuery :: forall p c m a. Chunk c => Monad m => Is p SureQuery =>
-    p c m Void a -> [c] -> m a
+actionParseSureQuery :: forall p c m e a. Chunk c => Monad m => Is p SureQuery =>
+    p c m e a -> [c] -> m a
 actionParseSureQuery p xs = z (run (castTo @Sure (castTo @SureQuery p))) xs <&> \(r, _) -> r
 
 z :: (Chunk c, Monad f) => Factory (Step 'RW c) f a -> [c] -> f (a, [c])

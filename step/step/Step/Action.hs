@@ -12,8 +12,7 @@ module Step.Action
     {- ** Monad-like operations -} {- $do -} Join (..), bindAction,
 
     {- * Examples -}
-    {- ** Single characters -}
-      peekCharMaybe, peekChar, takeChar, satisfyJust,
+    {- ** Single characters -} peekChar, takeChar, satisfyJust,
     {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
     {- ** Particular text -} nextTextIs, takeText, takeTextAtomic,
     {- ** Fixed-length -}
