@@ -1,7 +1,7 @@
-module Step.Toy.Spec (tests) where
+module Step.Package.InMemory.Spec (tests) where
 
 import Step.Action
-import Step.Toy
+import Step.Package.InMemory
 import Step.Chunk.ListLike (NonEmptyListLike, genChunks)
 
 import qualified Step.Do as P

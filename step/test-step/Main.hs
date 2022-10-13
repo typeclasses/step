@@ -2,11 +2,11 @@ module Main (main) where
 
 import Test.Tasty
 
-import qualified Step.Toy.Spec
+import qualified Step.Package.InMemory.Spec
 
 main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "Step"
-  [ Step.Toy.Spec.tests
+  [ Step.Package.InMemory.Spec.tests
   ]

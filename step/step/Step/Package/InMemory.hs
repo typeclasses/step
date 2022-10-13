@@ -1,4 +1,4 @@
-module Step.Toy (parse, actionParse, parseQuery, actionParseQuery, parseSure, actionParseSure, actionParseSureQuery, parseSureQuery, parseMaybe) where
+module Step.Package.InMemory (parse, actionParse, parseQuery, actionParseQuery, parseSure, actionParseSure, actionParseSureQuery, parseSureQuery, parseMaybe) where
 
 import Step.Action
 import Step.Chunk

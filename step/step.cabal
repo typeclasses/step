@@ -66,10 +66,9 @@ library
 
         Step.Error
 
-        Step.Toy
-
         Step.Package.AttoparsecText
         Step.Package.Document
+        Step.Package.InMemory
 
 test-suite test-step
     import: base
@@ -86,4 +85,4 @@ test-suite test-step
       , tasty-hunit
       , text
     other-modules:
-        Step.Toy.Spec
+        Step.Package.InMemory.Spec
