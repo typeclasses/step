@@ -2,9 +2,8 @@
 
 Description: The main API of the supply-chain library
 
-A "supply chain" represents a flow of information from one
-'Vendor' to the next, and so on, ultimately reaching a 'Factory'
-who returns a product.
+A "supply chain" represents a flow of information from one 'Vendor' to the next,
+and so on, ultimately reaching a 'Factory' who returns a product.
 
 @
 (vendor1 '>->' vendor2 '>->' vendor3 '>->' factory)
@@ -14,7 +13,9 @@ In the above example, @vendor2@ is said to be the /client/ which is immediately
 /downstream/ of @vendor1@. A factory or vendor can place an 'order', which is
 fulfilled by the vendor /upstream/ of it. So, the orders made by the @factory@
 are served by @vendor3@, the orders made by @vendor3@ are served by @vendor2@,
-and so on.
+and so on. If @vendor1@ does not make any requests and thus does not require yet
+another vendor upstream of it, then the above expression can be converted into
+an action using 'runFactory'.
 
 -}
 
