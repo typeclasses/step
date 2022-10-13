@@ -13,7 +13,7 @@ module Step.Action
 
     {- * Examples -}
     {- ** Single characters -} peekChar, takeChar, satisfyJust,
-    {- ** Chunks -} peekSome, peekSomeMaybe, takeSome, takeSomeMaybe,
+    {- ** Chunks -} peekSome, takeSome,
     {- ** Particular text -} nextTextIs, takeText, takeTextAtomic,
     {- ** Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
@@ -69,9 +69,6 @@ one = PositiveUnsafe 1
 trySkipPositive :: forall c m e. Positive Natural -> Sure c m e AdvanceResult
 trySkipPositive n = Sure (Walk.commit n)
 
-peekSomeMaybe :: forall c m e. ErrorContext e m => SureQuery c m e (Maybe c)
-peekSomeMaybe = SureQuery Walk.peekSomeMaybe
-
 -- | Take a peek at the next character (if possible) without advancing
 peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
 peekCharMaybe = SureQuery Walk.peekCharMaybe
@@ -113,12 +110,6 @@ takeSome :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e c
 takeSome = assumeMovement $ Atom $ act $ Interface.peekSomeMaybe >>= \case
     Nothing  ->  perform getError <&> Left
     Just x   ->  pure $ Right $ trySkipPositive (length @c x) $> x
-
-takeSomeMaybe :: forall c m e. Chunk c => Sure c m e (Maybe c)
-takeSomeMaybe = act do
-    xm <- Interface.peekSomeMaybe
-    _ <- for_ xm \x -> Interface.commit (length @c x)
-    pure xm
 
 satisfyJust :: forall c m e a. Chunk c => ErrorContext e m =>
     (One c -> Maybe a) -> AtomicMove c m e a
