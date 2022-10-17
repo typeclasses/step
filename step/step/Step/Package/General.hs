@@ -8,6 +8,7 @@ module Step.Package.General
 
     {- * Particular text -}
       nextTextIs, takeParticularText, takeParticularTextAtomic,
+      nextTextMatchesOn,
 
     {- * Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
@@ -41,6 +42,7 @@ import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import SupplyChain (Factory, perform)
+import Data.Functor.Contravariant
 
 import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
@@ -184,13 +186,17 @@ end = atEnd P.>>= require
 
 ---
 
-takeParticularText :: forall c m e. Chunk c => ErrorContext e m => c -> Move c m e ()
-takeParticularText t = assumeMovement $ Any (Walk.takeText t <&> Right) P.>>= require
+takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> Move c m e ()
+takeParticularText t = assumeMovement $ Any (Walk.takeText defaultEquivalence t <&> Right) P.>>= require
 
-nextTextIs :: forall c m e. Chunk c => c -> SureQuery c m e Bool
-nextTextIs t = SureQuery (Walk.nextTextIs t)
+nextTextIs :: forall c m e. Chunk c => Eq c => c -> SureQuery c m e Bool
+nextTextIs t = SureQuery (Walk.nextTextIs defaultEquivalence t)
 
-takeParticularTextAtomic :: forall c m e. Chunk c =>
+takeParticularTextAtomic :: forall c m e. Chunk c => Eq c =>
     ErrorContext e m => c -> AtomicMove c m e ()
 takeParticularTextAtomic t = assumeMovement $
     (nextTextIs t P.>>= require) P.<* trySkipPositive (length t)
+
+nextTextMatchesOn :: forall c m e. Chunk c =>
+    Equivalence c -> c -> SureQuery c m e Bool
+nextTextMatchesOn eq t = SureQuery (Walk.nextTextIs eq t)

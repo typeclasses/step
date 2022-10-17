@@ -15,7 +15,7 @@ import Data.Eq (Eq ((==)))
 import Data.Foldable (Foldable)
 import Data.Function (($), (&), (.), on)
 import Data.Functor ((<&>))
-import Data.Functor.Contravariant (Predicate (..))
+import Data.Functor.Contravariant (Predicate (..), Equivalence (..))
 import Data.ListLike (ListLike)
 import Data.Maybe (Maybe (..), fromMaybe)
 import Data.Ord (Ord (compare), Ordering (..))
@@ -76,7 +76,7 @@ instance Show c => Show (NonEmptyListLike c) where
 
 type instance One (NonEmptyListLike c) = Item c
 
-instance (Eq c, Eq (Item c), ListLike c (Item c)) => Chunk (NonEmptyListLike c)
+instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
   where
 
     length = nonEmptyListLikeLength
@@ -126,31 +126,19 @@ instance (Eq c, Eq (Item c), ListLike c (Item c)) => Chunk (NonEmptyListLike c)
                     _ -> Nothing
             }
 
-    stripEitherPrefix a b =
-        case compare (length a) (length b) of
-            EQ -> case nonEmptyListLike a == nonEmptyListLike b of
-                False    ->  StripEitherPrefixFail
-                True     ->  StripEitherPrefixAll
-            LT -> case LL.stripPrefix (nonEmptyListLike a) (nonEmptyListLike b) of
-                Nothing  ->  StripEitherPrefixFail
-                Just x   ->  IsPrefixOf{ afterPrefix = assume x }
-            GT -> case LL.stripPrefix (nonEmptyListLike b) (nonEmptyListLike a) of
-                Nothing  ->  StripEitherPrefixFail
-                Just x   ->  IsPrefixedBy{ afterPrefix = assume x }
-
 {-| Break up a text into a list of texts
 
     This can be useful for generating parser inputs for testing
 -}
-genChunks :: (Eq xs, Eq x, ListLike xs x) => xs -> Gen [NonEmptyListLike xs]
+genChunks :: ListLike xs x => xs -> Gen [NonEmptyListLike xs]
 genChunks x = case refine x of
     Nothing -> pure []
     Just y -> genChunks' y <&> LL.toList
 
-genChunks' :: (Eq xs, Eq x, ListLike xs x) => NonEmptyListLike xs -> Gen (Seq (NonEmptyListLike xs))
+genChunks' :: ListLike xs x => NonEmptyListLike xs -> Gen (Seq (NonEmptyListLike xs))
 genChunks' x = Gen.recursive Gen.choice [pure (x :<| Empty)] [genChunks'' x]
 
-genChunks'' :: (Eq xs, Eq x, ListLike xs x) => NonEmptyListLike xs -> Gen (Seq (NonEmptyListLike xs))
+genChunks'' :: ListLike xs x => NonEmptyListLike xs -> Gen (Seq (NonEmptyListLike xs))
 genChunks'' x = case Positive.minus (length x) one of
     Signed.Zero -> pure (x :<| Empty)
     Signed.Plus len -> do

@@ -2,13 +2,16 @@ module Step.Chunk where
 
 import Data.Eq (Eq)
 import Data.Function ((.))
-import Data.Functor.Contravariant (Predicate (..))
+import Data.Functor.Contravariant (Predicate (..), Equivalence (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
 import Data.Ord (Ord)
 import NatOptics.Positive.Unsafe (Positive)
 import Numeric.Natural (Natural)
 import Text.Show (Show)
+import Data.Ord (Ord (compare), Ordering (..))
+import Data.Bool (Bool (..))
+import Prelude (error)
 
 type family One (c :: Type) :: Type
 
@@ -20,7 +23,6 @@ class Chunk c
     drop :: Positive Natural -> c -> Drop c
     while :: Predicate (One c) -> c -> While c
     length :: c -> Positive Natural
-    stripEitherPrefix :: c -> c -> StripEitherPrefix c
 
 data StripEitherPrefix c =
     StripEitherPrefixAll
@@ -65,3 +67,19 @@ data While c =
 
 head :: Chunk c => c -> One c
 head = popItem . leftView
+
+stripEitherPrefix :: Chunk c => Equivalence c -> c -> c -> StripEitherPrefix c
+stripEitherPrefix eq a b = case compare (length a) (length b) of
+    EQ -> if getEquivalence eq a b
+            then StripEitherPrefixAll
+            else StripEitherPrefixFail
+    LT -> case split (length a) b of
+        Split a' b' -> if getEquivalence eq a a'
+            then IsPrefixOf{ afterPrefix = b' }
+            else StripEitherPrefixFail
+        SplitInsufficient{} -> error "stripEitherPrefix"
+    GT -> case split (length b) a of
+        Split b' a' -> if getEquivalence eq b b'
+            then IsPrefixedBy{ afterPrefix = a' }
+            else StripEitherPrefixFail
+        SplitInsufficient{} -> error "stripEitherPrefix"
