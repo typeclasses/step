@@ -12,7 +12,7 @@ module Step.Action
     {- ** Monad-like operations -} {- $do -} Join (..), bindAction,
 
     {- * Examples -}
-    {- ** Single characters -} peekChar, takeChar, satisfyJust,
+    {- ** Single characters -} peekChar, takeChar, satisfyJust, satisfyPredicate, nextCharIs, takeParticularChar,
     {- ** Chunks -} peekSome, takeSome,
     {- ** Particular text -} nextTextIs, takeParticularText, takeParticularTextAtomic,
     {- ** Fixed-length -}
@@ -38,6 +38,7 @@ import Data.Bool (Bool (..))
 import Control.Applicative (pure, (<*), (*>))
 import Control.Monad ((>>=), when)
 import Data.Either (Either (..))
+import Data.Eq
 import Data.Foldable (for_)
 import Data.Function (($), (.))
 import Data.Functor (($>), void, (<&>), fmap)
@@ -101,6 +102,17 @@ takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Nothing  ->  castTo @Atom fail
     Just x   ->  castTo @Atom (trySkipPositive one) $> x
 
+nextCharIs :: forall c m e. Chunk c => Eq (One c) => One c -> SureQuery c m e Bool
+nextCharIs c = act $ Interface.peekSomeMaybe <&> \case
+    Just x | head x == c  ->  True
+    _                     ->  False
+
+takeParticularChar :: forall c m e. Chunk c => Eq (One c) => ErrorContext e m =>
+    One c -> AtomicMove c m e ()
+takeParticularChar c = assumeMovement $ Atom $ act $ Interface.peekSomeMaybe >>= \case
+    Just x | head x == c  ->  pure $ Right $ act $ Interface.commit one $> ()
+    _                     ->  perform getError <&> Left
+
 peekSome :: forall c m e. ErrorContext e m => Query c m e c
 peekSome = act $ Interface.peekSomeMaybe >>= \case
     Nothing  ->  perform getError <&> Left
@@ -116,6 +128,10 @@ satisfyJust :: forall c m e a. Chunk c => ErrorContext e m =>
 satisfyJust ok = assumeMovement $ Atom $ act $ Interface.peekCharMaybe >>= \case
     Just (ok -> Just x)  ->  pure $ Right $ act $ Interface.commit one $> x
     _                    ->  perform getError <&> Left
+
+satisfyPredicate :: forall c m e. Chunk c => ErrorContext e m =>
+    (One c -> Bool) -> AtomicMove c m e (One c)
+satisfyPredicate f = satisfyJust (\x -> if f x then Just x else Nothing)
 
 remainsAtLeastPositive :: forall c m e. Chunk c =>
     Positive Natural -> SureQuery c m e Bool

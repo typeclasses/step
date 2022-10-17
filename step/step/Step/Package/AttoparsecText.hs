@@ -22,14 +22,17 @@ import Step.Error
 import Data.Functor.Identity
 import Control.Monad.Identity
 import Control.Monad.Reader
-import Control.Applicative (Applicative)
+import Control.Applicative (Applicative, pure)
 import Data.Semigroup ((<>))
 import Text.Show (show)
 import Data.Bool
+import Data.Foldable (Foldable)
 import Data.Function
 
 import qualified Step.Action as A
+import qualified Step.Do as A
 import qualified Data.Char as Char
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Step.Chunk.ListLike as LL
 
@@ -37,26 +40,22 @@ type Parser m (act :: Action) a =
     act (NonEmptyListLike Text) (ReaderT [Text] m) [Text] a
 
 char :: Applicative m => Char -> Parser m AtomicMove Char
-char x =
-    A.satisfyJust (\y -> if y == x then Just y else Nothing)
-      <?> ("char " <> Text.pack (show x))
+char x = A.satisfyPredicate (== x) <?> ("char " <> Text.pack (show x))
 
 anyChar :: Applicative m => Parser m AtomicMove Char
 anyChar = A.takeChar <?> "anyChar"
 
 notChar :: Applicative m => Char -> Parser m AtomicMove Char
-notChar x =
-    A.satisfyJust (\y -> if y /= x then Just y else Nothing)
-      <?> ("not " <> Text.singleton x)
+notChar x = A.satisfyPredicate (/= x) <?> ("not " <> Text.singleton x)
 
 satisfy :: Applicative m => (Char -> Bool) -> Parser m AtomicMove Char
-satisfy f = A.satisfyJust (\x -> if f x then Just x else Nothing) <?> "satisfy"
+satisfy f = A.satisfyPredicate f <?> "satisfy"
 
 satisfyWith :: Applicative m => (Char -> a) -> (a -> Bool) -> Parser m AtomicMove a
 satisfyWith f ok = A.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) <?> "satisfyWith"
 
 skip :: Applicative m => (Char -> Bool) -> Parser m AtomicMove ()
-skip f = A.satisfyJust (\x -> if f x then Just () else Nothing) <?> "skip"
+skip f = void (A.satisfyPredicate f) <?> "skip"
 
 peekChar :: Applicative m => Parser m SureQuery (Maybe Char)
 peekChar = A.try A.peekChar
@@ -65,22 +64,18 @@ peekChar' :: Applicative m => Parser m Query Char
 peekChar' = A.peekChar <?> "peekChar'"
 
 digit :: Applicative m => Parser m AtomicMove Char
-digit = A.satisfyJust (\x -> if Char.isDigit x then Just x else Nothing) <?> "digit"
+digit = A.satisfyPredicate Char.isDigit <?> "digit"
 
 letter :: Applicative m => Parser m AtomicMove Char
-letter = A.satisfyJust (\x -> if Char.isAlpha x then Just x else Nothing) <?> "letter"
+letter = A.satisfyPredicate Char.isAlpha <?> "letter"
 
--- todo
--- space :: Parser Char
+space :: Applicative m => Parser m AtomicMove Char
+space = A.satisfyPredicate Char.isSpace <?> "space"
 
--- todo
--- inClass :: String -> Char -> Bool
-
--- todo
--- notInClass :: String -> Char -> Bool
-
--- todo
--- string :: Text -> Parser Text
+string :: Applicative m => Text -> Parser m Atom ()
+string x = case LL.refine x of
+    Nothing -> A.castTo @Atom $ A.pure ()
+    Just x' -> A.castTo @Atom (A.takeParticularTextAtomic x') <?> "string"
 
 -- todo
 -- asciiCI :: Text -> Parser Text
