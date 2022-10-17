@@ -64,11 +64,11 @@ peekChar = A.try A.peekChar
 peekChar' :: Applicative m => Parser m Query Char
 peekChar' = A.peekChar <?> "peekChar'"
 
--- digit :: Monad m => Parser s m AtomicMove Char
--- digit = P.satisfyJust (\x -> if Char.isDigit x then Just x else Nothing) <?> "digit"
+digit :: Applicative m => Parser m AtomicMove Char
+digit = A.satisfyJust (\x -> if Char.isDigit x then Just x else Nothing) <?> "digit"
 
--- letter :: Monad m => Parser s m AtomicMove Char
--- letter = P.satisfyJust (\x -> if Char.isAlpha x then Just x else Nothing) <?> "letter"
+letter :: Applicative m => Parser m AtomicMove Char
+letter = A.satisfyJust (\x -> if Char.isAlpha x then Just x else Nothing) <?> "letter"
 
 -- todo
 -- space :: Parser Char
