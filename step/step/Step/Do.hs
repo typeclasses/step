@@ -20,7 +20,6 @@ import Data.Functor (Functor)
 
 import qualified Control.Applicative as Applicative
 import qualified Data.Functor as Functor
-import qualified Control.Monad as Monad
 
 import Step.Action.Core (Join, type (>>), SureQuery)
 import qualified Step.Action.Core as A

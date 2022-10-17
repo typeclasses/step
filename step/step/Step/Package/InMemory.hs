@@ -18,25 +18,20 @@ import Step.Chunk
 import Step.Interface
 
 import Control.Monad (Monad)
-import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
-import Control.Monad.State.Strict (runStateT, StateT)
+import Control.Monad.State.Strict (runStateT)
 import Data.Either (Either (..), either)
 import Data.Foldable (toList)
-import Data.Function (($), id, (&))
-import Data.Functor (fmap, (<&>))
+import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Data.Maybe (Maybe (..))
-import Data.Sequence (Seq (..))
-import Data.Void (Void, absurd)
+import Data.Void (Void)
 import Optics (simple, castOptic)
-import SupplyChain ((>->), Factory, Vendor)
-import SupplyChain.Interface.TerminableStream (TerminableStream)
-import Prelude (String, Char)
+import SupplyChain ((>->), Factory)
 
 import qualified Data.Sequence as Seq
 import qualified Control.Monad.Trans as MTL
 import qualified SupplyChain
-import qualified SupplyChain.Interface.TerminableStream as Stream
 
 parse :: forall p c e a. Chunk c => Is p Any =>
     p c Identity e a -> [c] -> (Either e a, [c])

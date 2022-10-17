@@ -18,21 +18,18 @@ import Data.Char (Char)
 import Data.Text (Text)
 import Data.Maybe (Maybe (..))
 import Step.Chunk.ListLike (NonEmptyListLike)
-import Step.Error
-import Data.Functor.Identity
 import Control.Monad.Identity
 import Control.Monad.Reader
-import Control.Applicative (Applicative, pure)
+import Control.Applicative (Applicative)
 import Data.Semigroup ((<>))
 import Text.Show (show)
 import Data.Bool
-import Data.Foldable (Foldable)
 import Data.Function
 
 import qualified Step.Action as A
+import qualified Step.Package.General as A
 import qualified Step.Do as A
 import qualified Data.Char as Char
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Step.Chunk.ListLike as LL
 

@@ -69,6 +69,7 @@ library
 
         Step.Package.AttoparsecText
         Step.Package.Document
+        Step.Package.General
         Step.Package.InMemory
 
 test-suite test-step

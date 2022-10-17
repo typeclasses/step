@@ -17,10 +17,9 @@ import Step.Interface.Core
 
 -- The basics
 import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..), maybe, isNothing)
+import Data.Maybe (Maybe (..), isNothing)
 import Data.Functor (Functor (..), (<&>), ($>), (<$>))
-import Data.Function (($), (.))
-import Data.Either (Either (..))
+import Data.Function (($))
 import Control.Monad (Monad (..))
 import Control.Applicative (Applicative (..))
 
@@ -28,18 +27,13 @@ import Control.Applicative (Applicative (..))
 import Data.Sequence (Seq (..))
 
 -- Optics
-import Optics (preview, Lens', use, assign, modifying)
+import Optics (Lens', use, assign, modifying)
 
 -- Math
 import Numeric.Natural (Natural)
-import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
-import qualified NatOptics.Positive as Positive
-import qualified NatOptics.Positive.Math as Positive
-import qualified NatOptics.Signed as Signed
+import NatOptics.Positive.Unsafe (Positive)
 
 -- Transformers
-import Control.Monad.Reader (MonadReader)
-import qualified Control.Monad.Reader as MTL
 import Control.Monad.State.Strict (MonadState)
 
 -- Streaming

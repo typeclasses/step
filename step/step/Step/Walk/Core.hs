@@ -2,33 +2,13 @@ module Step.Walk.Core where
 
 import Step.Interface.Core
 
--- The basics
-import Data.Maybe (Maybe (..))
-import Data.Functor (Functor (..), (<$>))
-import Data.Function (($), (.), id)
-import Data.Either (Either (..))
+import Data.Functor (Functor (..))
+import Data.Function ((.))
 import Control.Monad (Monad (..))
-import qualified Control.Monad as Monad
 import Control.Applicative (Applicative (..))
-import Data.Kind (Type)
-import Prelude (error)
+import SupplyChain (Factory, order)
 
--- Math
-import Numeric.Natural (Natural)
-import NatOptics.Positive.Unsafe (Positive)
-
--- Transformers
-import qualified Control.Monad.Reader as MTL
-import Control.Monad.Trans.Except (ExceptT (..))
-import qualified Control.Monad.Trans.Except as MTL
-
--- Streaming
-import SupplyChain (Factory, (>->), order)
-import qualified SupplyChain
-
--- Etc
-import GHC.TypeLits (TypeError, ErrorMessage (Text))
-
+import qualified Control.Monad as Monad
 
 {- |
     A Walk is a factory with 'Step' as its upstream interface, with the

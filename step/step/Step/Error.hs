@@ -3,7 +3,6 @@ module Step.Error where
 import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Reader
-import Data.Functor.Identity
 
 class ErrorContext e m | m -> e
   where

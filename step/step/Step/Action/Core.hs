@@ -14,18 +14,12 @@ import Control.Applicative (Applicative (..))
 import Data.Kind (Type)
 import Prelude (error)
 
--- Math
-import Numeric.Natural (Natural)
-import NatOptics.Positive.Unsafe (Positive)
-
 -- Optics
-import Optics (Iso', iso)
+import Optics (Iso')
 import qualified Optics
 
 -- Transformers
-import qualified Control.Monad.Reader as MTL
 import Control.Monad.Trans.Except (ExceptT (..))
-import qualified Control.Monad.Trans.Except as MTL
 
 -- Streaming
 import SupplyChain (Factory, (>->))

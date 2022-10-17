@@ -1,31 +1,24 @@
 module Step.Package.InMemory.Spec (tests) where
 
 import Step.Action
+import Step.Package.General
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
 import Step.Chunk.ListLike (NonEmptyListLike, genChunks)
 
-import qualified Step.Do as P
 import qualified Step.Chunk.ListLike as LL
 
-import Control.Monad ((>>=), Monad)
 import Data.Char (Char)
-import Data.Eq (Eq)
-import Data.Function (($), id)
+import Data.Function (($))
 import Data.Functor ((<$>))
-import Data.Functor.Identity (Identity)
 import Data.Maybe (Maybe (..))
 import Data.Text (Text)
-import Data.String (fromString)
-import Text.Show (Show)
-import Data.Void (Void)
 import Data.Semigroup ((<>))
 
 import qualified Data.Char as Char
 import qualified Data.Text as Text
 
-import Test.Tasty (TestTree, testGroup)
+import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
-import Test.Tasty.HUnit ((@?=), testCase)
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen

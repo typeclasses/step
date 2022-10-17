@@ -14,15 +14,13 @@ import Step.Walk.Core
 import qualified Step.Interface as Interface
 
 import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..), maybe, isNothing)
-import Data.Functor (Functor (..), (<&>), ($>), (<$>))
-import Data.Function (($), (.))
-import Data.Either (Either (..))
+import Data.Maybe (Maybe (..))
+import Data.Functor ((<&>))
 import Control.Monad (Monad (..))
 import Control.Applicative (Applicative (..))
 import Numeric.Natural (Natural)
-import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
-import SupplyChain (Factory, perform)
+import NatOptics.Positive.Unsafe (Positive)
+import SupplyChain (Factory)
 
 commit :: forall c m. Positive Natural -> Walk 'RW c m AdvanceResult
 commit n = Walk (Interface.commit n)
