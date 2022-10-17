@@ -25,6 +25,8 @@ import Control.Monad.Reader
 import Control.Applicative (Applicative)
 import Data.Semigroup ((<>))
 import Text.Show (show)
+import Data.Bool
+import Data.Function
 
 import qualified Step.Action as A
 import qualified Data.Char as Char
@@ -42,23 +44,25 @@ char x =
 anyChar :: Applicative m => Parser m AtomicMove Char
 anyChar = A.takeChar <?> "anyChar"
 
--- notChar :: Monad m => Char -> Parser s m AtomicMove Char
--- notChar x = P.satisfyJust (\y -> if y /= x then Just y else Nothing) <?> "not " <> Text.singleton x
+notChar :: Applicative m => Char -> Parser m AtomicMove Char
+notChar x =
+    A.satisfyJust (\y -> if y /= x then Just y else Nothing)
+      <?> ("not " <> Text.singleton x)
 
--- satisfy :: Monad m => (Char -> Bool) -> Parser s m AtomicMove Char
--- satisfy f = P.satisfyJust (\x -> if f x then Just x else Nothing) <?> "satisfy"
+satisfy :: Applicative m => (Char -> Bool) -> Parser m AtomicMove Char
+satisfy f = A.satisfyJust (\x -> if f x then Just x else Nothing) <?> "satisfy"
 
--- satisfyWith :: Monad m => (Char -> a) -> (a -> Bool) -> Parser s m AtomicMove a
--- satisfyWith f ok = P.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) <?> "satisfyWith"
+satisfyWith :: Applicative m => (Char -> a) -> (a -> Bool) -> Parser m AtomicMove a
+satisfyWith f ok = A.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) <?> "satisfyWith"
 
--- skip :: Monad m => (Char -> Bool) -> Parser s m AtomicMove ()
--- skip f = P.satisfyJust (\x -> if f x then Just () else Nothing) <?> "skip"
+skip :: Applicative m => (Char -> Bool) -> Parser m AtomicMove ()
+skip f = A.satisfyJust (\x -> if f x then Just () else Nothing) <?> "skip"
 
--- peekChar :: Monad m => Parser s m SureQuery (Maybe Char)
--- peekChar = P.nextCharMaybe
+peekChar :: Applicative m => Parser m SureQuery (Maybe Char)
+peekChar = A.try A.peekChar
 
--- peekChar' :: Monad m => Parser s m Query Char
--- peekChar' = (P.nextCharMaybe P.>>= maybe (castTo @Query P.fail) return) <?> "peekChar'"
+peekChar' :: Applicative m => Parser m Query Char
+peekChar' = A.peekChar <?> "peekChar'"
 
 -- digit :: Monad m => Parser s m AtomicMove Char
 -- digit = P.satisfyJust (\x -> if Char.isDigit x then Just x else Nothing) <?> "digit"
