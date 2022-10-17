@@ -14,7 +14,7 @@ module Step.Action
     {- * Examples -}
     {- ** Single characters -} peekChar, takeChar, satisfyJust,
     {- ** Chunks -} peekSome, takeSome,
-    {- ** Particular text -} nextTextIs, takeText, takeTextAtomic,
+    {- ** Particular text -} nextTextIs, takeParticularText, takeParticularTextAtomic,
     {- ** Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
       skipPositiveAtomic, skipNaturalAtomic,
@@ -174,15 +174,15 @@ end = atEnd P.>>= require
 
 ---
 
-takeText :: forall c m e. Chunk c => ErrorContext e m => c -> Move c m e ()
-takeText t = assumeMovement $ Any (Walk.takeText t <&> Right) P.>>= require
+takeParticularText :: forall c m e. Chunk c => ErrorContext e m => c -> Move c m e ()
+takeParticularText t = assumeMovement $ Any (Walk.takeText t <&> Right) P.>>= require
 
 nextTextIs :: forall c m e. Chunk c => c -> SureQuery c m e Bool
 nextTextIs t = SureQuery (Walk.nextTextIs t)
 
-takeTextAtomic :: forall c m e. Chunk c =>
+takeParticularTextAtomic :: forall c m e. Chunk c =>
     ErrorContext e m => c -> AtomicMove c m e ()
-takeTextAtomic t = assumeMovement $
+takeParticularTextAtomic t = assumeMovement $
     (nextTextIs t P.>>= require) P.<* trySkipPositive (length t)
 
 {- $do

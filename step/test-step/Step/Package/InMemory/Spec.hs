@@ -83,7 +83,8 @@ prop_takeCharMaybe_nonEmpty = property do
     i <- forAll (genChunks (Text.cons x xs))
     let (e, r) = parseMaybe (try takeChar) i
 
-    -- (try takeChar), on non-empty input, should succeed and return Just the first character
+    -- (try takeChar), on non-empty input, should succeed and
+    -- return Just the first character
     e === Just (Just x)
 
     -- the remainder should be only the tail of the original input
@@ -148,44 +149,48 @@ prop_satisfyJust_no = property do
 
 ---  Particular text parsers  ---
 
-prop_takeText_empty = property do
+prop_takeParticularText_empty = property do
     xs <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    let (x, r) = parseMaybe (takeText xs) []
+    let (x, r) = parseMaybe (takeParticularText xs) []
 
-    -- takeText, on empty input, should always fail
+    -- takeParticularText, on empty input, should always fail
     x === Nothing
 
     -- there should, of course, still be no input remaining
     r === noInput
 
-prop_takeText_notEnoughInput = property do
+prop_takeParticularText_notEnoughInput = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (LL.nonEmptyListLike a))
-    let (r, _) = parseMaybe (takeText (a <> b)) i
+    let (r, _) = parseMaybe (takeParticularText (a <> b)) i
 
-    -- takeText, when the input is a proper prefix of the desired text, should fail
+    -- takeParticularText, when the input is a proper prefix of
+    -- the desired text, should fail
     r === Nothing
 
-prop_takeText_exact = property do
+prop_takeParticularText_exact = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (LL.nonEmptyListLike a))
-    let (x, r) = parseMaybe (takeText a) i
+    let (x, r) = parseMaybe (takeParticularText a) i
 
-    -- takeText, when the input is exactly the desired text, should succeed
+    -- takeParticularText, when the input is exactly the
+    -- desired text, should succeed
     x === Just ()
 
     -- all of the input should have been taken
     r === noInput
 
-prop_takeText_okayAndMore = property do
+prop_takeParticularText_okayAndMore = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (LL.nonEmptyListLike (a <> b)))
-    let (x, r) = parseMaybe (takeText a) i
+    let (x, r) = parseMaybe (takeParticularText a) i
 
-    -- takeText, when the input begins with the desired text and contains more thereafter, should succeed
+    -- takeParticularText, when the input begins with the desired text
+    -- and contains more thereafter, should succeed
     x === Just ()
 
-    -- the remainder should consist of the input with the desired prefix stripped from it
+    -- the remainder should consist of the input with the desired
+    -- prefix stripped from it
     LL.fold r === LL.nonEmptyListLike b
