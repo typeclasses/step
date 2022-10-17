@@ -3,7 +3,7 @@ module Step.Action
     {- * Actions -} Action, {- $types -}
       Any, Query, Sure, SureQuery, Atom (..), Move, AtomicMove, Failure (..),
 
-    {- * Classes -} Atomic (..), AssumeMovement (..), IsWalk (..), run, act,
+    {- * Classes -} IsAction (..), Atomic (..), AssumeMovement (..), IsWalk (..), run, act,
 
     {- * Subtyping (Is, castTo) -} {- $subtyping -} Is (..), castTo,
 

@@ -54,6 +54,7 @@ library
 
         Step.Action
         Step.Action.Core
+        Step.Action.Types
 
         Step.Chunk
         Step.Chunk.ListLike

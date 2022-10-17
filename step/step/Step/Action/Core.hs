@@ -114,7 +114,10 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
     (<*>) = error "unreachable"
 
 
-class IsWalk p c m e a mode product | p c m e a -> mode product where
+class IsAction p =>
+    IsWalk p c m e a mode product
+    | p c m e a -> mode product
+  where
     walk :: Iso' (p c m e a) (Walk mode c m product)
 
 instance IsWalk Any c m e a 'RW (Either e a) where
@@ -138,9 +141,40 @@ act :: IsWalk p c m e a mode product => Factory (Step mode c) m product -> p c m
 act = Optics.review walk . Walk
 
 
+class IsAction (act :: Action) where
+    actionMap :: (forall x. m x -> m' x) -> act c m e a -> act c m' e a
+
+instance IsAction Any where
+    actionMap f (Any (Walk x)) = Any (Walk (SupplyChain.actionMap f x))
+
+instance IsAction Sure where
+    actionMap f (Sure (Walk x)) = Sure (Walk (SupplyChain.actionMap f x))
+
+instance IsAction Query where
+    actionMap f (Query (Walk x)) = Query (Walk (SupplyChain.actionMap f x))
+
+instance IsAction SureQuery where
+    actionMap f (SureQuery (Walk x)) = SureQuery (Walk (SupplyChain.actionMap f x))
+
+instance IsAction Atom where
+    actionMap f (Atom x) = Atom (fmap (actionMap f) (actionMap f x))
+
+instance IsAction Move where
+    actionMap f (Move x) = Move (actionMap f x)
+
+instance IsAction AtomicMove where
+    actionMap f (AtomicMove x) = AtomicMove (actionMap f x)
+
+instance IsAction Failure where
+    actionMap f (Failure x) = Failure (f x)
+
+
 -- | Action that can be tried noncommittally
 
-class Atomic (act :: Action) (try :: Action) | act -> try where
+class (IsAction act, IsAction try) =>
+    Atomic (act :: Action) (try :: Action)
+    | act -> try
+  where
     try :: act c m e a -> try c m e (Maybe a)
 
 instance Atomic Atom Sure where
@@ -158,7 +192,10 @@ instance Atomic Query SureQuery where
 
 -- | Unsafe coercion to action that always moves
 
-class Is act2 act1 => AssumeMovement (act1 :: Action) (act2 :: Action) | act1 -> act2 where
+class Is act2 act1 =>
+    AssumeMovement (act1 :: Action) (act2 :: Action)
+    | act1 -> act2
+  where
     assumeMovement :: act1 c es e a -> act2 c es e a
 
 instance AssumeMovement Any Move where
@@ -170,7 +207,9 @@ instance AssumeMovement Atom AtomicMove where
 
 -- | Action subtype relationship
 
-class Is (act1 :: Action) (act2 :: Action) where
+class (IsAction act1, IsAction act2) =>
+    Is (act1 :: Action) (act2 :: Action)
+  where
     cast :: act1 c es e a -> act2 c es e a
 
 -- | Same as 'cast', but with type parameters reordered so that the action we're casting to is first, which is more convenient for type application in some circumstances
@@ -182,7 +221,7 @@ cast2 = fmap (castTo @act2)
 
 -- Everything is itself
 
-instance {-# overlappable #-} Is a a where
+instance {-# overlappable #-} IsAction a => Is a a where
     cast = id
 
 -- Casting actions via casting steps

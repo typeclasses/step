@@ -12,7 +12,7 @@ Attoparsec version: @0.14.4@
 
 module Step.Package.AttoparsecText where
 
-import Step.Action
+import Step.Action.Types
 import Data.Eq ((==), (/=))
 import Data.Char (Char)
 import Data.Text (Text)
@@ -21,19 +21,26 @@ import Step.Chunk.ListLike (NonEmptyListLike)
 import Step.Error
 import Data.Functor.Identity
 import Control.Monad.Identity
+import Control.Monad.Reader
+import Control.Applicative (Applicative)
+import Data.Semigroup ((<>))
+import Text.Show (show)
 
 import qualified Step.Action as A
 import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Step.Chunk.ListLike as LL
 
-type Parser m (act :: Action) a = act (NonEmptyListLike Text) (IdentityT m) () a
+type Parser m (act :: Action) a =
+    act (NonEmptyListLike Text) (ReaderT [Text] m) [Text] a
 
-char :: Monad m => Char -> Parser m AtomicMove Char
-char x = satisfyJust (\y -> if y == x then Just y else Nothing) -- <?> "char " <> Text.pack (show x)
+char :: Applicative m => Char -> Parser m AtomicMove Char
+char x =
+    A.satisfyJust (\y -> if y == x then Just y else Nothing)
+      <?> ("char " <> Text.pack (show x))
 
--- anyChar :: Monad m => Parser s m AtomicMove Char
--- anyChar = P.satisfyJust Just <?> "anyChar"
+anyChar :: Applicative m => Parser m AtomicMove Char
+anyChar = A.takeChar <?> "anyChar"
 
 -- notChar :: Monad m => Char -> Parser s m AtomicMove Char
 -- notChar x = P.satisfyJust (\y -> if y /= x then Just y else Nothing) <?> "not " <> Text.singleton x
@@ -128,9 +135,11 @@ char x = satisfyJust (\y -> if y == x then Just y else Nothing) -- <?> "char " <
 -- todo
 -- try :: Parser a -> Parser a
 
--- infix 0 <?>
--- (<?>) :: Monad m => IsWalk act => Parser s m act a -> Text -> Parser s m act a
--- p <?> c = P.contextualize c p
+infix 0 <?>
+(<?>) :: Applicative m => IsAction act =>
+    Parser m act a -> Text -> Parser m act a
+p <?> c =
+    A.actionMap (\(ReaderT f) -> ReaderT \cs -> f (c : cs)) p
 
 -- todo
 -- choice :: ListLike list (Parser a) => list -> Parser a
