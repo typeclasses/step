@@ -176,7 +176,10 @@ takePositive n = _
 
 takePositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> AtomicMove c m e c
-takePositiveAtomic n = _
+takePositiveAtomic = \n -> assumeMovement $ ensureAtLeastPositive n P.*> Sure (Walk (go n))
+  where
+    go :: Positive Natural -> Factory (Step 'RW c) m c
+    go n = _
 
 ---
 
