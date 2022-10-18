@@ -2,6 +2,7 @@ module Step.Chunk where
 
 import Data.Eq (Eq)
 import Data.Function ((.))
+import Data.Functor (Functor)
 import Data.Functor.Contravariant (Predicate (..), Equivalence (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
@@ -12,6 +13,7 @@ import Text.Show (Show)
 import Data.Ord (Ord (compare), Ordering (..))
 import Data.Bool (Bool (..))
 import Prelude (error)
+import Data.Foldable (Foldable)
 
 type family One (c :: Type) :: Type
 
@@ -20,9 +22,11 @@ class Chunk c
     leftView :: c -> Pop c
     span :: Predicate (One c) -> c -> Span c
     split :: Positive Natural -> c -> Split c
+    take :: Positive Natural -> c -> Take c
     drop :: Positive Natural -> c -> Drop c
     while :: Predicate (One c) -> c -> While c
     length :: c -> Positive Natural
+    concat :: [c] -> c
 
 data StripEitherPrefix c =
     StripEitherPrefixAll
@@ -59,6 +63,15 @@ data Drop c =
       { dropRemainder :: c
       }
   deriving stock (Eq, Ord, Show)
+
+data Take c =
+    TakeAll
+  | TakeInsufficient
+      { takeShortfall :: Positive Natural
+      }
+  | TakePart
+      { takePart :: c
+      }
 
 data While c =
     WhileNone

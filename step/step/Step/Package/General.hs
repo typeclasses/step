@@ -12,7 +12,7 @@ module Step.Package.General
 
     {- * Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
-      takePositive, takePositiveAtomic,
+      takePositive, takePositiveAtomic, peekPositive,
       skipPositiveAtomic, skipNaturalAtomic,
       remainsAtLeastPositive, remainsAtLeastNatural,
       ensureAtLeastPositive, ensureAtLeastNatural,
@@ -39,7 +39,7 @@ import Data.Bool (Bool (..))
 import Data.Either (Either (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($))
-import Data.Functor (($>), (<&>))
+import Data.Functor (($>), (<&>), (<$>), fmap)
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
@@ -171,15 +171,24 @@ skipNaturalAtomic n = case Optics.preview Positive.refine n of
     Nothing  ->  castTo @Atom (P.pure ())
     Just p   ->  castTo @Atom (skipPositiveAtomic p)
 
+peekPositive :: forall c m e. Chunk c => ErrorContext e m =>
+    Positive Natural -> Query c m e c
+peekPositive = \n -> Query $ Walk $ fmap (fmap concat) $ go n
+  where
+    go :: Positive Natural -> Factory (Step 'R c) m (Either e [c])
+    go n = Interface.peekSomeMaybe >>= \case
+        Nothing -> perform getError <&> Left
+        Just x -> case take n x of
+            TakeAll -> pure (Right [x])
+            TakePart x' -> pure (Right [x'])
+            TakeInsufficient n' -> fmap (x :) <$> go n'
+
 takePositive :: forall c m e. ErrorContext e m => Positive Natural -> Move c m e c
 takePositive n = _
 
 takePositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> AtomicMove c m e c
-takePositiveAtomic = \n -> assumeMovement $ ensureAtLeastPositive n P.*> Sure (Walk (go n))
-  where
-    go :: Positive Natural -> Factory (Step 'RW c) m c
-    go n = _
+takePositiveAtomic = \n -> assumeMovement $ peekPositive n P.<* trySkipPositive n
 
 ---
 

@@ -14,7 +14,7 @@ import Data.Bool (Bool (..))
 import Data.Eq (Eq ((==)))
 import Data.Foldable (Foldable)
 import Data.Function (($), (&), (.), on)
-import Data.Functor ((<&>))
+import Data.Functor ((<&>), fmap)
 import Data.Functor.Contravariant (Predicate (..), Equivalence (..))
 import Data.ListLike (ListLike)
 import Data.Maybe (Maybe (..), fromMaybe)
@@ -81,6 +81,8 @@ instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
 
     length = nonEmptyListLikeLength
 
+    concat xs = assume $ LL.concatMap nonEmptyListLike xs
+
     span = \f whole -> tupleSpan (LL.span (getPredicate f) (nonEmptyListLike whole))
       where
         tupleSpan (a, b) =
@@ -98,6 +100,14 @@ instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
               }
         Signed.Minus dropShortfall ->
             DropInsufficient{ dropShortfall }
+
+    take = \n whole -> case Positive.minus (nonEmptyListLikeLength whole) n of
+        Signed.Zero ->
+            TakeAll
+        Signed.Plus{} ->
+            TakePart{ takePart = assume (LL.take (fromIntegral (review Positive.refine n)) (nonEmptyListLike whole)) }
+        Signed.Minus takeShortfall ->
+            TakeInsufficient{ takeShortfall }
 
     while = \f x -> case refine (LL.takeWhile (getPredicate f) (nonEmptyListLike x)) of
         Nothing -> WhileNone
