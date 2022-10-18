@@ -19,7 +19,7 @@ module Step.Package.General
 
     {- * End of input -} end, atEnd,
 
-    {- * Failure -} fail,
+    {- * Failure -} fail, requireTrue, requireJust,
   )
   where
 
@@ -180,10 +180,15 @@ takePositiveAtomic n = _
 
 ---
 
-require :: forall c m e. ErrorContext e m => Bool -> Query c m e ()
-require = \case
+requireTrue :: forall c m e. ErrorContext e m => Bool -> Query c m e ()
+requireTrue = \case
     True -> castTo @Query (P.pure ())
     False -> castTo @Query fail
+
+requireJust :: forall c m e a. ErrorContext e m => Maybe a -> Query c m e a
+requireJust = \case
+    Just x -> castTo @Query (P.pure x)
+    Nothing -> castTo @Query fail
 
 ---
 
@@ -191,13 +196,13 @@ atEnd :: SureQuery c m e Bool
 atEnd = SureQuery (Walk Interface.atEnd)
 
 end :: forall c m e. ErrorContext e m => Query c m e ()
-end = atEnd P.>>= require
+end = atEnd P.>>= requireTrue
 
 ---
 
 takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> Move c m e ()
 takeParticularText = \t -> assumeMovement $
-    Any (Walk (go t) <&> Right) P.>>= require
+    Any (Walk (go t) <&> Right) P.>>= requireTrue
   where
     go :: c -> Factory (Step 'RW c) m Bool
     go t = Interface.peekSomeMaybe >>= \case
@@ -214,7 +219,7 @@ nextTextIs = nextTextMatchesOn (ChunkCharacterEquivalence (==))
 takeParticularTextAtomic :: forall c m e. Chunk c => Eq c =>
     ErrorContext e m => c -> AtomicMove c m e ()
 takeParticularTextAtomic t = assumeMovement $
-    (nextTextIs t P.>>= require) P.<* trySkipPositive (length t)
+    (nextTextIs t P.>>= requireTrue) P.<* trySkipPositive (length t)
 
 nextTextMatchesOn :: forall c m e. Chunk c =>
     ChunkCharacterEquivalence c -> c -> SureQuery c m e Bool
@@ -236,4 +241,4 @@ takeMatchingText eq t = _
 takeMatchingTextAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     ChunkCharacterEquivalence c -> c -> Move c m e c
 takeMatchingTextAtomic eq t =
-    (nextTextMatchesOn eq t P.>>= require) P.*> takePositive (length t)
+    (nextTextMatchesOn eq t P.>>= requireTrue) P.*> takePositive (length t)
