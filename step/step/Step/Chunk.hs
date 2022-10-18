@@ -68,18 +68,27 @@ data While c =
 head :: Chunk c => c -> One c
 head = popItem . leftView
 
-stripEitherPrefix :: Chunk c => Equivalence c -> c -> c -> StripEitherPrefix c
+-- | An equivalence on characters, expressed as an equivalence on chunks.
+--
+-- It must be the case that chunks /a/ and /b/ are equivalent iff the length
+-- of /a/ and /b/ is /l/ and /a[i] ~ b[i]/ for all /i = [1 .. l]/ according
+-- to the character equivalence.
+--
+newtype ChunkCharacterEquivalence c =
+    ChunkCharacterEquivalence{ chunksEquivalent :: c -> c -> Bool }
+
+stripEitherPrefix :: Chunk c => ChunkCharacterEquivalence c -> c -> c -> StripEitherPrefix c
 stripEitherPrefix eq a b = case compare (length a) (length b) of
-    EQ -> if getEquivalence eq a b
+    EQ -> if chunksEquivalent eq a b
             then StripEitherPrefixAll
             else StripEitherPrefixFail
     LT -> case split (length a) b of
-        Split a' b' -> if getEquivalence eq a a'
+        Split a' b' -> if chunksEquivalent eq a a'
             then IsPrefixOf{ afterPrefix = b' }
             else StripEitherPrefixFail
         SplitInsufficient{} -> error "stripEitherPrefix"
     GT -> case split (length b) a of
-        Split b' a' -> if getEquivalence eq b b'
+        Split b' a' -> if chunksEquivalent eq b b'
             then IsPrefixedBy{ afterPrefix = a' }
             else StripEitherPrefixFail
         SplitInsufficient{} -> error "stripEitherPrefix"

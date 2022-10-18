@@ -8,10 +8,11 @@ module Step.Package.General
 
     {- * Particular text -}
       nextTextIs, takeParticularText, takeParticularTextAtomic,
-      nextTextMatchesOn,
+      nextTextMatchesOn, takeMatchingText, takeMatchingTextAtomic,
 
     {- * Fixed-length -}
       trySkipPositive, skipPositive, trySkipNatural, skipNatural,
+      takePositive, takePositiveAtomic,
       skipPositiveAtomic, skipNaturalAtomic,
       remainsAtLeastPositive, remainsAtLeastNatural,
       ensureAtLeastPositive, ensureAtLeastNatural,
@@ -169,6 +170,13 @@ skipNaturalAtomic n = case Optics.preview Positive.refine n of
     Nothing  ->  castTo @Atom (P.pure ())
     Just p   ->  castTo @Atom (skipPositiveAtomic p)
 
+takePositive :: forall c m e. ErrorContext e m => Positive Natural -> Move c m e c
+takePositive n = _
+
+takePositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>
+    Positive Natural -> AtomicMove c m e c
+takePositiveAtomic n = _
+
 ---
 
 require :: forall c m e. ErrorContext e m => Bool -> Query c m e ()
@@ -187,10 +195,11 @@ end = atEnd P.>>= require
 ---
 
 takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> Move c m e ()
-takeParticularText t = assumeMovement $ Any (Walk.takeText defaultEquivalence t <&> Right) P.>>= require
+takeParticularText t = assumeMovement $
+    Any (Walk.takeText (ChunkCharacterEquivalence (==)) t <&> Right) P.>>= require
 
 nextTextIs :: forall c m e. Chunk c => Eq c => c -> SureQuery c m e Bool
-nextTextIs t = SureQuery (Walk.nextTextIs defaultEquivalence t)
+nextTextIs t = SureQuery (Walk.nextTextIs (ChunkCharacterEquivalence (==)) t)
 
 takeParticularTextAtomic :: forall c m e. Chunk c => Eq c =>
     ErrorContext e m => c -> AtomicMove c m e ()
@@ -198,5 +207,14 @@ takeParticularTextAtomic t = assumeMovement $
     (nextTextIs t P.>>= require) P.<* trySkipPositive (length t)
 
 nextTextMatchesOn :: forall c m e. Chunk c =>
-    Equivalence c -> c -> SureQuery c m e Bool
+    ChunkCharacterEquivalence c -> c -> SureQuery c m e Bool
 nextTextMatchesOn eq t = SureQuery (Walk.nextTextIs eq t)
+
+takeMatchingText :: forall c m e. Chunk c =>
+    ChunkCharacterEquivalence c -> c -> Move c m e c
+takeMatchingText eq t = _
+
+takeMatchingTextAtomic :: forall c m e. Chunk c => ErrorContext e m =>
+    ChunkCharacterEquivalence c -> c -> Move c m e c
+takeMatchingTextAtomic eq t =
+    (nextTextMatchesOn eq t P.>>= require) P.*> takePositive (length t)

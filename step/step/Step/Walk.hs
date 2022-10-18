@@ -36,7 +36,7 @@ peekCharMaybe = Walk Interface.peekCharMaybe
 atEnd :: forall c m mode. Walk mode c m Bool
 atEnd = Walk Interface.atEnd
 
-takeText :: forall c m. Chunk c => Equivalence c -> c -> Walk 'RW c m Bool
+takeText :: forall c m. Chunk c => ChunkCharacterEquivalence c -> c -> Walk 'RW c m Bool
 takeText eq = \t -> Walk (go t)
   where
     go :: c -> Factory (Step 'RW c) m Bool
@@ -48,7 +48,7 @@ takeText eq = \t -> Walk (go t)
             IsPrefixedBy{}                  ->  Interface.commit (length t) <&> \_ -> True
             IsPrefixOf{ afterPrefix = t' }  ->  Interface.commit (length x) *> go t'
 
-nextTextIs :: forall mode c m. Chunk c => Equivalence c -> c -> Walk mode c m Bool
+nextTextIs :: forall mode c m. Chunk c => ChunkCharacterEquivalence c -> c -> Walk mode c m Bool
 nextTextIs eq = \t -> Walk (go t)
   where
     go :: c -> Factory (Step mode c) m Bool

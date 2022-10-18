@@ -74,8 +74,8 @@ string x = case LL.refine x of
     Nothing -> A.castTo @Atom $ A.pure ()
     Just x' -> A.castTo @Atom (A.takeParticularTextAtomic x') <?> "string"
 
--- todo
--- asciiCI :: Text -> Parser Text
+-- asciiCI :: Applicative m => Text -> Parser m Text ()
+-- asciiCI t =
 
 -- todo
 -- skipSpace :: Parser ()
