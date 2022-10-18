@@ -1,61 +1,36 @@
-module Step.Walk
-  (
-    Walk (..),
+module Step.Walk where
 
-    commit, peekSomeMaybe, peekCharMaybe, atEnd,
-    takeText, nextTextIs,
-  )
-  where
-
-import Step.Chunk
 import Step.Interface.Core
-import Step.Walk.Core
 
-import qualified Step.Interface as Interface
-
-import Data.Bool (Bool (..))
-import Data.Eq
-import Data.Maybe (Maybe (..))
-import Data.Functor ((<&>))
+import Data.Functor (Functor (..))
+import Data.Function ((.))
 import Control.Monad (Monad (..))
 import Control.Applicative (Applicative (..))
-import Numeric.Natural (Natural)
-import NatOptics.Positive.Unsafe (Positive)
-import SupplyChain (Factory)
-import Data.Functor.Contravariant
+import SupplyChain (Factory, order)
 
-commit :: forall c m. Positive Natural -> Walk 'RW c m AdvanceResult
-commit n = Walk (Interface.commit n)
+import qualified Control.Monad as Monad
 
-peekSomeMaybe :: forall c m mode. Walk mode c m (Maybe c)
-peekSomeMaybe = Walk Interface.peekSomeMaybe
+{- |
+    A Walk is a factory with 'Step' as its upstream interface, with the
+    additional implication that a walk is implicitly preceded and followed
+    by a 'StepReset'. Sequencing operations like '(<*>)' and '(>>=)' insert
+    resets between the operations. (The implicit resets and the idempotency
+    of 'StepReset' are essential to arguing that the 'Applicative' and
+    'Monad' class laws are respected.)
+-}
 
-peekCharMaybe :: forall c m mode. Chunk c => Walk mode c m (Maybe (One c))
-peekCharMaybe = Walk Interface.peekCharMaybe
+newtype Walk mode chunk action a =
+    Walk (Factory (Step mode chunk) action a)
+    deriving newtype Functor
 
-atEnd :: forall c m mode. Walk mode c m Bool
-atEnd = Walk Interface.atEnd
-
-takeText :: forall c m. Chunk c => ChunkCharacterEquivalence c -> c -> Walk 'RW c m Bool
-takeText eq = \t -> Walk (go t)
+instance Applicative (Walk mode chunk action)
   where
-    go :: c -> Factory (Step 'RW c) m Bool
-    go t = Interface.peekSomeMaybe >>= \case
-        Nothing -> pure False
-        Just x -> case stripEitherPrefix eq x t of
-            StripEitherPrefixFail           ->  pure False
-            StripEitherPrefixAll            ->  Interface.commit (length t) <&> \_ -> True
-            IsPrefixedBy{}                  ->  Interface.commit (length t) <&> \_ -> True
-            IsPrefixOf{ afterPrefix = t' }  ->  Interface.commit (length x) *> go t'
+    pure = Walk . pure
+    (<*>) = Monad.ap
 
-nextTextIs :: forall mode c m. Chunk c => ChunkCharacterEquivalence c -> c -> Walk mode c m Bool
-nextTextIs eq = \t -> Walk (go t)
+instance Monad (Walk mode chunk action)
   where
-    go :: c -> Factory (Step mode c) m Bool
-    go t = Interface.peekSomeMaybe >>= \case
-        Nothing -> pure False
-        Just x -> case stripEitherPrefix eq x t of
-            StripEitherPrefixFail           ->  pure False
-            StripEitherPrefixAll            ->  pure True
-            IsPrefixedBy{}                  ->  pure True
-            IsPrefixOf{ afterPrefix = t' }  ->  go t'
+    Walk step1 >>= step2 = Walk do
+        x <- step1
+        order StepReset
+        case step2 x of Walk b' -> b'

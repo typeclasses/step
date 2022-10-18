@@ -1,7 +1,7 @@
 module Step.Action.Core where
 
 import Step.Interface.Core
-import Step.Walk.Core
+import Step.Walk
 
 -- The basics
 import Data.Maybe (Maybe (..))

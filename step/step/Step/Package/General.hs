@@ -27,14 +27,15 @@ import Step.Action.Core
 import Step.Chunk
 import Step.Error
 import Step.Interface (Step, Mode (..), AdvanceResult (..))
+import Step.Walk (Walk (..))
 
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
 import qualified Step.Walk as Walk
 
-import Data.Bool (Bool (..))
-import Control.Applicative (pure)
+import Control.Applicative (pure, (*>))
 import Control.Monad ((>>=))
+import Data.Bool (Bool (..))
 import Data.Either (Either (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($))
@@ -65,11 +66,11 @@ one = PositiveUnsafe 1
     'AdvanceResult' gives the size of the difference.
 -}
 trySkipPositive :: forall c m e. Positive Natural -> Sure c m e AdvanceResult
-trySkipPositive n = Sure (Walk.commit n)
+trySkipPositive n = Sure (Walk (Interface.commit n))
 
 -- | Take a peek at the next character (if possible) without advancing
 peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
-peekCharMaybe = SureQuery Walk.peekCharMaybe
+peekCharMaybe = SureQuery (Walk Interface.peekCharMaybe)
 
 ---
 
@@ -187,7 +188,7 @@ require = \case
 ---
 
 atEnd :: SureQuery c m e Bool
-atEnd = SureQuery Walk.atEnd
+atEnd = SureQuery (Walk Interface.atEnd)
 
 end :: forall c m e. ErrorContext e m => Query c m e ()
 end = atEnd P.>>= require
@@ -195,11 +196,20 @@ end = atEnd P.>>= require
 ---
 
 takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> Move c m e ()
-takeParticularText t = assumeMovement $
-    Any (Walk.takeText (ChunkCharacterEquivalence (==)) t <&> Right) P.>>= require
+takeParticularText = \t -> assumeMovement $
+    Any (Walk (go t) <&> Right) P.>>= require
+  where
+    go :: c -> Factory (Step 'RW c) m Bool
+    go t = Interface.peekSomeMaybe >>= \case
+        Nothing -> pure False
+        Just x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
+            StripEitherPrefixFail           ->  pure False
+            StripEitherPrefixAll            ->  Interface.commit (length t) <&> \_ -> True
+            IsPrefixedBy{}                  ->  Interface.commit (length t) <&> \_ -> True
+            IsPrefixOf{ afterPrefix = t' }  ->  Interface.commit (length x) *> go t'
 
 nextTextIs :: forall c m e. Chunk c => Eq c => c -> SureQuery c m e Bool
-nextTextIs t = SureQuery (Walk.nextTextIs (ChunkCharacterEquivalence (==)) t)
+nextTextIs = nextTextMatchesOn (ChunkCharacterEquivalence (==))
 
 takeParticularTextAtomic :: forall c m e. Chunk c => Eq c =>
     ErrorContext e m => c -> AtomicMove c m e ()
@@ -208,7 +218,16 @@ takeParticularTextAtomic t = assumeMovement $
 
 nextTextMatchesOn :: forall c m e. Chunk c =>
     ChunkCharacterEquivalence c -> c -> SureQuery c m e Bool
-nextTextMatchesOn eq t = SureQuery (Walk.nextTextIs eq t)
+nextTextMatchesOn eq = \t -> SureQuery (Walk (go t))
+  where
+    go :: c -> Factory (Step mode c) m Bool
+    go t = Interface.peekSomeMaybe >>= \case
+        Nothing -> pure False
+        Just x -> case stripEitherPrefix eq x t of
+            StripEitherPrefixFail           ->  pure False
+            StripEitherPrefixAll            ->  pure True
+            IsPrefixedBy{}                  ->  pure True
+            IsPrefixOf{ afterPrefix = t' }  ->  go t'
 
 takeMatchingText :: forall c m e. Chunk c =>
     ChunkCharacterEquivalence c -> c -> Move c m e c
