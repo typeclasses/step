@@ -32,6 +32,7 @@ import qualified Step.Do as A
 import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Step.Chunk.ListLike as LL
+import qualified Step.Chunk as Chunk
 
 type Parser m (act :: Action) a =
     act (NonEmptyListLike Text) (ReaderT [Text] m) [Text] a
@@ -70,7 +71,7 @@ space :: Applicative m => Parser m AtomicMove Char
 space = A.satisfyPredicate Char.isSpace <?> "space"
 
 string :: Applicative m => Text -> Parser m Atom ()
-string x = case LL.refine x of
+string x = case Chunk.refine x of
     Nothing -> A.castTo @Atom $ A.pure ()
     Just x' -> A.castTo @Atom (A.takeParticularTextAtomic x') <?> "string"
 

@@ -1,7 +1,6 @@
 module Step.Chunk.ListLike
   (
     NonEmptyListLike,
-    {- * Conversion -} refine, generalize,
     {- * Concat -} concat,
     {- * Testing -} genChunks,
   )
