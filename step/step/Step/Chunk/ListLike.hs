@@ -1,13 +1,15 @@
 module Step.Chunk.ListLike
   (
-    NonEmptyListLike (..),
-    {- * Conversion -} assume, refine,
-    {- * Fold -} fold,
+    NonEmptyListLike,
+    {- * Conversion -} refine, generalize,
+    {- * Concat -} concat,
     {- * Testing -} genChunks,
   )
   where
 
-import Step.Chunk
+import Step.Chunk hiding (concat)
+import Step.Chunk.ListLike.Core hiding (length)
+import qualified Step.Chunk as Chunk
 
 import Control.Applicative (pure, (<*>))
 import Data.Bool (Bool (..))
@@ -17,7 +19,7 @@ import Data.Function (($), (&), (.), on)
 import Data.Functor ((<&>), fmap)
 import Data.Functor.Contravariant (Predicate (..), Equivalence (..))
 import Data.ListLike (ListLike)
-import Data.Maybe (Maybe (..), fromMaybe)
+import Data.Maybe (Maybe (..), fromMaybe, maybe)
 import Data.Ord (Ord (compare), Ordering (..))
 import Data.Sequence (Seq (..))
 import Data.String (IsString (..))
@@ -39,101 +41,6 @@ import qualified Hedgehog.Range as Range
 import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
-
-data NonEmptyListLike c =
-  NonEmptyListLike
-    { nonEmptyListLike :: !c
-    , nonEmptyListLikeLength :: !(Positive Natural)
-    }
-
-instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c)
-  where
-    fromString x =
-        fromMaybe (error "NonEmptyListLike fromString: empty") $
-            refine (fromString x)
-
-instance Semigroup c => Semigroup (NonEmptyListLike c)
-  where
-    NonEmptyListLike c1 l1 <> NonEmptyListLike c2 l2 =
-        NonEmptyListLike (c1 <> c2) (Positive.plus l1 l2)
-
-assume :: ListLike c (Item c) => c -> NonEmptyListLike c
-assume c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
-
-refine :: ListLike c (Item c) => c -> Maybe (NonEmptyListLike c)
-refine c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
-
-fold :: Foldable t => ListLike c (Item c) => t (NonEmptyListLike c) -> c
-fold = Foldable.foldMap nonEmptyListLike
-
-instance Eq c => Eq (NonEmptyListLike c) where
-    (==) = (==) `on` nonEmptyListLike
-
-instance Ord c => Ord (NonEmptyListLike c) where
-    compare = compare `on` nonEmptyListLike
-
-instance Show c => Show (NonEmptyListLike c) where
-    showsPrec p = showsPrec p . nonEmptyListLike
-
-type instance One (NonEmptyListLike c) = Item c
-
-instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
-  where
-
-    length = nonEmptyListLikeLength
-
-    span = \f whole -> tupleSpan (LL.span (getPredicate f) (nonEmptyListLike whole))
-      where
-        tupleSpan (a, b) =
-            if LL.null b then SpanAll else
-            if LL.null a then SpanNone else
-            SpanPart (assume a) (assume b)
-
-    drop = \n whole -> case Positive.minus (nonEmptyListLikeLength whole) n of
-        Signed.Zero ->
-            DropAll
-        Signed.Plus _ ->
-            DropPart
-              { dropRemainder = assume $
-                  LL.drop (fromIntegral (review Positive.refine n)) (nonEmptyListLike whole)
-              }
-        Signed.Minus dropShortfall ->
-            DropInsufficient{ dropShortfall }
-
-    take = \n whole -> case Positive.minus (nonEmptyListLikeLength whole) n of
-        Signed.Zero ->
-            TakeAll
-        Signed.Plus{} ->
-            TakePart{ takePart = assume (LL.take (fromIntegral (review Positive.refine n)) (nonEmptyListLike whole)) }
-        Signed.Minus takeShortfall ->
-            TakeInsufficient{ takeShortfall }
-
-    while = \f x -> case refine (LL.takeWhile (getPredicate f) (nonEmptyListLike x)) of
-        Nothing -> WhileNone
-        Just y ->
-            if nonEmptyListLikeLength y == nonEmptyListLikeLength x
-            then WhileAll
-            else WhilePrefix y
-
-    split = \n whole -> case Positive.minus (nonEmptyListLikeLength whole) n of
-        Signed.Plus _ -> Split (assume a) (assume b)
-          where
-            (a, b) = LL.splitAt
-                (fromIntegral (review Positive.refine n))
-                (nonEmptyListLike whole)
-        _ -> SplitInsufficient
-
-    leftView a = a
-        & nonEmptyListLike
-        & LL.uncons
-        & fromMaybe (error "ListLike leftViewIso")
-        & \(x, b) -> Pop
-            { popItem = x
-            , popRemainder =
-                case Positive.minus (nonEmptyListLikeLength a) (PositiveUnsafe 1) of
-                    Signed.Plus n -> Just (NonEmptyListLike b n )
-                    _ -> Nothing
-            }
 
 {-| Break up a text into a list of texts
 
@@ -160,3 +67,6 @@ genChunks'' x = case Positive.minus (length x) one of
 
 one :: Positive Natural
 one = PositiveUnsafe 1
+
+concat :: ListLike xs x => [NonEmptyListLike xs] -> xs
+concat = maybe LL.empty generalize . Chunk.concatMaybe

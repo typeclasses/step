@@ -5,7 +5,9 @@ import Step.Package.General
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
 import Step.Chunk.ListLike (NonEmptyListLike, genChunks)
 
+import qualified Step.Chunk as Chunk
 import qualified Step.Chunk.ListLike as LL
+import qualified Step.Chunk.ListLike.Core as LL
 
 import Data.Char (Char)
 import Data.Function (($))
@@ -81,7 +83,7 @@ prop_takeCharMaybe_nonEmpty = property do
     e === Just (Just x)
 
     -- the remainder should be only the tail of the original input
-    LL.fold r === xs
+    LL.concat r === xs
 
 prop_takeChar_empty = withTests 1 $ property do
     let (x, r) = parseMaybe takeChar []
@@ -102,7 +104,7 @@ prop_takeChar_nonEmpty = property do
     e === Just x
 
     -- the remainder should be only the tail of the original input
-    LL.fold r === xs
+    LL.concat r === xs
 
 upperOrd x = if Char.isUpper x then Just (Char.ord x) else Nothing
 
@@ -125,7 +127,7 @@ prop_satisfyJust_yes = property do
     e === Just (Char.ord x)
 
     -- the remainder after success be only the tail of the original input
-    LL.fold r === xs
+    LL.concat r === xs
 
 prop_satisfyJust_no = property do
     x <- forAll Gen.lower
@@ -155,7 +157,7 @@ prop_takeParticularText_empty = property do
 prop_takeParticularText_notEnoughInput = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (LL.nonEmptyListLike a))
+    i <- forAll (genChunks (LL.generalize a))
     let (r, _) = parseMaybe (takeParticularText (a <> b)) i
 
     -- takeParticularText, when the input is a proper prefix of
@@ -164,7 +166,7 @@ prop_takeParticularText_notEnoughInput = property do
 
 prop_takeParticularText_exact = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (LL.nonEmptyListLike a))
+    i <- forAll (genChunks (LL.generalize a))
     let (x, r) = parseMaybe (takeParticularText a) i
 
     -- takeParticularText, when the input is exactly the
@@ -177,7 +179,7 @@ prop_takeParticularText_exact = property do
 prop_takeParticularText_okayAndMore = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (LL.nonEmptyListLike (a <> b)))
+    i <- forAll (genChunks (LL.generalize (a <> b)))
     let (x, r) = parseMaybe (takeParticularText a) i
 
     -- takeParticularText, when the input begins with the desired text
@@ -186,4 +188,4 @@ prop_takeParticularText_okayAndMore = property do
 
     -- the remainder should consist of the input with the desired
     -- prefix stripped from it
-    LL.fold r === LL.nonEmptyListLike b
+    LL.concat r === LL.generalize b

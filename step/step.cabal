@@ -59,6 +59,7 @@ library
 
         Step.Chunk
         Step.Chunk.ListLike
+        Step.Chunk.ListLike.Core
 
         Step.Interface
         Step.Interface.Core
