@@ -1,9 +1,4 @@
-module Step.Chunk.ListLike.Core
-  (
-    NonEmptyListLike (..),
-    {- * Conversion -} assume,
-  )
-  where
+module Step.Chunk.ListLike.Core (NonEmptyListLike (..), assume) where
 
 import Step.Chunk hiding (length, generalize)
 import qualified Step.Chunk as Chunk

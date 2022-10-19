@@ -69,12 +69,12 @@ data Span c =
       { spannedPart :: c
       , spanRemainder :: c
       }
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Split c =
     SplitInsufficient
   | Split c c
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Drop c =
     DropAll
@@ -84,7 +84,7 @@ data Drop c =
   | DropPart
       { dropRemainder :: c
       }
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Take c =
     TakeAll
@@ -94,11 +94,13 @@ data Take c =
   | TakePart
       { takePart :: c
       }
+  deriving stock (Eq, Ord, Show, Functor)
 
 data While c =
     WhileNone
   | WhilePrefix c
   | WhileAll
+  deriving stock (Eq, Ord, Show, Functor)
 
 concatMaybe :: Chunk c => [c] -> Maybe c
 concatMaybe = fmap concat . nonEmpty

@@ -3,12 +3,12 @@ module Step.Package.InMemory.Spec (tests) where
 import Step.Action
 import Step.Package.General
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
-import Step.Chunk.ListLike (NonEmptyListLike)
+import Step.Chunk.Text (Text1)
 import Step.Chunk.Gen (genChunks)
 
 import qualified Step.Chunk as Chunk
-import qualified Step.Chunk.ListLike as LL
-import qualified Step.Chunk.ListLike.Core as LL
+import qualified Step.Chunk.Text as T
+import qualified Step.Chunk.Text.Core as T
 
 import Data.Char (Char)
 import Data.Function (($))
@@ -27,9 +27,7 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-type T = NonEmptyListLike Text
-
-noInput :: [T]
+noInput :: [Text1]
 noInput = []
 
 tests :: TestTree
@@ -46,7 +44,7 @@ prop_peekChar_empty = withTests 1 $ property do
 prop_peekChar_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @T (Text.cons x xs))
+    i <- forAll (genChunks @Text1 (Text.cons x xs))
 
     -- peekChar, on non-empty input, should return the first character
     parseQueryMaybe peekChar i === Just x
@@ -59,7 +57,7 @@ prop_peekCharMaybe_empty = withTests 1 $ property do
 prop_peekCharMaybe_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @T (Text.cons x xs))
+    i <- forAll (genChunks @Text1 (Text.cons x xs))
 
     -- (try peekChar), on non-empty input, should return Just the first character
     parseSureQuery (try peekChar) i === Just x
@@ -76,7 +74,7 @@ prop_takeCharMaybe_empty = withTests 1 $ property do
 prop_takeCharMaybe_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @T (Text.cons x xs))
+    i <- forAll (genChunks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe (try takeChar) i
 
     -- (try takeChar), on non-empty input, should succeed and
@@ -98,7 +96,7 @@ prop_takeChar_empty = withTests 1 $ property do
 prop_takeChar_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @T (Text.cons x xs))
+    i <- forAll (genChunks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe takeChar i
 
     -- takeChar, on non-empty input, should return the first character
@@ -121,7 +119,7 @@ prop_satisfyJust_empty = withTests 1 $ property do
 prop_satisfyJust_yes = property do
     x <-forAll Gen.upper
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    i <- forAll (genChunks @T (Text.cons x xs))
+    i <- forAll (genChunks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe (satisfyJust upperOrd) i
 
     -- satisfyJust, if the first characters matches, should succeed
@@ -133,7 +131,7 @@ prop_satisfyJust_yes = property do
 prop_satisfyJust_no = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    i <- forAll (genChunks @T (Text.cons x xs))
+    i <- forAll (genChunks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe (satisfyJust upperOrd) i
 
     -- satisfyJust, if the first character does not match, should fail
@@ -146,7 +144,7 @@ prop_satisfyJust_no = property do
 ---  Particular text parsers  ---
 
 prop_takeParticularText_empty = property do
-    xs <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    xs <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     let (x, r) = parseMaybe (takeParticularText xs) []
 
     -- takeParticularText, on empty input, should always fail
@@ -156,8 +154,8 @@ prop_takeParticularText_empty = property do
     r === noInput
 
 prop_takeParticularText_notEnoughInput = property do
-    a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    b <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (Chunk.generalize a))
     let (r, _) = parseMaybe (takeParticularText (a <> b)) i
 
@@ -166,7 +164,7 @@ prop_takeParticularText_notEnoughInput = property do
     r === Nothing
 
 prop_takeParticularText_exact = property do
-    a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (Chunk.generalize a))
     let (x, r) = parseMaybe (takeParticularText a) i
 
@@ -178,8 +176,8 @@ prop_takeParticularText_exact = property do
     r === noInput
 
 prop_takeParticularText_okayAndMore = property do
-    a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
+    b <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     i <- forAll (genChunks (Chunk.generalize (a <> b)))
     let (x, r) = parseMaybe (takeParticularText a) i
 
