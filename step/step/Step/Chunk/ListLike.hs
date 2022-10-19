@@ -1,7 +1,6 @@
 module Step.Chunk.ListLike
   (
     NonEmptyListLike,
-    {- * Concat -} concat,
     {- * Testing -} genChunks,
   )
   where
@@ -66,6 +65,3 @@ genChunks'' x = case Positive.minus (length x) one of
 
 one :: Positive Natural
 one = PositiveUnsafe 1
-
-concat :: ListLike xs x => [NonEmptyListLike xs] -> xs
-concat = maybe LL.empty generalize . Chunk.concatMaybe

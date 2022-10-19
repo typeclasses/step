@@ -5,7 +5,7 @@ import Data.Function ((.))
 import Data.Functor (Functor, fmap)
 import Data.Functor.Contravariant (Predicate (..), Equivalence (..))
 import Data.Kind (Type)
-import Data.Maybe (Maybe (..))
+import Data.Maybe (Maybe (..), maybe)
 import Data.Ord (Ord)
 import NatOptics.Positive.Unsafe (Positive)
 import Numeric.Natural (Natural)
@@ -18,6 +18,7 @@ import Data.Semigroup (Semigroup)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid (Monoid)
 
+import qualified Data.Monoid as Monoid
 import qualified Data.Semigroup as Semigroup
 
 type family One (c :: Type) :: Type
@@ -101,6 +102,9 @@ data While c =
 
 concatMaybe :: Chunk c => [c] -> Maybe c
 concatMaybe = fmap concat . nonEmpty
+
+concatTrivialize :: Trivializable c => [c] -> Nullable c
+concatTrivialize = maybe Monoid.mempty generalize . concatMaybe
 
 head :: Chunk c => c -> One c
 head = popItem . leftView

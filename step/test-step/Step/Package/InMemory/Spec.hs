@@ -83,7 +83,7 @@ prop_takeCharMaybe_nonEmpty = property do
     e === Just (Just x)
 
     -- the remainder should be only the tail of the original input
-    LL.concat r === xs
+    Chunk.concatTrivialize r === xs
 
 prop_takeChar_empty = withTests 1 $ property do
     let (x, r) = parseMaybe takeChar []
@@ -104,7 +104,7 @@ prop_takeChar_nonEmpty = property do
     e === Just x
 
     -- the remainder should be only the tail of the original input
-    LL.concat r === xs
+    Chunk.concatTrivialize r === xs
 
 upperOrd x = if Char.isUpper x then Just (Char.ord x) else Nothing
 
@@ -127,7 +127,7 @@ prop_satisfyJust_yes = property do
     e === Just (Char.ord x)
 
     -- the remainder after success be only the tail of the original input
-    LL.concat r === xs
+    Chunk.concatTrivialize r === xs
 
 prop_satisfyJust_no = property do
     x <- forAll Gen.lower
@@ -188,4 +188,4 @@ prop_takeParticularText_okayAndMore = property do
 
     -- the remainder should consist of the input with the desired
     -- prefix stripped from it
-    LL.concat r === Chunk.generalize b
+    Chunk.concatTrivialize r === Chunk.generalize b
