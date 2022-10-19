@@ -229,10 +229,10 @@ takeParticularText = \t -> assumeMovement $
     go t = Interface.peekSomeMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
-            StripEitherPrefixFail           ->  pure False
-            StripEitherPrefixAll            ->  Interface.commit (length t) <&> \_ -> True
-            IsPrefixedBy{}                  ->  Interface.commit (length t) <&> \_ -> True
-            IsPrefixOf{ afterPrefix = t' }  ->  Interface.commit (length x) *> go t'
+            StripEitherPrefixFail         ->  pure False
+            StripEitherPrefixAll          ->  Interface.commit (length t) <&> \_ -> True
+            IsPrefixedBy{}                ->  Interface.commit (length t) <&> \_ -> True
+            IsPrefixOf{ extraPart = t' }  ->  Interface.commit (length x) *> go t'
 
 nextTextIs :: forall c m e. Chunk c => Eq c => c -> SureQuery c m e Bool
 nextTextIs = nextTextMatchesOn (ChunkCharacterEquivalence (==))
@@ -250,14 +250,23 @@ nextTextMatchesOn eq = \t -> SureQuery (Walk (go t))
     go t = Interface.peekSomeMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix eq x t of
-            StripEitherPrefixFail           ->  pure False
-            StripEitherPrefixAll            ->  pure True
-            IsPrefixedBy{}                  ->  pure True
-            IsPrefixOf{ afterPrefix = t' }  ->  go t'
+            StripEitherPrefixFail         ->  pure False
+            StripEitherPrefixAll          ->  pure True
+            IsPrefixedBy{}                ->  pure True
+            IsPrefixOf{ extraPart = t' }  ->  go t'
 
-takeMatchingText :: forall c m e. Chunk c =>
+takeMatchingText :: forall c m e. ErrorContext e m => Chunk c =>
     ChunkCharacterEquivalence c -> c -> Move c m e c
-takeMatchingText eq t = _
+takeMatchingText eq = \t -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go t
+  where
+    go :: c -> Factory (Step 'RW c) m (Either e [c])
+    go t = Interface.peekSomeMaybe >>= \case
+        Nothing -> perform getError <&> Left
+        Just x -> case stripEitherPrefix eq x t of
+            StripEitherPrefixFail            ->  perform getError <&> Left
+            StripEitherPrefixAll             ->  pure $ Right [x]
+            IsPrefixedBy{ commonPart = x' }  ->  pure $ Right [x']
+            IsPrefixOf{ extraPart = t' }     ->  go t'
 
 takeMatchingTextAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     ChunkCharacterEquivalence c -> c -> Move c m e c

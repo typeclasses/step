@@ -31,8 +31,8 @@ class Chunk c
 data StripEitherPrefix c =
     StripEitherPrefixAll
   | StripEitherPrefixFail
-  | IsPrefixOf   { afterPrefix :: c }
-  | IsPrefixedBy { afterPrefix :: c }
+  | IsPrefixOf   { commonPart :: c, extraPart :: c }
+  | IsPrefixedBy { commonPart :: c, extraPart :: c }
 
 data Pop c =
   Pop
@@ -97,11 +97,11 @@ stripEitherPrefix eq a b = case compare (length a) (length b) of
             else StripEitherPrefixFail
     LT -> case split (length a) b of
         Split a' b' -> if chunksEquivalent eq a a'
-            then IsPrefixOf{ afterPrefix = b' }
+            then IsPrefixOf{ commonPart = a', extraPart = b' }
             else StripEitherPrefixFail
         SplitInsufficient{} -> error "stripEitherPrefix"
     GT -> case split (length b) a of
         Split b' a' -> if chunksEquivalent eq b b'
-            then IsPrefixedBy{ afterPrefix = a' }
+            then IsPrefixedBy{ commonPart = b', extraPart = a' }
             else StripEitherPrefixFail
         SplitInsufficient{} -> error "stripEitherPrefix"
