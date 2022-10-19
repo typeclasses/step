@@ -2,7 +2,7 @@ module Step.Chunk where
 
 import Data.Eq (Eq)
 import Data.Function ((.))
-import Data.Functor (Functor)
+import Data.Functor (Functor, fmap)
 import Data.Functor.Contravariant (Predicate (..), Equivalence (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
@@ -14,19 +14,31 @@ import Data.Ord (Ord (compare), Ordering (..))
 import Data.Bool (Bool (..))
 import Prelude (error)
 import Data.Foldable (Foldable)
+import Data.Semigroup (Semigroup)
+import Data.List.NonEmpty (NonEmpty, nonEmpty)
+
+import qualified Data.Semigroup as Semigroup
 
 type family One (c :: Type) :: Type
 
-class Chunk c
+class Semigroup c => Chunk c
   where
     leftView :: c -> Pop c
+
     span :: Predicate (One c) -> c -> Span c
+
     split :: Positive Natural -> c -> Split c
+
     take :: Positive Natural -> c -> Take c
+
     drop :: Positive Natural -> c -> Drop c
+
     while :: Predicate (One c) -> c -> While c
+
     length :: c -> Positive Natural
-    concat :: [c] -> c
+
+    concat :: NonEmpty c -> c
+    concat = Semigroup.sconcat
 
 data StripEitherPrefix c =
     StripEitherPrefixAll
@@ -77,6 +89,9 @@ data While c =
     WhileNone
   | WhilePrefix c
   | WhileAll
+
+concatMaybe :: Chunk c => [c] -> Maybe c
+concatMaybe = fmap concat . nonEmpty
 
 head :: Chunk c => c -> One c
 head = popItem . leftView

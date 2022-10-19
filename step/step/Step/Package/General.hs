@@ -45,7 +45,9 @@ import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import SupplyChain (Factory, perform)
 import Data.Functor.Contravariant
+import Data.List.NonEmpty (NonEmpty ((:|)))
 
+import qualified Data.List.NonEmpty as NE
 import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
@@ -175,25 +177,25 @@ peekPositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Query c m e c
 peekPositive = \n -> Query $ Walk $ fmap (fmap concat) $ go n
   where
-    go :: Positive Natural -> Factory (Step 'R c) m (Either e [c])
+    go :: Positive Natural -> Factory (Step 'R c) m (Either e (NonEmpty c))
     go n = Interface.peekSomeMaybe >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case take n x of
-            TakeAll -> pure (Right [x])
-            TakePart{ takePart } -> pure (Right [takePart])
-            TakeInsufficient{ takeShortfall } -> fmap (x :) <$> go takeShortfall
+            TakeAll -> pure $ Right $ x :| []
+            TakePart{ takePart } -> pure $ Right $ takePart :| []
+            TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
 takePositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Move c m e c
 takePositive = \n -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go n
   where
-    go :: Positive Natural -> Factory (Step 'RW c) m (Either e [c])
+    go :: Positive Natural -> Factory (Step 'RW c) m (Either e (NonEmpty c))
     go n = Interface.peekSomeMaybe >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case take n x of
-            TakeAll -> Interface.commit n $> Right [x]
-            TakePart{ takePart } -> Interface.commit (length takePart) $> Right [takePart]
-            TakeInsufficient{ takeShortfall } -> fmap (x :) <$> go takeShortfall
+            TakeAll -> Interface.commit n $> Right (x :| [])
+            TakePart{ takePart } -> Interface.commit (length takePart) $> Right (takePart :| [])
+            TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
 takePositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> AtomicMove c m e c
@@ -259,13 +261,13 @@ takeMatchingText :: forall c m e. ErrorContext e m => Chunk c =>
     ChunkCharacterEquivalence c -> c -> Move c m e c
 takeMatchingText eq = \t -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go t
   where
-    go :: c -> Factory (Step 'RW c) m (Either e [c])
+    go :: c -> Factory (Step 'RW c) m (Either e (NonEmpty c))
     go t = Interface.peekSomeMaybe >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case stripEitherPrefix eq x t of
             StripEitherPrefixFail            ->  perform getError <&> Left
-            StripEitherPrefixAll             ->  pure $ Right [x]
-            IsPrefixedBy{ commonPart = x' }  ->  pure $ Right [x']
+            StripEitherPrefixAll             ->  pure $ Right $ x :| []
+            IsPrefixedBy{ commonPart = x' }  ->  pure $ Right $ x' :| []
             IsPrefixOf{ extraPart = t' }     ->  go t'
 
 takeMatchingTextAtomic :: forall c m e. Chunk c => ErrorContext e m =>

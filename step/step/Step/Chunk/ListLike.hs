@@ -31,6 +31,7 @@ import Prelude (fromIntegral)
 import Text.Show (Show (showsPrec))
 import Data.Semigroup (Semigroup (..))
 
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Foldable as Foldable
 import qualified Data.ListLike as LL
 import qualified Hedgehog.Gen as Gen
@@ -80,8 +81,6 @@ instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
   where
 
     length = nonEmptyListLikeLength
-
-    concat xs = assume $ LL.concatMap nonEmptyListLike xs
 
     span = \f whole -> tupleSpan (LL.span (getPredicate f) (nonEmptyListLike whole))
       where
