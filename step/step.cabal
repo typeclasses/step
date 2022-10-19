@@ -58,6 +58,7 @@ library
         Step.Action.Types
 
         Step.Chunk
+        Step.Chunk.Gen
         Step.Chunk.ListLike
         Step.Chunk.ListLike.Core
 
