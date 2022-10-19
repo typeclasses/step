@@ -8,7 +8,7 @@ module Step.Chunk.ListLike
   where
 
 import Step.Chunk hiding (concat)
-import Step.Chunk.ListLike.Core hiding (length)
+import Step.Chunk.ListLike.Core hiding (length, generalize)
 import qualified Step.Chunk as Chunk
 
 import Control.Applicative (pure, (<*>))

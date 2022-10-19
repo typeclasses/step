@@ -16,6 +16,7 @@ import Prelude (error)
 import Data.Foldable (Foldable)
 import Data.Semigroup (Semigroup)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
+import Data.Monoid (Monoid)
 
 import qualified Data.Semigroup as Semigroup
 
@@ -39,6 +40,14 @@ class Semigroup c => Chunk c
 
     concat :: NonEmpty c -> c
     concat = Semigroup.sconcat
+
+type family Nullable (c :: Type) :: Type
+
+class (Chunk c, Monoid (Nullable c)) => Trivializable c
+  where
+    refine :: Nullable c -> Maybe c
+
+    generalize :: c -> Nullable c
 
 data StripEitherPrefix c =
     StripEitherPrefixAll

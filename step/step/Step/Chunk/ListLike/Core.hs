@@ -1,11 +1,11 @@
 module Step.Chunk.ListLike.Core
   (
     NonEmptyListLike (..),
-    {- * Conversion -} assume, refine,
+    {- * Conversion -} assume,
   )
   where
 
-import Step.Chunk hiding (length)
+import Step.Chunk hiding (length, generalize)
 import qualified Step.Chunk as Chunk
 
 import Control.Applicative (pure, (<*>))
@@ -29,6 +29,7 @@ import Prelude (error)
 import Prelude (fromIntegral)
 import Text.Show (Show (showsPrec))
 import Data.Semigroup (Semigroup (..))
+import Data.Monoid (Monoid)
 
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Foldable as Foldable
@@ -59,8 +60,12 @@ instance Semigroup c => Semigroup (NonEmptyListLike c)
 assume :: ListLike c (Item c) => c -> NonEmptyListLike c
 assume c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
 
-refine :: ListLike c (Item c) => c -> Maybe (NonEmptyListLike c)
-refine c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
+type instance Nullable (NonEmptyListLike c) = c
+
+instance (Monoid c, ListLike c (Item c)) => Trivializable (NonEmptyListLike c)
+  where
+    refine c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
+    generalize = generalize
 
 instance Eq c => Eq (NonEmptyListLike c) where
     (==) = (==) `on` generalize

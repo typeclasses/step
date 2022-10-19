@@ -157,7 +157,7 @@ prop_takeParticularText_empty = property do
 prop_takeParticularText_notEnoughInput = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (LL.generalize a))
+    i <- forAll (genChunks (Chunk.generalize a))
     let (r, _) = parseMaybe (takeParticularText (a <> b)) i
 
     -- takeParticularText, when the input is a proper prefix of
@@ -166,7 +166,7 @@ prop_takeParticularText_notEnoughInput = property do
 
 prop_takeParticularText_exact = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (LL.generalize a))
+    i <- forAll (genChunks (Chunk.generalize a))
     let (x, r) = parseMaybe (takeParticularText a) i
 
     -- takeParticularText, when the input is exactly the
@@ -179,7 +179,7 @@ prop_takeParticularText_exact = property do
 prop_takeParticularText_okayAndMore = property do
     a <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- LL.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (LL.generalize (a <> b)))
+    i <- forAll (genChunks (Chunk.generalize (a <> b)))
     let (x, r) = parseMaybe (takeParticularText a) i
 
     -- takeParticularText, when the input begins with the desired text
@@ -188,4 +188,4 @@ prop_takeParticularText_okayAndMore = property do
 
     -- the remainder should consist of the input with the desired
     -- prefix stripped from it
-    LL.concat r === LL.generalize b
+    LL.concat r === Chunk.generalize b
