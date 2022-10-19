@@ -180,11 +180,20 @@ peekPositive = \n -> Query $ Walk $ fmap (fmap concat) $ go n
         Nothing -> perform getError <&> Left
         Just x -> case take n x of
             TakeAll -> pure (Right [x])
-            TakePart x' -> pure (Right [x'])
-            TakeInsufficient n' -> fmap (x :) <$> go n'
+            TakePart{ takePart } -> pure (Right [takePart])
+            TakeInsufficient{ takeShortfall } -> fmap (x :) <$> go takeShortfall
 
-takePositive :: forall c m e. ErrorContext e m => Positive Natural -> Move c m e c
-takePositive n = _
+takePositive :: forall c m e. Chunk c => ErrorContext e m =>
+    Positive Natural -> Move c m e c
+takePositive = \n -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go n
+  where
+    go :: Positive Natural -> Factory (Step 'RW c) m (Either e [c])
+    go n = Interface.peekSomeMaybe >>= \case
+        Nothing -> perform getError <&> Left
+        Just x -> case take n x of
+            TakeAll -> Interface.commit n $> Right [x]
+            TakePart{ takePart } -> Interface.commit (length takePart) $> Right [takePart]
+            TakeInsufficient{ takeShortfall } -> fmap (x :) <$> go takeShortfall
 
 takePositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> AtomicMove c m e c
