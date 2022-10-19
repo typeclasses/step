@@ -12,30 +12,31 @@ Attoparsec version: @0.14.4@
 
 module Step.Package.AttoparsecText where
 
-import Step.Action.Types
-import Data.Eq ((==), (/=))
-import Data.Char (Char)
-import Data.Text (Text)
-import Data.Maybe (Maybe (..))
-import Step.Chunk.ListLike (NonEmptyListLike)
+import Control.Applicative (Applicative, pure)
 import Control.Monad.Identity
 import Control.Monad.Reader
-import Control.Applicative (Applicative)
-import Data.Semigroup ((<>))
-import Text.Show (show)
 import Data.Bool
+import Data.Char (Char)
+import Data.Eq ((==), (/=))
 import Data.Function
+import Data.Functor
+import Data.Maybe (Maybe (..), maybe)
+import Data.Semigroup ((<>))
+import Data.Text (Text)
+import Step.Action.Types
+import Step.Chunk.Text (Text1)
+import Text.Show (show)
 
 import qualified Step.Action as A
 import qualified Step.Package.General as A
 import qualified Step.Do as A
 import qualified Data.Char as Char
 import qualified Data.Text as Text
-import qualified Step.Chunk.ListLike as LL
+import qualified Step.Chunk.Text as Text1
 import qualified Step.Chunk as Chunk
 
 type Parser m (act :: Action) a =
-    act (NonEmptyListLike Text) (ReaderT [Text] m) [Text] a
+    act Text1 (ReaderT [Text] m) [Text] a
 
 char :: Applicative m => Char -> Parser m AtomicMove Char
 char x = A.satisfyPredicate (== x) <?> ("char " <> Text.pack (show x))
@@ -75,8 +76,10 @@ string x = case Chunk.refine x of
     Nothing -> A.castTo @Atom $ A.pure ()
     Just x' -> A.castTo @Atom (A.takeParticularTextAtomic x') <?> "string"
 
--- asciiCI :: Applicative m => Text -> Parser m Text ()
--- asciiCI t =
+asciiCI :: Applicative m => Text -> Parser m Atom Text
+asciiCI x = case Chunk.refine x of
+    Nothing -> A.castTo @Atom $ A.pure x
+    Just x' -> A.castTo @Atom $ A.takeMatchingTextAtomic Text1.asciiCI x' <&> Chunk.generalize
 
 -- todo
 -- skipSpace :: Parser ()

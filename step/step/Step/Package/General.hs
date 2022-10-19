@@ -271,6 +271,6 @@ takeMatchingText eq = \t -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ g
             IsPrefixOf{ extraPart = t' }     ->  go t'
 
 takeMatchingTextAtomic :: forall c m e. Chunk c => ErrorContext e m =>
-    ChunkCharacterEquivalence c -> c -> Move c m e c
+    ChunkCharacterEquivalence c -> c -> AtomicMove c m e c
 takeMatchingTextAtomic eq t =
-    (nextTextMatchesOn eq t P.>>= requireTrue) P.*> takePositive (length t)
+    (nextTextMatchesOn eq t P.>>= requireTrue) P.*> takePositiveAtomic (length t)
