@@ -87,8 +87,8 @@ evalFactory :: forall (product :: Type).
 evalFactory f = runIdentity (runFactory f)
 
 
-evalVendor :: forall (down :: Interface) (x :: Type).
-    Vendor NoInterface down NoAction -> down x -> Supply NoInterface down NoAction x
+evalVendor :: forall (down :: Interface) (receipt :: Type) (x :: Type).
+    Vendor NoInterface down NoAction receipt -> down x -> Supply NoInterface down NoAction receipt x
 
 evalVendor v r = runIdentity (runVendor v r)
 
@@ -96,33 +96,33 @@ evalVendor v r = runIdentity (runVendor v r)
 -- | A simple stateless vendor that responds to each request by applying a pure function
 
 functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall response. down response -> response) -> Vendor up down action
+    (forall response. down response -> response) -> Vendor up down action ()
 
 functionVendor f = go
   where
-    go = Vendor \x -> pure $ Supply (f x) go
+    go = Vendor \x -> pure $ Supply (f x) () go
 
 
 -- | A simple stateless vendor that responds to each request by applying an effectful function
 
 actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall response. down response -> action response) -> Vendor up down action
+    (forall response. down response -> action response) -> Vendor up down action ()
 
 actionVendor f = go
   where
-    go = Vendor \x -> perform (f x) <&> (`Supply` go)
+    go = Vendor \x -> perform (f x) <&> \product -> Supply product () go
 
 
-noVendor :: forall (up :: Interface) (action :: Action).
-    Vendor up NoInterface action
+noVendor :: forall (up :: Interface) (action :: Action) (receipt :: Type).
+    Vendor up NoInterface action receipt
 noVendor = Vendor \case{}
 
 
 map :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall x. down x -> up x) -> Vendor up down action
+    (forall x. down x -> up x) -> Vendor up down action ()
 map f = go
   where
-    go = Vendor \x -> order (f x) <&> (`Supply` go)
+    go = Vendor \x -> order (f x) <&> \product -> Supply product () go
 
 
 class Connect (up :: Interface) (down :: Interface)
@@ -136,7 +136,7 @@ class Connect (up :: Interface) (down :: Interface)
         This operation is associative; if @a@ and @b@ are vendors and @c@ is a factory,
         then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
     -}
-    (>->) :: Vendor up down action -> client -> result
+    (>->) :: Vendor up down action () -> client -> result
 
 instance Connect up down action
     (Factory down action product)
@@ -145,8 +145,8 @@ instance Connect up down action
     (>->) = vendorToFactory
 
 instance Connect up middle action
-    (Vendor middle down action)
-    (Vendor up down action)
+    (Vendor middle down action receipt)
+    (Vendor up down action receipt)
   where
     (>->) = vendorToVendor
 
