@@ -25,9 +25,8 @@ type Either :: Interface -> Interface -> Interface
 
 -- | Combination of two vendors
 
-offerEither :: forall up down1 down2 action receipt.
-    Vendor up down1 action receipt -> Vendor up down2 action receipt
-    -> Vendor up (Either down1 down2) action receipt
+offerEither :: forall up down1 down2 action.
+    Vendor up down1 action -> Vendor up down2 action -> Vendor up (Either down1 down2) action
 
 offerEither a@(Vendor a') b@(Vendor b') = Vendor \case
     Left  req -> a' req <&> \s -> s{ supplyNext = offerEither (supplyNext s) b }

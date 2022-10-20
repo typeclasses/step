@@ -13,9 +13,9 @@ module SupplyChain.Core where
 import Control.Applicative (Applicative (pure, (*>), (<*>)))
 import Control.Monad (Monad ((>>=)))
 import Data.Function (($), (.), fix)
-import Data.Functor (Functor (fmap), (<$>), (<&>), void)
-import Data.Functor.Const (Const (..))
+import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
+import Data.Functor.Const (Const (..))
 import Data.Void (absurd, Void)
 
 
@@ -87,46 +87,39 @@ runFactory = go
       Request (Const x)    ->  absurd x
 
 
--- | An action in which a vendor handles a single request
+{-| An action in which a vendor handles a single request
 
-runVendor :: forall (action :: Action) (down :: Interface) (receipt :: Type) (x :: Type). Monad action =>
-    Vendor NoInterface down action receipt -> down x
-    -> action (Supply NoInterface down action receipt x)
+    The action returns a 'Supply', which contains two things:
 
-runVendor Vendor{ offer } r = runFactory (offer r)
+    - The response to the request
+    - A new version of the vendor
+-}
+
+runVendor :: forall (action :: Action) (down :: Interface) (x :: Type). Monad action =>
+    Vendor NoInterface down action -> down x -> action (Supply NoInterface down action x)
+
+runVendor v r = runFactory $ vendorToFactory' v (Request r)
 
 
 -- | Makes requests, responds to requests, and performs actions
 
-newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) (receipt :: Type) =
+newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
     { offer :: forall (product :: Type).
-        down product -> Factory up action (Supply up down action receipt product) }
-
-instance Functor (Vendor up down action)
-  where
-    fmap f Vendor{ offer } = Vendor{ offer = \request -> fmap (supplyReceiptMap f) (offer request) }
-
-
-supplyReceiptMap :: (receipt1 -> receipt2)
-    -> Supply up down action receipt1 product
-    -> Supply up down action receipt2 product
-
-supplyReceiptMap f (Supply a b c) = Supply a (f b) (fmap f c)
+        down product -> Factory up action (Supply up down action product) }
 
 
 -- | The conclusion of a vendor's handling of a client request
 
-data Supply (up :: Interface) (down :: Interface) (action :: Action) (receipt :: Type) (product :: Type) =
+data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
   Supply
     { supplyProduct :: product
         -- ^ The requested product
-    , supplyReceipt :: receipt
-    , supplyNext :: Vendor up down action receipt
+    , supplyNext :: Vendor up down action
         -- ^ A new vendor to handle subsequent requests
     }
 
-deriving stock instance Functor (Supply up down action receipt)
+deriving stock instance Functor (Supply up down action)
 
 
 {-|
@@ -149,7 +142,7 @@ response of type @x@.
 -}
 
 vendorToFactory ::
-    Vendor up down action ()
+    Vendor up down action
     -> Factory down action product
     -> Factory up action product
 
@@ -158,9 +151,9 @@ vendorToFactory up down =
 
 
 vendorToVendor ::
-    Vendor up middle action ()
-    -> Vendor middle down action receipt
-    -> Vendor up down action receipt
+    Vendor up middle action
+    -> Vendor middle down action
+    -> Vendor up down action
 vendorToVendor up down =
     Vendor \request -> vendorToFactory' up (offer down request) <&> joinSupply
 
@@ -174,12 +167,12 @@ vendorToVendor up down =
 vendorToFactory' ::
     forall
       (up :: Interface) (down :: Interface) (action :: Action) (product :: Type).
-    Vendor up down action () -> Factory down action product
-    -> Factory up action (Supply up down action () product)
+    Vendor up down action -> Factory down action product
+    -> Factory up action (Supply up down action product)
 
 vendorToFactory' up = \case
-    Pure product      ->  Pure (Supply product () up)
-    Perform action    ->  Perform action <&> \product -> Supply product () up
+    Pure product      ->  Pure (Supply product up)
+    Perform action    ->  Perform action <&> (`Supply` up)
     Request request   ->  offer up request
     Bind step1 step2  ->  (vendorToFactory' up step1) `Bind` \supply ->
                             vendorToFactory' (supplyNext supply)
@@ -191,11 +184,11 @@ vendorToFactory' up = \case
 -}
 
 joinSupply ::
-    Supply up middle action () (Supply middle down action receipt product)
-    -> Supply up down action receipt product
+    Supply up middle action (Supply middle down action product)
+    -> Supply up down action product
 
-joinSupply (Supply (Supply product receipt nextDown) _receipt nextUp) =
-    Supply product receipt (vendorToVendor nextUp nextDown)
+joinSupply (Supply (Supply product nextDown) nextUp) =
+    Supply product (vendorToVendor nextUp nextDown)
 
 
 class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: Type)
@@ -221,17 +214,17 @@ instance ActionFunctor action1 action2
             Bind a b   ->  Bind (go a) (go . b)
 
 instance ActionFunctor action1 action2
-    (Vendor up down action1 receipt)
-    (Vendor up down action2 receipt)
+    (Vendor up down action1)
+    (Vendor up down action2)
   where
     actionMap f = go
       where
         go (Vendor v) = Vendor \request ->
-            actionMap f (v request) <&> \(Supply response receipt v') ->
-                Supply response receipt (go v')
+            actionMap f (v request) <&> \(Supply response v') ->
+                Supply response (go v')
 
 instance ActionFunctor action1 action2
-    (Supply up down action1 receipt product)
-    (Supply up down action2 receipt product)
+    (Supply up down action1 product)
+    (Supply up down action2 product)
   where
-    actionMap f (Supply x r v) = Supply x r (actionMap f v)
+    actionMap f (Supply x v) = Supply x (actionMap f v)
