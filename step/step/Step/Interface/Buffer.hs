@@ -48,12 +48,21 @@ pureStepper buffer =
     (Stream.nil :: Vendor up (TerminableStream c) action)
     >-> bufferedStepper buffer
 
--- | Keeps the /uncommitted/ buffer in State, and the /unviewed/ buffer private
+{-| Turns an unbuffered stream (the 'IsTerminableStream' interface)
+    into a buffered stream (the 'Step' interface).
+
+    A buffer stored in the 'MonadState' context, at a position identified
+    by the given 'Lens'' parameter, holds any input that has been read from
+    the unbuffered stream but has not yet been committed. The remaining input,
+    then, consists of anything that is in the buffer, followed by anything
+    that is yet to be obtained from the unbuffered stream.
+-}
 bufferedStepper :: forall s up action c. Chunk c => MonadState s action =>
     IsTerminableStream c up =>
     Lens' s (Buffer c) -> Vendor up (Step 'RW c) action
 bufferedStepper buffer = go Start
   where
+    -- The "unviewed" buffer is internal state only, not externally accessible.
     go :: ViewBuffer c -> Vendor up (Step 'RW c) action
     go unviewed = Vendor \case
         StepReset -> pure $ Supply () (go Start)
