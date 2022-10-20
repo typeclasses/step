@@ -72,9 +72,15 @@ library
         Step.Error
 
         Step.Package.AttoparsecText
+        Step.Package.Characters
         Step.Package.Document
+        Step.Package.End
+        Step.Package.Failure
+        Step.Package.FixedLength
         Step.Package.General
         Step.Package.InMemory
+        Step.Package.ParticularText
+        Step.Package.Some
 
 test-suite test-step
     import: base
