@@ -18,7 +18,7 @@ common base
     -- Temporary for early stage development
     ghc-options: -fno-warn-unused-imports
     ghc-options: -fno-warn-missing-signatures
-    -- ghc-options: -fno-warn-typed-holes
+    ghc-options: -fno-warn-typed-holes
 
     default-extensions:
         BlockArguments
@@ -78,6 +78,7 @@ library
         Step.Package.Failure
         Step.Package.FixedLength
         Step.Package.General
+        Step.Package.Match
         Step.Package.InMemory
         Step.Package.ParticularText
         Step.Package.Some
