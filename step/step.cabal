@@ -65,6 +65,7 @@ library
         Step.Chunk.Text.Core
 
         Step.Interface
+        Step.Interface.Buffer
         Step.Interface.Core
 
         Step.Walk

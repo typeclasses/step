@@ -16,6 +16,7 @@ module Step.Package.InMemory
 import Step.Action
 import Step.Chunk
 import Step.Interface
+import Step.Interface.Buffer
 
 import Control.Monad (Monad)
 import Control.Monad.State.Strict (runStateT)
