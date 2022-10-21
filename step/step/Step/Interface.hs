@@ -1,23 +1,13 @@
 module Step.Interface
   (
-    -- * The interface
-    Mode (..), Step (..), AdvanceResult (..), stepCast,
-
+    CommittableChunkStream, ResettableTerminableStream,
+    AdvanceResult (..),
+    nextMaybe, reset, commit,
+    stepCast,
   )
   where
 
-import Step.Chunk
 import Step.Interface.Core
-
--- The basics
-import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..), isNothing)
-import Data.Functor (Functor (..), (<&>))
-
--- Math
-import Numeric.Natural (Natural)
-import NatOptics.Positive (Positive)
-
--- Streaming
-import SupplyChain (Factory)
-import qualified SupplyChain
+import SupplyChain.Interface.ResettableTerminableStream (ResettableTerminableStream)
+import SupplyChain.Interface.Resettable (IsResettable (..))
+import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))

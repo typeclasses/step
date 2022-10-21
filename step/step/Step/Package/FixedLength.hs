@@ -11,7 +11,7 @@ module Step.Package.FixedLength
 import Step.Action.Core
 import Step.Chunk
 import Step.Error
-import Step.Interface (Step, Mode (..), AdvanceResult (..))
+import Step.Interface
 import Step.Walk (Walk (..))
 import Step.Package.Failure
 import Step.Interface
@@ -28,7 +28,7 @@ import Data.Functor (($>), (<&>), (<$>), fmap)
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
-import SupplyChain (Factory, perform)
+import SupplyChain (Factory, perform, order)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified Data.List.NonEmpty as NE
@@ -45,7 +45,7 @@ import qualified SupplyChain
     'AdvanceResult' gives the size of the difference.
 -}
 trySkipPositive :: forall c m e. Positive Natural -> Sure c m e AdvanceResult
-trySkipPositive n = Sure (Walk (SupplyChain.order (StepCommit n)))
+trySkipPositive n = Sure (Walk (order (commit n)))
 
 trySkipNatural :: forall c m e. Natural -> Sure c m e AdvanceResult
 trySkipNatural n = case Optics.preview Positive.refine n of
@@ -66,8 +66,8 @@ remainsAtLeastPositive :: forall c m e. Chunk c =>
     Positive Natural -> SureQuery c m e Bool
 remainsAtLeastPositive = \n -> act @SureQuery (go n)
   where
-    go :: Positive Natural -> Factory (Step 'R c) m Bool
-    go n = SupplyChain.order StepNext >>= \case
+    go :: Positive Natural -> Factory (ResettableTerminableStream c) m Bool
+    go n = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case Positive.minus n (length @c x) of
             Signed.Plus n' -> go n'
@@ -106,8 +106,8 @@ peekPositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Query c m e c
 peekPositive = \n -> Query $ Walk $ fmap (fmap concat) $ go n
   where
-    go :: Positive Natural -> Factory (Step 'R c) m (Either e (NonEmpty c))
-    go n = SupplyChain.order StepNext >>= \case
+    go :: Positive Natural -> Factory (ResettableTerminableStream c) m (Either e (NonEmpty c))
+    go n = order nextMaybe >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case take n x of
             TakeAll -> pure $ Right $ x :| []
@@ -118,12 +118,12 @@ takePositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Move c m e c
 takePositive = \n -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go n
   where
-    go :: Positive Natural -> Factory (Step 'RW c) m (Either e (NonEmpty c))
-    go n = SupplyChain.order StepNext >>= \case
+    go :: Positive Natural -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
+    go n = order nextMaybe >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case take n x of
-            TakeAll -> SupplyChain.order (StepCommit n) $> Right (x :| [])
-            TakePart{ takePart } -> SupplyChain.order (StepCommit (length takePart)) $> Right (takePart :| [])
+            TakeAll -> order (commit n) $> Right (x :| [])
+            TakePart{ takePart } -> order (commit (length takePart)) $> Right (takePart :| [])
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
 takePositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>

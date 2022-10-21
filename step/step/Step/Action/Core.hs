@@ -1,6 +1,6 @@
 module Step.Action.Core where
 
-import Step.Interface.Core
+import Step.Interface
 import Step.Walk
 
 -- The basics
@@ -45,21 +45,21 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (Walk 'RW c m (Either e a))
+newtype Any c m e a = Any (Walk (CommittableChunkStream c) m (Either e a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (Walk 'RW c m)
+        via ExceptT e (Walk (CommittableChunkStream c) m)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (Walk 'R c m (Either e a))
+newtype Query c m e a = Query (Walk (ResettableTerminableStream c) m (Either e a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (Walk 'R c m)
+        via ExceptT e (Walk (ResettableTerminableStream c) m)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Walk 'RW c m a)
+newtype Sure c m e a = Sure (Walk (CommittableChunkStream c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Walk 'R c m a)
+newtype SureQuery c m e a = SureQuery (Walk (ResettableTerminableStream c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 
@@ -109,29 +109,29 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
 
 
 class IsAction p =>
-    IsWalk p c m e a mode product
-    | p c m e a -> mode product
+    IsWalk p c m e a up product
+    | p c m e a -> up product
   where
-    walk :: Iso' (p c m e a) (Walk mode c m product)
+    walk :: Iso' (p c m e a) (Walk up m product)
 
-instance IsWalk Any c m e a 'RW (Either e a) where
+instance IsWalk Any c m e a (CommittableChunkStream c) (Either e a) where
     walk = Optics.coerced
 
-instance IsWalk Sure c m e a 'RW a where
+instance IsWalk Sure c m e a (CommittableChunkStream c) a where
     walk = Optics.coerced
 
-instance IsWalk Query c m e a 'R (Either e a) where
+instance IsWalk Query c m e a (ResettableTerminableStream c) (Either e a) where
     walk = Optics.coerced
 
-instance IsWalk SureQuery c m e a 'R a where
+instance IsWalk SureQuery c m e a (ResettableTerminableStream c) a where
     walk = Optics.coerced
 
 
-run :: IsWalk p c m e a mode product => p c m e a -> Factory (Step mode c) m product
+run :: IsWalk p c m e a up product => p c m e a -> Factory up m product
 run = (\(Walk x) -> x) . Optics.view walk
 
 
-act :: IsWalk p c m e a mode product => Factory (Step mode c) m product -> p c m e a
+act :: IsWalk p c m e a up product => Factory up m product -> p c m e a
 act = Optics.review walk . Walk
 
 

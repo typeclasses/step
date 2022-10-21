@@ -8,7 +8,7 @@ module Step.Package.ParticularText
 import Step.Action.Core
 import Step.Chunk
 import Step.Error
-import Step.Interface (Step, Mode (..))
+import Step.Interface
 import Step.Walk (Walk (..))
 import Step.Package.FixedLength
 import Step.Package.Failure
@@ -25,7 +25,7 @@ import Data.Eq (Eq, (==))
 import Data.Function (($))
 import Data.Functor ((<&>), fmap)
 import Data.Maybe (Maybe (..))
-import SupplyChain (Factory, perform)
+import SupplyChain (Factory, perform, order)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified SupplyChain
@@ -34,14 +34,14 @@ takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> 
 takeParticularText = \t -> assumeMovement $
     Any (Walk (go t) <&> Right) P.>>= requireTrue
   where
-    go :: c -> Factory (Step 'RW c) m Bool
-    go t = SupplyChain.order StepNext >>= \case
+    go :: c -> Factory (CommittableChunkStream c) m Bool
+    go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
             StripEitherPrefixFail         ->  pure False
-            StripEitherPrefixAll          ->  SupplyChain.order (StepCommit (length t)) <&> \_ -> True
-            IsPrefixedBy{}                ->  SupplyChain.order (StepCommit (length t)) <&> \_ -> True
-            IsPrefixOf{ extraPart = t' }  ->  SupplyChain.order (StepCommit (length x)) *> go t'
+            StripEitherPrefixAll          ->  order (commit (length t)) <&> \_ -> True
+            IsPrefixedBy{}                ->  order (commit (length t)) <&> \_ -> True
+            IsPrefixOf{ extraPart = t' }  ->  order (commit (length x)) *> go t'
 
 nextTextIs :: forall c m e. Chunk c => Eq c => c -> SureQuery c m e Bool
 nextTextIs = nextTextMatchesOn (ChunkCharacterEquivalence (==))
@@ -55,8 +55,8 @@ nextTextMatchesOn :: forall c m e. Chunk c =>
     ChunkCharacterEquivalence c -> c -> SureQuery c m e Bool
 nextTextMatchesOn eq = \t -> SureQuery (Walk (go t))
   where
-    go :: c -> Factory (Step mode c) m Bool
-    go t = SupplyChain.order StepNext >>= \case
+    go :: c -> Factory (ResettableTerminableStream c) m Bool
+    go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix eq x t of
             StripEitherPrefixFail         ->  pure False
@@ -68,8 +68,8 @@ takeMatchingText :: forall c m e. ErrorContext e m => Chunk c =>
     ChunkCharacterEquivalence c -> c -> Move c m e c
 takeMatchingText eq = \t -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go t
   where
-    go :: c -> Factory (Step 'RW c) m (Either e (NonEmpty c))
-    go t = SupplyChain.order StepNext >>= \case
+    go :: c -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
+    go t = order nextMaybe >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case stripEitherPrefix eq x t of
             StripEitherPrefixFail            ->  perform getError <&> Left

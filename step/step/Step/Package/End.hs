@@ -13,11 +13,12 @@ import Data.Bool (Bool (..))
 import Data.Function
 import Data.Functor
 import Data.Maybe
+import SupplyChain (order)
 
 import qualified SupplyChain
 
 atEnd :: SureQuery c m e Bool
-atEnd = SureQuery $ Walk $ SupplyChain.order StepNext <&> isNothing
+atEnd = SureQuery $ Walk $ order nextMaybe <&> isNothing
 
 end :: forall c m e. ErrorContext e m => Query c m e ()
 end = atEnd P.>>= requireTrue

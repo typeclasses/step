@@ -26,13 +26,13 @@ import Data.Functor (($>), (<&>), fmap)
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
-import SupplyChain (perform)
+import SupplyChain (perform, order)
 
 import qualified SupplyChain
 
 -- | Take a peek at the next character (if possible) without advancing
 peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
-peekCharMaybe = SureQuery $ Walk $ SupplyChain.order StepNext <&> fmap @Maybe head
+peekCharMaybe = SureQuery $ Walk $ order nextMaybe <&> fmap @Maybe head
 
 peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case
@@ -46,20 +46,20 @@ takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Just x   ->  castTo @Atom (trySkipPositive one) $> x
 
 nextCharIs :: forall c m e. Chunk c => Eq (One c) => One c -> SureQuery c m e Bool
-nextCharIs c = act $ SupplyChain.order StepNext <&> \case
+nextCharIs c = act $ order nextMaybe <&> \case
     Just x | head x == c  ->  True
     _                     ->  False
 
 takeParticularChar :: forall c m e. Chunk c => Eq (One c) => ErrorContext e m =>
     One c -> AtomicMove c m e ()
-takeParticularChar c = assumeMovement $ Atom $ act $ SupplyChain.order StepNext >>= \case
-    Just x | head x == c  ->  pure $ Right $ act $ SupplyChain.order (StepCommit one) $> ()
+takeParticularChar c = assumeMovement $ Atom $ act $ order nextMaybe >>= \case
+    Just x | head x == c  ->  pure $ Right $ act $ order (commit one) $> ()
     _                     ->  perform getError <&> Left
 
 satisfyJust :: forall c m e a. Chunk c => ErrorContext e m =>
     (One c -> Maybe a) -> AtomicMove c m e a
-satisfyJust ok = assumeMovement $ Atom $ act $ SupplyChain.order StepNext <&> fmap @Maybe head >>= \case
-    Just (ok -> Just x)  ->  pure $ Right $ act $ SupplyChain.order (StepCommit one) $> x
+satisfyJust ok = assumeMovement $ Atom $ act $ order nextMaybe <&> fmap @Maybe head >>= \case
+    Just (ok -> Just x)  ->  pure $ Right $ act $ order (commit one) $> x
     _                    ->  perform getError <&> Left
 
 satisfyPredicate :: forall c m e. Chunk c => ErrorContext e m =>

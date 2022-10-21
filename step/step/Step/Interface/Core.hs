@@ -1,27 +1,38 @@
 module Step.Interface.Core where
 
--- The basics
 import Data.Maybe (Maybe (..))
 import Data.Kind (Type)
-
--- Math
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
 
-data Mode =
-    R   -- ^ Read-only
-  | RW  -- ^ Read/write
+import SupplyChain.Interface.ResettableTerminableStream (ResettableTerminableStream)
+import qualified SupplyChain.Interface.ResettableTerminableStream as RTS
+import SupplyChain.Interface.Resettable (IsResettable (..))
+import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
 
-data Step (mo :: Mode) (c :: Type) (a :: Type) =
-    (a ~ AdvanceResult, mo ~ 'RW) => StepCommit (Positive Natural)
-  | a ~ Maybe c                   => StepNext
-  | a ~ ()                        => StepReset
+data CommittableChunkStream (chunk :: Type) (product :: Type) =
+    (product ~ Maybe chunk) => NextMaybe
+  | (product ~ ()) => Reset
+  | (product ~ AdvanceResult) => Commit (Positive Natural)
+
+instance IsResettable (CommittableChunkStream chunk)
+  where
+    reset = Reset
+
+instance IsTerminableStream chunk (CommittableChunkStream chunk)
+  where
+    nextMaybe = NextMaybe
 
 data AdvanceResult =
     AdvanceSuccess
   | YouCanNotAdvance{ shortfall :: Positive Natural }
 
-stepCast :: Step 'R c a -> Step 'RW c a
+stepCast ::
+    ResettableTerminableStream chunk product
+    -> CommittableChunkStream chunk product
 stepCast = \case
-    StepNext  -> StepNext
-    StepReset -> StepReset
+    RTS.NextMaybe  ->  NextMaybe
+    RTS.Reset      ->  Reset
+
+commit :: Positive Natural -> CommittableChunkStream chunk AdvanceResult
+commit = Commit

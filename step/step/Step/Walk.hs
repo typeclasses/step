@@ -1,12 +1,13 @@
 module Step.Walk where
 
-import Step.Interface.Core
+import Step.Interface
 
 import Data.Functor (Functor (..))
 import Data.Function ((.))
 import Control.Monad (Monad (..))
 import Control.Applicative (Applicative (..))
 import SupplyChain (Factory, order)
+import SupplyChain.Interface.Resettable (IsResettable (reset))
 
 import qualified Control.Monad as Monad
 
@@ -19,18 +20,20 @@ import qualified Control.Monad as Monad
     'Monad' class laws are respected.)
 -}
 
-newtype Walk mode chunk action a =
-    Walk (Factory (Step mode chunk) action a)
+-- todo: rename, update doc
+
+newtype Walk up action a =
+    Walk (Factory up action a)
     deriving newtype Functor
 
-instance Applicative (Walk mode chunk action)
+instance IsResettable up => Applicative (Walk up action)
   where
     pure = Walk . pure
     (<*>) = Monad.ap
 
-instance Monad (Walk mode chunk action)
+instance IsResettable up => Monad (Walk up action)
   where
     Walk step1 >>= step2 = Walk do
         x <- step1
-        order StepReset
+        order reset
         case step2 x of Walk b' -> b'
