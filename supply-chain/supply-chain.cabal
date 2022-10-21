@@ -41,6 +41,8 @@ library
         SupplyChain.Interface.DrainableStream
         SupplyChain.Interface.Either
         SupplyChain.Interface.InfiniteStream
+        SupplyChain.Interface.Resettable
+        SupplyChain.Interface.ResettableTerminableStream
         SupplyChain.Interface.TerminableStream
 
         SupplyChain.Bonus.ActionList

@@ -22,7 +22,6 @@ import Prelude ((+))
 
 data Counting i response =
     Order (i response)
-        -- ^ The next item, or 'Nothing' if input is exhausted
   | (response ~ Natural) => Count
         -- ^ How many items have been fetched so far
 

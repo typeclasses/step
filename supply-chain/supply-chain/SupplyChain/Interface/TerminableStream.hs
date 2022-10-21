@@ -27,7 +27,7 @@ import Numeric.Natural (Natural)
 import Prelude ((+))
 
 
-class IsTerminableStream item (i :: Interface)
+class IsTerminableStream item (i :: Interface) | i -> item
   where
     nextMaybe :: i (Maybe item)
 
