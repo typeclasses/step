@@ -14,6 +14,7 @@ import Step.Error
 import Step.Interface (Step, Mode (..), AdvanceResult (..))
 import Step.Walk (Walk (..))
 import Step.Package.Failure
+import Step.Interface
 
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
@@ -35,6 +36,7 @@ import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
 import qualified Optics
+import qualified SupplyChain
 
 {-| Advance over the next /n/ characters (if possible)
 
@@ -43,7 +45,7 @@ import qualified Optics
     'AdvanceResult' gives the size of the difference.
 -}
 trySkipPositive :: forall c m e. Positive Natural -> Sure c m e AdvanceResult
-trySkipPositive n = Sure (Walk (Interface.commit n))
+trySkipPositive n = Sure (Walk (SupplyChain.order (StepCommit n)))
 
 trySkipNatural :: forall c m e. Natural -> Sure c m e AdvanceResult
 trySkipNatural n = case Optics.preview Positive.refine n of
@@ -65,7 +67,7 @@ remainsAtLeastPositive :: forall c m e. Chunk c =>
 remainsAtLeastPositive = \n -> act @SureQuery (go n)
   where
     go :: Positive Natural -> Factory (Step 'R c) m Bool
-    go n = Interface.peekSomeMaybe >>= \case
+    go n = SupplyChain.order StepNext >>= \case
         Nothing -> pure False
         Just x -> case Positive.minus n (length @c x) of
             Signed.Plus n' -> go n'
@@ -105,7 +107,7 @@ peekPositive :: forall c m e. Chunk c => ErrorContext e m =>
 peekPositive = \n -> Query $ Walk $ fmap (fmap concat) $ go n
   where
     go :: Positive Natural -> Factory (Step 'R c) m (Either e (NonEmpty c))
-    go n = Interface.peekSomeMaybe >>= \case
+    go n = SupplyChain.order StepNext >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case take n x of
             TakeAll -> pure $ Right $ x :| []
@@ -117,11 +119,11 @@ takePositive :: forall c m e. Chunk c => ErrorContext e m =>
 takePositive = \n -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go n
   where
     go :: Positive Natural -> Factory (Step 'RW c) m (Either e (NonEmpty c))
-    go n = Interface.peekSomeMaybe >>= \case
+    go n = SupplyChain.order StepNext >>= \case
         Nothing -> perform getError <&> Left
         Just x -> case take n x of
-            TakeAll -> Interface.commit n $> Right (x :| [])
-            TakePart{ takePart } -> Interface.commit (length takePart) $> Right (takePart :| [])
+            TakeAll -> SupplyChain.order (StepCommit n) $> Right (x :| [])
+            TakePart{ takePart } -> SupplyChain.order (StepCommit (length takePart)) $> Right (takePart :| [])
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
 takePositiveAtomic :: forall c m e. Chunk c => ErrorContext e m =>
