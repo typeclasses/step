@@ -8,7 +8,6 @@ module Step.Package.Characters
 import Step.Action.Core
 import Step.Chunk
 import Step.Error
-import Step.Walk (Walk (..))
 import Step.Package.FixedLength
 import Step.Package.Failure
 import Step.Interface
@@ -32,7 +31,7 @@ import qualified SupplyChain
 
 -- | Take a peek at the next character (if possible) without advancing
 peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
-peekCharMaybe = SureQuery $ Walk $ order nextMaybe <&> fmap @Maybe head
+peekCharMaybe = SureQuery $ ResettingSequence $ order nextMaybe <&> fmap @Maybe head
 
 peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
 peekChar = peekCharMaybe P.>>= \case

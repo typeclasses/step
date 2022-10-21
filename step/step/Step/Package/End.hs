@@ -2,7 +2,6 @@ module Step.Package.End where
 
 import Step.Action.Core
 import Step.Error
-import Step.Walk (Walk (..))
 import Step.Package.Failure
 import Step.Interface
 
@@ -18,7 +17,7 @@ import SupplyChain (order)
 import qualified SupplyChain
 
 atEnd :: SureQuery c m e Bool
-atEnd = SureQuery $ Walk $ order nextMaybe <&> isNothing
+atEnd = SureQuery $ ResettingSequence $ order nextMaybe <&> isNothing
 
 end :: forall c m e. ErrorContext e m => Query c m e ()
 end = atEnd P.>>= requireTrue

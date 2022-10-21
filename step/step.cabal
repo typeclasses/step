@@ -68,8 +68,6 @@ library
         Step.Interface.Buffer
         Step.Interface.Core
 
-        Step.Walk
-
         Step.Error
 
         Step.Package.AttoparsecText

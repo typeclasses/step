@@ -12,7 +12,6 @@ import Step.Action.Core
 import Step.Chunk
 import Step.Error
 import Step.Interface
-import Step.Walk (Walk (..))
 import Step.Package.Failure
 import Step.Interface
 
@@ -45,7 +44,7 @@ import qualified SupplyChain
     'AdvanceResult' gives the size of the difference.
 -}
 trySkipPositive :: forall c m e. Positive Natural -> Sure c m e AdvanceResult
-trySkipPositive n = Sure (Walk (order (commit n)))
+trySkipPositive n = Sure (ResettingSequence (order (commit n)))
 
 trySkipNatural :: forall c m e. Natural -> Sure c m e AdvanceResult
 trySkipNatural n = case Optics.preview Positive.refine n of
@@ -104,7 +103,7 @@ skipNaturalAtomic n = case Optics.preview Positive.refine n of
 
 peekPositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Query c m e c
-peekPositive = \n -> Query $ Walk $ fmap (fmap concat) $ go n
+peekPositive = \n -> Query $ ResettingSequence $ fmap (fmap concat) $ go n
   where
     go :: Positive Natural -> Factory (ResettableTerminableStream c) m (Either e (NonEmpty c))
     go n = order nextMaybe >>= \case
@@ -116,7 +115,7 @@ peekPositive = \n -> Query $ Walk $ fmap (fmap concat) $ go n
 
 takePositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Move c m e c
-takePositive = \n -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go n
+takePositive = \n -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap concat) $ go n
   where
     go :: Positive Natural -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
     go n = order nextMaybe >>= \case

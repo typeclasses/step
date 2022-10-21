@@ -2,7 +2,6 @@ module Step.Package.Match (match) where
 
 import Step.Action.Core
 import Step.Error
-import Step.Walk (Walk (..))
 import Step.Package.Failure
 import Step.Chunk
 import Step.Interface
@@ -23,7 +22,7 @@ import Prelude ((+))
 import qualified SupplyChain
 
 match :: Chunk c => Any c m e a -> Any c m e (c, a)
-match (Any (Walk f)) = Any $ Walk do
+match (Any (ResettingSequence f)) = Any $ ResettingSequence do
     _
 
 data Counting (c :: Type) (response :: Type) =

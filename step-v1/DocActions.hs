@@ -10,7 +10,7 @@ import Step.Action
       SureQuery,
       CursorPosition,
       IsStep(hoistStep),
-      IsWalk(..),
+      IsResettingSequence(..),
       AtomicMove,
       castTo,
       bindAction,
@@ -42,7 +42,7 @@ import Step.ContextStack
 
 import qualified Loc
 
-contextualize :: forall act xs x s e m m' a. MonadReader (Context xs x s m) m' => IsWalk act =>
+contextualize :: forall act xs x s e m m' a. MonadReader (Context xs x s m) m' => IsResettingSequence act =>
     Text
     -> act xs x e m' a
     -> act xs x e m' a

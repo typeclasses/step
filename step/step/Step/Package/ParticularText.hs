@@ -9,7 +9,6 @@ import Step.Action.Core
 import Step.Chunk
 import Step.Error
 import Step.Interface
-import Step.Walk (Walk (..))
 import Step.Package.FixedLength
 import Step.Package.Failure
 import Step.Interface
@@ -32,7 +31,7 @@ import qualified SupplyChain
 
 takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> Move c m e ()
 takeParticularText = \t -> assumeMovement $
-    Any (Walk (go t) <&> Right) P.>>= requireTrue
+    Any (ResettingSequence (go t) <&> Right) P.>>= requireTrue
   where
     go :: c -> Factory (CommittableChunkStream c) m Bool
     go t = order nextMaybe >>= \case
@@ -53,7 +52,7 @@ takeParticularTextAtomic t = assumeMovement $
 
 nextTextMatchesOn :: forall c m e. Chunk c =>
     ChunkCharacterEquivalence c -> c -> SureQuery c m e Bool
-nextTextMatchesOn eq = \t -> SureQuery (Walk (go t))
+nextTextMatchesOn eq = \t -> SureQuery (ResettingSequence (go t))
   where
     go :: c -> Factory (ResettableTerminableStream c) m Bool
     go t = order nextMaybe >>= \case
@@ -66,7 +65,7 @@ nextTextMatchesOn eq = \t -> SureQuery (Walk (go t))
 
 takeMatchingText :: forall c m e. ErrorContext e m => Chunk c =>
     ChunkCharacterEquivalence c -> c -> Move c m e c
-takeMatchingText eq = \t -> assumeMovement $ Any $ Walk $ fmap (fmap concat) $ go t
+takeMatchingText eq = \t -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap concat) $ go t
   where
     go :: c -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
     go t = order nextMaybe >>= \case

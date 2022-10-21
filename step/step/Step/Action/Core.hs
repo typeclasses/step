@@ -1,7 +1,6 @@
 module Step.Action.Core where
 
 import Step.Interface
-import Step.Walk
 
 -- The basics
 import Data.Maybe (Maybe (..))
@@ -37,7 +36,7 @@ type Action =
   -> Type
 
 
--- Simple actions that are just a newtype for Walk:
+-- Simple actions that are just a newtype for ResettingSequence:
 
 type Any :: Action
 type Query :: Action
@@ -45,21 +44,21 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m e a = Any (Walk (CommittableChunkStream c) m (Either e a))
+newtype Any c m e a = Any (ResettingSequence (CommittableChunkStream c) m (Either e a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (Walk (CommittableChunkStream c) m)
+        via ExceptT e (ResettingSequence (CommittableChunkStream c) m)
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m e a = Query (Walk (ResettableTerminableStream c) m (Either e a))
+newtype Query c m e a = Query (ResettingSequence (ResettableTerminableStream c) m (Either e a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (Walk (ResettableTerminableStream c) m)
+        via ExceptT e (ResettingSequence (ResettableTerminableStream c) m)
 
 -- | Always succeeds
-newtype Sure c m e a = Sure (Walk (CommittableChunkStream c) m a)
+newtype Sure c m e a = Sure (ResettingSequence (CommittableChunkStream c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m e a = SureQuery (Walk (ResettableTerminableStream c) m a)
+newtype SureQuery c m e a = SureQuery (ResettingSequence (ResettableTerminableStream c) m a)
     deriving newtype (Functor, Applicative, Monad)
 
 
@@ -109,46 +108,46 @@ instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would s
 
 
 class IsAction p =>
-    IsWalk p c m e a up product
+    IsResettingSequence p c m e a up product
     | p c m e a -> up product
   where
-    walk :: Iso' (p c m e a) (Walk up m product)
+    walk :: Iso' (p c m e a) (ResettingSequence up m product)
 
-instance IsWalk Any c m e a (CommittableChunkStream c) (Either e a) where
+instance IsResettingSequence Any c m e a (CommittableChunkStream c) (Either e a) where
     walk = Optics.coerced
 
-instance IsWalk Sure c m e a (CommittableChunkStream c) a where
+instance IsResettingSequence Sure c m e a (CommittableChunkStream c) a where
     walk = Optics.coerced
 
-instance IsWalk Query c m e a (ResettableTerminableStream c) (Either e a) where
+instance IsResettingSequence Query c m e a (ResettableTerminableStream c) (Either e a) where
     walk = Optics.coerced
 
-instance IsWalk SureQuery c m e a (ResettableTerminableStream c) a where
+instance IsResettingSequence SureQuery c m e a (ResettableTerminableStream c) a where
     walk = Optics.coerced
 
 
-run :: IsWalk p c m e a up product => p c m e a -> Factory up m product
-run = (\(Walk x) -> x) . Optics.view walk
+run :: IsResettingSequence p c m e a up product => p c m e a -> Factory up m product
+run = (\(ResettingSequence x) -> x) . Optics.view walk
 
 
-act :: IsWalk p c m e a up product => Factory up m product -> p c m e a
-act = Optics.review walk . Walk
+act :: IsResettingSequence p c m e a up product => Factory up m product -> p c m e a
+act = Optics.review walk . ResettingSequence
 
 
 class IsAction (act :: Action) where
     actionMap :: (forall x. m x -> m' x) -> act c m e a -> act c m' e a
 
 instance IsAction Any where
-    actionMap f (Any (Walk x)) = Any (Walk (SupplyChain.actionMap f x))
+    actionMap f (Any (ResettingSequence x)) = Any (ResettingSequence (SupplyChain.actionMap f x))
 
 instance IsAction Sure where
-    actionMap f (Sure (Walk x)) = Sure (Walk (SupplyChain.actionMap f x))
+    actionMap f (Sure (ResettingSequence x)) = Sure (ResettingSequence (SupplyChain.actionMap f x))
 
 instance IsAction Query where
-    actionMap f (Query (Walk x)) = Query (Walk (SupplyChain.actionMap f x))
+    actionMap f (Query (ResettingSequence x)) = Query (ResettingSequence (SupplyChain.actionMap f x))
 
 instance IsAction SureQuery where
-    actionMap f (SureQuery (Walk x)) = SureQuery (Walk (SupplyChain.actionMap f x))
+    actionMap f (SureQuery (ResettingSequence x)) = SureQuery (ResettingSequence (SupplyChain.actionMap f x))
 
 instance IsAction Atom where
     actionMap f (Atom x) = Atom (fmap (actionMap f) (actionMap f x))

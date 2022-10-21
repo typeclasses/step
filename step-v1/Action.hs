@@ -42,10 +42,10 @@ instance AssumeSuccess (Step 'ReadWrite 'Imperfect) (Step 'ReadWrite 'Perfect) w
         Step_Fail _ -> error "assumeSuccess: assumption failed"
 
 instance AssumeSuccess Any Sure where
-    assumeSuccess (Any (Walk x)) = Sure (Walk (hoistF assumeSuccess x))
+    assumeSuccess (Any (ResettingSequence x)) = Sure (ResettingSequence (hoistF assumeSuccess x))
 
 instance AssumeSuccess Query SureQuery where
-    assumeSuccess (Query (Walk x)) = SureQuery (Walk (hoistF assumeSuccess x))
+    assumeSuccess (Query (ResettingSequence x)) = SureQuery (ResettingSequence (hoistF assumeSuccess x))
 
 -- ⭕
 
@@ -128,7 +128,7 @@ strictlyIncreaseCursorPosition = increaseCursorPosition . review Positive.refine
 increaseCursorPosition :: Natural -> Endo CursorPosition
 increaseCursorPosition x = Endo $ CursorPosition . (+ x) . cursorPositionNatural
 
-counting :: IsWalk act => MonadState s m => Lens' s CursorPosition -> act xs x r m a -> act xs x r m a
+counting :: IsResettingSequence act => MonadState s m => Lens' s CursorPosition -> act xs x r m a -> act xs x r m a
 counting o = mapSteps \case
     s@(Step_Commit (Commit n _)) -> do
         liftF (Step_Lift (modifying o $ appEndo $ strictlyIncreaseCursorPosition n))
