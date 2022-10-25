@@ -162,9 +162,9 @@ of job @b@, then we can form the composition @'vendorToJob' a b@.
 When the 'Job' makes a request of type @i x@, the 'Vendor' replies with a
 response of type @x@.
 
-> ┌────────────────────────────┐
-> │     Vendor up i action     │
-> └────────────────────────────┘
+> ┌────────────────────────┐
+> │   Vendor up i action   │
+> └────────────────────────┘
 >              ▲   │
 >         i x  │   │  x
 >              │   ▼
