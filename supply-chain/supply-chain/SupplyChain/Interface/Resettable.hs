@@ -15,7 +15,7 @@ class IsResettable (i :: Interface)
     reset :: i ()
 
 {- |
-    A /resetting sequence/ is a factory with a resettable upstream interface,
+    A /resetting sequence/ is a job with a resettable upstream interface,
     with the additional implication that a resetting sequence is implicitly
     preceded and followed by a 'reset'. Sequencing operations like '(<*>)' and
     '(>>=)' insert resets between the operations. (The implicit resets and the
@@ -24,7 +24,7 @@ class IsResettable (i :: Interface)
 -}
 
 newtype ResettingSequence up action a =
-    ResettingSequence (Factory up action a)
+    ResettingSequence (Job up action a)
     deriving newtype Functor
 
 instance IsResettable up => Applicative (ResettingSequence up action)

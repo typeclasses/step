@@ -27,7 +27,7 @@ import Data.Functor (($>), (<&>), (<$>), fmap)
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
-import SupplyChain (Factory, perform, order, noVendor, (>->))
+import SupplyChain (Job, perform, order, noVendor, (>->))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified Data.List.NonEmpty as NE
@@ -65,7 +65,7 @@ remainsAtLeastPositive :: forall c m e. Chunk c =>
     Positive Natural -> SureQuery c m e Bool
 remainsAtLeastPositive = \n -> act @SureQuery (go n)
   where
-    go :: Positive Natural -> Factory (ResettableTerminableStream c) m Bool
+    go :: Positive Natural -> Job (ResettableTerminableStream c) m Bool
     go n = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case Positive.minus n (length @c x) of
@@ -105,7 +105,7 @@ peekPositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Query c m e c
 peekPositive = \n -> Query $ ResettingSequence $ fmap (fmap concat) $ go n
   where
-    go :: Positive Natural -> Factory (ResettableTerminableStream c) m (Either e (NonEmpty c))
+    go :: Positive Natural -> Job (ResettableTerminableStream c) m (Either e (NonEmpty c))
     go n = order nextMaybe >>= \case
         Nothing -> (noVendor >-> getError) <&> Left
         Just x -> case take n x of
@@ -117,7 +117,7 @@ takePositive :: forall c m e. Chunk c => ErrorContext e m =>
     Positive Natural -> Move c m e c
 takePositive = \n -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap concat) $ go n
   where
-    go :: Positive Natural -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
+    go :: Positive Natural -> Job (CommittableChunkStream c) m (Either e (NonEmpty c))
     go n = order nextMaybe >>= \case
         Nothing -> (noVendor >-> getError) <&> Left
         Just x -> case take n x of

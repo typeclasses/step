@@ -1,6 +1,6 @@
 {- |
 
-Description: The 'Either' interface, a general way to connect a factory to two vendors by merging them into one
+Description: The 'Either' interface, a general way to connect a job to two vendors by merging them into one
 
 -}
 

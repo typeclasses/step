@@ -24,7 +24,7 @@ import Data.Eq (Eq, (==))
 import Data.Function (($))
 import Data.Functor ((<&>), fmap)
 import Data.Maybe (Maybe (..))
-import SupplyChain (Factory, perform, order, noVendor, (>->))
+import SupplyChain (Job, perform, order, noVendor, (>->))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified SupplyChain
@@ -33,7 +33,7 @@ takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> 
 takeParticularText = \t -> assumeMovement $
     Any (ResettingSequence (go t) <&> Right) P.>>= requireTrue
   where
-    go :: c -> Factory (CommittableChunkStream c) m Bool
+    go :: c -> Job (CommittableChunkStream c) m Bool
     go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
@@ -54,7 +54,7 @@ nextTextMatchesOn :: forall c m e. Chunk c =>
     ChunkCharacterEquivalence c -> c -> SureQuery c m e Bool
 nextTextMatchesOn eq = \t -> SureQuery (ResettingSequence (go t))
   where
-    go :: c -> Factory (ResettableTerminableStream c) m Bool
+    go :: c -> Job (ResettableTerminableStream c) m Bool
     go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix eq x t of
@@ -67,7 +67,7 @@ takeMatchingText :: forall c m e. ErrorContext e m => Chunk c =>
     ChunkCharacterEquivalence c -> c -> Move c m e c
 takeMatchingText eq = \t -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap concat) $ go t
   where
-    go :: c -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
+    go :: c -> Job (CommittableChunkStream c) m (Either e (NonEmpty c))
     go t = order nextMaybe >>= \case
         Nothing -> (noVendor >-> getError) <&> Left
         Just x -> case stripEitherPrefix eq x t of

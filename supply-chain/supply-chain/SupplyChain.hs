@@ -3,19 +3,19 @@
 Description: The main API of the supply-chain library
 
 A "supply chain" represents a flow of information from one 'Vendor' to the next,
-and so on, ultimately reaching a 'Factory' who returns a product.
+and so on, ultimately reaching a 'Job' that returns a product.
 
 @
-(vendor1 '>->' vendor2 '>->' vendor3 '>->' factory)
+(vendor1 '>->' vendor2 '>->' vendor3 '>->' job)
 @
 
 In the above example, @vendor2@ is said to be the /client/ which is immediately
-/downstream/ of @vendor1@. A factory or vendor can place an 'order', which is
-fulfilled by the vendor /upstream/ of it. So, the orders made by the @factory@
+/downstream/ of @vendor1@. A job or vendor can place an 'order', which is
+fulfilled by the vendor /upstream/ of it. So, the orders made by the @job@
 are served by @vendor3@, the orders made by @vendor3@ are served by @vendor2@,
 and so on. If @vendor1@ does not make any requests and thus does not require yet
 another vendor upstream of it, then the above expression can be converted into
-an action using 'runFactory'.
+an action using 'runJob'.
 
 -}
 
@@ -26,10 +26,10 @@ module SupplyChain
     {- ** Interface -} Interface, NoInterface,
     {- ** Action -} Action, NoAction,
 
-    {- * Factory -}
-    {- ** Type -} Factory, {- $factory -}
-    {- ** How to create a factory -} {- $definingFactories -} order, perform,
-    {- ** How to use a factory -} runFactory, evalFactory,
+    {- * Job -}
+    {- ** Type -} Job, {- $job -}
+    {- ** How to create a job -} {- $definingJobs -} order, perform,
+    {- ** How to use a job -} runJob, evalJob,
 
     {- * Vendor -}
     {- ** Type -} Vendor (..), {- $vendor -} Supply (..),
@@ -38,9 +38,9 @@ module SupplyChain
     {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
 
     {- * Connection -}
-    {- ** Functions -} vendorToFactory, vendorToVendor,
+    {- ** Functions -} vendorToJob, vendorToVendor,
     {- ** Polymorphically (>->) -} Connect (..),
-    {- ** Reusing vendors -} vendorToFactory',
+    {- ** Reusing vendors -} vendorToJob',
 
     {- * Changing the Action context -} ActionFunctor (..), {- $actionMap -}
 
@@ -55,18 +55,18 @@ import Data.Functor ((<&>))
 import Data.Kind (Type)
 
 
--- | Perform an action in a factory's 'Action' context
+-- | Perform an action in a job's 'Action' context
 
 perform :: forall (up :: Interface) (action :: Action) (product :: Type).
-    action product -> Factory up action product
+    action product -> Job up action product
 
 perform = Perform
 
 
--- | Send a request via the factory's upstream 'Interface'
+-- | Send a request via the job's upstream 'Interface'
 
 order :: forall (up :: Interface) (action :: Action) (response :: Type).
-    up response -> Factory up action response
+    up response -> Job up action response
 
 order = Request
 
@@ -109,18 +109,18 @@ class Connect (up :: Interface) (down :: Interface)
     , client -> down action
     , result -> up action
   where
-    {-| Generalizes 'vendorToVendor' and 'vendorToFactory'
+    {-| Generalizes 'vendorToVendor' and 'vendorToJob'
 
-        This operation is associative; if @a@ and @b@ are vendors and @c@ is a factory,
+        This operation is associative; if @a@ and @b@ are vendors and @c@ is a job,
         then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
     -}
     (>->) :: Vendor up down action -> client -> result
 
 instance Connect up down action
-    (Factory down action product)
-    (Factory up   action product)
+    (Job down action product)
+    (Job up   action product)
   where
-    (>->) = vendorToFactory
+    (>->) = vendorToJob
 
 instance Connect up middle action
     (Vendor middle down action)
@@ -129,22 +129,22 @@ instance Connect up middle action
     (>->) = vendorToVendor
 
 
-{- $factory
+{- $job
 
 >              ▲   │
 >        up x  │   │  x
 >              │   ▼
-> ┌─────────────────────────────┐
-> │  Factory up action product  │
-> └─────────────────────────────┘
+> ┌─────────────────────────┐
+> │  Job up action product  │
+> └─────────────────────────┘
 
 -}
 
 
-{- $definingFactories
+{- $definingJobs
 
-In addition to these functions for constructing factories,
-also keep in mind that 'Factory' belongs to the 'Monad' class.
+In addition to these functions for constructing jobs,
+also keep in mind that 'Job' belongs to the 'Monad' class.
 
 -}
 
@@ -169,18 +169,18 @@ also keep in mind that 'Factory' belongs to the 'Monad' class.
 We define vendors using the v'Vendor' constructor.
 Please inspect its type carefully.
 
-> forall product. down product -> Factory up action (Supply up down action product)
+> forall product. down product -> Job up action (Supply up down action product)
 
 A vendor is a function that accepts a request. The request type is
 polymorphic but constrained by the vendor's downstream interface.
 
-> forall product. down product -> Factory up action (Supply up down action product)
+> forall product. down product -> Job up action (Supply up down action product)
 >                 ^^^^^^^^^^^^
 
-A vendor has an upstream interface and can do everything a factory can,
-therefore the request handler operates in a 'Factory' context.
+A vendor has an upstream interface and can do everything a job can,
+therefore the request handler operates in a 'Job' context.
 
-> forall product. down product -> Factory up action (Supply up down action product)
+> forall product. down product -> Job up action (Supply up down action product)
 >                                 ^^^^^^^^^^^^^^^^^
 
 This allows the vendor to undertake a monadic sequence involving
@@ -188,7 +188,7 @@ This allows the vendor to undertake a monadic sequence involving
 
 The final step in fulfilling a request is to return a 'Supply'.
 
-> forall product. down product -> Factory up action (Supply up down action product)
+> forall product. down product -> Job up action (Supply up down action product)
 >                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A 'Supply' is written using its '(:->)' constructor, which has two parameters:
@@ -216,7 +216,7 @@ defined recursively.
 Specializations:
 
 @
-'actionMap' :: (forall x. action1 x -> action2 x) -> 'Factory' up action1 product     -> 'Factory' up action2 product
+'actionMap' :: (forall x. action1 x -> action2 x) -> 'Job' up action1 product     -> 'FactJob action2 product
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Vendor' up down action1         -> 'Vendor' up down action2
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Supply' up down action1 product -> 'Supply' up down action2 product
 @
@@ -225,7 +225,7 @@ Specializations:
 
 {- $usingVendors
 
-The most common way to use a 'Vendor' is to connect it to a 'Factory' using
-'vendorToFactory'. However, a vendor can also be used by itself with 'runVendor'.
+The most common way to use a 'Vendor' is to connect it to a 'Job' using
+'vendorToJob'. However, a vendor can also be used by itself with 'runVendor'.
 
 -}

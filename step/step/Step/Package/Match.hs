@@ -15,7 +15,7 @@ import Control.Applicative (pure)
 import Data.Bool (Bool (..))
 import Data.Function
 import Numeric.Natural
-import SupplyChain (Interface, Vendor (..), Factory, Supply (..))
+import SupplyChain (Interface, Vendor (..), Job, Supply (..))
 import Data.Functor
 import Prelude ((+))
 

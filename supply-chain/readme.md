@@ -40,7 +40,7 @@ Let us return our attention to the pipes `Proxy` type. When we attempt to alter 
 
 todo, discuss push-based streams
 
-todo, discuss why vendor and factory are different types, unlike proxy
+todo, discuss why vendor and job are different types, unlike proxy
 
 todo, discuss why vendors can't return
 
@@ -49,7 +49,7 @@ todo, discuss `>->`
 todo, thank streaming-benchmark for the [Bind] constructor
 
 
-A factory's upstream interface and action context correspond to what the effectful library calls "dynamic effects" and "static effects" respectively. Our `vendorToFactory` function corresponds roughly to what effectful describes as "reinterpeting" the factory's upstream interface.
+A job's upstream interface and action context correspond to what the effectful library calls "dynamic effects" and "static effects" respectively. Our `vendorToJob` function corresponds roughly to what effectful describes as "reinterpeting" the job's upstream interface.
 
   [pipes]: https://hackage.haskell.org/package/pipes
   [Proxy]: https://github.com/Gabriella439/pipes/blob/e43acc24100dca20cdb901d91a7553143b2c1369/src/Pipes/Internal.hs#L72-L76

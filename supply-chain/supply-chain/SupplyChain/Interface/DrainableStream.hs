@@ -119,6 +119,6 @@ map f = go
 -- | Collects everything from the stream
 
 all :: forall list a action.
-    Factory (DrainableStream list a) action (list a)
+    Job (DrainableStream list a) action (list a)
 
 all = order Drain

@@ -28,7 +28,7 @@ import Data.Functor.Identity (Identity (runIdentity))
 import Data.Maybe (Maybe (..))
 import Data.Void (Void)
 import Optics (simple, castOptic)
-import SupplyChain ((>->), Factory)
+import SupplyChain ((>->), Job)
 
 import qualified Data.Sequence as Seq
 import qualified Control.Monad.Trans as MTL
@@ -74,13 +74,13 @@ actionParseSureQuery :: forall p c m e a. Chunk c => Monad m => Is p SureQuery =
     p c m e a -> [c] -> m a
 actionParseSureQuery p xs = z (run (castTo @Sure (castTo @SureQuery p))) xs <&> \(r, _) -> r
 
-z :: (Chunk c, Monad f) => Factory (CommittableChunkStream c) f a -> [c] -> f (a, [c])
-z parser xs = runStateT (SupplyChain.runFactory (pureStepper (castOptic simple) >-> liftFactory parser)) (Buffer (Seq.fromList xs))
+z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])
+z parser xs = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> liftJob parser)) (Buffer (Seq.fromList xs))
         <&> \(a, rem) -> (a, bufferList rem)
 
-liftFactory :: forall up m m' a. Monad m =>
-    MTL.MonadTrans m' => Factory up m a -> Factory up (m' m) a
-liftFactory = SupplyChain.actionMap (\(x :: m z) -> MTL.lift x)
+liftJob :: forall up m m' a. Monad m =>
+    MTL.MonadTrans m' => Job up m a -> Job up (m' m) a
+liftJob = SupplyChain.actionMap (\(x :: m z) -> MTL.lift x)
 
 bufferList :: Buffer c -> [c]
 bufferList (Buffer ys) = toList ys

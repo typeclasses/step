@@ -21,7 +21,7 @@ import qualified Optics
 import Control.Monad.Trans.Except (ExceptT (..))
 
 -- Streaming
-import SupplyChain (Factory, (>->), NoInterface, noVendor)
+import SupplyChain (Job, (>->), NoInterface, noVendor)
 import qualified SupplyChain
 
 -- Etc
@@ -99,7 +99,7 @@ instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' woul
 
 type Failure :: Action
 
-newtype Failure c m e a = Failure (Factory NoInterface m e)
+newtype Failure c m e a = Failure (Job NoInterface m e)
     deriving stock Functor
 
 instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m e) where
@@ -126,11 +126,11 @@ instance IsResettingSequence SureQuery c m e a (ResettableTerminableStream c) a 
     walk = Optics.coerced
 
 
-run :: IsResettingSequence p c m e a up product => p c m e a -> Factory up m product
+run :: IsResettingSequence p c m e a up product => p c m e a -> Job up m product
 run = (\(ResettingSequence x) -> x) . Optics.view walk
 
 
-act :: IsResettingSequence p c m e a up product => Factory up m product -> p c m e a
+act :: IsResettingSequence p c m e a up product => Job up m product -> p c m e a
 act = Optics.review walk . ResettingSequence
 
 

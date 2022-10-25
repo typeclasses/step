@@ -13,7 +13,7 @@ module SupplyChain.Bonus.ActionList
   )
   where
 
-import SupplyChain (Connect((>->)), Vendor, evalFactory, runFactory, runVendor, NoInterface, NoAction, Supply (..))
+import SupplyChain (Connect((>->)), Vendor, evalJob, runJob, runVendor, NoInterface, NoAction, Supply (..))
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
@@ -64,11 +64,11 @@ perform x = VendorActionList (Stream.actionSingleton x)
 
 -- | Converts an 'ActionList' into an ordinary list
 toList :: ActionList NoAction a -> [a]
-toList (VendorActionList v) = evalFactory (v >-> Stream.all)
+toList (VendorActionList v) = evalJob (v >-> Stream.all)
 
 -- | Converts an 'ActionList' into an action that returns all the items at once
 runActionList :: Monad m => ActionList m a -> m [a]
-runActionList (VendorActionList v) = runFactory (v >-> Stream.all)
+runActionList (VendorActionList v) = runJob (v >-> Stream.all)
 
 next :: Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
 next (VendorActionList v) =

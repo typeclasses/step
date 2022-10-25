@@ -30,7 +30,7 @@ import NatOptics.Positive.Unsafe (Positive)
 import Control.Monad.State.Strict (MonadState)
 
 -- Streaming
-import SupplyChain (Vendor (..), Factory, Supply (..), (>->), order)
+import SupplyChain (Vendor (..), Job, Supply (..), (>->), order)
 import SupplyChain.Interface.TerminableStream (IsTerminableStream, TerminableStream)
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
@@ -70,17 +70,17 @@ bufferedStepper buffer = go Start
         I.NextMaybe -> getUnviewedChunks >>= handleNext
         I.Commit n -> getUncommittedChunks >>= handleCommit unviewed n
       where
-        getUncommittedChunks :: Factory up action (Seq c)
+        getUncommittedChunks :: Job up action (Seq c)
         getUncommittedChunks = bufferSeq <$> SupplyChain.perform (use buffer)
 
-        getUnviewedChunks :: Factory up action (Seq c)
+        getUnviewedChunks :: Job up action (Seq c)
         getUnviewedChunks = case unviewed of
             Unviewed b -> pure (bufferSeq b)
             Start -> getUncommittedChunks
 
     handleNext ::
         Seq c -- unviewed chunks
-        -> Factory up action
+        -> Job up action
               (Supply up (CommittableChunkStream c) action (Maybe c))
     handleNext = \case
         x :<| xs -> pure $ Supply (Just x) (goUnviewed xs)
@@ -91,7 +91,7 @@ bufferedStepper buffer = go Start
         goUnviewed :: Seq c -> Vendor up (CommittableChunkStream c) action
         goUnviewed unviewed = go (Unviewed (Buffer unviewed))
 
-        feedCommitBuffer :: c -> Factory up action ()
+        feedCommitBuffer :: c -> Job up action ()
         feedCommitBuffer x = SupplyChain.perform $
             modifying buffer \(Buffer xs) -> Buffer (xs :|> x)
 
@@ -99,7 +99,7 @@ bufferedStepper buffer = go Start
         ViewBuffer c
         -> Positive Natural -- how much to commit
         -> Seq c -- uncommitted chunks
-        -> Factory up action
+        -> Job up action
               (Supply up (CommittableChunkStream c) action AdvanceResult)
     handleCommit unviewed n = \case
         x :<| xs -> case drop n x of
@@ -116,5 +116,5 @@ bufferedStepper buffer = go Start
                     Start -> Unviewed (Buffer (x :<| Empty))
                     Unviewed (Buffer xs) -> Unviewed (Buffer (x :<| xs))
       where
-        setUncommittedChunks :: Seq c -> Factory up action ()
+        setUncommittedChunks :: Seq c -> Job up action ()
         setUncommittedChunks xs = SupplyChain.perform $ assign buffer (Buffer xs)

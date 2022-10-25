@@ -13,7 +13,7 @@ import Data.Function
 
 class ErrorContext e m | m -> e
   where
-    getError :: Factory up m e
+    getError :: Job up m e
 
 instance ErrorContext () (Const Void)
   where

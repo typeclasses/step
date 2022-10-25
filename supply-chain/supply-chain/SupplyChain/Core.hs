@@ -19,9 +19,9 @@ import Data.Functor.Const (Const (..))
 import Data.Void (absurd, Void)
 
 
-{-| The kind of requests and responses exchanged between a vendor and a factory
+{-| The kind of requests and responses exchanged between a vendor and a job
 
-    If a factory's upstream interface is @i@, then when the factory makes a
+    If a job's upstream interface is @i@, then when the job makes a
     request of type @i x@, it receives a response of type @x@.
 
     Values of a type of this kind represent requests. Each constructor will
@@ -45,13 +45,13 @@ type Action = Type -> Type
 
 -- | Monadic context that supports making requests and performing actions
 
-data Factory (up :: Interface) (action :: Action) (product :: Type) =
+data Job (up :: Interface) (action :: Action) (product :: Type) =
     Pure product
   | Perform (action product)
   | Request (up product)
-  | forall (x :: Type). Bind (Factory up action x) (x -> Factory up action product)
+  | forall (x :: Type). Bind (Job up action x) (x -> Job up action product)
 
-instance Functor (Factory up action)
+instance Functor (Job up action)
   where
     fmap f = fix \r -> \case
         Pure product      ->  Pure (f product)
@@ -59,13 +59,13 @@ instance Functor (Factory up action)
         Request request   ->  Bind (Request request) (Pure . f)
         Bind step1 step2  ->  Bind step1 (r . step2)
 
-instance Applicative (Factory up action)
+instance Applicative (Job up action)
   where
     pure = Pure
     a1 <*> a2 = a1 `Bind` \f -> (f $) <$> a2
     a1 *> a2 = Bind a1 (\_ -> a2)
 
-instance Monad (Factory up action)
+instance Monad (Job up action)
   where
     (>>=) = Bind
 
@@ -84,14 +84,14 @@ type NoAction = Const Void
 type NoAction :: Action
 
 
--- | Run a factory in its 'Action' context
+-- | Run a job in its 'Action' context
 
-runFactory :: forall (action :: Action) (product :: Type). Monad action =>
-    Factory NoInterface action product -> action product
+runJob :: forall (action :: Action) (product :: Type). Monad action =>
+    Job NoInterface action product -> action product
 
-runFactory = go
+runJob = go
   where
-    go :: forall x. Factory NoInterface action x -> action x
+    go :: forall x. Job NoInterface action x -> action x
     go = \case
       Pure    product      ->  pure product
       Bind    step1 step2  ->  go step1 >>= (go . step2)
@@ -99,14 +99,14 @@ runFactory = go
       Request (Const x)    ->  absurd x
 
 
--- | Run a factory that performs no actions
+-- | Run a job that performs no actions
 
-evalFactory :: forall (product :: Type).
-    Factory NoInterface NoAction product -> product
+evalJob :: forall (product :: Type).
+    Job NoInterface NoAction product -> product
 
-evalFactory =  go
+evalJob =  go
   where
-    go :: forall x. Factory NoInterface NoAction x -> x
+    go :: forall x. Job NoInterface NoAction x -> x
     go = \case
       Pure    product      ->  product
       Bind    step1 step2  ->  go (step2 (go step1))
@@ -125,13 +125,13 @@ evalFactory =  go
 runVendor :: forall (action :: Action) (down :: Interface) (x :: Type). Monad action =>
     Vendor NoInterface down action -> down x -> action (Supply NoInterface down action x)
 
-runVendor v r = runFactory $ vendorToFactory' v (Request r)
+runVendor v r = runJob $ vendorToJob' v (Request r)
 
 
 evalVendor :: forall (down :: Interface) (x :: Type).
     Vendor NoInterface down NoAction -> down x -> Supply NoInterface down NoAction x
 
-evalVendor v r = evalFactory $ vendorToFactory' v (Request r)
+evalVendor v r = evalJob $ vendorToJob' v (Request r)
 
 
 -- | Makes requests, responds to requests, and performs actions
@@ -139,7 +139,7 @@ evalVendor v r = evalFactory $ vendorToFactory' v (Request r)
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
     { offer :: forall (product :: Type).
-        down product -> Factory up action (Supply up down action product) }
+        down product -> Job up action (Supply up down action product) }
 
 
 -- | The conclusion of a vendor's handling of a client request
@@ -158,8 +158,8 @@ deriving stock instance Functor (Supply up down action)
 {-|
 
 If @i@ is the downstream interface of vendor @a@ and the upstream interface
-of factory @b@, then we can form the composition @'vendorToFactory' a b@.
-When the 'Factory' makes a request of type @i x@, the 'Vendor' replies with a
+of job @b@, then we can form the composition @'vendorToJob' a b@.
+When the 'Job' makes a request of type @i x@, the 'Vendor' replies with a
 response of type @x@.
 
 > ┌────────────────────────────┐
@@ -168,19 +168,19 @@ response of type @x@.
 >              ▲   │
 >         i x  │   │  x
 >              │   ▼
-> ┌────────────────────────────┐
-> │  Factory i action product  │
-> └────────────────────────────┘
+> ┌────────────────────────┐
+> │  Job i action product  │
+> └────────────────────────┘
 
 -}
 
-vendorToFactory ::
+vendorToJob ::
     Vendor up down action
-    -> Factory down action product
-    -> Factory up action product
+    -> Job down action product
+    -> Job up action product
 
-vendorToFactory up down =
-    vendorToFactory' up down <&> supplyProduct
+vendorToJob up down =
+    vendorToJob' up down <&> supplyProduct
 
 
 vendorToVendor ::
@@ -188,27 +188,27 @@ vendorToVendor ::
     -> Vendor middle down action
     -> Vendor up down action
 vendorToVendor up down =
-    Vendor \request -> vendorToFactory' up (offer down request) <&> joinSupply
+    Vendor \request -> vendorToJob' up (offer down request) <&> joinSupply
 
 
-{-| Connect a vendor to a factory, producing a factory which
+{-| Connect a vendor to a job, producing a job which
     returns both the product and a new version of the vendor.
 
-    Use this function instead of 'vendorToFactory' if you need to attach
-    a succession of factories to one stateful vendor.
+    Use this function instead of 'vendorToJob' if you need to attach
+    a succession of jobs to one stateful vendor.
 -}
-vendorToFactory' ::
+vendorToJob' ::
     forall
       (up :: Interface) (down :: Interface) (action :: Action) (product :: Type).
-    Vendor up down action -> Factory down action product
-    -> Factory up action (Supply up down action product)
+    Vendor up down action -> Job down action product
+    -> Job up action (Supply up down action product)
 
-vendorToFactory' up = \case
+vendorToJob' up = \case
     Pure product      ->  Pure (Supply product up)
     Perform action    ->  Perform action <&> (`Supply` up)
     Request request   ->  offer up request
-    Bind step1 step2  ->  (vendorToFactory' up step1) `Bind` \supply ->
-                            vendorToFactory' (supplyNext supply)
+    Bind step1 step2  ->  (vendorToJob' up step1) `Bind` \supply ->
+                            vendorToJob' (supplyNext supply)
                               (step2 (supplyProduct supply))
 
 
@@ -234,12 +234,12 @@ class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: 
     actionMap :: (forall (x :: Type). action1 x -> action2 x) -> x1 -> x2
 
 instance ActionFunctor action1 action2
-    (Factory up action1 product)
-    (Factory up action2 product)
+    (Job up action1 product)
+    (Job up action2 product)
   where
     actionMap f = go
       where
-        go :: forall (x :: Type). Factory up action1 x -> Factory up action2 x
+        go :: forall (x :: Type). Job up action1 x -> Job up action2 x
         go = \case
             Pure x     ->  Pure x
             Request x  ->  Request x
