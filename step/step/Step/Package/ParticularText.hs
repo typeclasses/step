@@ -24,7 +24,7 @@ import Data.Eq (Eq, (==))
 import Data.Function (($))
 import Data.Functor ((<&>), fmap)
 import Data.Maybe (Maybe (..))
-import SupplyChain (Factory, perform, order)
+import SupplyChain (Factory, perform, order, noVendor, (>->))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified SupplyChain
@@ -69,9 +69,9 @@ takeMatchingText eq = \t -> assumeMovement $ Any $ ResettingSequence $ fmap (fma
   where
     go :: c -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
     go t = order nextMaybe >>= \case
-        Nothing -> perform getError <&> Left
+        Nothing -> (noVendor >-> getError) <&> Left
         Just x -> case stripEitherPrefix eq x t of
-            StripEitherPrefixFail            ->  perform getError <&> Left
+            StripEitherPrefixFail            ->  (noVendor >-> getError) <&> Left
             StripEitherPrefixAll             ->  pure $ Right $ x :| []
             IsPrefixedBy{ commonPart = x' }  ->  pure $ Right $ x' :| []
             IsPrefixOf{ extraPart = t' }     ->  go t'

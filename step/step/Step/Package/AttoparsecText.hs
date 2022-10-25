@@ -13,7 +13,6 @@ Attoparsec version: @0.14.4@
 module Step.Package.AttoparsecText where
 
 import Control.Applicative (Applicative, pure)
-import Control.Monad.Identity
 import Control.Monad.Reader
 import Data.Bool
 import Data.Char (Char)
@@ -34,49 +33,71 @@ import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Step.Chunk.Text as Text1
 import qualified Step.Chunk as Chunk
+import qualified Step.Error as E
+import qualified SupplyChain
+import qualified Control.Monad.Reader as Reader
+
+---  Not part of the API  ---
+
+newtype Trace m a = Trace (ReaderT [Text] m a)
+    deriving newtype (Functor, Applicative, Monad)
+
+instance Monad m => E.ErrorContext [Text] (Trace m)
+  where
+    getError = SupplyChain.perform (Trace Reader.ask)
+
+---
 
 type Parser m (act :: Action) a =
-    act Text1 (ReaderT [Text] m) [Text] a
+    act Text1 (Trace m) [Text] a
 
-char :: Applicative m => Char -> Parser m AtomicMove Char
+infix 0 <?>
+(<?>) :: Monad m => IsAction act =>
+    Parser m act a -> Text -> Parser m act a
+p <?> c =
+    p & A.actionMap \(Trace (ReaderT f)) ->
+        Trace (ReaderT \cs -> f (c : cs))
+
+char :: Monad m => Char -> Parser m AtomicMove Char
 char x = A.satisfyPredicate (== x) <?> ("char " <> Text.pack (show x))
 
-anyChar :: Applicative m => Parser m AtomicMove Char
+
+anyChar :: Monad m => Parser m AtomicMove Char
 anyChar = A.takeChar <?> "anyChar"
 
-notChar :: Applicative m => Char -> Parser m AtomicMove Char
+notChar :: Monad m => Char -> Parser m AtomicMove Char
 notChar x = A.satisfyPredicate (/= x) <?> ("not " <> Text.singleton x)
 
-satisfy :: Applicative m => (Char -> Bool) -> Parser m AtomicMove Char
+satisfy :: Monad m => (Char -> Bool) -> Parser m AtomicMove Char
 satisfy f = A.satisfyPredicate f <?> "satisfy"
 
-satisfyWith :: Applicative m => (Char -> a) -> (a -> Bool) -> Parser m AtomicMove a
+satisfyWith :: Monad m => (Char -> a) -> (a -> Bool) -> Parser m AtomicMove a
 satisfyWith f ok = A.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) <?> "satisfyWith"
 
-skip :: Applicative m => (Char -> Bool) -> Parser m AtomicMove ()
+skip :: Monad m => (Char -> Bool) -> Parser m AtomicMove ()
 skip f = void (A.satisfyPredicate f) <?> "skip"
 
-peekChar :: Applicative m => Parser m SureQuery (Maybe Char)
+peekChar :: Monad m => Parser m SureQuery (Maybe Char)
 peekChar = A.try A.peekChar
 
-peekChar' :: Applicative m => Parser m Query Char
+peekChar' :: Monad m => Parser m Query Char
 peekChar' = A.peekChar <?> "peekChar'"
 
-digit :: Applicative m => Parser m AtomicMove Char
+digit :: Monad m => Parser m AtomicMove Char
 digit = A.satisfyPredicate Char.isDigit <?> "digit"
 
-letter :: Applicative m => Parser m AtomicMove Char
+letter :: Monad m => Parser m AtomicMove Char
 letter = A.satisfyPredicate Char.isAlpha <?> "letter"
 
-space :: Applicative m => Parser m AtomicMove Char
+space :: Monad m => Parser m AtomicMove Char
 space = A.satisfyPredicate Char.isSpace <?> "space"
 
-string :: Applicative m => Text -> Parser m Atom ()
+string :: Monad m => Text -> Parser m Atom ()
 string x = case Chunk.refine x of
     Nothing -> A.castTo @Atom $ A.pure ()
     Just x' -> A.castTo @Atom (A.takeParticularTextAtomic x') <?> "string"
 
-asciiCI :: Applicative m => Text -> Parser m Atom Text
+asciiCI :: Monad m => Text -> Parser m Atom Text
 asciiCI x = case Chunk.refine x of
     Nothing -> A.castTo @Atom $ A.pure x
     Just x' -> A.castTo @Atom $ A.takeMatchingTextAtomic Text1.asciiCI x' <&> Chunk.generalize
@@ -134,12 +155,6 @@ asciiCI x = case Chunk.refine x of
 
 -- todo
 -- try :: Parser a -> Parser a
-
-infix 0 <?>
-(<?>) :: Applicative m => IsAction act =>
-    Parser m act a -> Text -> Parser m act a
-p <?> c =
-    A.actionMap (\(ReaderT f) -> ReaderT \cs -> f (c : cs)) p
 
 -- todo
 -- choice :: ListLike list (Parser a) => list -> Parser a

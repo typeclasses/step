@@ -53,13 +53,13 @@ takeParticularChar :: forall c m e. Chunk c => Eq (One c) => ErrorContext e m =>
     One c -> AtomicMove c m e ()
 takeParticularChar c = assumeMovement $ Atom $ act $ order nextMaybe >>= \case
     Just x | head x == c  ->  pure $ Right $ act $ order (commit one) $> ()
-    _                     ->  perform getError <&> Left
+    _                     ->  getError <&> Left
 
 satisfyJust :: forall c m e a. Chunk c => ErrorContext e m =>
     (One c -> Maybe a) -> AtomicMove c m e a
 satisfyJust ok = assumeMovement $ Atom $ act $ order nextMaybe <&> fmap @Maybe head >>= \case
     Just (ok -> Just x)  ->  pure $ Right $ act $ order (commit one) $> x
-    _                    ->  perform getError <&> Left
+    _                    ->  getError <&> Left
 
 satisfyPredicate :: forall c m e. Chunk c => ErrorContext e m =>
     (One c -> Bool) -> AtomicMove c m e (One c)

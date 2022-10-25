@@ -52,15 +52,7 @@ import SupplyChain.Core
 import Control.Applicative (pure)
 import Data.Function (($))
 import Data.Functor ((<&>))
-import Data.Functor.Identity (Identity (..))
 import Data.Kind (Type)
-
-
--- | An 'Action' that permits no action
-
-type NoAction = Identity
-
-type NoAction :: Action
 
 
 -- | Perform an action in a factory's 'Action' context
@@ -77,20 +69,6 @@ order :: forall (up :: Interface) (action :: Action) (response :: Type).
     up response -> Factory up action response
 
 order = Request
-
-
--- | Run a factory that performs no actions
-
-evalFactory :: forall (product :: Type).
-    Factory NoInterface NoAction product -> product
-
-evalFactory f = runIdentity (runFactory f)
-
-
-evalVendor :: forall (down :: Interface) (x :: Type).
-    Vendor NoInterface down NoAction -> down x -> Supply NoInterface down NoAction x
-
-evalVendor v r = runIdentity (runVendor v r)
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function

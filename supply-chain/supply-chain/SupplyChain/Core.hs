@@ -28,12 +28,17 @@ import Data.Void (absurd, Void)
     typically have a constraint that specifies what type of response is
     expected in return. Types of this kind are therefore often
     <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html GADTs>.
+
+    The lack of any interface at all can be expressed as 'NoInterface'.
 -}
 
 type Interface = Type -> Type
 
 
--- | A monadic context such as 'Data.Functor.Identity.Identity' or 'System.IO.IO'
+{-| A monadic context such as 'System.IO.IO'
+
+    The lack of any actions at all can be expressed as 'NoAction'.
+-}
 
 type Action = Type -> Type
 
@@ -72,6 +77,13 @@ type NoInterface = Const Void
 type NoInterface :: Interface
 
 
+-- | An 'Action' that admits no actions
+
+type NoAction = Const Void
+
+type NoAction :: Action
+
+
 -- | Run a factory in its 'Action' context
 
 runFactory :: forall (action :: Action) (product :: Type). Monad action =>
@@ -82,8 +94,23 @@ runFactory = go
     go :: forall x. Factory NoInterface action x -> action x
     go = \case
       Pure    product      ->  pure product
-      Perform action       ->  action
       Bind    step1 step2  ->  go step1 >>= (go . step2)
+      Perform action       ->  action
+      Request (Const x)    ->  absurd x
+
+
+-- | Run a factory that performs no actions
+
+evalFactory :: forall (product :: Type).
+    Factory NoInterface NoAction product -> product
+
+evalFactory =  go
+  where
+    go :: forall x. Factory NoInterface NoAction x -> x
+    go = \case
+      Pure    product      ->  product
+      Bind    step1 step2  ->  go (step2 (go step1))
+      Perform (Const x)    ->  absurd x
       Request (Const x)    ->  absurd x
 
 
@@ -99,6 +126,12 @@ runVendor :: forall (action :: Action) (down :: Interface) (x :: Type). Monad ac
     Vendor NoInterface down action -> down x -> action (Supply NoInterface down action x)
 
 runVendor v r = runFactory $ vendorToFactory' v (Request r)
+
+
+evalVendor :: forall (down :: Interface) (x :: Type).
+    Vendor NoInterface down NoAction -> down x -> Supply NoInterface down NoAction x
+
+evalVendor v r = evalFactory $ vendorToFactory' v (Request r)
 
 
 -- | Makes requests, responds to requests, and performs actions

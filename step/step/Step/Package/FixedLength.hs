@@ -27,7 +27,7 @@ import Data.Functor (($>), (<&>), (<$>), fmap)
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
-import SupplyChain (Factory, perform, order)
+import SupplyChain (Factory, perform, order, noVendor, (>->))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified Data.List.NonEmpty as NE
@@ -107,7 +107,7 @@ peekPositive = \n -> Query $ ResettingSequence $ fmap (fmap concat) $ go n
   where
     go :: Positive Natural -> Factory (ResettableTerminableStream c) m (Either e (NonEmpty c))
     go n = order nextMaybe >>= \case
-        Nothing -> perform getError <&> Left
+        Nothing -> (noVendor >-> getError) <&> Left
         Just x -> case take n x of
             TakeAll -> pure $ Right $ x :| []
             TakePart{ takePart } -> pure $ Right $ takePart :| []
@@ -119,7 +119,7 @@ takePositive = \n -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap conca
   where
     go :: Positive Natural -> Factory (CommittableChunkStream c) m (Either e (NonEmpty c))
     go n = order nextMaybe >>= \case
-        Nothing -> perform getError <&> Left
+        Nothing -> (noVendor >-> getError) <&> Left
         Just x -> case take n x of
             TakeAll -> order (commit n) $> Right (x :| [])
             TakePart{ takePart } -> order (commit (length takePart)) $> Right (takePart :| [])

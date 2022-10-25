@@ -21,7 +21,7 @@ import qualified Optics
 import Control.Monad.Trans.Except (ExceptT (..))
 
 -- Streaming
-import SupplyChain (Factory, (>->))
+import SupplyChain (Factory, (>->), NoInterface, noVendor)
 import qualified SupplyChain
 
 -- Etc
@@ -99,7 +99,7 @@ instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' woul
 
 type Failure :: Action
 
-newtype Failure c m e a = Failure (m e)
+newtype Failure c m e a = Failure (Factory NoInterface m e)
     deriving stock Functor
 
 instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m e) where
@@ -159,7 +159,7 @@ instance IsAction AtomicMove where
     actionMap f (AtomicMove x) = AtomicMove (actionMap f x)
 
 instance IsAction Failure where
-    actionMap f (Failure x) = Failure (f x)
+    actionMap f (Failure x) = Failure (SupplyChain.actionMap f x)
 
 
 -- | Action that can be tried noncommittally
@@ -269,19 +269,19 @@ instance Is AtomicMove Any where
 -- Casting out of failure
 
 instance Is Failure Any where
-    cast (Failure x) = act (SupplyChain.perform x <&> Left)
+    cast (Failure x) = act ((noVendor >-> x) <&> Left)
 
 instance Is Failure Query where
-    cast (Failure x) = act (SupplyChain.perform x <&> Left)
+    cast (Failure x) = act ((noVendor >-> x) <&> Left)
 
 instance Is Failure Move where
-    cast (Failure x) = Move $ act (SupplyChain.perform x <&> Left)
+    cast (Failure x) = Move $ act ((noVendor >-> x) <&> Left)
 
 instance Is Failure Atom where
-    cast (Failure x) = Atom $ act (SupplyChain.perform x <&> Left)
+    cast (Failure x) = Atom $ act ((noVendor >-> x) <&> Left)
 
 instance Is Failure AtomicMove where
-    cast (Failure x) = AtomicMove $ Atom $ act (SupplyChain.perform x <&> Left)
+    cast (Failure x) = AtomicMove $ Atom $ act ((noVendor >-> x) <&> Left)
 
 
 {-| The type @a >> b@ is type of the expression @a >> b@.

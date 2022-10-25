@@ -14,16 +14,16 @@ import Data.Either (Either (..))
 import Data.Function (($))
 import Data.Functor (($>), (<&>))
 import Data.Maybe (Maybe (..))
-import SupplyChain (perform, order)
+import SupplyChain (perform, order, noVendor, (>->))
 
 import qualified SupplyChain
 
 peekSome :: forall c m e. ErrorContext e m => Query c m e c
 peekSome = act $ order nextMaybe >>= \case
-    Nothing  ->  perform getError <&> Left
+    Nothing  ->  (noVendor >-> getError) <&> Left
     Just x   ->  pure (Right x)
 
 takeSome :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e c
 takeSome = assumeMovement $ Atom $ act $ order nextMaybe >>= \case
-    Nothing  ->  perform getError <&> Left
+    Nothing  ->  (noVendor >-> getError) <&> Left
     Just x   ->  pure $ Right $ trySkipPositive (length @c x) $> x
