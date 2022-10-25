@@ -216,7 +216,7 @@ defined recursively.
 Specializations:
 
 @
-'actionMap' :: (forall x. action1 x -> action2 x) -> 'Job' up action1 product     -> 'FactJob action2 product
+'actionMap' :: (forall x. action1 x -> action2 x) -> 'Job' up action1 product         -> 'Job' action2 product
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Vendor' up down action1         -> 'Vendor' up down action2
 'actionMap' :: (forall x. action1 x -> action2 x) -> 'Supply' up down action1 product -> 'Supply' up down action2 product
 @
