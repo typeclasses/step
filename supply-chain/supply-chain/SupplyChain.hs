@@ -35,14 +35,17 @@ module SupplyChain
     {- ** Type -} Vendor (..), {- $vendor -} Supply (..),
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
-    {- ** Some simple vendors -} functionVendor, actionVendor, noVendor, map,
+    {- ** Some simple vendors -} functionVendor, actionVendor, absurdVendor, map,
 
     {- * Connection -}
     {- ** Functions -} vendorToJob, vendorToVendor,
     {- ** Polymorphically (>->) -} Connect (..),
     {- ** Reusing vendors -} vendorToJob',
 
-    {- * Changing the Action context -} ActionFunctor (..), {- $actionMap -}
+    {- * Alteration -}
+    {- ** Functions -} alterJob, alterVendor,
+    {- ** Polymorphically -} Alter (..),
+    {- ** Of particular bits -} alterAction, alterOrder, absurdAction, absurdOrder,
 
   )
   where
@@ -50,7 +53,7 @@ module SupplyChain
 import SupplyChain.Core
 
 import Control.Applicative (pure)
-import Data.Function (($))
+import Data.Function (($), (.))
 import Data.Functor ((<&>))
 import Data.Kind (Type)
 
@@ -91,9 +94,10 @@ actionVendor f = go
     go = Vendor \x -> perform (f x) <&> (`Supply` go)
 
 
-noVendor :: forall (up :: Interface) (action :: Action).
+absurdVendor :: forall (up :: Interface) (action :: Action).
     Vendor up NoInterface action
-noVendor = Vendor \case{}
+
+absurdVendor = Vendor \case{}
 
 
 map :: forall (up :: Interface) (down :: Interface) (action :: Action).
@@ -109,7 +113,7 @@ class Connect (up :: Interface) (down :: Interface)
     , client -> down action
     , result -> up action
   where
-    {-| Generalizes 'vendorToVendor' and 'vendorToJob'
+    {-| Generalizes 'vendorToJob' and 'vendorToVendor'
 
         This operation is associative; if @a@ and @b@ are vendors and @c@ is a job,
         then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
@@ -127,6 +131,51 @@ instance Connect up middle action
     (Vendor up down action)
   where
     (>->) = vendorToVendor
+
+
+class Alter up up' action action' x1 x2
+    | x1 -> up action
+    , x2 -> up' action'
+    , x1 up' action' -> x2
+    , x2 up action -> x1
+  where
+    -- | Generalizes 'alterJob' and 'alterVendor'
+    alter ::
+        (forall x. up x -> Job up' action' x)
+        -> (forall x. action x -> Job up' action' x)
+        -> x1 -> x2
+
+instance Alter up up' action action' (Job up action product) (Job up' action' product) where
+    alter = alterJob
+
+instance Alter up up' action action' (Vendor up down action) (Vendor up' down action') where
+    alter = alterVendor
+
+
+-- | Changes the 'Action' context
+
+alterAction :: Alter up up action action' x1 x2 =>
+    (forall x. action x -> action' x) -> x1 -> x2
+
+alterAction f = alter order (perform . f)
+
+
+-- | Changes the upstream 'Interface'
+
+alterOrder :: Alter up up' action action x1 x2 =>
+    (forall x. up x -> up' x) -> x1 -> x2
+
+alterOrder f = alter (order . f) perform
+
+
+absurdAction :: Alter up up NoAction action' x1 x2 => x1 -> x2
+
+absurdAction = alterAction \case{}
+
+
+absurdOrder :: Alter NoInterface up' action action x1 x2 => x1 -> x2
+
+absurdOrder = alterOrder \case{}
 
 
 {- $job
@@ -210,18 +259,6 @@ defined recursively.
 
 -}
 
-
-{- $actionMap
-
-Specializations:
-
-@
-'actionMap' :: (forall x. action1 x -> action2 x) -> 'Job' up action1 product         -> 'Job' action2 product
-'actionMap' :: (forall x. action1 x -> action2 x) -> 'Vendor' up down action1         -> 'Vendor' up down action2
-'actionMap' :: (forall x. action1 x -> action2 x) -> 'Supply' up down action1 product -> 'Supply' up down action2 product
-@
-
--}
 
 {- $usingVendors
 

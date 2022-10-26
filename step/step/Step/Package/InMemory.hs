@@ -80,7 +80,7 @@ z parser xs = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> 
 
 liftJob :: forall up m m' a. Monad m =>
     MTL.MonadTrans m' => Job up m a -> Job up (m' m) a
-liftJob = SupplyChain.actionMap (\(x :: m z) -> MTL.lift x)
+liftJob = SupplyChain.alterAction (\(x :: m z) -> MTL.lift x)
 
 bufferList :: Buffer c -> [c]
 bufferList (Buffer ys) = toList ys

@@ -47,9 +47,10 @@ type Action = Type -> Type
 
 data Job (up :: Interface) (action :: Action) (product :: Type) =
     Pure product
-  | Perform (action product)
   | Request (up product)
+  | Perform (action product)
   | forall (x :: Type). Bind (Job up action x) (x -> Job up action product)
+
 
 instance Functor (Job up action)
   where
@@ -224,40 +225,30 @@ joinSupply (Supply (Supply product nextDown) nextUp) =
     Supply product (vendorToVendor nextUp nextDown)
 
 
-class ActionFunctor (action1 :: Action) (action2 :: Action) (x1 :: Type) (x2 :: Type)
-    | x1 action1 x2 -> action2
-    , x1 x2 action2 -> action1
-    , x1 action1 action2 -> x2
-    , x2 action1 action2 -> x1
-  where
-    -- | Changes the 'Action' context
-    actionMap :: (forall (x :: Type). action1 x -> action2 x) -> x1 -> x2
+alterJob :: forall up up' action action' product.
+    (forall x. up x -> Job up' action' x)
+    -> (forall x. action x -> Job up' action' x)
+    -> Job up action product -> Job up' action' product
 
-instance ActionFunctor action1 action2
-    (Job up action1 product)
-    (Job up action2 product)
+alterJob f g = go
   where
-    actionMap f = go
-      where
-        go :: forall (x :: Type). Job up action1 x -> Job up action2 x
-        go = \case
-            Pure x     ->  Pure x
-            Request x  ->  Request x
-            Perform x  ->  Perform (f x)
-            Bind a b   ->  Bind (go a) (go . b)
+    go :: forall x. Job up action x -> Job up' action' x
+    go = \case
+        Pure x -> Pure x
+        Request x -> f x
+        Perform x -> g x
+        Bind step1 step2 -> Bind (go step1) (go . step2)
 
-instance ActionFunctor action1 action2
-    (Vendor up down action1)
-    (Vendor up down action2)
-  where
-    actionMap f = go
-      where
-        go (Vendor v) = Vendor \request ->
-            actionMap f (v request) <&> \(Supply response v') ->
-                Supply response (go v')
 
-instance ActionFunctor action1 action2
-    (Supply up down action1 product)
-    (Supply up down action2 product)
+alterVendor :: forall up up' action action' down.
+    (forall x. up x -> Job up' action' x)
+    -> (forall x. action x -> Job up' action' x)
+    -> Vendor up down action -> Vendor up' down action'
+
+alterVendor f g = go
   where
-    actionMap f (Supply x v) = Supply x (actionMap f v)
+    go :: Vendor up down action -> Vendor up' down action'
+    go Vendor{ offer } = Vendor{ offer = fmap alterSupply . alterJob f g . offer }
+
+    alterSupply :: Supply up down action product -> Supply up' down action' product
+    alterSupply s = s{ supplyNext = go (supplyNext s) }

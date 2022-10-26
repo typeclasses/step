@@ -137,7 +137,7 @@ concatMapVendor f = go
   where
     go = Vendor \NextMaybe -> order NextMaybe >>= \case
         Nothing -> pure $ Supply Nothing nil
-        Just x -> offer (append (noVendor >-> f x) go) NextMaybe
+        Just x -> offer (append (absurdOrder (f x)) go) NextMaybe
 
 
 -- | Flattens a stream of lists
