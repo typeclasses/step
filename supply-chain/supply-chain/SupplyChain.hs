@@ -37,6 +37,9 @@ module SupplyChain
     {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
     {- ** Some simple vendors -} functionVendor, actionVendor, absurdVendor, map,
 
+    {- * Effect -}
+    {- ** Type -} Effect (..),
+
     {- * Connection -}
     {- ** Functions -} vendorToJob, vendorToVendor,
     {- ** Polymorphically (>->) -} Connect (..),
@@ -140,15 +143,17 @@ class Alter up up' action action' x1 x2
     , x2 up action -> x1
   where
     -- | Generalizes 'alterJob' and 'alterVendor'
-    alter ::
-        (forall x. up x -> Job up' action' x)
-        -> (forall x. action x -> Job up' action' x)
-        -> x1 -> x2
+    alter :: (forall x. Effect up action x -> Job up' action' x) -> x1 -> x2
 
-instance Alter up up' action action' (Job up action product) (Job up' action' product) where
+instance Alter up up' action action'
+    (Job up action product) (Job up' action' product)
+  where
     alter = alterJob
 
-instance Alter up up' action action' (Vendor up down action) (Vendor up' down action') where
+instance Alter up up' action action'
+    (Vendor up down action)
+    (Vendor up' down action')
+  where
     alter = alterVendor
 
 
@@ -157,7 +162,7 @@ instance Alter up up' action action' (Vendor up down action) (Vendor up' down ac
 alterAction :: Alter up up action action' x1 x2 =>
     (forall x. action x -> action' x) -> x1 -> x2
 
-alterAction f = alter order (perform . f)
+alterAction f = alter \case{ Request x -> order x; Perform x -> perform (f x) }
 
 
 -- | Changes the upstream 'Interface'
@@ -165,7 +170,7 @@ alterAction f = alter order (perform . f)
 alterOrder :: Alter up up' action action x1 x2 =>
     (forall x. up x -> up' x) -> x1 -> x2
 
-alterOrder f = alter (order . f) perform
+alterOrder f = alter \case{ Request x -> order (f x); Perform x -> perform x }
 
 
 absurdAction :: Alter up up NoAction action' x1 x2 => x1 -> x2

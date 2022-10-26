@@ -232,30 +232,26 @@ joinSupply (Supply (Supply product nextDown) nextUp) =
 
 
 alterJob :: forall up up' action action' product.
-    (forall x. up x -> Job up' action' x)
-    -> (forall x. action x -> Job up' action' x)
+    (forall x. Effect up action x -> Job up' action' x)
     -> Job up action product -> Job up' action' product
 
-alterJob f g = go
+alterJob f = go
   where
     go :: forall x. Job up action x -> Job up' action' x
     go = \case
         Pure x -> Pure x
         Bind step1 step2 -> Bind (go step1) (go . step2)
-        Effect e -> case e of
-            Request x -> f x
-            Perform x -> g x
+        Effect e -> f e
 
 
 alterVendor :: forall up up' action action' down.
-    (forall x. up x -> Job up' action' x)
-    -> (forall x. action x -> Job up' action' x)
+    (forall x. Effect up action x -> Job up' action' x)
     -> Vendor up down action -> Vendor up' down action'
 
-alterVendor f g = go
+alterVendor f = go
   where
     go :: Vendor up down action -> Vendor up' down action'
-    go Vendor{ offer } = Vendor{ offer = fmap alterSupply . alterJob f g . offer }
+    go Vendor{ offer } = Vendor{ offer = fmap alterSupply . alterJob f . offer }
 
     alterSupply :: Supply up down action product -> Supply up' down action' product
     alterSupply s = s{ supplyNext = go (supplyNext s) }
