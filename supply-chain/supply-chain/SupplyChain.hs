@@ -63,7 +63,7 @@ import Data.Kind (Type)
 perform :: forall (up :: Interface) (action :: Action) (product :: Type).
     action product -> Job up action product
 
-perform = Perform
+perform = Effect . Perform
 
 
 -- | Send a request via the job's upstream 'Interface'
@@ -71,7 +71,7 @@ perform = Perform
 order :: forall (up :: Interface) (action :: Action) (response :: Type).
     up response -> Job up action response
 
-order = Request
+order = Effect . Request
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function

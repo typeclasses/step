@@ -43,12 +43,16 @@ type Interface = Type -> Type
 type Action = Type -> Type
 
 
+data Effect (up :: Interface) (action :: Action) (product :: Type) =
+    Request (up product)
+  | Perform (action product)
+
+
 -- | Monadic context that supports making requests and performing actions
 
 data Job (up :: Interface) (action :: Action) (product :: Type) =
     Pure product
-  | Request (up product)
-  | Perform (action product)
+  | Effect (Effect up action product)
   | forall (x :: Type). Bind (Job up action x) (x -> Job up action product)
 
 
@@ -56,9 +60,8 @@ instance Functor (Job up action)
   where
     fmap f = fix \r -> \case
         Pure product      ->  Pure (f product)
-        Perform action    ->  Bind (Perform action) (Pure . f)
-        Request request   ->  Bind (Request request) (Pure . f)
         Bind step1 step2  ->  Bind step1 (r . step2)
+        Effect e          ->  Bind (Effect e) (Pure . f)
 
 instance Applicative (Job up action)
   where
@@ -94,10 +97,11 @@ runJob = go
   where
     go :: forall x. Job NoInterface action x -> action x
     go = \case
-      Pure    product      ->  pure product
-      Bind    step1 step2  ->  go step1 >>= (go . step2)
-      Perform action       ->  action
-      Request (Const x)    ->  absurd x
+      Pure product -> pure product
+      Bind step1 step2 -> go step1 >>= (go . step2)
+      Effect e -> case e of
+          Perform action -> action
+          Request (Const x) -> absurd x
 
 
 -- | Run a job that performs no actions
@@ -109,10 +113,11 @@ evalJob =  go
   where
     go :: forall x. Job NoInterface NoAction x -> x
     go = \case
-      Pure    product      ->  product
-      Bind    step1 step2  ->  go (step2 (go step1))
-      Perform (Const x)    ->  absurd x
-      Request (Const x)    ->  absurd x
+      Pure product -> product
+      Bind step1 step2 -> go (step2 (go step1))
+      Effect e -> case e of
+          Perform (Const x) -> absurd x
+          Request (Const x) -> absurd x
 
 
 {-| An action in which a vendor handles a single request
@@ -126,13 +131,13 @@ evalJob =  go
 runVendor :: forall (action :: Action) (down :: Interface) (x :: Type). Monad action =>
     Vendor NoInterface down action -> down x -> action (Supply NoInterface down action x)
 
-runVendor v r = runJob $ vendorToJob' v (Request r)
+runVendor v r = runJob $ vendorToJob' v (Effect (Request r))
 
 
 evalVendor :: forall (down :: Interface) (x :: Type).
     Vendor NoInterface down NoAction -> down x -> Supply NoInterface down NoAction x
 
-evalVendor v r = evalJob $ vendorToJob' v (Request r)
+evalVendor v r = evalJob $ vendorToJob' v (Effect (Request r))
 
 
 -- | Makes requests, responds to requests, and performs actions
@@ -206,11 +211,12 @@ vendorToJob' ::
 
 vendorToJob' up = \case
     Pure product      ->  Pure (Supply product up)
-    Perform action    ->  Perform action <&> (`Supply` up)
-    Request request   ->  offer up request
     Bind step1 step2  ->  (vendorToJob' up step1) `Bind` \supply ->
                             vendorToJob' (supplyNext supply)
                               (step2 (supplyProduct supply))
+    Effect e -> case e of
+        Perform action    ->  Effect (Perform action) <&> (`Supply` up)
+        Request request   ->  offer up request
 
 
 {-| Sort of resembles what a 'Control.Monad.join' implementation for
@@ -235,9 +241,10 @@ alterJob f g = go
     go :: forall x. Job up action x -> Job up' action' x
     go = \case
         Pure x -> Pure x
-        Request x -> f x
-        Perform x -> g x
         Bind step1 step2 -> Bind (go step1) (go . step2)
+        Effect e -> case e of
+            Request x -> f x
+            Perform x -> g x
 
 
 alterVendor :: forall up up' action action' down.
