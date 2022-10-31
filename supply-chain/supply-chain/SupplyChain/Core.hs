@@ -10,13 +10,16 @@ which is better documented and somewhat more abstract.
 -}
 module SupplyChain.Core where
 
-import Control.Applicative (Applicative (pure, (*>), (<*>)))
-import Control.Monad (Monad ((>>=)))
-import Data.Function (($), (.))
-import Data.Functor (Functor (fmap), (<$>), (<&>))
+import Control.Applicative (Applicative (pure, (<*>)))
+import Control.Arrow ((>>>))
+import Control.Monad (Monad ((>>=)), (>=>))
+import Data.Function (($), (.), (&))
+import Data.Functor (Functor (fmap), (<&>))
 import Data.Kind (Type)
 import Data.Functor.Const (Const (..))
 import Data.Void (absurd, Void)
+
+import qualified Control.Monad as Monad
 
 
 {-| The kind of requests and responses exchanged between a vendor and a job
@@ -50,25 +53,32 @@ data Effect (up :: Interface) (action :: Action) (product :: Type) =
 
 -- | Monadic context that supports making requests and performing actions
 
-data Job (up :: Interface) (action :: Action) (product :: Type) =
+data Job (up :: Interface) (action :: Action) (param :: Type) (product :: Type) =
     Pure product
   | Effect (Effect up action product)
-  | forall (x :: Type). Bind (Job up action x) (x -> Job up action product)
+  | Ask (param -> Job up action param product)
+  | forall (x :: Type). Compose (Job up action param x) (Job up action x product)
 
-
-instance Functor (Job up action)
+instance Functor (Job up action param)
   where
-    fmap f j = Bind j (Pure . f)
+    fmap f j = j `Compose` Ask \x -> Pure (f x)
 
-instance Applicative (Job up action)
+instance Applicative (Job up action param)
   where
     pure = Pure
-    a1 <*> a2 = a1 `Bind` \f -> (f $) <$> a2
-    a1 *> a2 = Bind a1 (\_ -> a2)
+    (<*>) = Monad.ap
 
-instance Monad (Job up action)
+instance Monad (Job up action param)
   where
-    (>>=) = Bind
+    step1 >>= step2 = Ask \x -> Compose step1 $ Ask \y -> contraConstJob x (step2 y)
+
+-- todo: profunctor instance?
+
+contraMapJob :: (param' -> param) -> Job up action param product -> Job up action param' product
+contraMapJob f j = Compose (Ask \x -> Pure (f x)) j
+
+contraConstJob :: param -> Job up action param product -> Job up action param' product
+contraConstJob x = contraMapJob (\_ -> x)
 
 
 -- | An 'Interface' that admits no requests
@@ -87,34 +97,36 @@ type NoAction :: Action
 
 -- | Run a job in its 'Action' context
 
-runJob :: forall (action :: Action) (product :: Type). Monad action =>
-    Job NoInterface action product -> action product
+runJob :: forall (action :: Action) (param :: Type) (product :: Type). Monad action =>
+    Job NoInterface action param product -> param -> action product
 
 runJob = go
   where
-    go :: forall x. Job NoInterface action x -> action x
+    go :: forall a b. Job NoInterface action a b -> a -> action b
     go = \case
-      Pure product -> pure product
-      Bind step1 step2 -> go step1 >>= (go . step2)
-      Effect e -> case e of
-          Perform action -> action
-          Request (Const x) -> absurd x
+      Pure product -> \_ -> pure product
+      Compose (Compose step1 step2) step3 -> go (Compose step1 (Compose step2 step3))
+      Compose step1 step2 -> go step1 >=> go step2
+      Effect (Perform action) -> \_ -> action
+      Effect (Request (Const x)) -> absurd x
+      Ask f -> \x -> go (f x) x
 
 
 -- | Run a job that performs no actions
 
-evalJob :: forall (product :: Type).
-    Job NoInterface NoAction product -> product
+evalJob :: forall (param :: Type) (product :: Type).
+    Job NoInterface NoAction param product -> param -> product
 
 evalJob =  go
   where
-    go :: forall x. Job NoInterface NoAction x -> x
+    go :: forall a b. Job NoInterface NoAction a b -> a -> b
     go = \case
-      Pure product -> product
-      Bind step1 step2 -> go (step2 (go step1))
-      Effect e -> case e of
-          Perform (Const x) -> absurd x
-          Request (Const x) -> absurd x
+      Pure product -> \_ -> product
+      Compose (Compose step1 step2) step3 -> go (Compose step1 (Compose step2 step3))
+      Compose step1 step2 -> go step1 >>> go step2
+      Effect (Perform (Const x)) -> absurd x
+      Effect (Request (Const x)) -> absurd x
+      Ask f -> \x -> go (f x) x
 
 
 {-| An action in which a vendor handles a single request
@@ -125,37 +137,39 @@ evalJob =  go
     - A new version of the vendor
 -}
 
-runVendor :: forall (action :: Action) (down :: Interface) (x :: Type). Monad action =>
-    Vendor NoInterface down action -> down x -> action (Supply NoInterface down action x)
+runVendor :: forall (action :: Action) (down :: Interface) (param :: Type) (product :: Type). Monad action =>
+    Vendor NoInterface down action param -> down product
+    -> param -> action (Supply NoInterface down action param product)
 
 runVendor v r = runJob $ vendorToJob' v (Effect (Request r))
 
 
-evalVendor :: forall (down :: Interface) (x :: Type).
-    Vendor NoInterface down NoAction -> down x -> Supply NoInterface down NoAction x
+evalVendor :: forall (down :: Interface) (param :: Type) (product :: Type).
+    Vendor NoInterface down NoAction param -> down product
+    -> param -> Supply NoInterface down NoAction param product
 
 evalVendor v r = evalJob $ vendorToJob' v (Effect (Request r))
 
 
 -- | Makes requests, responds to requests, and performs actions
 
-newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
+newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) (param :: Type) =
   Vendor
     { offer :: forall (product :: Type).
-        down product -> Job up action (Supply up down action product) }
+        down product -> Job up action param (Supply up down action param product) }
 
 
 -- | The conclusion of a vendor's handling of a client request
 
-data Supply (up :: Interface) (down :: Interface) (action :: Action) (product :: Type) =
+data Supply (up :: Interface) (down :: Interface) (action :: Action) (param :: Type) (product :: Type) =
   Supply
     { supplyProduct :: product
         -- ^ The requested product
-    , supplyNext :: Vendor up down action
+    , supplyNext :: Vendor up down action param
         -- ^ A new vendor to handle subsequent requests
     }
 
-deriving stock instance Functor (Supply up down action)
+deriving stock instance Functor (Supply up down action param)
 
 
 {-|
@@ -178,18 +192,18 @@ response of type @x@.
 -}
 
 vendorToJob ::
-    Vendor up down action
-    -> Job down action product
-    -> Job up action product
+    Vendor up down action param
+    -> Job down action param product
+    -> Job up action param product
 
 vendorToJob up down =
     vendorToJob' up down <&> supplyProduct
 
 
 vendorToVendor ::
-    Vendor up middle action
-    -> Vendor middle down action
-    -> Vendor up down action
+    Vendor up middle action param
+    -> Vendor middle down action param
+    -> Vendor up down action param
 vendorToVendor up down =
     Vendor \request -> vendorToJob' up (offer down request) <&> joinSupply
 
@@ -202,18 +216,18 @@ vendorToVendor up down =
 -}
 vendorToJob' ::
     forall
-      (up :: Interface) (down :: Interface) (action :: Action) (product :: Type).
-    Vendor up down action -> Job down action product
-    -> Job up action (Supply up down action product)
+      (up :: Interface) (down :: Interface) (action :: Action) (param :: Type) (product :: Type).
+    Vendor up down action param -> Job down action param product
+    -> Job up action param (Supply up down action param product)
 
 vendorToJob' up = \case
-    Pure product      ->  Pure (Supply product up)
-    Bind step1 step2  ->  (vendorToJob' up step1) `Bind` \supply ->
-                            vendorToJob' (supplyNext supply)
-                              (step2 (supplyProduct supply))
-    Effect e -> case e of
-        Perform action    ->  Effect (Perform action) <&> (`Supply` up)
-        Request request   ->  offer up request
+    Pure product -> Pure (Supply product up)
+    Effect (Perform action) -> Effect (Perform action) <&> (`Supply` up)
+    Effect (Request request) -> offer up request
+    Compose step1 step2 -> do
+        Supply x up' <- vendorToJob' up step1
+        let step2' = contraConstJob x step2
+        vendorToJob' up' step2'
 
 
 {-| Sort of resembles what a 'Control.Monad.join' implementation for
@@ -221,34 +235,35 @@ vendorToJob' up = \case
 -}
 
 joinSupply ::
-    Supply up middle action (Supply middle down action product)
-    -> Supply up down action product
+    Supply up middle action param (Supply middle down action param product)
+    -> Supply up down action param product
 
 joinSupply (Supply (Supply product nextDown) nextUp) =
     Supply product (vendorToVendor nextUp nextDown)
 
 
-alterJob :: forall up up' action action' product.
-    (forall x. Effect up action x -> Job up' action' x)
-    -> Job up action product -> Job up' action' product
+-- todo: should this alter the param too now?
+alterJob :: forall up up' action action' param product.
+    (forall x. Effect up action x -> Job up' action' param x)
+    -> Job up action param product -> Job up' action' param product
 
 alterJob f = go
   where
-    go :: forall x. Job up action x -> Job up' action' x
+    go :: forall x. Job up action param x -> Job up' action' param x
     go = \case
         Pure x -> Pure x
-        Bind step1 step2 -> Bind (go step1) (go . step2)
+        -- Bind step1 step2 -> Bind (go step1) (go . step2)
         Effect e -> f e
 
 
-alterVendor :: forall up up' action action' down.
-    (forall x. Effect up action x -> Job up' action' x)
-    -> Vendor up down action -> Vendor up' down action'
+alterVendor :: forall up up' action action' down param.
+    (forall x. Effect up action x -> Job up' action' param x)
+    -> Vendor up down action param -> Vendor up' down action' param
 
 alterVendor f = go
   where
-    go :: Vendor up down action -> Vendor up' down action'
+    go :: Vendor up down action param -> Vendor up' down action' param
     go Vendor{ offer } = Vendor{ offer = fmap alterSupply . alterJob f . offer }
 
-    alterSupply :: Supply up down action product -> Supply up' down action' product
+    alterSupply :: Supply up down action param product -> Supply up' down action' param product
     alterSupply s = s{ supplyNext = go (supplyNext s) }
