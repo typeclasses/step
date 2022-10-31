@@ -12,7 +12,7 @@ module SupplyChain.Core where
 
 import Control.Applicative (Applicative (pure, (*>), (<*>)))
 import Control.Monad (Monad ((>>=)))
-import Data.Function (($), (.), fix)
+import Data.Function (($), (.))
 import Data.Functor (Functor (fmap), (<$>), (<&>))
 import Data.Kind (Type)
 import Data.Functor.Const (Const (..))
@@ -58,10 +58,7 @@ data Job (up :: Interface) (action :: Action) (product :: Type) =
 
 instance Functor (Job up action)
   where
-    fmap f = fix \r -> \case
-        Pure product      ->  Pure (f product)
-        Bind step1 step2  ->  Bind step1 (r . step2)
-        Effect e          ->  Bind (Effect e) (Pure . f)
+    fmap f j = Bind j (Pure . f)
 
 instance Applicative (Job up action)
   where
