@@ -31,20 +31,20 @@ instance IsResettable (ResettableTerminableStream item)
 
 -- | The empty stream
 
-nil :: forall up a action.
-    Vendor up (ResettableTerminableStream a) action
+nil :: forall up a action param.
+    Vendor up (ResettableTerminableStream a) action param
 
 nil = go
   where
-    go :: Vendor up (ResettableTerminableStream a) action
+    go :: Vendor up (ResettableTerminableStream a) action param
     go = Vendor \case
         NextMaybe -> pure $ Supply Nothing go
         Reset -> pure $ Supply () go
 
 -- | Yields one item, then stops
 
-singleton :: forall up a action.
-    a -> Vendor up (ResettableTerminableStream a) action
+singleton :: forall up a action param.
+    a -> Vendor up (ResettableTerminableStream a) action param
 
 singleton x = fix \r -> Vendor \case
     NextMaybe -> pure $ Supply (Just x) $ fix \go -> Vendor \case
@@ -54,12 +54,12 @@ singleton x = fix \r -> Vendor \case
 
 -- | Yields each item from the list, then stops
 
-list :: forall up a action.
-    [a] -> Vendor up (ResettableTerminableStream a) action
+list :: forall up a action param.
+    [a] -> Vendor up (ResettableTerminableStream a) action param
 
 list oxs = go oxs
   where
-    go :: [a] -> Vendor up (ResettableTerminableStream a) action
+    go :: [a] -> Vendor up (ResettableTerminableStream a) action param
     go xs = fix \v -> Vendor \case
         Reset -> pure $ Supply () (go oxs)
         NextMaybe -> case xs of

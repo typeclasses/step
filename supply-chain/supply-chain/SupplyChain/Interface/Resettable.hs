@@ -23,16 +23,16 @@ class IsResettable (i :: Interface)
     and 'Monad' class laws are sufficiently respected.)
 -}
 
-newtype ResettingSequence up action a =
-    ResettingSequence (Job up action a)
+newtype ResettingSequence up action param a =
+    ResettingSequence (Job up action param a)
     deriving newtype Functor
 
-instance IsResettable up => Applicative (ResettingSequence up action)
+instance IsResettable up => Applicative (ResettingSequence up action param)
   where
     pure = ResettingSequence . pure
     (<*>) = Monad.ap
 
-instance IsResettable up => Monad (ResettingSequence up action)
+instance IsResettable up => Monad (ResettingSequence up action param)
   where
     ResettingSequence step1 >>= step2 = ResettingSequence do
         x <- step1

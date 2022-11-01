@@ -52,13 +52,13 @@ instance IsTerminableStream item (DrainableStream list item)
 
 -- | Yields each item from the list, then stops
 
-list :: forall up list a action. List list =>
+list :: forall up list a action param. List list =>
     list a
-    -> Vendor up (DrainableStream list a) action
+    -> Vendor up (DrainableStream list a) action param
 
 list = go
   where
-    go :: list a -> Vendor up (DrainableStream list a) action
+    go :: list a -> Vendor up (DrainableStream list a) action param
     go xs = case unconsList xs of
         Nothing -> nil
         Just (x, xs') -> Vendor \case
@@ -68,12 +68,12 @@ list = go
 
 -- | The empty stream
 
-nil :: forall up list a action. List list =>
-    Vendor up (DrainableStream list a) action
+nil :: forall up list a action param. List list =>
+    Vendor up (DrainableStream list a) action param
 
 nil = go
   where
-    go :: Vendor up (DrainableStream list a) action
+    go :: Vendor up (DrainableStream list a) action param
     go = Vendor \case
         NextMaybe  ->  pure $ Supply Nothing   go
         Drain      ->  pure $ Supply emptyList go
@@ -81,8 +81,8 @@ nil = go
 
 -- | Yields one item, then stops
 
-singleton :: forall up list a action. List list =>
-    a -> Vendor up (DrainableStream list a) action
+singleton :: forall up list a action param. List list =>
+    a -> Vendor up (DrainableStream list a) action param
 
 singleton x = Vendor \case
     NextMaybe  ->  pure $ Supply (Just x)          nil
@@ -91,8 +91,8 @@ singleton x = Vendor \case
 
 -- | Performs one action, yields the resulting item, then stops
 
-actionSingleton :: forall up list a action. List list =>
-    action a -> Vendor up (DrainableStream list a) action
+actionSingleton :: forall up list a action param. List list =>
+    action a -> Vendor up (DrainableStream list a) action param
 
 actionSingleton mx =
     Vendor \case
@@ -102,9 +102,9 @@ actionSingleton mx =
 
 -- | Apply a function to each item in the stream
 
-map :: forall list a b action. List list =>
+map :: forall list a b action param. List list =>
     (a -> b)
-    -> Vendor (DrainableStream list a) (DrainableStream list b) action
+    -> Vendor (DrainableStream list a) (DrainableStream list b) action param
 
 map f = go
   where
@@ -118,7 +118,7 @@ map f = go
 
 -- | Collects everything from the stream
 
-all :: forall list a action.
-    Job (DrainableStream list a) action (list a)
+all :: forall list a action param.
+    Job (DrainableStream list a) action param (list a)
 
 all = order Drain

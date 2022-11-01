@@ -63,24 +63,24 @@ import Data.Kind (Type)
 
 -- | Perform an action in a job's 'Action' context
 
-perform :: forall (up :: Interface) (action :: Action) (product :: Type).
-    action product -> Job up action product
+perform :: forall (up :: Interface) (action :: Action) (param :: Type) (product :: Type).
+    action product -> Job up action param product
 
 perform = Effect . Perform
 
 
 -- | Send a request via the job's upstream 'Interface'
 
-order :: forall (up :: Interface) (action :: Action) (response :: Type).
-    up response -> Job up action response
+order :: forall (up :: Interface) (action :: Action) (param :: Type) (response :: Type).
+    up response -> Job up action param response
 
 order = Effect . Request
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function
 
-functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall response. down response -> response) -> Vendor up down action
+functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action) (param :: Type).
+    (forall response. down response -> response) -> Vendor up down action param
 
 functionVendor f = go
   where
@@ -89,49 +89,49 @@ functionVendor f = go
 
 -- | A simple stateless vendor that responds to each request by applying an effectful function
 
-actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall response. down response -> action response) -> Vendor up down action
+actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action) (param :: Type).
+    (forall response. down response -> action response) -> Vendor up down action param
 
 actionVendor f = go
   where
     go = Vendor \x -> perform (f x) <&> (`Supply` go)
 
 
-absurdVendor :: forall (up :: Interface) (action :: Action).
-    Vendor up NoInterface action
+absurdVendor :: forall (up :: Interface) (action :: Action) (param :: Type).
+    Vendor up NoInterface action param
 
 absurdVendor = Vendor \case{}
 
 
-map :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall x. down x -> up x) -> Vendor up down action
+map :: forall (up :: Interface) (down :: Interface) (action :: Action) (param :: Type).
+    (forall x. down x -> up x) -> Vendor up down action param
 map f = go
   where
     go = Vendor \x -> order (f x) <&> (`Supply` go)
 
 
 class Connect (up :: Interface) (down :: Interface)
-    (action :: Action) (client :: Type) (result :: Type)
-    | up client -> result
-    , client -> down action
-    , result -> up action
+    (action :: Action) (param :: Type) (client :: Type) (result :: Type)
+    | up client param -> result
+    , client -> down action param
+    , result -> up action param
   where
     {-| Generalizes 'vendorToJob' and 'vendorToVendor'
 
         This operation is associative; if @a@ and @b@ are vendors and @c@ is a job,
         then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
     -}
-    (>->) :: Vendor up down action -> client -> result
+    (>->) :: Vendor up down action param -> client -> result
 
-instance Connect up down action
-    (Job down action product)
-    (Job up   action product)
+instance Connect up down action param
+    (Job down action param product)
+    (Job up   action param product)
   where
     (>->) = vendorToJob
 
-instance Connect up middle action
-    (Vendor middle down action)
-    (Vendor up down action)
+instance Connect up middle action param
+    (Vendor middle down action param)
+    (Vendor up down action param)
   where
     (>->) = vendorToVendor
 
@@ -143,16 +143,16 @@ class Alter up up' action action' x1 x2
     , x2 up action -> x1
   where
     -- | Generalizes 'alterJob' and 'alterVendor'
-    alter :: (forall x. Effect up action x -> Job up' action' x) -> x1 -> x2
+    alter :: (forall x. Effect up action x -> Job up' action' () x) -> x1 -> x2
 
 instance Alter up up' action action'
-    (Job up action product) (Job up' action' product)
+    (Job up action param product) (Job up' action' param product)
   where
     alter = alterJob
 
 instance Alter up up' action action'
-    (Vendor up down action)
-    (Vendor up' down action')
+    (Vendor up down action param)
+    (Vendor up' down action' param)
   where
     alter = alterVendor
 

@@ -46,24 +46,24 @@ data TerminableStream item response =
 type TerminableStream :: Type -> Interface
 
 
-action :: forall up a action.
-    action (Maybe a) -> Vendor up (TerminableStream a) action
+action :: forall up a action param.
+    action (Maybe a) -> Vendor up (TerminableStream a) action param
 
 action a = go
   where
-    go :: Vendor up (TerminableStream a) action
+    go :: Vendor up (TerminableStream a) action param
     go = Vendor \case
         NextMaybe -> perform a <&> (`Supply` go)
 
 
 -- | Yields each item from the list, then stops
 
-list :: forall up a action.
-    [a] -> Vendor up (TerminableStream a) action
+list :: forall up a action param.
+    [a] -> Vendor up (TerminableStream a) action param
 
 list = go
   where
-    go :: [a] -> Vendor up (TerminableStream a) action
+    go :: [a] -> Vendor up (TerminableStream a) action param
     go = \case
         []      ->  nil
         x : xs  ->  Vendor \NextMaybe -> pure $ Supply (Just x) (go xs)
@@ -71,27 +71,27 @@ list = go
 
 -- | The empty stream
 
-nil :: forall up a action.
-    Vendor up (TerminableStream a) action
+nil :: forall up a action param.
+    Vendor up (TerminableStream a) action param
 
 nil = go
   where
-    go :: Vendor up (TerminableStream a) action
+    go :: Vendor up (TerminableStream a) action param
     go = Vendor \NextMaybe -> pure $ Supply Nothing go
 
 
 -- | Yields one item, then stops
 
-singleton :: forall up a action.
-    a -> Vendor up (TerminableStream a) action
+singleton :: forall up a action param.
+    a -> Vendor up (TerminableStream a) action param
 
 singleton x = Vendor \NextMaybe -> pure $ Supply (Just x) nil
 
 
 -- | Performs one action, yields the resulting item, then stops
 
-actionSingleton :: forall up a action.
-    action a -> Vendor up (TerminableStream a) action
+actionSingleton :: forall up a action param.
+    action a -> Vendor up (TerminableStream a) action param
 
 actionSingleton mx =
     Vendor \NextMaybe -> perform mx <&> \x -> Supply (Just x) nil
@@ -99,8 +99,8 @@ actionSingleton mx =
 
 -- | Apply a function to each item in the stream
 
-map :: forall a b action.
-    (a -> b) -> Vendor (TerminableStream a) (TerminableStream b) action
+map :: forall a b action param.
+    (a -> b) -> Vendor (TerminableStream a) (TerminableStream b) action param
 
 map f = go
   where
@@ -113,13 +113,13 @@ map f = go
     and yields each result from the list to the downstream
 -}
 
-concatMap :: forall a b action.
-    (a -> [b]) -> Vendor (TerminableStream a) (TerminableStream b) action
+concatMap :: forall a b action param.
+    (a -> [b]) -> Vendor (TerminableStream a) (TerminableStream b) action param
 
 concatMap f = Vendor \NextMaybe -> go []
   where
-    go :: [b] -> Job (TerminableStream a) action
-        (Supply (TerminableStream a) (TerminableStream b) action (Maybe b))
+    go :: [b] -> Job (TerminableStream a) action param
+        (Supply (TerminableStream a) (TerminableStream b) action param (Maybe b))
     go = \case
         b : bs' -> pure $ Supply (Just b) $ Vendor \NextMaybe -> go bs'
         [] -> order NextMaybe >>= \case
@@ -129,9 +129,9 @@ concatMap f = Vendor \NextMaybe -> go []
 
 -- | Like 'concatMap', but the function gives a vendor instead of a list
 
-concatMapVendor :: forall a b action.
-    (a -> Vendor NoInterface (TerminableStream b) action)
-    -> Vendor (TerminableStream a) (TerminableStream b) action
+concatMapVendor :: forall a b action param.
+    (a -> Vendor NoInterface (TerminableStream b) action param)
+    -> Vendor (TerminableStream a) (TerminableStream b) action param
 
 concatMapVendor f = go
   where
@@ -142,17 +142,17 @@ concatMapVendor f = go
 
 -- | Flattens a stream of lists
 
-concat :: forall a action.
-    Vendor (TerminableStream [a]) (TerminableStream a) action
+concat :: forall a action param.
+    Vendor (TerminableStream [a]) (TerminableStream a) action param
 
 concat = concatMap id
 
 
 -- | Yields the longest stream prefix matching the predicate
 
-while :: forall a action.
+while :: forall a action param.
     (a -> Bool)
-    -> Vendor (TerminableStream a) (TerminableStream a) action
+    -> Vendor (TerminableStream a) (TerminableStream a) action param
 
 while ok = v
   where
@@ -166,10 +166,10 @@ while ok = v
     followed by all the items of the second
 -}
 
-append :: forall up a action.
-       Vendor up (TerminableStream a) action
-    -> Vendor up (TerminableStream a) action
-    -> Vendor up (TerminableStream a) action
+append :: forall up a action param.
+       Vendor up (TerminableStream a) action param
+    -> Vendor up (TerminableStream a) action param
+    -> Vendor up (TerminableStream a) action param
 
 append a b = Vendor \NextMaybe ->
     offer a NextMaybe >>= \case
@@ -179,8 +179,8 @@ append a b = Vendor \NextMaybe ->
 
 -- | Collects everything from the stream
 
-all :: forall a action.
-    Job (TerminableStream a) action [a]
+all :: forall a action param.
+    Job (TerminableStream a) action param [a]
 
 all = go
   where
@@ -205,17 +205,17 @@ all = go
     @
 -}
 
-group :: forall a action. Eq a =>
-    Vendor (TerminableStream a) (TerminableStream (Natural, a)) action
+group :: forall a action param. Eq a =>
+    Vendor (TerminableStream a) (TerminableStream (Natural, a)) action param
 
 group = Vendor \NextMaybe ->
     order NextMaybe >>= \case
         Nothing -> pure $ Supply Nothing nil
         Just x -> start x
   where
-    start :: a -> Job (TerminableStream a) action
+    start :: a -> Job (TerminableStream a) action param
         ( Supply (TerminableStream a) (TerminableStream (Natural, a))
-          action (Maybe (Natural, a))
+          action param (Maybe (Natural, a))
         )
     start = go 0
 

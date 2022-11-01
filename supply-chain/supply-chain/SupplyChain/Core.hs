@@ -13,7 +13,7 @@ module SupplyChain.Core where
 import Control.Applicative (Applicative (pure, (<*>)))
 import Control.Arrow ((>>>))
 import Control.Monad (Monad ((>>=)), (>=>))
-import Data.Function (($), (.), (&))
+import Data.Function (($), (.))
 import Data.Functor (Functor (fmap), (<&>))
 import Data.Kind (Type)
 import Data.Functor.Const (Const (..))
@@ -224,6 +224,7 @@ vendorToJob' up = \case
     Pure product -> Pure (Supply product up)
     Effect (Perform action) -> Effect (Perform action) <&> (`Supply` up)
     Effect (Request request) -> offer up request
+    Ask f -> Ask \x -> vendorToJob' up (f x)
     Compose step1 step2 -> do
         Supply x up' <- vendorToJob' up step1
         let step2' = contraConstJob x step2
@@ -244,20 +245,20 @@ joinSupply (Supply (Supply product nextDown) nextUp) =
 
 -- todo: should this alter the param too now?
 alterJob :: forall up up' action action' param product.
-    (forall x. Effect up action x -> Job up' action' param x)
+    (forall x. Effect up action x -> Job up' action' () x)
     -> Job up action param product -> Job up' action' param product
 
 alterJob f = go
   where
-    go :: forall x. Job up action param x -> Job up' action' param x
+    go :: forall x param'. Job up action param' x -> Job up' action' param' x
     go = \case
         Pure x -> Pure x
-        -- Bind step1 step2 -> Bind (go step1) (go . step2)
-        Effect e -> f e
-
+        Compose step1 step2 -> Compose (go step1) (go step2)
+        Effect e -> contraMapJob (\_ -> ()) (f e)
+        Ask g -> Ask (\x -> go (g x))
 
 alterVendor :: forall up up' action action' down param.
-    (forall x. Effect up action x -> Job up' action' param x)
+    (forall x. Effect up action x -> Job up' action' () x)
     -> Vendor up down action param -> Vendor up' down action' param
 
 alterVendor f = go
