@@ -26,33 +26,33 @@ tests = testGroup "TerminableStream"
     ]
 
 listTest :: Assertion
-listTest = evalJob job @?= result
+listTest = evalJob job () @?= result
   where
     job = list "abc" >-> replicateM 4 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
 concatTest1 :: Assertion
-concatTest1 = evalJob job @?= result
+concatTest1 = evalJob job () @?= result
   where
     job = list ["a", "bc", "def", "ghij"] >-> concat
                     >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
 
 concatTest2 :: Assertion
-concatTest2 = evalJob job @?= result
+concatTest2 = evalJob job () @?= result
   where
     job = list ["a", "bc"] >-> concat
                     >-> replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]
 
 groupLetters :: Assertion
-groupLetters = evalJob job @?= result
+groupLetters = evalJob job () @?= result
   where
     job = (list "Hrmm..." >-> group >-> all)
     result = [(0, 'H'), (0, 'r'), (1, 'm'), (2, '.')]
 
 groupEmpty :: Assertion
-groupEmpty = evalJob job @?= result
+groupEmpty = evalJob job () @?= result
   where
     job = nil >-> group >-> all
     result = [] :: [(Natural, Char)]

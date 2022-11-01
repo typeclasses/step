@@ -141,27 +141,35 @@ class IsAction (act :: Action) where
 
 instance IsAction Any where
     actionMap f (Any (ResettingSequence x)) = Any (ResettingSequence (SupplyChain.alterAction f x))
+    paramMap f (Any (ResettingSequence x)) = Any (ResettingSequence (SupplyChain.contramapJob f x))
 
 instance IsAction Sure where
     actionMap f (Sure (ResettingSequence x)) = Sure (ResettingSequence (SupplyChain.alterAction f x))
+    paramMap f (Sure (ResettingSequence x)) = Sure (ResettingSequence (SupplyChain.contramapJob f x))
 
 instance IsAction Query where
     actionMap f (Query (ResettingSequence x)) = Query (ResettingSequence (SupplyChain.alterAction f x))
+    paramMap f (Query (ResettingSequence x)) = Query (ResettingSequence (SupplyChain.contramapJob f x))
 
 instance IsAction SureQuery where
     actionMap f (SureQuery (ResettingSequence x)) = SureQuery (ResettingSequence (SupplyChain.alterAction f x))
+    paramMap f (SureQuery (ResettingSequence x)) = SureQuery (ResettingSequence (SupplyChain.contramapJob f x))
 
 instance IsAction Atom where
     actionMap f (Atom x) = Atom (fmap (actionMap f) (actionMap f x))
+    paramMap f (Atom x) = Atom (fmap (paramMap f) (paramMap f x))
 
 instance IsAction Move where
     actionMap f (Move x) = Move (actionMap f x)
+    paramMap f (Move x) = Move (paramMap f x)
 
 instance IsAction AtomicMove where
     actionMap f (AtomicMove x) = AtomicMove (actionMap f x)
+    paramMap f (AtomicMove x) = AtomicMove (paramMap f x)
 
 instance IsAction Failure where
     actionMap f (Failure x) = Failure (SupplyChain.alterAction f x)
+    paramMap f (Failure x) = Failure (SupplyChain.contramapJob f x)
 
 
 -- | Action that can be tried noncommittally

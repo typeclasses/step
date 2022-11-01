@@ -70,15 +70,15 @@ instance Applicative (Job up action param)
 
 instance Monad (Job up action param)
   where
-    step1 >>= step2 = Ask \x -> Compose step1 $ Ask \y -> contraConstJob x (step2 y)
+    step1 >>= step2 = Ask \x -> Compose step1 $ Ask \y -> contraconstJob x (step2 y)
 
 -- todo: profunctor instance?
 
-contraMapJob :: (param' -> param) -> Job up action param product -> Job up action param' product
-contraMapJob f j = Compose (Ask \x -> Pure (f x)) j
+contramapJob :: (param' -> param) -> Job up action param product -> Job up action param' product
+contramapJob f j = Compose (Ask \x -> Pure (f x)) j
 
-contraConstJob :: param -> Job up action param product -> Job up action param' product
-contraConstJob x = contraMapJob (\_ -> x)
+contraconstJob :: param -> Job up action param product -> Job up action param' product
+contraconstJob x = contramapJob (\_ -> x)
 
 
 -- | An 'Interface' that admits no requests
@@ -229,7 +229,7 @@ vendorToJob' up = \case
     Ask f -> Ask \x -> vendorToJob' up (f x)
     Compose step1 step2 -> do
         Supply x up' <- vendorToJob' up step1
-        let step2' = contraConstJob x step2
+        let step2' = contraconstJob x step2
         vendorToJob' up' step2'
 
 
@@ -245,7 +245,6 @@ joinSupply (Supply (Supply product nextDown) nextUp) =
     Supply product (vendorToVendor nextUp nextDown)
 
 
--- todo: should this alter the param too now?
 alterJob :: forall up up' action action' param product.
     (forall x. Effect up action x -> Job up' action' () x)
     -> Job up action param product -> Job up' action' param product
@@ -256,7 +255,7 @@ alterJob f = go
     go = \case
         Pure x -> Pure x
         Compose step1 step2 -> Compose (go step1) (go step2)
-        Effect e -> contraMapJob (\_ -> ()) (f e)
+        Effect e -> contramapJob (\_ -> ()) (f e)
         Ask g -> Ask (\x -> go (g x))
 
 alterVendor :: forall up up' action action' down param.

@@ -46,7 +46,7 @@ module SupplyChain
     {- ** Reusing vendors -} vendorToJob',
 
     {- * Alteration -}
-    {- ** Functions -} alterJob, alterVendor,
+    {- ** Functions -} alterJob, alterVendor, contramapJob, contraconstJob,
     {- ** Polymorphically -} Alter (..),
     {- ** Of particular bits -} alterAction, alterOrder, absurdAction, absurdOrder,
 
