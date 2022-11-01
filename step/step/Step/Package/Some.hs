@@ -2,7 +2,6 @@ module Step.Package.Some where
 
 import Step.Action.Core
 import Step.Chunk
-import Step.Error
 import Step.Package.FixedLength
 import Step.Interface
 
@@ -18,12 +17,12 @@ import SupplyChain (perform, order, absurdOrder, (>->))
 
 import qualified SupplyChain
 
-peekSome :: forall c m e. ErrorContext e m => Query c m e c
+peekSome :: forall c m r. Query c m r r c
 peekSome = act $ order nextMaybe >>= \case
-    Nothing  ->  absurdOrder getError <&> Left
+    Nothing  ->  SupplyChain.param <&> Left
     Just x   ->  pure (Right x)
 
-takeSome :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e c
+takeSome :: forall c m r. Chunk c => AtomicMove c m r r c
 takeSome = assumeMovement $ Atom $ act $ order nextMaybe >>= \case
-    Nothing  ->  absurdOrder getError <&> Left
+    Nothing  ->  SupplyChain.param <&> Left
     Just x   ->  pure $ Right $ trySkipPositive (length @c x) $> x

@@ -68,8 +68,6 @@ library
         Step.Interface.Buffer
         Step.Interface.Core
 
-        Step.Error
-
         Step.Package.AttoparsecText
         Step.Package.Characters
         Step.Package.Document

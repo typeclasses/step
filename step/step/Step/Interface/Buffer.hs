@@ -43,10 +43,10 @@ data ViewBuffer c =
   | Unviewed (Buffer c)
       -- ^ The unviewed buffer, which may differ from the uncommitted buffer
 
-pureStepper :: forall s up action c. Chunk c => MonadState s action =>
-    Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
+pureStepper :: forall s up action r c. Chunk c => MonadState s action =>
+    Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action r
 pureStepper buffer =
-    (Stream.nil :: Vendor up (TerminableStream c) action)
+    (Stream.nil :: Vendor up (TerminableStream c) action r)
     >-> bufferedStepper buffer
 
 {-| Turns an unbuffered stream (the 'IsTerminableStream' interface)
@@ -58,40 +58,40 @@ pureStepper buffer =
     then, consists of anything that is in the buffer, followed by anything
     that is yet to be obtained from the unbuffered stream.
 -}
-bufferedStepper :: forall s up action c. Chunk c => MonadState s action =>
+bufferedStepper :: forall s up action r c. Chunk c => MonadState s action =>
     IsTerminableStream c up =>
-    Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
+    Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action r
 bufferedStepper buffer = go Start
   where
     -- The "unviewed" buffer is internal state only, not externally accessible.
-    go :: ViewBuffer c -> Vendor up (CommittableChunkStream c) action
+    go :: ViewBuffer c -> Vendor up (CommittableChunkStream c) action r
     go unviewed = Vendor \case
         I.Reset -> pure $ Supply () (go Start)
         I.NextMaybe -> getUnviewedChunks >>= handleNext
         I.Commit n -> getUncommittedChunks >>= handleCommit unviewed n
       where
-        getUncommittedChunks :: Job up action (Seq c)
+        getUncommittedChunks :: Job up action r (Seq c)
         getUncommittedChunks = bufferSeq <$> SupplyChain.perform (use buffer)
 
-        getUnviewedChunks :: Job up action (Seq c)
+        getUnviewedChunks :: Job up action r (Seq c)
         getUnviewedChunks = case unviewed of
             Unviewed b -> pure (bufferSeq b)
             Start -> getUncommittedChunks
 
     handleNext ::
         Seq c -- unviewed chunks
-        -> Job up action
-              (Supply up (CommittableChunkStream c) action (Maybe c))
+        -> Job up action r
+              (Supply up (CommittableChunkStream c) action r (Maybe c))
     handleNext = \case
         x :<| xs -> pure $ Supply (Just x) (goUnviewed xs)
         Empty -> order Stream.nextMaybe >>= \case
             Nothing -> pure $ Supply Nothing (goUnviewed Empty)
             Just x -> feedCommitBuffer x $> Supply (Just x) (goUnviewed Empty)
       where
-        goUnviewed :: Seq c -> Vendor up (CommittableChunkStream c) action
+        goUnviewed :: Seq c -> Vendor up (CommittableChunkStream c) action r
         goUnviewed unviewed = go (Unviewed (Buffer unviewed))
 
-        feedCommitBuffer :: c -> Job up action ()
+        feedCommitBuffer :: c -> Job up action r ()
         feedCommitBuffer x = SupplyChain.perform $
             modifying buffer \(Buffer xs) -> Buffer (xs :|> x)
 
@@ -99,8 +99,8 @@ bufferedStepper buffer = go Start
         ViewBuffer c
         -> Positive Natural -- how much to commit
         -> Seq c -- uncommitted chunks
-        -> Job up action
-              (Supply up (CommittableChunkStream c) action AdvanceResult)
+        -> Job up action r
+              (Supply up (CommittableChunkStream c) action r AdvanceResult)
     handleCommit unviewed n = \case
         x :<| xs -> case drop n x of
             DropAll ->
@@ -116,5 +116,5 @@ bufferedStepper buffer = go Start
                     Start -> Unviewed (Buffer (x :<| Empty))
                     Unviewed (Buffer xs) -> Unviewed (Buffer (x :<| xs))
       where
-        setUncommittedChunks :: Seq c -> Job up action ()
+        setUncommittedChunks :: Seq c -> Job up action r ()
         setUncommittedChunks xs = SupplyChain.perform $ assign buffer (Buffer xs)

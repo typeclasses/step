@@ -22,6 +22,7 @@ import Data.Functor
 import Data.Maybe (Maybe (..), maybe)
 import Data.Semigroup ((<>))
 import Data.Text (Text)
+import Prelude (Eq, Ord, Show)
 import Step.Action.Types
 import Step.Chunk.Text (Text1)
 import Text.Show (show)
@@ -33,30 +34,24 @@ import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Step.Chunk.Text as Text1
 import qualified Step.Chunk as Chunk
-import qualified Step.Error as E
 import qualified SupplyChain
 import qualified Control.Monad.Reader as Reader
 
 ---  Not part of the API  ---
 
-newtype Trace m a = Trace (ReaderT [Text] m a)
-    deriving newtype (Functor, Applicative, Monad)
-
-instance Monad m => E.ErrorContext [Text] (Trace m)
-  where
-    getError = SupplyChain.perform (Trace Reader.ask)
+newtype Trace = Trace [Text]
+  deriving newtype (Eq, Ord, Show)
 
 ---
 
 type Parser m (act :: Action) a =
-    act Text1 (Trace m) [Text] a
+    act Text1 m Trace Trace a
 
 infix 0 <?>
 (<?>) :: Monad m => IsAction act =>
     Parser m act a -> Text -> Parser m act a
 p <?> c =
-    p & A.actionMap \(Trace (ReaderT f)) ->
-        Trace (ReaderT \cs -> f (c : cs))
+    p & A.paramMap \(Trace cs) -> Trace (c : cs)
 
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = A.satisfyPredicate (== x) <?> ("char " <> Text.pack (show x))

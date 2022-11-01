@@ -34,52 +34,52 @@ import qualified Data.Sequence as Seq
 import qualified Control.Monad.Trans as MTL
 import qualified SupplyChain
 
-parse :: forall p c e a. Chunk c => Is p Any =>
-    p c Identity e a -> [c] -> (Either e a, [c])
-parse p xs = runIdentity (actionParse p xs)
+parse :: forall p c r e a. Chunk c => Is p Any =>
+    p c Identity r e a -> [c] -> r -> (Either e a, [c])
+parse p xs r = runIdentity (actionParse p xs r)
 
-parseMaybe :: forall p c a. Chunk c => Is p Any =>
-    p c Identity () a -> [c] -> (Maybe a, [c])
-parseMaybe p xs = parse p xs & \(x, r) -> (either (\_ -> Nothing) Just x, r)
+parseMaybe :: forall p c r a. Chunk c => Is p Any =>
+    p c Identity r () a -> [c] -> r -> (Maybe a, [c])
+parseMaybe p xs r = parse p xs r & \(x, rem) -> (either (\_ -> Nothing) Just x, rem)
 
-parseQuery :: forall p c e a. Chunk c => Is p Query =>
-    p c Identity e a -> [c] -> Either e a
-parseQuery p xs = runIdentity (actionParseQuery p xs)
+parseQuery :: forall p c r e a. Chunk c => Is p Query =>
+    p c Identity r e a -> [c] -> r -> Either e a
+parseQuery p xs r = runIdentity (actionParseQuery p xs r)
 
-parseQueryMaybe :: forall p c a. Chunk c => Is p Query =>
-    p c Identity () a -> [c] -> Maybe a
-parseQueryMaybe p xs = parseQuery p xs & either (\_ -> Nothing) Just
+parseQueryMaybe :: forall p c r a. Chunk c => Is p Query =>
+    p c Identity r () a -> [c] -> r -> Maybe a
+parseQueryMaybe p xs r = parseQuery p xs r & either (\_ -> Nothing) Just
 
-parseSure :: forall p c a. Chunk c => Is p Sure =>
-    p c Identity Void a -> [c] -> (a, [c])
-parseSure p xs = runIdentity (actionParseSure p xs)
+parseSure :: forall p c r a. Chunk c => Is p Sure =>
+    p c Identity r Void a -> [c] -> r -> (a, [c])
+parseSure p xs r = runIdentity (actionParseSure p xs r)
 
-actionParse :: forall p c m e a. Chunk c => Monad m => Is p Any =>
-    p c m e a -> [c] -> m (Either e a, [c])
-actionParse p xs = z (run (castTo @Any p)) xs
+actionParse :: forall p c m r e a. Chunk c => Monad m => Is p Any =>
+    p c m r e a -> [c] -> r -> m (Either e a, [c])
+actionParse p xs r = z (run (castTo @Any p)) xs r
 
-actionParseQuery :: forall p c m e a. Chunk c => Monad m => Is p Query =>
-    p c m e a -> [c] -> m (Either e a)
-actionParseQuery p xs = actionParse (castTo @Any (castTo @Query p)) xs <&> \(r, _) -> r
+actionParseQuery :: forall p c m r e a. Chunk c => Monad m => Is p Query =>
+    p c m r e a -> [c] -> r -> m (Either e a)
+actionParseQuery p xs r = actionParse (castTo @Any (castTo @Query p)) xs r <&> \(res, _) -> res
 
-actionParseSure :: forall p c m e a. Chunk c => Monad m => Is p Sure =>
-    p c m e a -> [c] -> m (a, [c])
-actionParseSure p xs = z (run (castTo @Sure p)) xs
+actionParseSure :: forall p c m r e a. Chunk c => Monad m => Is p Sure =>
+    p c m r e a -> [c] -> r -> m (a, [c])
+actionParseSure p xs r = z (run (castTo @Sure p)) xs r
 
-parseSureQuery :: forall p c e a. Chunk c => Is p SureQuery =>
-    p c Identity e a -> [c] -> a
-parseSureQuery p xs = runIdentity (actionParseSureQuery p xs)
+parseSureQuery :: forall p c r e a. Chunk c => Is p SureQuery =>
+    p c Identity r e a -> [c] -> r -> a
+parseSureQuery p xs r = runIdentity (actionParseSureQuery p xs r)
 
-actionParseSureQuery :: forall p c m e a. Chunk c => Monad m => Is p SureQuery =>
-    p c m e a -> [c] -> m a
-actionParseSureQuery p xs = z (run (castTo @Sure (castTo @SureQuery p))) xs <&> \(r, _) -> r
+actionParseSureQuery :: forall p c m r e a. Chunk c => Monad m => Is p SureQuery =>
+    p c m r e a -> [c] -> r -> m a
+actionParseSureQuery p xs r = z (run (castTo @Sure (castTo @SureQuery p))) xs r <&> \(res, _) -> res
 
-z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])
-z parser xs = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> liftJob parser)) (Buffer (Seq.fromList xs))
+z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f r a -> [c] -> r -> f (a, [c])
+z parser xs r = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> liftJob parser) r) (Buffer (Seq.fromList xs))
         <&> \(a, rem) -> (a, bufferList rem)
 
-liftJob :: forall up m m' a. Monad m =>
-    MTL.MonadTrans m' => Job up m a -> Job up (m' m) a
+liftJob :: forall up m m' r a. Monad m =>
+    MTL.MonadTrans m' => Job up m r a -> Job up (m' m) r a
 liftJob = SupplyChain.alterAction (\(x :: m z) -> MTL.lift x)
 
 bufferList :: Buffer c -> [c]

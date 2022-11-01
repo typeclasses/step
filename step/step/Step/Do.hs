@@ -37,46 +37,46 @@ infixr 1 >=>
 
 -- | Akin to 'Monad.join'
 join :: Join act1 act2 =>
-    act1 c es e (act2 c es e a) -> (act1 >> act2) c es e a
+    act1 c m r e (act2 c m r e a) -> (act1 >> act2) c m r e a
 join = A.join
 
 -- | Akin to 'Monad.>>='
-(>>=) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
-    act1 c m e a -> (a -> act2 c m e b) -> act3 c m e b
+(>>=) :: Functor (act1 c m r e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    act1 c m r e a -> (a -> act2 c m r e b) -> act3 c m r e b
 (>>=) = A.bindAction
 
 -- | Akin to 'Monad.>=>'
-(>=>) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
-    (a -> act1 c m e b) -> (b -> act2 c m e c) -> a -> act3 c m e c
+(>=>) :: Functor (act1 c m r e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    (a -> act1 c m r e b) -> (b -> act2 c m r e c) -> a -> act3 c m r e c
 a >=> b = \x -> a x >>= b
 
 -- | Akin to 'Applicative.<*'
-(<*) :: Functor (act1 c m e) => Functor (act2 c m e) => Join act1 act2 =>
-    act1 >> act2 ~ act3 => act1 c m e a -> act2 c m e b -> act3 c m e a
+(<*) :: Functor (act1 c m r e) => Functor (act2 c m r e) => Join act1 act2 =>
+    act1 >> act2 ~ act3 => act1 c m r e a -> act2 c m r e b -> act3 c m r e a
 a <* b = join (fmap (\x -> fmap (\_ -> x) b) a)
 
 -- | Akin to 'Applicative.*>'
-(*>) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
-    act1 c m e a -> act2 c m e b -> act3 c m e b
+(*>) :: Functor (act1 c m r e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    act1 c m r e a -> act2 c m r e b -> act3 c m r e b
 a *> b = join (fmap (\_ -> b) a)
 
 -- | Akin to 'Monad.>>'
-(>>) :: Functor (act1 c m e) => Join act1 act2 => act1 >> act2 ~ act3 =>
-    act1 c m e a -> act2 c m e b -> act3 c m e b
+(>>) :: Functor (act1 c m r e) => Join act1 act2 => act1 >> act2 ~ act3 =>
+    act1 c m r e a -> act2 c m r e b -> act3 c m r e b
 (>>) = (*>)
 
 -- | Akin to 'Applicative.<*>'
-(<*>) :: Functor (act1 c m e) => Functor (act2 c m e) =>
+(<*>) :: Functor (act1 c m r e) => Functor (act2 c m r e) =>
     Join act1 act2 => act1 >> act2 ~ act3 =>
-    act1 c m e (a -> b) -> act2 c m e a -> act3 c m e b
+    act1 c m r e (a -> b) -> act2 c m r e a -> act3 c m r e b
 f <*> x = join (fmap (\f' -> fmap f' x) f)
 
 -- | Specialized alias for 'Applicative.pure'
-return :: a -> SureQuery c m e a
+return :: a -> SureQuery c m r e a
 return = Applicative.pure
 
 -- | Specialized alias for 'Applicative.pure'
-pure :: a -> SureQuery c m e a
+pure :: a -> SureQuery c m r e a
 pure = Applicative.pure
 
 -- | Alias for 'Functor.fmap'

@@ -51,7 +51,7 @@ data Effect (up :: Interface) (action :: Action) (product :: Type) =
   | Perform (action product)
 
 
--- | Monadic context that supports making requests and performing actions
+-- | Monadic context that supports making requests, performing actions, and reading a parameter
 
 data Job (up :: Interface) (action :: Action) (param :: Type) (product :: Type) =
     Pure product
@@ -104,8 +104,10 @@ runJob = go
   where
     go :: forall a b. Job NoInterface action a b -> a -> action b
     go = \case
-      Pure product -> \_ -> pure product
+      -- If the root of the tree is left-associated, perform a rotation before proceeding.
       Compose (Compose step1 step2) step3 -> go (Compose step1 (Compose step2 step3))
+
+      Pure product -> \_ -> pure product
       Compose step1 step2 -> go step1 >=> go step2
       Effect (Perform action) -> \_ -> action
       Effect (Request (Const x)) -> absurd x
@@ -121,8 +123,8 @@ evalJob =  go
   where
     go :: forall a b. Job NoInterface NoAction a b -> a -> b
     go = \case
-      Pure product -> \_ -> product
       Compose (Compose step1 step2) step3 -> go (Compose step1 (Compose step2 step3))
+      Pure product -> \_ -> product
       Compose step1 step2 -> go step1 >>> go step2
       Effect (Perform (Const x)) -> absurd x
       Effect (Request (Const x)) -> absurd x
@@ -151,7 +153,7 @@ evalVendor :: forall (down :: Interface) (param :: Type) (product :: Type).
 evalVendor v r = evalJob $ vendorToJob' v (Effect (Request r))
 
 
--- | Makes requests, responds to requests, and performs actions
+-- | Makes requests, responds to requests, performs actions, and reads a parameter
 
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) (param :: Type) =
   Vendor

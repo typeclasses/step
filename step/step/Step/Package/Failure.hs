@@ -1,23 +1,23 @@
 module Step.Package.Failure where
 
 import Step.Action.Core
-import Step.Error
 
 import qualified Step.Do as P
 
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
 
+import qualified SupplyChain
 
-fail :: forall c m e a. ErrorContext e m => Failure c m e a
-fail = Failure (getError @e @m)
+fail :: forall c m r a. Failure c m r r a
+fail = Failure SupplyChain.param
 
-requireTrue :: forall c m e. ErrorContext e m => Bool -> Query c m e ()
+requireTrue :: forall c m r. Bool -> Query c m r r ()
 requireTrue = \case
     True -> castTo @Query (P.pure ())
     False -> castTo @Query fail
 
-requireJust :: forall c m e a. ErrorContext e m => Maybe a -> Query c m e a
+requireJust :: forall c m r a. Maybe a -> Query c m r r a
 requireJust = \case
     Just x -> castTo @Query (P.pure x)
     Nothing -> castTo @Query fail

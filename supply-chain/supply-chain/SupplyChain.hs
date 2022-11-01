@@ -28,7 +28,7 @@ module SupplyChain
 
     {- * Job -}
     {- ** Type -} Job, {- $job -}
-    {- ** How to create a job -} {- $definingJobs -} order, perform,
+    {- ** How to create a job -} {- $definingJobs -} order, perform, param,
     {- ** How to use a job -} runJob, evalJob,
 
     {- * Vendor -}
@@ -75,6 +75,12 @@ order :: forall (up :: Interface) (action :: Action) (param :: Type) (response :
     up response -> Job up action param response
 
 order = Effect . Request
+
+
+param :: forall (up :: Interface) (action :: Action) (param :: Type).
+    Job up action param param
+
+param = Ask Pure
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function

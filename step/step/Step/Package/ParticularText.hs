@@ -7,7 +7,6 @@ module Step.Package.ParticularText
 
 import Step.Action.Core
 import Step.Chunk
-import Step.Error
 import Step.Interface
 import Step.Package.FixedLength
 import Step.Package.Failure
@@ -29,11 +28,11 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified SupplyChain
 
-takeParticularText :: forall c m e. Chunk c => Eq c => ErrorContext e m => c -> Move c m e ()
+takeParticularText :: forall c m r. Chunk c => Eq c => c -> Move c m r r ()
 takeParticularText = \t -> assumeMovement $
     Any (ResettingSequence (go t) <&> Right) P.>>= requireTrue
   where
-    go :: c -> Job (CommittableChunkStream c) m Bool
+    go :: c -> Job (CommittableChunkStream c) m r Bool
     go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
@@ -42,19 +41,19 @@ takeParticularText = \t -> assumeMovement $
             IsPrefixedBy{}                ->  order (commit (length t)) <&> \_ -> True
             IsPrefixOf{ extraPart = t' }  ->  order (commit (length x)) *> go t'
 
-nextTextIs :: forall c m e. Chunk c => Eq c => c -> SureQuery c m e Bool
+nextTextIs :: forall c m r. Chunk c => Eq c => c -> SureQuery c m r r Bool
 nextTextIs = nextTextMatchesOn (ChunkCharacterEquivalence (==))
 
-takeParticularTextAtomic :: forall c m e. Chunk c => Eq c =>
-    ErrorContext e m => c -> AtomicMove c m e ()
+takeParticularTextAtomic :: forall c m r. Chunk c => Eq c =>
+    c -> AtomicMove c m r r ()
 takeParticularTextAtomic t = assumeMovement $
     (nextTextIs t P.>>= requireTrue) P.<* trySkipPositive (length t)
 
-nextTextMatchesOn :: forall c m e. Chunk c =>
-    ChunkCharacterEquivalence c -> c -> SureQuery c m e Bool
+nextTextMatchesOn :: forall c m r. Chunk c =>
+    ChunkCharacterEquivalence c -> c -> SureQuery c m r r Bool
 nextTextMatchesOn eq = \t -> SureQuery (ResettingSequence (go t))
   where
-    go :: c -> Job (ResettableTerminableStream c) m Bool
+    go :: c -> Job (ResettableTerminableStream c) m r Bool
     go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix eq x t of
@@ -63,20 +62,20 @@ nextTextMatchesOn eq = \t -> SureQuery (ResettingSequence (go t))
             IsPrefixedBy{}                ->  pure True
             IsPrefixOf{ extraPart = t' }  ->  go t'
 
-takeMatchingText :: forall c m e. ErrorContext e m => Chunk c =>
-    ChunkCharacterEquivalence c -> c -> Move c m e c
+takeMatchingText :: forall c m r. Chunk c =>
+    ChunkCharacterEquivalence c -> c -> Move c m r r c
 takeMatchingText eq = \t -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap concat) $ go t
   where
-    go :: c -> Job (CommittableChunkStream c) m (Either e (NonEmpty c))
+    go :: c -> Job (CommittableChunkStream c) m r (Either r (NonEmpty c))
     go t = order nextMaybe >>= \case
-        Nothing -> absurdOrder getError <&> Left
+        Nothing -> SupplyChain.param <&> Left
         Just x -> case stripEitherPrefix eq x t of
-            StripEitherPrefixFail            ->  absurdOrder getError <&> Left
+            StripEitherPrefixFail            ->  SupplyChain.param <&> Left
             StripEitherPrefixAll             ->  pure $ Right $ x :| []
             IsPrefixedBy{ commonPart = x' }  ->  pure $ Right $ x' :| []
             IsPrefixOf{ extraPart = t' }     ->  go t'
 
-takeMatchingTextAtomic :: forall c m e. Chunk c => ErrorContext e m =>
-    ChunkCharacterEquivalence c -> c -> AtomicMove c m e c
+takeMatchingTextAtomic :: forall c m r. Chunk c =>
+    ChunkCharacterEquivalence c -> c -> AtomicMove c m r r c
 takeMatchingTextAtomic eq t =
     (nextTextMatchesOn eq t P.>>= requireTrue) P.*> takePositiveAtomic (length t)

@@ -7,7 +7,6 @@ module Step.Package.Characters
 
 import Step.Action.Core
 import Step.Chunk
-import Step.Error
 import Step.Package.FixedLength
 import Step.Package.Failure
 import Step.Interface
@@ -30,39 +29,39 @@ import SupplyChain (perform, order)
 import qualified SupplyChain
 
 -- | Take a peek at the next character (if possible) without advancing
-peekCharMaybe :: forall c m e. Chunk c => SureQuery c m e (Maybe (One c))
+peekCharMaybe :: forall c m r. Chunk c => SureQuery c m r r (Maybe (One c))
 peekCharMaybe = SureQuery $ ResettingSequence $ order nextMaybe <&> fmap @Maybe head
 
-peekChar :: forall c m e. Chunk c => ErrorContext e m => Query c m e (One c)
+peekChar :: forall c m r. Chunk c => Query c m r r (One c)
 peekChar = peekCharMaybe P.>>= \case
     Nothing  ->  castTo @Query fail
     Just x   ->  pure x
 
 -- | Advance over the next character and return it; fail if end of input
-takeChar :: forall c m e. Chunk c => ErrorContext e m => AtomicMove c m e (One c)
+takeChar :: forall c m r. Chunk c => AtomicMove c m r r (One c)
 takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Nothing  ->  castTo @Atom fail
     Just x   ->  castTo @Atom (trySkipPositive one) $> x
 
-nextCharIs :: forall c m e. Chunk c => Eq (One c) => One c -> SureQuery c m e Bool
+nextCharIs :: forall c m r. Chunk c => Eq (One c) => One c -> SureQuery c m r r Bool
 nextCharIs c = act $ order nextMaybe <&> \case
     Just x | head x == c  ->  True
     _                     ->  False
 
-takeParticularChar :: forall c m e. Chunk c => Eq (One c) => ErrorContext e m =>
-    One c -> AtomicMove c m e ()
+takeParticularChar :: forall c m r. Chunk c => Eq (One c) =>
+    One c -> AtomicMove c m r r ()
 takeParticularChar c = assumeMovement $ Atom $ act $ order nextMaybe >>= \case
     Just x | head x == c  ->  pure $ Right $ act $ order (commit one) $> ()
-    _                     ->  getError <&> Left
+    _                     ->  SupplyChain.param <&> Left
 
-satisfyJust :: forall c m e a. Chunk c => ErrorContext e m =>
-    (One c -> Maybe a) -> AtomicMove c m e a
+satisfyJust :: forall c m r a. Chunk c =>
+    (One c -> Maybe a) -> AtomicMove c m r r a
 satisfyJust ok = assumeMovement $ Atom $ act $ order nextMaybe <&> fmap @Maybe head >>= \case
     Just (ok -> Just x)  ->  pure $ Right $ act $ order (commit one) $> x
-    _                    ->  getError <&> Left
+    _                    ->  SupplyChain.param <&> Left
 
-satisfyPredicate :: forall c m e. Chunk c => ErrorContext e m =>
-    (One c -> Bool) -> AtomicMove c m e (One c)
+satisfyPredicate :: forall c m r. Chunk c =>
+    (One c -> Bool) -> AtomicMove c m r r (One c)
 satisfyPredicate f = satisfyJust (\x -> if f x then Just x else Nothing)
 
 one :: Positive Natural
