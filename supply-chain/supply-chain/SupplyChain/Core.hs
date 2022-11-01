@@ -10,7 +10,7 @@ which is better documented and somewhat more abstract.
 -}
 module SupplyChain.Core where
 
-import Control.Applicative (Applicative (pure, (<*>)))
+import Control.Applicative (Applicative (pure, (<*>), (*>)))
 import Control.Arrow ((>>>))
 import Control.Monad (Monad ((>>=)), (>=>))
 import Data.Function (($), (.))
@@ -67,6 +67,7 @@ instance Applicative (Job up action param)
   where
     pure = Pure
     (<*>) = Monad.ap
+    step1 *> step2 = Ask \x -> Compose step1 (contraconstJob x step2)
 
 instance Monad (Job up action param)
   where
