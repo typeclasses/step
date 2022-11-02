@@ -17,54 +17,107 @@ import Data.Function (($), (.), const)
 import Data.Functor (Functor (fmap), (<&>))
 import Data.Kind (Type)
 import Data.Functor.Const (Const (..))
+import Data.Maybe (Maybe (..))
 import Data.Void (absurd, Void)
 
 import qualified Control.Monad as Monad
 
 
--- | A pointed functor is a Functor plus a lifting function, usually known as 'pure' but here called 'point'.
+-- | A pointed functor from any type constructor
 
-class Functor f => PointedFunctor f where
-    pattern Point :: a -> f a
-
-
--- | The free pointed functor turns any type constructor into a pointed functor.
---
--- 'Pure' provides 'point', and the second parameter to 'Funct' provides 'fmap'.
-
-data FreePointedFunctor f a = Pure a | forall x. Funct (f x) (x -> a)
+data FreePointedFunctor f a =
+    FreePure a | forall x. FreeMap (f x) (x -> a)
 
 deriving stock instance Functor (FreePointedFunctor f)
 
-instance PointedFunctor (FreePointedFunctor f) where point = Pure
 
-
--- | A walk is a chain of steps. Where `f` is a pointed functor, `Walk f ()` is a monad.
+-- | A chain of profunctor steps
+--
+-- Where `f` is a pointed functor, `Walk f ()` is a monad.
 -- Thanks to its profunctorial nature, 'Compose' is easy to reassociate.
 
-data Walk f a b = Step (f b) | forall x. Compose (a -> Walk f () x) (x -> Walk f () b)
+data Walk f a b = WalkStep (f b)
+    | forall x. WalkCompose (a -> Walk f () x) (x -> Walk f () b)
+
+pattern WalkPure :: b -> Walk (FreePointedFunctor f) a b
+pattern WalkPure a = WalkStep (FreePure a)
+
+pattern WalkMap :: f x -> (x -> b) -> Walk (FreePointedFunctor f) a b
+pattern WalkMap x f = WalkStep (FreeMap x f)
+
+{-# complete WalkPure, WalkMap, WalkCompose #-}
 
 deriving stock instance Functor f => Functor (Walk f a)
 
-instance PointedFunctor f => Applicative (Walk f ()) where
-    pure = Step . point
-    (<*>) = Monad.ap
 
-instance PointedFunctor f => Monad (Walk f ()) where
-    step1 >>= step2 = Compose (const step1) step2
+newtype FreeWalk f a b = FreeWalk { unFreeWalk :: Walk (FreePointedFunctor f) a b }
 
-pattern WalkPure :: PointedFunctor f => b -> Walk f a b
-pattern WalkPure x = Step (Point x)
+deriving stock instance Functor (FreeWalk f a)
 
+pattern FreeWalkPure :: b -> FreeWalk f a b
+pattern FreeWalkPure x = FreeWalk (WalkPure x)
 
-newtype FreeMonad f a = FreeMonad (Walk (FreePointedFunctor f) () a)
+pattern FreeWalkMap :: f x -> (x -> b) -> FreeWalk f a b
+pattern FreeWalkMap x f = FreeWalk (WalkMap x f)
 
-deriving newtype instance Functor (FreeMonad f)
-deriving newtype instance Applicative (FreeMonad f)
-deriving newtype instance Monad (FreeMonad f)
+pattern FreeWalkCompose ::
+    (a -> FreeWalk f () x) -> (x -> FreeWalk f () b) -> FreeWalk f a b
+pattern FreeWalkCompose a b <-
+    FreeWalk (WalkCompose ((FreeWalk .) -> a) ((FreeWalk .) -> b))
+  where
+    FreeWalkCompose a b = FreeWalk (WalkCompose (unFreeWalk . a) (unFreeWalk . b))
+
+{-# complete FreeWalkPure, FreeWalkMap, FreeWalkCompose #-}
+
+runFreeWalk :: Monad m => (forall x. f x -> m x) -> FreeWalk f a b -> a -> m b
+runFreeWalk f fw a = case fw of
+    FreeWalkPure x -> pure x
+    FreeWalkMap x g -> f x <&> g
+    FreeWalkCompose step1 step2 ->
+        case step1 a of
+            FreeWalkCompose stepA stepB -> runFreeWalk f (FreeWalkCompose (stepA ()) (FreeWalkCompose stepB step2)) ()
+        -- runFreeWalk f (step1 a) () >>= \x ->
+        -- runFreeWalk f (step2 x) ()
+
+-- | A monad from any type constructor
+
+newtype FreeMonad f a =
+    FreeMonad { unFreeMonad :: Walk (FreePointedFunctor f) () a }
 
 pattern FreeMonadPure :: a -> FreeMonad f a
-pattern FreeMonadPure x = FreeMonad (Step (Pure x))
+pattern FreeMonadPure x = FreeMonad (WalkPure x)
+
+pattern FreeMonadMap :: f x -> (x -> b) -> FreeMonad f b
+pattern FreeMonadMap x f = FreeMonad (WalkMap x f)
+
+pattern FreeMonadCompose ::
+    (() -> FreeMonad f x) -> (x -> FreeMonad f a) -> FreeMonad f a
+pattern FreeMonadCompose a b <-
+    FreeMonad (WalkCompose (((FreeMonad) .) -> a) (((FreeMonad) .) -> b))
+  where
+    FreeMonadCompose a b =
+        FreeMonad (WalkCompose (unFreeMonad . a) (unFreeMonad . b))
+
+{-# complete FreeMonadPure, FreeMonadMap, FreeMonadCompose #-}
+
+pattern FreeMonadBind ::
+    (FreeMonad f x) -> (x -> FreeMonad f a) -> FreeMonad f a
+pattern FreeMonadBind a b <- FreeMonadCompose (($ ()) -> a) b
+  where FreeMonadBind a b = FreeMonadCompose (\() -> a) b
+
+{-# complete FreeMonadPure, FreeMonadMap, FreeMonadBind #-}
+
+deriving stock instance Functor (FreeMonad f)
+
+instance Applicative (FreeMonad f) where
+    pure = FreeMonadPure
+    (<*>) = Monad.ap
+
+instance Monad (FreeMonad f) where
+    (>>=) = FreeMonadBind
+
+-- runFreeMonad :: Monad m => (forall x. f x -> m x) -> FreeMonad f a -> m a
+-- runFreeMonad = _
 
 
 {-| The kind of requests and responses exchanged between a vendor and a job
@@ -99,47 +152,34 @@ data Effect (up :: Interface) (action :: Action) (product :: Type) =
 -- | Monadic context that supports making requests and performing actions
 
 newtype Job (up :: Interface) (action :: Action) (product :: Type) =
-    Job (FreeMonad (Effect up action) product)
+    Job { unJob :: FreeMonad (Effect up action) product }
+
+pattern JobPure :: a -> Job up action a
+pattern JobPure x = Job (FreeMonadPure x)
+
+pattern JobRequest :: up x -> (x -> product) -> Job up action product
+pattern JobRequest x f = Job (FreeMonadMap (Request x) f)
+
+pattern JobPerform :: action x -> (x -> product) -> Job up action product
+pattern JobPerform x f = Job (FreeMonadMap (Perform x) f)
+
+pattern JobCompose ::
+    (() -> Job up action x) -> (x -> Job up action a) -> Job up action a
+pattern JobCompose a b <- Job (FreeMonadCompose ((Job .) -> a) ((Job .) -> b))
+  where JobCompose a b = Job (FreeMonadCompose (unJob . a) (unJob . b))
+
+{-# complete JobPure, JobRequest, JobPerform, JobCompose #-}
+
+pattern JobBind ::
+    (Job up action x) -> (x -> Job up action a) -> Job up action a
+pattern JobBind a b <- JobCompose (($ ()) -> a) b
+  where JobBind a b = JobCompose (\() -> a) b
+
+{-# complete JobPure, JobRequest, JobPerform, JobBind #-}
 
 deriving newtype instance Functor (Job up action)
 deriving newtype instance Applicative (Job up action)
 deriving newtype instance Monad (Job up action)
-
-pattern JobPure :: product -> Job up action product
-pattern JobPure x = Job (FreeMonad (Step (Pure x)))
-
-pattern JobRequest :: up x -> (x -> product) -> Job up action product
-pattern JobRequest x f = Job (FreeMonad (Step (Funct (Request x) f)))
-
-pattern JobPerform :: action x -> (x -> product) -> Job up action product
-pattern JobPerform x f = Job (FreeMonad (Step (Funct (Perform x) f)))
-
-pattern JobBind :: Job up action x -> (x -> Job up action product) -> Job up action product
-pattern JobBind a b <- Job (FreeMonad (Compose (Job . FreeMonad . ($ ()) -> a) (((Job . FreeMonad) .) -> b)))
-  where
-    JobBind (Job (FreeMonad a)) b = Job (FreeMonad (Compose (\() -> a) ((\(Job (FreeMonad b')) -> b') . b)))
-
-{-
-
-deriving stock instance Functor (Atom up action)
-
-deriving stock instance Functor (Job up action ())
-
-instance Applicative (Job up action ())
-  where
-    pure = Atom . Pure
-    (<*>) = Monad.ap
-    step1 *> step2 = Compose (const step1) (const step2)
-
-instance Monad (Job up action ())
-  where
-    step1 >>= step2 = Compose (const step1) step2
-
--- contramapJob :: (param' -> param) -> Job up action param product -> Job up action param' product
--- contramapJob f j = Compose (Ask \x -> Pure (f x)) j
-
--- contraconstJob :: param -> Job up action param product -> Job up action param' product
--- contraconstJob x = contramapJob (\_ -> x)
 
 
 -- | An 'Interface' that admits no requests
@@ -155,24 +195,27 @@ type NoAction = Const Void
 
 type NoAction :: Action
 
+{-
 
 -- | Run a job in its 'Action' context
 
-runJob :: forall (action :: Action) (param :: Type) (product :: Type). Monad action =>
-    Job NoInterface action param product -> param -> action product
+runJob :: forall (action :: Action) (product :: Type). Monad action =>
+    Job NoInterface action product -> action product
 
 runJob = go
   where
-    go :: forall a b. Job NoInterface action a b -> a -> action b
+    go :: forall a. Job NoInterface action a -> a -> action b
     go = \case
       -- If the root of the tree is left-associated, perform a rotation before proceeding.
-      Compose (Compose step1 step2) step3 -> go (Compose step1 (Compose step2 step3))
+      JobCompose (JobCompose step1 step2) step3 -> go (JobCompose step1 (JobCompose step2 step3))
 
-      Compose step1 step2 -> go step1 >=> go step2
+      JobCompose step1 step2 -> go step1 >=> go step2
+      JobPure x ->
       Atom (Pure f) -> pure . f
       Atom (Effect f g) -> case f x of
           Perform p -> p <&> g
           Request (Const y) -> absurd y
+
 
 
 -- | Run a job that performs no actions
