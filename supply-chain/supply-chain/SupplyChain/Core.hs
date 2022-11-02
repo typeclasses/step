@@ -13,13 +13,58 @@ module SupplyChain.Core where
 import Control.Applicative (Applicative (pure, (<*>), (*>)))
 import Control.Arrow ((>>>))
 import Control.Monad (Monad ((>>=)), (>=>))
-import Data.Function (($), (.))
+import Data.Function (($), (.), const)
 import Data.Functor (Functor (fmap), (<&>))
 import Data.Kind (Type)
 import Data.Functor.Const (Const (..))
 import Data.Void (absurd, Void)
 
 import qualified Control.Monad as Monad
+
+
+-- | A pointed functor is a Functor plus a lifting function, usually known as 'pure' but here called 'point'.
+
+class Functor f => PointedFunctor f where
+    pattern Point :: a -> f a
+
+
+-- | The free pointed functor turns any type constructor into a pointed functor.
+--
+-- 'Pure' provides 'point', and the second parameter to 'Funct' provides 'fmap'.
+
+data FreePointedFunctor f a = Pure a | forall x. Funct (f x) (x -> a)
+
+deriving stock instance Functor (FreePointedFunctor f)
+
+instance PointedFunctor (FreePointedFunctor f) where point = Pure
+
+
+-- | A walk is a chain of steps. Where `f` is a pointed functor, `Walk f ()` is a monad.
+-- Thanks to its profunctorial nature, 'Compose' is easy to reassociate.
+
+data Walk f a b = Step (f b) | forall x. Compose (a -> Walk f () x) (x -> Walk f () b)
+
+deriving stock instance Functor f => Functor (Walk f a)
+
+instance PointedFunctor f => Applicative (Walk f ()) where
+    pure = Step . point
+    (<*>) = Monad.ap
+
+instance PointedFunctor f => Monad (Walk f ()) where
+    step1 >>= step2 = Compose (const step1) step2
+
+pattern WalkPure :: PointedFunctor f => b -> Walk f a b
+pattern WalkPure x = Step (Point x)
+
+
+newtype FreeMonad f a = FreeMonad (Walk (FreePointedFunctor f) () a)
+
+deriving newtype instance Functor (FreeMonad f)
+deriving newtype instance Applicative (FreeMonad f)
+deriving newtype instance Monad (FreeMonad f)
+
+pattern FreeMonadPure :: a -> FreeMonad f a
+pattern FreeMonadPure x = FreeMonad (Step (Pure x))
 
 
 {-| The kind of requests and responses exchanged between a vendor and a job
@@ -51,35 +96,50 @@ data Effect (up :: Interface) (action :: Action) (product :: Type) =
   | Perform (action product)
 
 
--- | Monadic context that supports making requests, performing actions, and reading a parameter
+-- | Monadic context that supports making requests and performing actions
 
-data Job (up :: Interface) (action :: Action) (param :: Type) (product :: Type) =
-    Pure product
-  | Effect (Effect up action product)
-  | Ask (param -> Job up action param product)
-  | forall (x :: Type). Compose (Job up action param x) (Job up action x product)
+newtype Job (up :: Interface) (action :: Action) (product :: Type) =
+    Job (FreeMonad (Effect up action) product)
 
-instance Functor (Job up action param)
+deriving newtype instance Functor (Job up action)
+deriving newtype instance Applicative (Job up action)
+deriving newtype instance Monad (Job up action)
+
+pattern JobPure :: product -> Job up action product
+pattern JobPure x = Job (FreeMonad (Step (Pure x)))
+
+pattern JobRequest :: up x -> (x -> product) -> Job up action product
+pattern JobRequest x f = Job (FreeMonad (Step (Funct (Request x) f)))
+
+pattern JobPerform :: action x -> (x -> product) -> Job up action product
+pattern JobPerform x f = Job (FreeMonad (Step (Funct (Perform x) f)))
+
+pattern JobBind :: Job up action x -> (x -> Job up action product) -> Job up action product
+pattern JobBind a b <- Job (FreeMonad (Compose (Job . FreeMonad . ($ ()) -> a) (((Job . FreeMonad) .) -> b)))
   where
-    fmap f j = j `Compose` Ask \x -> Pure (f x)
+    JobBind (Job (FreeMonad a)) b = Job (FreeMonad (Compose (\() -> a) ((\(Job (FreeMonad b')) -> b') . b)))
 
-instance Applicative (Job up action param)
+{-
+
+deriving stock instance Functor (Atom up action)
+
+deriving stock instance Functor (Job up action ())
+
+instance Applicative (Job up action ())
   where
-    pure = Pure
+    pure = Atom . Pure
     (<*>) = Monad.ap
-    step1 *> step2 = Ask \x -> Compose step1 (contraconstJob x step2)
+    step1 *> step2 = Compose (const step1) (const step2)
 
-instance Monad (Job up action param)
+instance Monad (Job up action ())
   where
-    step1 >>= step2 = Ask \x -> Compose step1 $ Ask \y -> contraconstJob x (step2 y)
+    step1 >>= step2 = Compose (const step1) step2
 
--- todo: profunctor instance?
+-- contramapJob :: (param' -> param) -> Job up action param product -> Job up action param' product
+-- contramapJob f j = Compose (Ask \x -> Pure (f x)) j
 
-contramapJob :: (param' -> param) -> Job up action param product -> Job up action param' product
-contramapJob f j = Compose (Ask \x -> Pure (f x)) j
-
-contraconstJob :: param -> Job up action param product -> Job up action param' product
-contraconstJob x = contramapJob (\_ -> x)
+-- contraconstJob :: param -> Job up action param product -> Job up action param' product
+-- contraconstJob x = contramapJob (\_ -> x)
 
 
 -- | An 'Interface' that admits no requests
@@ -108,11 +168,11 @@ runJob = go
       -- If the root of the tree is left-associated, perform a rotation before proceeding.
       Compose (Compose step1 step2) step3 -> go (Compose step1 (Compose step2 step3))
 
-      Pure product -> \_ -> pure product
       Compose step1 step2 -> go step1 >=> go step2
-      Effect (Perform action) -> \_ -> action
-      Effect (Request (Const x)) -> absurd x
-      Ask f -> \x -> go (f x) x
+      Atom (Pure f) -> pure . f
+      Atom (Effect f g) -> case f x of
+          Perform p -> p <&> g
+          Request (Const y) -> absurd y
 
 
 -- | Run a job that performs no actions
@@ -125,11 +185,12 @@ evalJob =  go
     go :: forall a b. Job NoInterface NoAction a b -> a -> b
     go = \case
       Compose (Compose step1 step2) step3 -> go (Compose step1 (Compose step2 step3))
-      Pure product -> \_ -> product
-      Compose step1 step2 -> go step1 >>> go step2
-      Effect (Perform (Const x)) -> absurd x
-      Effect (Request (Const x)) -> absurd x
-      Ask f -> \x -> go (f x) x
+
+      Compose step1 step2 -> go step1 >=> go step2
+      Atom (Pure f) -> pure . f
+      Atom (Effect f g) -> case f x of
+          Perform (Const y) -> absurd y
+          Request (Const y) -> absurd y
 
 
 {-| An action in which a vendor handles a single request
@@ -224,10 +285,9 @@ vendorToJob' ::
     -> Job up action param (Supply up down action param product)
 
 vendorToJob' up = \case
-    Pure product -> Pure (Supply product up)
-    Effect (Perform action) -> Effect (Perform action) <&> (`Supply` up)
-    Effect (Request request) -> offer up request
-    Ask f -> Ask \x -> vendorToJob' up (f x)
+    Atom (Pure product) -> Pure (Supply product up)
+    Atom (Effect (Perform action) f) -> Effect (Perform action) <&> (`Supply` up)
+    Atom (Effect (Request request) f) -> offer up request
     Compose step1 step2 -> do
         Supply x up' <- vendorToJob' up step1
         let step2' = contraconstJob x step2
@@ -254,10 +314,9 @@ alterJob f = go
   where
     go :: forall x param'. Job up action param' x -> Job up' action' param' x
     go = \case
-        Pure x -> Pure x
+        Atom (Pure x) -> Atom (Pure x)
+        Atom (Effect e f) -> contramapJob (\_ -> ()) (f e)
         Compose step1 step2 -> Compose (go step1) (go step2)
-        Effect e -> contramapJob (\_ -> ()) (f e)
-        Ask g -> Ask (\x -> go (g x))
 
 alterVendor :: forall up up' action action' down param.
     (forall x. Effect up action x -> Job up' action' () x)
@@ -270,3 +329,5 @@ alterVendor f = go
 
     alterSupply :: Supply up down action param product -> Supply up' down action' param product
     alterSupply s = s{ supplyNext = go (supplyNext s) }
+
+-}

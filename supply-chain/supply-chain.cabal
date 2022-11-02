@@ -23,7 +23,9 @@ common base
         LambdaCase
         NoImplicitPrelude
         NoMonomorphismRestriction
+        PatternSynonyms
         TypeFamilies
+        ViewPatterns
 
     build-depends:
         base ^>= 4.16
