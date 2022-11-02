@@ -14,15 +14,15 @@ import SupplyChain.Interface.TerminableStream
 
 tests :: TestTree
 tests = testGroup "TerminableStream"
-    [ testCase "finiteList" listTest
-    , testGroup "finiteConcat"
-        [ testCase "with more" concatTest1
-        , testCase "exhaustion" concatTest2
-        ]
-    , testGroup "group"
-        [ testCase "empty" groupEmpty
-        , testCase "letters" groupLetters
-        ]
+    [ -- testCase "finiteList" listTest
+    -- , testGroup "finiteConcat"
+    --     [ testCase "with more" concatTest1
+    --     , testCase "exhaustion" concatTest2
+    --     ]
+    -- , testGroup "group"
+    --     [ testCase "empty" groupEmpty
+    --     , testCase "letters" groupLetters
+    --     ]
     ]
 
 listTest :: Assertion

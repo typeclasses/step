@@ -11,9 +11,9 @@ tests = testGroup "SupplyChain"
   [ testGroup "Core"
       [ SupplyChain.Core.Spec.tests
       ]
-  -- , testGroup "Interface"
-  --     [ SupplyChain.Interface.TerminableStream.Spec.tests
-  --     ]
+  , testGroup "Interface"
+      [ SupplyChain.Interface.TerminableStream.Spec.tests
+      ]
   -- , testGroup "Bonus"
   --     [ SupplyChain.Bonus.ActionList.Spec.tests
   --     ]
