@@ -5,7 +5,8 @@ import Control.Monad (Monad)
 import Data.Kind (Type)
 
 import SupplyChain.Core.VendorAndSupply (Vendor (..), Supply (..))
-import SupplyChain.Core.Kinds (Action, Interface, NoAction, NoInterface)
+import SupplyChain.Core.Kinds (Action, Interface)
+import SupplyChain.Core.Nil (NoInterface, NoAction)
 import qualified SupplyChain.Core.Job as Job
 import SupplyChain.Core.Job (Job)
 import qualified SupplyChain.Core.VendorAndSupply as VendorAndSupply

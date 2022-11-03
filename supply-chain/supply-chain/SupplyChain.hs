@@ -48,19 +48,22 @@ module SupplyChain
   )
   where
 
-import SupplyChain.Core.Types
+import SupplyChain.Core.Connect (vendorToVendor, vendorToJob, vendorToJob')
+import SupplyChain.Core.Effect (Effect)
+import SupplyChain.Core.Job (Job)
+import SupplyChain.Core.Kinds (Type, Action, Interface)
+import SupplyChain.Core.Nil (NoAction, NoInterface)
 import SupplyChain.Core.Supply (Supply (..))
 import SupplyChain.Core.Vendor (Vendor (..))
-import SupplyChain.Core.Connect (vendorToVendor, vendorToJob, vendorToJob')
+
 import qualified SupplyChain.Core.Effect as Effect
 import qualified SupplyChain.Core.Job as Job
 import qualified SupplyChain.Core.Vendor as Vendor
 
-import Control.Monad (Monad)
 import Control.Applicative (pure)
+import Control.Monad (Monad)
 import Data.Function (($), id)
 import Data.Functor ((<&>))
-import Data.Kind (Type)
 
 
 alterJob :: (forall x. Effect up action x -> Job up' action' x)

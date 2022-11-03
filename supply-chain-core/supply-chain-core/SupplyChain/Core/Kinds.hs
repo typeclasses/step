@@ -1,9 +1,6 @@
-module SupplyChain.Core.Kinds
-    (Interface, NoInterface, Action, NoAction) where
+module SupplyChain.Core.Kinds (Interface, Action, Type) where
 
-import Data.Functor.Const (Const)
 import Data.Kind (Type)
-import Data.Void (Void)
 
 {-| The kind of requests and responses exchanged between a vendor and a job
 
@@ -16,20 +13,14 @@ import Data.Void (Void)
     <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html GADTs>.
     Types of this kind are also often not functors.
 
-    The lack of any interface at all can be expressed as 'NoInterface'.
+    The lack of any interface at all can be expressed as
+    'SupplyChain.Core.Nil.NoInterface'.
 -}
 type Interface = Type -> Type
 
 {-| A monadic context such as 'System.IO.IO'
 
-    The lack of any actions at all can be expressed as 'NoAction'.
+    The lack of any actions at all can be expressed as
+    'SupplyChain.Core.Nil.NoAction'.
 -}
 type Action = Type -> Type
-
--- | An 'Interface' that admits no requests
-type NoInterface = Const Void
-type NoInterface :: Interface
-
--- | An 'Action' that admits no actions
-type NoAction = Const Void
-type NoAction :: Action

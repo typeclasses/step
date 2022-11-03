@@ -37,6 +37,8 @@ library
     exposed-modules:
         SupplyChain
         SupplyChain.Job
+        SupplyChain.Kinds
+        SupplyChain.Nil
         SupplyChain.Supply
         SupplyChain.Vendor
         SupplyChain.Types

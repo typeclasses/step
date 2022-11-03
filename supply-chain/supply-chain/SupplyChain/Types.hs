@@ -1,4 +1,3 @@
-module SupplyChain.Types
-    (Job, Vendor, Supply, Interface, Action, NoInterface, NoAction) where
+module SupplyChain.Types (Job, Vendor, Supply) where
 
 import SupplyChain.Core.Types

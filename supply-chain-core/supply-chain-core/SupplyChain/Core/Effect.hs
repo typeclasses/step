@@ -3,7 +3,8 @@ module SupplyChain.Core.Effect (Effect (Request, Perform), run, absurd,
 
 import Data.Kind (Type)
 
-import SupplyChain.Core.Kinds (Action, Interface, NoInterface, NoAction)
+import SupplyChain.Core.Kinds (Action, Interface)
+import SupplyChain.Core.Nil (NoInterface, NoAction)
 
 data Effect (up :: Interface) (action :: Action) (product :: Type) =
     Request (up product)

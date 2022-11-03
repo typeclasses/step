@@ -8,7 +8,8 @@ import Data.Functor (Functor)
 import Data.Function ((.), id)
 import Data.Kind (Type)
 
-import SupplyChain.Core.Kinds (Action, Interface, NoInterface, NoAction)
+import SupplyChain.Core.Kinds (Action, Interface)
+import SupplyChain.Core.Nil (NoInterface, NoAction)
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.FreeMonad (FreeMonad)
 import qualified SupplyChain.Core.Effect as Effect
