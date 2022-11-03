@@ -1,7 +1,5 @@
 {- |
 
-Description: The main API of the supply-chain library
-
 A "supply chain" represents a flow of information from one 'Vendor' to the next,
 and so on, ultimately reaching a 'Job' that returns a product.
 
