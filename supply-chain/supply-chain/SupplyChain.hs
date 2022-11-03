@@ -43,7 +43,7 @@ module SupplyChain
     {- ** Reusing vendors -} vendorToJob',
 
     {- * Alteration -}
-    {- ** Functions -} alterJob, alterVendor, contramapJob,
+    {- ** Functions -} alterJob, alterVendor,
     {- ** Polymorphically -} Alter (..),
     {- ** Of particular bits -} alterAction, alterOrder, absurdAction, absurdOrder,
 
@@ -53,13 +53,23 @@ module SupplyChain
 import SupplyChain.Core.Types
 import SupplyChain.Core.Supply (Supply (..))
 import SupplyChain.Core.Vendor (Vendor (..))
+import SupplyChain.Core.Connect (vendorToVendor, vendorToJob, vendorToJob')
 import qualified SupplyChain.Core.Effect as Effect
 import qualified SupplyChain.Core.Job as Job
+import qualified SupplyChain.Core.Vendor as Vendor
 
 import Control.Applicative (pure)
-import Data.Function (($), (.))
+import Data.Function (($), (.), id)
 import Data.Functor ((<&>))
 import Data.Kind (Type)
+
+
+alterJob = Job.alter
+alterVendor = Vendor.alter
+runVendor = Vendor.run
+evalVendor = Vendor.eval
+runJob = Job.run
+evalJob = Job.eval
 
 
 -- | Perform an action in a job's 'Action' context
@@ -67,7 +77,7 @@ import Data.Kind (Type)
 perform :: forall (up :: Interface) (action :: Action) (product :: Type).
     action product -> Job up action product
 
-perform = Job.Perform
+perform x = Job.Perform x id
 
 
 -- | Send a request via the job's upstream 'Interface'
@@ -75,7 +85,7 @@ perform = Job.Perform
 order :: forall (up :: Interface) (action :: Action) (response :: Type).
     up response -> Job up action response
 
-order = Job.Request
+order x = Job.Request x id
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function
