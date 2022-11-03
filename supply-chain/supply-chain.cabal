@@ -48,8 +48,6 @@ library
         SupplyChain.Interface.ResettableTerminableStream
         SupplyChain.Interface.TerminableStream
 
-        SupplyChain.Bonus.ActionList
-
 test-suite test-supply-chain
     import: base
     type: exitcode-stdio-1.0
@@ -63,4 +61,3 @@ test-suite test-supply-chain
     other-modules:
         SupplyChain.Spec
         SupplyChain.Interface.TerminableStream.Spec
-        SupplyChain.Bonus.ActionList.Spec

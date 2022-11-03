@@ -1,11 +1,16 @@
-module SupplyChain.Bonus.ActionList.Spec (tests) where
+module Main (main) where
 
-import Prelude ((<$>), (<*>))
+import Data.Functor ((<$>))
+import Control.Applicative ((<*>))
+import System.IO (IO)
 
 import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
 
-import SupplyChain.Bonus.ActionList
+import ActionList
+
+main :: IO ()
+main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "ActionList"

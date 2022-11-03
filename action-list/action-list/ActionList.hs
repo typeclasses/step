@@ -4,7 +4,7 @@ Description: A streaming list type based on the 'TerminableStream' interface
 
 -}
 
-module SupplyChain.Bonus.ActionList
+module ActionList
   (
     {- * Type -} ActionList (..),
     {- * Introduction -} fromList, perform,
@@ -13,14 +13,14 @@ module SupplyChain.Bonus.ActionList
   )
   where
 
-import SupplyChain (Connect ((>->)), Vendor, evalJob, runJob, runVendor, vendorToJob, NoInterface, NoAction, Supply (..))
+import SupplyChain (Connect ((>->)), Vendor, evalJob, runJob, runVendor, vendorToJob, vendorToVendor, NoInterface, NoAction, Supply (..))
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
 import Control.Applicative (Applicative (..))
 import Data.Maybe (Maybe (..))
 import Control.Monad (Monad (..), ap)
-import Data.Function ((.))
+import Data.Function ((.), ($))
 import Data.Functor (Functor (..), (<&>))
 import Data.Monoid (Monoid (..))
 import Data.Semigroup (Semigroup (..))
@@ -52,7 +52,7 @@ instance Applicative (ActionList m)
 instance Monad (ActionList m)
   where
     VendorActionList v1 >>= f =
-        VendorActionList (v1 >-> Stream.concatMapVendor (actionListVendor . f))
+        VendorActionList (vendorToVendor v1 $ Stream.concatMapVendor (actionListVendor . f))
 
 -- | Converts an ordinary list into an 'ActionList'
 fromList :: [a] -> ActionList m a

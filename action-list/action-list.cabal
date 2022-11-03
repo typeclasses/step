@@ -1,0 +1,31 @@
+cabal-version: 3.0
+
+name: action-list
+version: 0
+
+license: Apache-2.0
+license-file: license.txt
+
+common base
+    default-language: GHC2021
+    ghc-options: -Wall
+    default-extensions: NoImplicitPrelude
+    build-depends:
+        base ^>= 4.16
+      , supply-chain
+
+library
+    import: base
+    hs-source-dirs: action-list
+    exposed-modules: ActionList
+
+test-suite test-action-list
+    import: base
+    type: exitcode-stdio-1.0
+    hs-source-dirs: test-action-list
+    main-is: Main.hs
+    build-depends:
+        action-list
+      , tasty
+      , tasty-hedgehog
+      , tasty-hunit
