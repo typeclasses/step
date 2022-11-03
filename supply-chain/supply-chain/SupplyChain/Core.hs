@@ -34,7 +34,7 @@ deriving stock instance Functor (FreePointedFunctor f)
 -- | A chain of profunctor steps
 --
 -- Where `f` is a pointed functor, `Walk f ()` is a monad.
--- Thanks to its profunctorial nature, 'Compose' is easy to reassociate.
+-- Thanks to its profunctorial nature, 'Compose' can be reassociated.
 
 data Walk f a b = WalkStep (f b)
     | forall x. WalkCompose (a -> Walk f () x) (x -> Walk f () b)
@@ -48,6 +48,13 @@ pattern WalkMap x f = WalkStep (FreeMap x f)
 {-# complete WalkPure, WalkMap, WalkCompose #-}
 
 deriving stock instance Functor f => Functor (Walk f a)
+
+runWalk :: Monad m => (forall x. f x -> m x) -> Walk f a b -> a -> m b
+runWalk f w a = case w of
+    WalkStep fb -> f fb
+    WalkCompose step1 step2 -> case step1 a of
+        WalkCompose stepA stepB -> runWalk f (WalkCompose stepA (\x -> WalkCompose (\() -> stepB x) step2)) ()
+        WalkStep fb -> f fb >>= \x -> runWalk f (step2 x) ()
 
 
 newtype FreeWalk f a b = FreeWalk { unFreeWalk :: Walk (FreePointedFunctor f) a b }
@@ -69,13 +76,17 @@ pattern FreeWalkCompose a b <-
 
 {-# complete FreeWalkPure, FreeWalkMap, FreeWalkCompose #-}
 
-runFreeWalk :: Monad m => (forall x. f x -> m x) -> FreeWalk f a b -> a -> m b
+runFreeWalk :: forall m f a b. Monad m => (forall x. f x -> m x) -> FreeWalk f a b -> a -> m b
 runFreeWalk f fw a = case fw of
     FreeWalkPure x -> pure x
     FreeWalkMap x g -> f x <&> g
     FreeWalkCompose step1 step2 ->
         case step1 a of
-            FreeWalkCompose stepA stepB -> runFreeWalk f (FreeWalkCompose (stepA ()) (FreeWalkCompose stepB step2)) ()
+            FreeWalkCompose stepA stepB -> runFreeWalk f w' ()
+              where
+                w' :: FreeWalk f () b
+                w' = FreeWalk (WalkCompose (unFreeWalk . stepA) (\x -> WalkCompose (\y -> unFreeWalk (stepB x)) (\y -> unFreeWalk (step2 y))))
+
         -- runFreeWalk f (step1 a) () >>= \x ->
         -- runFreeWalk f (step2 x) ()
 
