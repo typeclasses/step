@@ -31,32 +31,31 @@ data FreePointedFunctor f a =
 deriving stock instance Functor (FreePointedFunctor f)
 
 
--- | A chain of profunctor steps
+-- | A chain of steps
 --
--- Where `f` is a pointed functor, `Walk f ()` is a monad.
+-- Where `f` is a pointed functor, `Walk f` is a monad.
 -- Thanks to its profunctorial nature, 'Compose' can be reassociated.
 
-data Walk f a b = WalkStep (f b)
-    | forall x. WalkCompose (a -> Walk f () x) (x -> Walk f () b)
+data Walk f a = WalkStep (f a)
+    | forall x. WalkCompose (Walk f x) (x -> Walk f a)
 
-pattern WalkPure :: b -> Walk (FreePointedFunctor f) a b
+pattern WalkPure :: a -> Walk (FreePointedFunctor f) a
 pattern WalkPure a = WalkStep (FreePure a)
 
-pattern WalkMap :: f x -> (x -> b) -> Walk (FreePointedFunctor f) a b
+pattern WalkMap :: f x -> (x -> a) -> Walk (FreePointedFunctor f) a
 pattern WalkMap x f = WalkStep (FreeMap x f)
 
 {-# complete WalkPure, WalkMap, WalkCompose #-}
 
-deriving stock instance Functor f => Functor (Walk f a)
+deriving stock instance Functor f => Functor (Walk f)
 
-runWalk :: Monad m => (forall x. f x -> m x) -> Walk f a b -> a -> m b
-runWalk f w a = case w of
+runWalk :: Monad m => (forall x. f x -> m x) -> Walk f a -> m a
+runWalk f = \case
     WalkStep fb -> f fb
-    WalkCompose step1 step2 -> case step1 a of
-        WalkCompose stepA stepB -> runWalk f (WalkCompose stepA (\x -> WalkCompose (\() -> stepB x) step2)) ()
-        WalkStep fb -> f fb >>= \x -> runWalk f (step2 x) ()
+    WalkCompose (WalkCompose step1 step2) step3 -> runWalk f (WalkCompose step1 (\x -> WalkCompose (step2 x) step3))
+    WalkCompose (WalkStep fb) step2 -> f fb >>= \x -> runWalk f (step2 x)
 
-
+{-
 newtype FreeWalk f a b = FreeWalk { unFreeWalk :: Walk (FreePointedFunctor f) a b }
 
 deriving stock instance Functor (FreeWalk f a)
@@ -129,7 +128,7 @@ instance Monad (FreeMonad f) where
 
 -- runFreeMonad :: Monad m => (forall x. f x -> m x) -> FreeMonad f a -> m a
 -- runFreeMonad = _
-
+-}
 
 {-| The kind of requests and responses exchanged between a vendor and a job
 
@@ -159,7 +158,7 @@ data Effect (up :: Interface) (action :: Action) (product :: Type) =
     Request (up product)
   | Perform (action product)
 
-
+{-
 -- | Monadic context that supports making requests and performing actions
 
 newtype Job (up :: Interface) (action :: Action) (product :: Type) =
@@ -191,7 +190,7 @@ pattern JobBind a b <- JobCompose (($ ()) -> a) b
 deriving newtype instance Functor (Job up action)
 deriving newtype instance Applicative (Job up action)
 deriving newtype instance Monad (Job up action)
-
+-}
 
 -- | An 'Interface' that admits no requests
 
