@@ -29,11 +29,11 @@ type Counting :: Interface -> Interface
 
 
 counting :: forall i action.
-    Vendor i (Counting i) action ()
+    Vendor i (Counting i) action
 
 counting = go 0
   where
-    go :: Natural -> Vendor i (Counting i) action ()
+    go :: Natural -> Vendor i (Counting i) action
     go n = Vendor \case
         Count    ->  pure $ Supply n (go n)
         Order x  ->  order x <&> (`Supply` go (n + 1))

@@ -38,6 +38,8 @@ library
 
         SupplyChain
 
+        SupplyChain.Supply
+
         SupplyChain.Interface.Counting
         SupplyChain.Interface.DrainableStream
         SupplyChain.Interface.Either

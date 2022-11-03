@@ -32,7 +32,7 @@ module SupplyChain
     {- ** How to use a job -} runJob, evalJob,
 
     {- * Vendor -}
-    {- ** Type -} Vendor (..), {- $vendor -} Supply (..),
+    {- ** Type -} Vendor (..), {- $vendor -} Supply (Supply),
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
     {- ** Some simple vendors -} functionVendor, actionVendor, absurdVendor, map,
@@ -58,17 +58,34 @@ import qualified SupplyChain.Core.Effect as Effect
 import qualified SupplyChain.Core.Job as Job
 import qualified SupplyChain.Core.Vendor as Vendor
 
+import Control.Monad (Monad)
 import Control.Applicative (pure)
-import Data.Function (($), (.), id)
+import Data.Function (($), id)
 import Data.Functor ((<&>))
 import Data.Kind (Type)
 
 
+alterJob :: (forall x. Effect up action x -> Job up' action' x)
+    -> Job up action product -> Job up' action' product
 alterJob = Job.alter
+
+alterVendor :: (forall x. Effect up action x -> Job up' action' x)
+    -> Vendor up down action -> Vendor up' down action'
 alterVendor = Vendor.alter
+
+runVendor :: Monad action => Vendor NoInterface down action
+    -> down product -> action (Supply NoInterface down action product)
 runVendor = Vendor.run
+
+evalVendor :: Vendor NoInterface down NoAction
+    -> down product -> Supply NoInterface down NoAction product
 evalVendor = Vendor.eval
+
+runJob :: Monad action =>
+    Job NoInterface action product -> action product
 runJob = Job.run
+
+evalJob :: Job NoInterface NoAction product -> product
 evalJob = Job.eval
 
 
@@ -171,15 +188,19 @@ instance Alter up up' action action'
 -- | Changes the 'Action' context
 
 alterAction :: Alter up up action action' x1 x2 =>
-    (forall x. action x -> action' x) -> x1 -> x2
-alterAction f = alter (Effect.alterPerform f)
+    (forall x. action x -> Job up action' x) -> x1 -> x2
+alterAction f = alter \case
+    Effect.Perform x -> f x
+    Effect.Request x -> order x
 
 
 -- | Changes the upstream 'Interface'
 
 alterOrder :: Alter up up' action action x1 x2 =>
-    (forall x. up x -> up' x) -> x1 -> x2
-alterOrder f = alter (Effect.alterRequest f)
+    (forall x. up x -> Job up' action x) -> x1 -> x2
+alterOrder f = alter \case
+    Effect.Request x -> f x
+    Effect.Perform x -> perform x
 
 
 absurdAction :: Alter up up NoAction action' x1 x2 => x1 -> x2

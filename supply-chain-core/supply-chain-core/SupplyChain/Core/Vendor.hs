@@ -1,4 +1,4 @@
-module SupplyChain.Core.Vendor (Vendor (..), Supply (..), run, eval, alter)
+module SupplyChain.Core.Vendor (Vendor (..), run, eval, alter)
     where
 
 import Control.Monad (Monad)

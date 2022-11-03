@@ -12,6 +12,7 @@ module SupplyChain.Interface.Either
   where
 
 import SupplyChain
+import qualified SupplyChain.Supply as Supply
 
 import Data.Functor ((<&>))
 
@@ -25,11 +26,11 @@ type Either :: Interface -> Interface -> Interface
 
 -- | Combination of two vendors
 
-offerEither :: forall up down1 down2 action param.
-     Vendor up down1 action param
-  -> Vendor up down2 action param
-  -> Vendor up (Either down1 down2) action param
+offerEither :: forall up down1 down2 action.
+     Vendor up down1 action
+  -> Vendor up down2 action
+  -> Vendor up (Either down1 down2) action
 
 offerEither a@(Vendor a') b@(Vendor b') = Vendor \case
-    Left  req -> a' req <&> \s -> s{ supplyNext = offerEither (supplyNext s) b }
-    Right req -> b' req <&> \s -> s{ supplyNext = offerEither a (supplyNext s) }
+    Left  req -> a' req <&> \s -> s{ Supply.next = offerEither (Supply.next s) b }
+    Right req -> b' req <&> \s -> s{ Supply.next = offerEither a (Supply.next s) }

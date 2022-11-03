@@ -13,7 +13,7 @@ module SupplyChain.Bonus.ActionList
   )
   where
 
-import SupplyChain (Connect((>->)), Vendor, evalJob, runJob, runVendor, NoInterface, NoAction, Supply (..))
+import SupplyChain (Connect ((>->)), Vendor, evalJob, runJob, runVendor, vendorToJob, NoInterface, NoAction, Supply (..))
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
@@ -27,7 +27,7 @@ import Data.Semigroup (Semigroup (..))
 
 newtype ActionList m a =
   VendorActionList
-    { actionListVendor :: Vendor NoInterface (TerminableStream a) m ()
+    { actionListVendor :: Vendor NoInterface (TerminableStream a) m
     }
 
 instance Semigroup (ActionList m a)
@@ -64,13 +64,13 @@ perform x = VendorActionList (Stream.actionSingleton x)
 
 -- | Converts an 'ActionList' into an ordinary list
 toList :: ActionList NoAction a -> [a]
-toList (VendorActionList v) = evalJob (v >-> Stream.all) ()
+toList (VendorActionList v) = evalJob (vendorToJob v Stream.all)
 
 -- | Converts an 'ActionList' into an action that returns all the items at once
 runActionList :: Monad m => ActionList m a -> m [a]
-runActionList (VendorActionList v) = runJob (v >-> Stream.all) ()
+runActionList (VendorActionList v) = runJob (vendorToJob v Stream.all)
 
 next :: Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
 next (VendorActionList v) =
-    SupplyChain.runVendor v Stream.NextMaybe () <&> \(Supply xm v') ->
+    SupplyChain.runVendor v Stream.NextMaybe <&> \(Supply xm v') ->
         xm <&> (, VendorActionList v')

@@ -5,9 +5,11 @@ import Control.Monad ((>>=))
 import Data.Functor ((<&>), fmap)
 import Data.Kind (Type)
 
-import SupplyChain.Core.Vendor (Vendor (Vendor), Supply (Supply))
+import SupplyChain.Core.Vendor (Vendor (Vendor))
+import SupplyChain.Core.Supply (Supply (Supply))
 import SupplyChain.Core.Job (Job)
 import qualified SupplyChain.Core.Vendor as Vendor
+import qualified SupplyChain.Core.Supply as Supply
 import qualified SupplyChain.Core.Job as Job
 import SupplyChain.Core.Kinds (Interface, Action)
 
@@ -31,7 +33,7 @@ vendorToJob :: forall (up :: Interface) (down :: Interface) (action :: Action)
     (product :: Type). Vendor up down action -> Job down action product
     -> Job up action product
 
-vendorToJob up down = vendorToJob' up down <&> Vendor.product
+vendorToJob up down = vendorToJob' up down <&> Supply.product
 
 
 vendorToVendor :: forall (up :: Interface) (middle :: Interface)
