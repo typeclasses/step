@@ -1,14 +1,17 @@
 module Main (main) where
 
-import Prelude
-
-import Test.Tasty
-
+import Prelude (Int, succ)
+import System.IO (IO)
 import Data.Functor.Identity (Identity (Identity))
-import Data.Functor ((<&>))
+import Data.Functor ((<&>), (<$>))
+import Data.Semigroup ((<>))
+import Control.Applicative (pure, (<*>))
+import Data.Function (($))
+import Data.Maybe (Maybe (..))
 
 import qualified Data.List as List
 
+import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase)
 
 import SupplyChain.Core.Connect ( vendorToJob )
