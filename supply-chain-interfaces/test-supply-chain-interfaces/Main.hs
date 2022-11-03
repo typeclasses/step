@@ -1,16 +1,19 @@
-module SupplyChain.Interface.TerminableStream.Spec (tests) where
+module Main (main) where
 
-import Prelude (Maybe (..))
-
+import Data.Maybe (Maybe (..))
 import Control.Monad (replicateM)
 import Data.Char (Char)
 import Numeric.Natural (Natural)
+import System.IO (IO)
 
 import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
 
 import SupplyChain
 import SupplyChain.Interface.TerminableStream
+
+main :: IO ()
+main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "TerminableStream"

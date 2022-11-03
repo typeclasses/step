@@ -13,6 +13,7 @@ common base
     build-depends:
         base ^>= 4.16
       , supply-chain
+      , supply-chain-interfaces
 
 library
     import: base

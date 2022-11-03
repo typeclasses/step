@@ -1,4 +1,9 @@
-packages: action-list, supply-chain, supply-chain-core, step
+packages:
+    action-list
+  , supply-chain
+  , supply-chain-core
+  , supply-chain-interfaces
+  , step
 
 with-compiler: ghc-9.2.4
 

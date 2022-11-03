@@ -42,6 +42,7 @@ common base
       , hedgehog ^>= 1.1
       , ListLike
       , supply-chain
+      , supply-chain-interfaces
       , mtl
       , transformers
 

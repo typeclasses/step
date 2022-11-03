@@ -35,29 +35,5 @@ library
     import: base
     hs-source-dirs: supply-chain
     exposed-modules:
-
         SupplyChain
-
         SupplyChain.Supply
-
-        SupplyChain.Interface.Counting
-        SupplyChain.Interface.DrainableStream
-        SupplyChain.Interface.Either
-        SupplyChain.Interface.InfiniteStream
-        SupplyChain.Interface.Resettable
-        SupplyChain.Interface.ResettableTerminableStream
-        SupplyChain.Interface.TerminableStream
-
-test-suite test-supply-chain
-    import: base
-    type: exitcode-stdio-1.0
-    hs-source-dirs: test-supply-chain
-    main-is: Main.hs
-    build-depends:
-        supply-chain
-      , tasty
-      , tasty-hedgehog
-      , tasty-hunit
-    other-modules:
-        SupplyChain.Spec
-        SupplyChain.Interface.TerminableStream.Spec

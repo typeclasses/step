@@ -1,0 +1,55 @@
+cabal-version: 3.0
+
+name: supply-chain-interfaces
+version: 0
+
+license: Apache-2.0
+license-file: license.txt
+
+common base
+    default-language: GHC2021
+
+    ghc-options:
+        -Wall
+        -Wmissing-deriving-strategies
+        -fdefer-typed-holes
+
+    default-extensions:
+        BlockArguments
+        DataKinds
+        DerivingStrategies
+        FunctionalDependencies
+        ImpredicativeTypes
+        LambdaCase
+        NoImplicitPrelude
+        NoMonomorphismRestriction
+        PatternSynonyms
+        TypeFamilies
+        ViewPatterns
+
+    build-depends:
+        base ^>= 4.16
+      , supply-chain
+
+library
+    import: base
+    hs-source-dirs: supply-chain-interfaces
+    exposed-modules:
+        SupplyChain.Interface.Counting
+        SupplyChain.Interface.DrainableStream
+        SupplyChain.Interface.Either
+        SupplyChain.Interface.InfiniteStream
+        SupplyChain.Interface.Resettable
+        SupplyChain.Interface.ResettableTerminableStream
+        SupplyChain.Interface.TerminableStream
+
+test-suite test-supply-chain-interfaces
+    import: base
+    type: exitcode-stdio-1.0
+    hs-source-dirs: test-supply-chain-interfaces
+    main-is: Main.hs
+    build-depends:
+        supply-chain-interfaces
+      , tasty
+      , tasty-hedgehog
+      , tasty-hunit
