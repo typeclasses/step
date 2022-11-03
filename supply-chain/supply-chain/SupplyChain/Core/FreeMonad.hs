@@ -1,47 +1,71 @@
-module SupplyChain.Core.FreeMonad
-    (T (Step, Bind, Pure, Map), run) where
+module SupplyChain.Core.FreeMonad (FreeMonad (Step, Bind, Pure, Map),
+    run, eval, alter) where
 
-import Data.Functor (Functor)
+import Data.Functor (Functor, (<&>))
+import Data.Function ((&), ($), (.))
 import Control.Applicative (Applicative (pure, (<*>)))
 import Control.Monad (Monad ((>>=)))
 import qualified Control.Monad as Monad
 
-import SupplyChain.Core.RunnerType (type (->>))
-import qualified SupplyChain.Core.FreePointedFunctor as PointedFunctor
+import SupplyChain.Core.FreePointedFunctor (FreePointedFunctor)
+import qualified SupplyChain.Core.FreePointedFunctor as FreePointedFunctor
 
-data T con product =
-    Step (PointedFunctor.T con product)
-  | forall x. Bind (T con x) (x -> T con product)
+data FreeMonad con product =
+    Step (FreePointedFunctor con product)
+  | forall x. Bind (FreeMonad con x) (x -> FreeMonad con product)
 
-pattern Pure :: product -> T con product
-pattern Pure product = Step (PointedFunctor.Pure product)
+pattern Pure :: product -> FreeMonad con product
+pattern Pure product = Step (FreePointedFunctor.Pure product)
 
-pattern Map :: con x -> (x -> product) -> T con product
-pattern Map action extract = Step (PointedFunctor.Map action extract)
+pattern Map :: con x -> (x -> product) -> FreeMonad con product
+pattern Map action extract = Step (FreePointedFunctor.Map action extract)
 
 {-# complete Pure, Map, Bind #-}
 
-deriving stock instance Functor (T con)
+deriving stock instance Functor (FreeMonad con)
 
-instance Applicative (T con)
-  where
+instance Applicative (FreeMonad con) where
     pure = Pure
     (<*>) = Monad.ap
 
-instance Monad (T con)
-  where
+instance Monad (FreeMonad con) where
     (>>=) = Bind
 
 run :: forall effect con product. Monad effect =>
-    (con ->> effect) -> T con product -> effect product
+    (forall x. con x -> effect x) -> FreeMonad con product -> effect product
 
-run runEffect = go
+run runEffect = recur
   where
-    runPF :: PointedFunctor.T con x -> effect x
-    runPF = PointedFunctor.run pure runEffect
+    runPF :: FreePointedFunctor con x -> effect x
+    runPF = FreePointedFunctor.run pure runEffect
 
-    go :: T con x -> effect x
-    go = \case
-        Step a -> runPF a
-        Bind (Step a) b -> runPF a >>= \x -> go (b x)
-        Bind (Bind a b) c -> go (Bind a \x -> Bind (b x) c)
+    recur :: forall x. FreeMonad con x -> effect x
+    recur = \case
+        Step a             ->  runPF a
+        Bind (Step a) b    ->  runPF a >>= \x -> recur $ b x
+        Bind (Bind a b) c  ->  recur a >>= \x -> recur $ Bind (b x) c
+
+eval :: forall con product. (forall x. con x -> x)
+    -> FreeMonad con product -> product
+
+eval evalEffect = recur
+  where
+    evalPF :: FreePointedFunctor con x -> x
+    evalPF = FreePointedFunctor.eval evalEffect
+
+    recur :: forall x. FreeMonad con x -> x
+    recur = \case
+        Step a              ->  evalPF a
+        Bind (Step a) b     ->  evalPF a & \x -> recur $ b x
+        Bind (Bind a b) c   ->  recur  a & \x -> recur $ Bind (b x) c
+
+alter :: forall con con' product. (forall x. con x -> FreeMonad con' x)
+    -> FreeMonad con product -> FreeMonad con' product
+
+alter f = recur
+  where
+    recur :: forall x. FreeMonad con x -> FreeMonad con' x
+    recur = \case
+        Pure x -> Pure x
+        Map action extract -> f action <&> extract
+        Bind a b -> Bind (recur a) (recur . b)

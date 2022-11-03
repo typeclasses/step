@@ -37,13 +37,16 @@ library
 
         SupplyChain
 
-        SupplyChain.Core
+        SupplyChain.Core.Connect
         SupplyChain.Core.Effect
         SupplyChain.Core.FreePointedFunctor
         SupplyChain.Core.FreeMonad
         SupplyChain.Core.Job
         SupplyChain.Core.Kinds
-        SupplyChain.Core.RunnerType
+        SupplyChain.Core.Supply
+        SupplyChain.Core.Types
+        SupplyChain.Core.Vendor
+        SupplyChain.Core.VendorAndSupply
 
         SupplyChain.Interface.Counting
         SupplyChain.Interface.DrainableStream

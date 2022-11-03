@@ -1,22 +1,30 @@
 module SupplyChain.Core.FreePointedFunctor
-    (T (Pure, Map), run) where
+    (FreePointedFunctor (Pure, Map), run, eval, alter) where
 
 import Control.Monad (Monad)
 import Data.Functor (Functor, (<&>))
+import Data.Function ((&))
 
-import SupplyChain.Core.RunnerType (type (->>))
-
-data T con product =
+data FreePointedFunctor con product =
     Pure product
   | forall x. Map (con x) (x -> product)
 
-deriving stock instance Functor (T con)
+deriving stock instance Functor (FreePointedFunctor con)
 
-run :: Monad effect =>
-    (product -> effect product) -> (con ->> effect)
-    -> T con product -> effect product
-
-run runPure runEffect =
-  \case
+run :: Monad effect => (product -> effect product)
+    -> (forall x. con x -> effect x)
+    -> FreePointedFunctor con product -> effect product
+run runPure runEffect = \case
     Pure product        ->  runPure product
     Map action extract  ->  runEffect action <&> extract
+
+eval :: (forall x. con x -> x) -> FreePointedFunctor con product -> product
+eval evalCon = \case
+    Pure product        ->  product
+    Map action extract  ->  evalCon action & extract
+
+alter :: (forall x. con x -> FreePointedFunctor con' x)
+    -> FreePointedFunctor con product -> FreePointedFunctor con' product
+alter f = \case
+    Pure product        ->  Pure product
+    Map action extract  ->  f action <&> extract

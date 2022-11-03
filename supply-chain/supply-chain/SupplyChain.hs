@@ -28,7 +28,7 @@ module SupplyChain
 
     {- * Job -}
     {- ** Type -} Job, {- $job -}
-    {- ** How to create a job -} {- $definingJobs -} order, perform, param,
+    {- ** How to create a job -} {- $definingJobs -} order, perform,
     {- ** How to use a job -} runJob, evalJob,
 
     {- * Vendor -}
@@ -37,23 +37,24 @@ module SupplyChain
     {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
     {- ** Some simple vendors -} functionVendor, actionVendor, absurdVendor, map,
 
-    {- * Effect -}
-    {- ** Type -} Effect (..),
-
     {- * Connection -}
     {- ** Functions -} vendorToJob, vendorToVendor,
     {- ** Polymorphically (>->) -} Connect (..),
     {- ** Reusing vendors -} vendorToJob',
 
     {- * Alteration -}
-    {- ** Functions -} alterJob, alterVendor, contramapJob, contraconstJob,
+    {- ** Functions -} alterJob, alterVendor, contramapJob,
     {- ** Polymorphically -} Alter (..),
     {- ** Of particular bits -} alterAction, alterOrder, absurdAction, absurdOrder,
 
   )
   where
 
-import SupplyChain.Core
+import SupplyChain.Core.Types
+import SupplyChain.Core.Supply (Supply (..))
+import SupplyChain.Core.Vendor (Vendor (..))
+import qualified SupplyChain.Core.Effect as Effect
+import qualified SupplyChain.Core.Job as Job
 
 import Control.Applicative (pure)
 import Data.Function (($), (.))
@@ -63,30 +64,24 @@ import Data.Kind (Type)
 
 -- | Perform an action in a job's 'Action' context
 
-perform :: forall (up :: Interface) (action :: Action) (param :: Type) (product :: Type).
-    action product -> Job up action param product
+perform :: forall (up :: Interface) (action :: Action) (product :: Type).
+    action product -> Job up action product
 
-perform = Effect . Perform
+perform = Job.Perform
 
 
 -- | Send a request via the job's upstream 'Interface'
 
-order :: forall (up :: Interface) (action :: Action) (param :: Type) (response :: Type).
-    up response -> Job up action param response
+order :: forall (up :: Interface) (action :: Action) (response :: Type).
+    up response -> Job up action response
 
-order = Effect . Request
-
-
-param :: forall (up :: Interface) (action :: Action) (param :: Type).
-    Job up action param param
-
-param = Ask Pure
+order = Job.Request
 
 
 -- | A simple stateless vendor that responds to each request by applying a pure function
 
-functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action) (param :: Type).
-    (forall response. down response -> response) -> Vendor up down action param
+functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
+    (forall response. down response -> response) -> Vendor up down action
 
 functionVendor f = go
   where
@@ -95,49 +90,49 @@ functionVendor f = go
 
 -- | A simple stateless vendor that responds to each request by applying an effectful function
 
-actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action) (param :: Type).
-    (forall response. down response -> action response) -> Vendor up down action param
+actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
+    (forall response. down response -> action response) -> Vendor up down action
 
 actionVendor f = go
   where
     go = Vendor \x -> perform (f x) <&> (`Supply` go)
 
 
-absurdVendor :: forall (up :: Interface) (action :: Action) (param :: Type).
-    Vendor up NoInterface action param
+absurdVendor :: forall (up :: Interface) (action :: Action).
+    Vendor up NoInterface action
 
 absurdVendor = Vendor \case{}
 
 
-map :: forall (up :: Interface) (down :: Interface) (action :: Action) (param :: Type).
-    (forall x. down x -> up x) -> Vendor up down action param
+map :: forall (up :: Interface) (down :: Interface) (action :: Action).
+    (forall x. down x -> up x) -> Vendor up down action
 map f = go
   where
     go = Vendor \x -> order (f x) <&> (`Supply` go)
 
 
 class Connect (up :: Interface) (down :: Interface)
-    (action :: Action) (param :: Type) (client :: Type) (result :: Type)
-    | up client param -> result
-    , client -> down action param
-    , result -> up action param
+    (action :: Action) (client :: Type) (result :: Type)
+    | up client -> result
+    , client -> down action
+    , result -> up action
   where
     {-| Generalizes 'vendorToJob' and 'vendorToVendor'
 
         This operation is associative; if @a@ and @b@ are vendors and @c@ is a job,
         then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
     -}
-    (>->) :: Vendor up down action param -> client -> result
+    (>->) :: Vendor up down action -> client -> result
 
-instance Connect up down action param
-    (Job down action param product)
-    (Job up   action param product)
+instance Connect up down action
+    (Job down action product)
+    (Job up   action product)
   where
     (>->) = vendorToJob
 
-instance Connect up middle action param
-    (Vendor middle down action param)
-    (Vendor up down action param)
+instance Connect up middle action
+    (Vendor middle down action)
+    (Vendor up down action)
   where
     (>->) = vendorToVendor
 
@@ -149,16 +144,16 @@ class Alter up up' action action' x1 x2
     , x2 up action -> x1
   where
     -- | Generalizes 'alterJob' and 'alterVendor'
-    alter :: (forall x. Effect up action x -> Job up' action' () x) -> x1 -> x2
+    alter :: (forall x. Effect up action x -> Job up' action' x) -> x1 -> x2
 
 instance Alter up up' action action'
-    (Job up action param product) (Job up' action' param product)
+    (Job up action product) (Job up' action' product)
   where
     alter = alterJob
 
 instance Alter up up' action action'
-    (Vendor up down action param)
-    (Vendor up' down action' param)
+    (Vendor up down action)
+    (Vendor up' down action')
   where
     alter = alterVendor
 
@@ -167,25 +162,21 @@ instance Alter up up' action action'
 
 alterAction :: Alter up up action action' x1 x2 =>
     (forall x. action x -> action' x) -> x1 -> x2
-
-alterAction f = alter \case{ Request x -> order x; Perform x -> perform (f x) }
+alterAction f = alter (Effect.alterPerform f)
 
 
 -- | Changes the upstream 'Interface'
 
 alterOrder :: Alter up up' action action x1 x2 =>
     (forall x. up x -> up' x) -> x1 -> x2
-
-alterOrder f = alter \case{ Request x -> order (f x); Perform x -> perform x }
+alterOrder f = alter (Effect.alterRequest f)
 
 
 absurdAction :: Alter up up NoAction action' x1 x2 => x1 -> x2
-
 absurdAction = alterAction \case{}
 
 
 absurdOrder :: Alter NoInterface up' action action x1 x2 => x1 -> x2
-
 absurdOrder = alterOrder \case{}
 
 
