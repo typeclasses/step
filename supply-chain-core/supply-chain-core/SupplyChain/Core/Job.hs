@@ -1,11 +1,11 @@
 module SupplyChain.Core.Job
     (Job (FreeMonad, Pure, Effect, Request, Perform, Bind),
-    run, eval, alter) where
+    effect, perform, order, run, eval, alter) where
 
 import Control.Applicative (Applicative)
 import Control.Monad (Monad)
 import Data.Functor (Functor)
-import Data.Function ((.))
+import Data.Function ((.), id)
 import Data.Kind (Type)
 
 import SupplyChain.Core.Kinds (Action, Interface, NoInterface, NoAction)
@@ -40,6 +40,15 @@ pattern Bind a b <- FreeMonad (FreeMonad.Bind (FreeMonad -> a) ((FreeMonad .) ->
 deriving newtype instance Functor     (Job up action)
 deriving newtype instance Applicative (Job up action)
 deriving newtype instance Monad       (Job up action)
+
+effect :: Effect up action product -> Job up action product
+effect x = Effect x id
+
+order :: up product -> Job up action product
+order x = Request x id
+
+perform :: action product -> Job up action product
+perform x = Perform x id
 
 -- | Run a job in its 'Action' context
 run :: forall (action :: Action) (product :: Type). Monad action =>

@@ -1,6 +1,6 @@
 cabal-version: 3.0
 
-name: supply-chain
+name: supply-chain-core
 version: 0
 
 license: Apache-2.0
@@ -29,36 +29,30 @@ common base
 
     build-depends:
         base ^>= 4.16
-      , supply-chain-core
 
 library
     import: base
-    hs-source-dirs: supply-chain
+    hs-source-dirs: supply-chain-core
     exposed-modules:
+        SupplyChain.Core.Connect
+        SupplyChain.Core.Effect
+        SupplyChain.Core.FreePointedFunctor
+        SupplyChain.Core.FreeMonad
+        SupplyChain.Core.Job
+        SupplyChain.Core.Kinds
+        SupplyChain.Core.Supply
+        SupplyChain.Core.Types
+        SupplyChain.Core.Vendor
+    other-modules:
+        SupplyChain.Core.VendorAndSupply
 
-        SupplyChain
-
-        SupplyChain.Interface.Counting
-        SupplyChain.Interface.DrainableStream
-        SupplyChain.Interface.Either
-        SupplyChain.Interface.InfiniteStream
-        SupplyChain.Interface.Resettable
-        SupplyChain.Interface.ResettableTerminableStream
-        SupplyChain.Interface.TerminableStream
-
-        SupplyChain.Bonus.ActionList
-
-test-suite test-supply-chain
+test-suite test-supply-chain-core
     import: base
     type: exitcode-stdio-1.0
-    hs-source-dirs: test-supply-chain
+    hs-source-dirs: test-supply-chain-core
     main-is: Main.hs
     build-depends:
-        supply-chain
+        supply-chain-core
       , tasty
       , tasty-hedgehog
       , tasty-hunit
-    other-modules:
-        SupplyChain.Spec
-        SupplyChain.Interface.TerminableStream.Spec
-        SupplyChain.Bonus.ActionList.Spec
