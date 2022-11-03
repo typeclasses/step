@@ -24,14 +24,14 @@ run :: forall (action :: Action) (down :: Interface) (product :: Type). Monad ac
     Vendor NoInterface down action -> down product
     -> action (Supply NoInterface down action product)
 
-run v r = Job.run (offer v r)
+run v r = Job.run (handle v r)
 
 
 eval :: forall (down :: Interface) (product :: Type).
     Vendor NoInterface down NoAction -> down product
     -> Supply NoInterface down NoAction product
 
-eval v r = Job.eval (offer v r)
+eval v r = Job.eval (handle v r)
 
 
 alter :: forall up up' action action' down.

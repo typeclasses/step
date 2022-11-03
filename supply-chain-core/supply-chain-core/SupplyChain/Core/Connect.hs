@@ -41,7 +41,7 @@ vendorToVendor :: forall (up :: Interface) (middle :: Interface)
     -> Vendor middle down action -> Vendor up down action
 
 vendorToVendor up down = Vendor \request ->
-    vendorToJob' up (Vendor.offer down request) <&> joinSupply
+    vendorToJob' up (Vendor.handle down request) <&> joinSupply
 
 
 {-| Sort of resembles what a 'Control.Monad.join' implementation for 'Supply'
@@ -68,5 +68,5 @@ vendorToJob' :: forall (up :: Interface) (down :: Interface) (action :: Action)
 vendorToJob' up = \case
     Job.Pure product -> Job.Pure (Supply product up)
     Job.Perform action extract -> Job.Perform action extract <&> (`Supply` up)
-    Job.Request request extract -> Vendor.offer up request <&> fmap extract
+    Job.Request request extract -> Vendor.handle up request <&> fmap extract
     Job.Bind a b -> vendorToJob' up a >>= \(Supply x up') -> vendorToJob' up' (b x)

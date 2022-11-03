@@ -14,7 +14,7 @@ import qualified SupplyChain.Core.Job as Job
 
 newtype Vendor (up :: Interface) (down :: Interface) (action :: Action) =
   Vendor
-    { offer :: forall (product :: Type).
+    { handle :: forall (product :: Type).
         down product -> Job up action (Supply up down action product) }
 
 -- | The conclusion of a vendor's handling of a client request
@@ -31,8 +31,8 @@ alterVendor :: forall up up' action action' down.
     (forall x. Effect up action x -> Job up' action' x)
     -> Vendor up down action -> Vendor up' down action'
 
-alterVendor f Vendor{ offer } =
-    Vendor{ offer = fmap (alterSupply f) . Job.alter f . offer }
+alterVendor f Vendor{ handle } =
+    Vendor{ handle = fmap (alterSupply f) . Job.alter f . handle }
 
 alterSupply :: forall up up' action action' down product.
     (forall x. Effect up action x -> Job up' action' x)

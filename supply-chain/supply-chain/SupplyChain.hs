@@ -30,7 +30,7 @@ module SupplyChain
     {- ** How to use a job -} runJob, evalJob,
 
     {- * Vendor -}
-    {- ** Type -} Vendor (..), {- $vendor -} Supply (Supply),
+    {- ** Type -} Vendor (Vendor, handle), {- $vendor -} Supply (Supply),
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
     {- ** Some simple vendors -} functionVendor, actionVendor, absurdVendor, map,

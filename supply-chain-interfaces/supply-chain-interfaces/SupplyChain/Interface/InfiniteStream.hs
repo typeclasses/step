@@ -45,7 +45,7 @@ concatMap f = go []
     go :: [b] -> Vendor (InfiniteStream a) (InfiniteStream b) action
     go bs = Vendor \Next -> case bs of
         b : bs' -> pure $ Supply b (go bs')
-        [] -> order Next >>= \a -> offer (go (f a)) Next
+        [] -> order Next >>= \a -> handle (go (f a)) Next
 
 
 concat :: forall a action.

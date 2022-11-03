@@ -36,4 +36,7 @@ library
     hs-source-dirs: supply-chain
     exposed-modules:
         SupplyChain
+        SupplyChain.Job
         SupplyChain.Supply
+        SupplyChain.Vendor
+        SupplyChain.Types
