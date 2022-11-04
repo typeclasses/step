@@ -1,6 +1,7 @@
 module Step.Package.Failure where
 
 import Step.Action.Core
+import Step.Interface.Core
 
 import qualified Step.Do as P
 
@@ -22,3 +23,8 @@ requireJust :: forall c m r a. Maybe a -> Query c m r r a
 requireJust = \case
     Just x -> castTo @Query (P.pure x)
     Nothing -> castTo @Query fail
+
+requireAdvanceSuccess :: AdvanceResult -> Query c m e e ()
+requireAdvanceSuccess = \case
+    AdvanceSuccess -> castTo @Query (P.pure ())
+    YouCanNotAdvance{} -> castTo @Query fail

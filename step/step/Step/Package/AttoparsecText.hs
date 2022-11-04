@@ -56,7 +56,6 @@ p <?> c =
 char :: Monad m => Char -> Parser m AtomicMove Char
 char x = A.satisfyPredicate (== x) <?> ("char " <> Text.pack (show x))
 
-
 anyChar :: Monad m => Parser m AtomicMove Char
 anyChar = A.takeChar <?> "anyChar"
 
