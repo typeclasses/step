@@ -4,6 +4,8 @@ module SupplyChain.Core.VendorAndSupply (Vendor (..), Supply (..),
 import Data.Kind (Type)
 import Data.Functor (Functor, fmap)
 import Data.Function ((.))
+import Data.Foldable (Foldable)
+import Data.Traversable (Traversable)
 
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.Kinds (Action, Interface)
@@ -26,6 +28,8 @@ data Supply (up :: Interface) (down :: Interface) (action :: Action) (product ::
     }
 
 deriving stock instance Functor (Supply up down action)
+deriving stock instance Foldable (Supply up down action)
+deriving stock instance Traversable (Supply up down action)
 
 alterVendor :: forall up up' action action' down.
     (forall x. Effect up action x -> Job up' action' x)

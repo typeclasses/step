@@ -36,6 +36,7 @@ library
     hs-source-dirs: supply-chain
     exposed-modules:
         SupplyChain
+        SupplyChain.Connect
         SupplyChain.Job
         SupplyChain.Kinds
         SupplyChain.Nil

@@ -51,7 +51,8 @@ module SupplyChain
   )
   where
 
-import SupplyChain.Core.Connect (vendorToVendor, vendorToJob, vendorToJob')
+import SupplyChain.Connect (Connect (..), vendorToJob, vendorToVendor, vendorToJob')
+
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.Job (Job)
 import SupplyChain.Core.Kinds (Type, Action, Interface)
@@ -140,32 +141,6 @@ map :: forall (up :: Interface) (down :: Interface) (action :: Action).
 map f = go
   where
     go = Vendor \x -> order (f x) <&> (`Supply` go)
-
-
-class Connect (up :: Interface) (down :: Interface)
-    (action :: Action) (client :: Type) (result :: Type)
-    | up client -> result
-    , client -> down action
-    , result -> up action
-  where
-    {-| Generalizes 'vendorToJob' and 'vendorToVendor'
-
-        This operation is associative; if @a@ and @b@ are vendors and @c@ is a job,
-        then @(a >-> b) >-> c@ is the same supply chain as @a >-> (b >-> c)@.
-    -}
-    (>->) :: Vendor up down action -> client -> result
-
-instance Connect up down action
-    (Job down action product)
-    (Job up   action product)
-  where
-    (>->) = vendorToJob
-
-instance Connect up middle action
-    (Vendor middle down action)
-    (Vendor up down action)
-  where
-    (>->) = vendorToVendor
 
 
 class Alter up up' action action' x1 x2

@@ -1,29 +1,27 @@
-{- |
-
-Description: A streaming list type based on the 'TerminableStream' interface
-
--}
-
 module ActionList
   (
-    {- * Type -} ActionList (..),
-    {- * Introduction -} fromList, perform,
-    {- * Elimination -} toList, runActionList,
-    {- * Use -} next,
+    {- * Type         -}  ActionList (..),
+    {- * Introduction -}  fromList, perform,
+    {- * Elimination  -}  toList, runActionList,
+    {- * Use          -}  next,
   )
   where
 
-import SupplyChain (Connect ((>->)), Vendor, evalJob, runJob, runVendor, vendorToJob, vendorToVendor, NoInterface, NoAction, Supply (..))
+import SupplyChain (NoInterface, NoAction, Vendor, Supply (Supply), (>->))
+import qualified SupplyChain.Vendor as Vendor
+import qualified SupplyChain.Job as Job
+
 import SupplyChain.Interface.TerminableStream (TerminableStream)
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
-import Control.Applicative (Applicative (..))
-import Data.Maybe (Maybe (..))
-import Control.Monad (Monad (..), ap)
-import Data.Function ((.), ($))
-import Data.Functor (Functor (..), (<&>))
-import Data.Monoid (Monoid (..))
-import Data.Semigroup (Semigroup (..))
+import Control.Applicative (Applicative, pure, (<*>))
+import Data.Maybe (Maybe)
+import Control.Monad (Monad, (>>=), ap)
+import Data.Function ((.), ($), (&))
+import Data.Functor (Functor, fmap)
+import Data.Monoid (Monoid, mempty)
+import Data.Semigroup (Semigroup, (<>))
+import Data.Traversable (sequence)
 
 newtype ActionList m a =
   VendorActionList
@@ -51,26 +49,27 @@ instance Applicative (ActionList m)
 
 instance Monad (ActionList m)
   where
-    VendorActionList v1 >>= f =
-        VendorActionList (vendorToVendor v1 $ Stream.concatMapVendor (actionListVendor . f))
+    VendorActionList v1 >>= f = VendorActionList $
+        v1 >-> Stream.concatMapVendor (actionListVendor . f)
 
 -- | Converts an ordinary list into an 'ActionList'
-fromList :: [a] -> ActionList m a
+fromList :: forall m a. [a] -> ActionList m a
 fromList = VendorActionList . Stream.list
 
 -- | A singleton list where the item is obtained by performing an action
-perform :: m a -> ActionList m a
-perform x = VendorActionList (Stream.actionSingleton x)
+perform :: forall m a. m a -> ActionList m a
+perform = VendorActionList . Stream.actionSingleton
 
 -- | Converts an 'ActionList' into an ordinary list
-toList :: ActionList NoAction a -> [a]
-toList (VendorActionList v) = evalJob (vendorToJob v Stream.all)
+toList :: forall a. ActionList NoAction a -> [a]
+toList xs = Job.eval (actionListVendor xs >-> Stream.all)
 
 -- | Converts an 'ActionList' into an action that returns all the items at once
-runActionList :: Monad m => ActionList m a -> m [a]
-runActionList (VendorActionList v) = runJob (vendorToJob v Stream.all)
+runActionList :: forall m a. Monad m => ActionList m a -> m [a]
+runActionList xs = Job.run (actionListVendor xs >-> Stream.all)
 
-next :: Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
-next (VendorActionList v) =
-    SupplyChain.runVendor v Stream.NextMaybe <&> \(Supply xm v') ->
-        xm <&> (, VendorActionList v')
+next :: forall m a. Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
+next xs = fmap @m f $ Vendor.run (actionListVendor xs) Stream.NextMaybe
+  where
+    f :: Supply NoInterface (TerminableStream a) m (Maybe a) -> Maybe (a, ActionList m a)
+    f s = s & sequence & fmap @Maybe \(Supply x v) -> (x, VendorActionList v)

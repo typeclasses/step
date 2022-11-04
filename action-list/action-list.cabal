@@ -9,7 +9,9 @@ license-file: license.txt
 common base
     default-language: GHC2021
     ghc-options: -Wall
-    default-extensions: NoImplicitPrelude
+    default-extensions:
+        BlockArguments
+        NoImplicitPrelude
     build-depends:
         base ^>= 4.16
       , supply-chain
