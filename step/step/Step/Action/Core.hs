@@ -147,6 +147,18 @@ rsj :: Optics.Iso
 rsj = iso resettingSequenceJob ResettingSequenceJob
 
 
+class CanSucceed (act :: Action) where
+    pure' :: a -> act c m r e a
+
+instance CanSucceed Any where pure' = pure
+instance CanSucceed Sure where pure' = pure
+instance CanSucceed Query where pure' = pure
+instance CanSucceed SureQuery where pure' = pure
+instance CanSucceed Atom where pure' = Atom . pure' . pure'
+instance CanSucceed Move where pure' = Move . pure'
+instance CanSucceed AtomicMove where pure' = AtomicMove . pure'
+
+
 class IsAction (act :: Action) where
     actionMap :: (forall x. m x -> m' x) -> act c m r e a -> act c m' r e a
     paramMap :: (r' -> r) -> act c m r e a -> act c m r' e a

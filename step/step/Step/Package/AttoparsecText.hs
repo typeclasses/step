@@ -24,6 +24,7 @@ import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Prelude (Eq, Ord, Show)
 import Step.Action.Types
+import Step.Action.Core
 import Step.Chunk.Text (Text1)
 import Text.Show (show)
 
@@ -88,13 +89,13 @@ space = A.satisfyPredicate Char.isSpace <?> "space"
 
 string :: Monad m => Text -> Parser m Atom ()
 string x = case Chunk.refine x of
-    Nothing -> A.castTo @Atom $ A.pure ()
-    Just x' -> A.castTo @Atom (A.takeParticularTextAtomic x') <?> "string"
+    Nothing -> A.pure' ()
+    Just x' -> A.cast (A.takeParticularTextAtomic x') <?> "string"
 
 asciiCI :: Monad m => Text -> Parser m Atom Text
 asciiCI x = case Chunk.refine x of
-    Nothing -> A.castTo @Atom $ A.pure x
-    Just x' -> A.castTo @Atom $ A.takeMatchingTextAtomic Text1.asciiCI x' <&> Chunk.generalize
+    Nothing -> A.pure' x
+    Just x' -> A.cast $ A.takeMatchingTextAtomic Text1.asciiCI x' <&> Chunk.generalize
 
 -- todo
 -- skipSpace :: Parser ()

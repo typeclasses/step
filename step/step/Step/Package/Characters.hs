@@ -1,7 +1,7 @@
 module Step.Package.Characters
   (
     peekChar, takeChar, satisfyJust, satisfyPredicate,
-    nextCharIs, takeParticularChar,
+    nextCharIs, takeParticularChar, trySkipChar,
   )
   where
 
@@ -14,7 +14,6 @@ import Step.Interface
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
 
-import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Either (Either (..))
@@ -33,36 +32,23 @@ peekCharMaybe :: forall c m r. Chunk c => SureQuery c m r r (Maybe (One c))
 peekCharMaybe = SureQuery \_ -> ResettingSequenceJob $ order nextMaybe <&> fmap @Maybe head
 
 peekChar :: forall c m r. Chunk c => Query c m r r (One c)
-peekChar = peekCharMaybe P.>>= \case
-    Nothing  ->  castTo @Query fail
-    Just x   ->  pure x
+peekChar = peekCharMaybe P.>>= requireJust
 
 -- | Advance over the next character and return it; fail if end of input
 takeChar :: forall c m r. Chunk c => AtomicMove c m r r (One c)
-takeChar = assumeMovement $ peekCharMaybe P.>>= \case
-    Nothing  ->  castTo @Atom fail
-    Just x   ->  castTo @Atom (trySkipPositive one) $> x
+takeChar = assumeMovement $ peekCharMaybe P.>>= requireJust P.>>= (trySkipChar $>)
 
 nextCharIs :: forall c m r. Chunk c => Eq (One c) => One c -> SureQuery c m r r Bool
-nextCharIs c = act \_ -> order nextMaybe <&> \case
-    Just x | head x == c  ->  True
-    _                     ->  False
+nextCharIs c = act \_ -> order nextMaybe <&> \case{ Just x | head x == c -> True; _ -> False }
 
-takeParticularChar :: forall c m r. Chunk c => Eq (One c) =>
-    One c -> AtomicMove c m r r ()
-takeParticularChar c = assumeMovement $ Atom $ act \r -> order nextMaybe <&> \case
-    Just x | head x == c  ->  Right $ act \_ -> order (commit one) $> ()
-    _                     ->  Left r
+takeParticularChar :: forall c m r. Chunk c => Eq (One c) => One c -> AtomicMove c m r r ()
+takeParticularChar c = assumeMovement P.do{ nextCharIs c P.>>= requireTrue; trySkipChar }
 
-satisfyJust :: forall c m r a. Chunk c =>
-    (One c -> Maybe a) -> AtomicMove c m r r a
-satisfyJust ok = assumeMovement $ Atom $ act \r -> order nextMaybe <&> fmap @Maybe head <&> \case
-    Just (ok -> Just x)  ->  Right $ act \_ -> order (commit one) $> x
-    _                    ->  Left r
+satisfyJust :: forall c m r a. Chunk c => (One c -> Maybe a) -> AtomicMove c m r r a
+satisfyJust ok = assumeMovement P.do{ x <- peekChar; y <- requireJust (ok x); trySkipChar; P.pure y }
 
-satisfyPredicate :: forall c m r. Chunk c =>
-    (One c -> Bool) -> AtomicMove c m r r (One c)
-satisfyPredicate f = satisfyJust (\x -> if f x then Just x else Nothing)
+satisfyPredicate :: forall c m r. Chunk c => (One c -> Bool) -> AtomicMove c m r r (One c)
+satisfyPredicate ok = assumeMovement P.do{ x <- peekChar; requireTrue (ok x); trySkipChar; P.pure x }
 
-one :: Positive Natural
-one = PositiveUnsafe 1
+trySkipChar :: Sure c m r r ()
+trySkipChar = trySkipPositive_ (PositiveUnsafe 1)

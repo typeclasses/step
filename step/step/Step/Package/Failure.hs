@@ -14,17 +14,20 @@ import qualified SupplyChain
 fail :: forall c m r a. Failure c m r r a
 fail = Failure pure
 
+fail' :: forall p c m r a. Is Failure p => p c m r r a
+fail' = cast fail
+
 requireTrue :: forall c m r. Bool -> Query c m r r ()
 requireTrue = \case
-    True -> castTo @Query (P.pure ())
-    False -> castTo @Query fail
+    True -> pure' ()
+    False -> fail'
 
 requireJust :: forall c m r a. Maybe a -> Query c m r r a
 requireJust = \case
-    Just x -> castTo @Query (P.pure x)
-    Nothing -> castTo @Query fail
+    Just x -> pure' x
+    Nothing -> fail'
 
 requireAdvanceSuccess :: AdvanceResult -> Query c m e e ()
 requireAdvanceSuccess = \case
-    AdvanceSuccess -> castTo @Query (P.pure ())
-    YouCanNotAdvance{} -> castTo @Query fail
+    AdvanceSuccess -> pure' ()
+    YouCanNotAdvance{} -> fail'

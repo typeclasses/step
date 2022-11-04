@@ -1,6 +1,7 @@
 module Step.Package.FixedLength
   (
-    trySkipPositive, skipPositive, trySkipNatural, skipNatural,
+    trySkipPositive, trySkipPositive_, skipPositive,
+    trySkipNatural, trySkipNatural_, skipNatural,
     takePositive, takePositiveAtomic, peekPositive,
     skipPositiveAtomic, skipNaturalAtomic,
     remainsAtLeastPositive, remainsAtLeastNatural,
@@ -22,7 +23,7 @@ import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Either (Either (..))
 import Data.Function (($), (&), (.))
-import Data.Functor (($>), (<&>), (<$>), fmap)
+import Data.Functor (($>), (<&>), (<$>), fmap, void)
 import Data.Maybe (Maybe (..), maybe)
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
@@ -48,14 +49,20 @@ ifZero z p n = Optics.preview Positive.refine n & maybe z p
 trySkipPositive :: forall c m r. Positive Natural -> Sure c m r r AdvanceResult
 trySkipPositive n = Sure \_ -> ResettingSequenceJob $ order $ commit n
 
+trySkipPositive_ :: Positive Natural -> Sure c m r r ()
+trySkipPositive_ = void . trySkipPositive
+
 trySkipNatural :: forall c m r. Natural -> Sure c m r r AdvanceResult
-trySkipNatural = ifZero (pure AdvanceSuccess) trySkipPositive
+trySkipNatural = ifZero (pure' AdvanceSuccess) trySkipPositive
+
+trySkipNatural_ :: forall c m r. Natural -> Sure c m r r ()
+trySkipNatural_ = ifZero (pure' ()) trySkipPositive_
 
 skipPositive :: forall c m r. Positive Natural -> Move c m r r ()
 skipPositive n = assumeMovement $ trySkipPositive n P.>>= requireAdvanceSuccess
 
 skipNatural :: forall c m r. Natural -> Any c m r r ()
-skipNatural = ifZero (pure ()) $ castTo @Any . skipPositive
+skipNatural = ifZero (pure' ()) $ cast . skipPositive
 
 remainsAtLeastPositive :: forall c m r. Chunk c => Positive Natural -> SureQuery c m r r Bool
 remainsAtLeastPositive = \n -> act @SureQuery \r -> go r n
@@ -69,19 +76,19 @@ remainsAtLeastPositive = \n -> act @SureQuery \r -> go r n
 
 remainsAtLeastNatural :: forall c m r. Chunk c =>
     Natural -> SureQuery c m r r Bool
-remainsAtLeastNatural = ifZero (pure True) remainsAtLeastPositive
+remainsAtLeastNatural = ifZero (pure' True) remainsAtLeastPositive
 
 ensureAtLeastPositive :: forall c m r. Chunk c => Positive Natural -> Query c m r r ()
 ensureAtLeastPositive n = remainsAtLeastPositive n P.>>= requireTrue
 
 ensureAtLeastNatural :: forall c m r. Chunk c => Natural -> Query c m r r ()
-ensureAtLeastNatural = ifZero (pure ()) ensureAtLeastPositive
+ensureAtLeastNatural = ifZero (pure' ()) ensureAtLeastPositive
 
 skipPositiveAtomic :: forall c m r. Chunk c => Positive Natural -> AtomicMove c m r r ()
 skipPositiveAtomic n = assumeMovement $ ensureAtLeastPositive n P.<* trySkipPositive n
 
 skipNaturalAtomic :: forall c m r. Chunk c => Natural -> Atom c m r r ()
-skipNaturalAtomic = ifZero (castTo @Atom (P.pure ())) $ castTo @Atom . skipPositiveAtomic
+skipNaturalAtomic = ifZero (pure' ()) $ cast . skipPositiveAtomic
 
 peekPositive :: forall c m r. Chunk c => Positive Natural -> Query c m r r c
 peekPositive = \n -> Query $ required $ go n

@@ -7,22 +7,18 @@ import Step.Interface
 
 import qualified Step.Interface as Interface
 
-import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Either (Either (..))
 import Data.Function (($))
 import Data.Functor (($>), (<&>))
-import Data.Maybe (Maybe (..))
+import Data.Maybe (Maybe (..), maybe)
 import SupplyChain (perform, order, absurdOrder, (>->))
 
 import qualified SupplyChain
 
 peekSome :: forall c m r. Query c m r r c
-peekSome = act \r -> order nextMaybe <&> \case
-    Nothing  ->  Left r
-    Just x   ->  Right x
+peekSome = act \r -> order nextMaybe <&> maybe (Left r) Right
 
 takeSome :: forall c m r. Chunk c => AtomicMove c m r r c
-takeSome = assumeMovement $ Atom $ act \r -> order nextMaybe <&> \case
-    Nothing  ->  Left r
-    Just x   ->  Right $ trySkipPositive (length @c x) $> x
+takeSome = assumeMovement $ Atom $ act \r -> order nextMaybe <&> maybe (Left r) \x ->
+    Right $ trySkipPositive (length @c x) $> x

@@ -11,7 +11,7 @@ language extension.
 module Step.Do
   (
     {- * Monad -} join, (>>=), (>=>), (>>), return,
-    {- * Applicative -} (<*), (*>), (<*>), pure,
+    {- * Applicative -} (<*), (*>), (<*>), pure, pure',
     {- * Functor -} fmap, (<$>), (<&>),
   )
   where
@@ -21,7 +21,7 @@ import Data.Functor (Functor)
 import qualified Control.Applicative as Applicative
 import qualified Data.Functor as Functor
 
-import Step.Action.Core (Join, type (>>), SureQuery)
+import Step.Action.Core (Join, type (>>), SureQuery, pure')
 import qualified Step.Action.Core as A
 
 infixl 1 <&>
