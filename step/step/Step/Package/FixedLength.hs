@@ -43,7 +43,7 @@ import qualified SupplyChain
     'AdvanceResult' gives the size of the difference.
 -}
 trySkipPositive :: forall c m r. Positive Natural -> Sure c m r r AdvanceResult
-trySkipPositive n = Sure (ResettingSequence (order (commit n)))
+trySkipPositive n = Sure \_ -> ResettingSequenceJob $ order $ commit n
 
 trySkipNatural :: forall c m r. Natural -> Sure c m r r AdvanceResult
 trySkipNatural n = case Optics.preview Positive.refine n of
@@ -62,13 +62,13 @@ skipNatural n = case Optics.preview Positive.refine n of
 
 remainsAtLeastPositive :: forall c m r. Chunk c =>
     Positive Natural -> SureQuery c m r r Bool
-remainsAtLeastPositive = \n -> act @SureQuery (go n)
+remainsAtLeastPositive = \n -> act @SureQuery \r -> go r n
   where
-    go :: Positive Natural -> Job (ResettableTerminableStream c) m r Bool
-    go n = order nextMaybe >>= \case
+    go :: r -> Positive Natural -> Job (ResettableTerminableStream c) m Bool
+    go r n = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case Positive.minus n (length @c x) of
-            Signed.Plus n' -> go n'
+            Signed.Plus n' -> go r n'
             _ -> pure True
 
 remainsAtLeastNatural :: forall c m r. Chunk c =>
@@ -102,27 +102,27 @@ skipNaturalAtomic n = case Optics.preview Positive.refine n of
 
 peekPositive :: forall c m r. Chunk c =>
     Positive Natural -> Query c m r r c
-peekPositive = \n -> Query $ ResettingSequence $ fmap (fmap concat) $ go n
+peekPositive = \n -> Query \r -> ResettingSequenceJob $ fmap (fmap concat) $ go r n
   where
-    go :: Positive Natural -> Job (ResettableTerminableStream c) m r (Either r (NonEmpty c))
-    go n = order nextMaybe >>= \case
-        Nothing -> SupplyChain.param <&> Left
+    go :: r -> Positive Natural -> Job (ResettableTerminableStream c) m (Either r (NonEmpty c))
+    go r n = order nextMaybe >>= \case
+        Nothing -> pure (Left r)
         Just x -> case take n x of
             TakeAll -> pure $ Right $ x :| []
             TakePart{ takePart } -> pure $ Right $ takePart :| []
-            TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
+            TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go r takeShortfall
 
 takePositive :: forall c m r. Chunk c =>
     Positive Natural -> Move c m r r c
-takePositive = \n -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap concat) $ go n
+takePositive = \n -> assumeMovement $ Any \r -> ResettingSequenceJob $ fmap (fmap concat) $ go r n
   where
-    go :: Positive Natural -> Job (CommittableChunkStream c) m r (Either r (NonEmpty c))
-    go n = order nextMaybe >>= \case
-        Nothing -> SupplyChain.param <&> Left
+    go :: r -> Positive Natural -> Job (CommittableChunkStream c) m (Either r (NonEmpty c))
+    go r n = order nextMaybe >>= \case
+        Nothing -> pure (Left r)
         Just x -> case take n x of
             TakeAll -> order (commit n) $> Right (x :| [])
             TakePart{ takePart } -> order (commit (length takePart)) $> Right (takePart :| [])
-            TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
+            TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go r takeShortfall
 
 takePositiveAtomic :: forall c m r. Chunk c =>
     Positive Natural -> AtomicMove c m r r c

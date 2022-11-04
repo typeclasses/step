@@ -18,11 +18,11 @@ import SupplyChain (perform, order, absurdOrder, (>->))
 import qualified SupplyChain
 
 peekSome :: forall c m r. Query c m r r c
-peekSome = act $ order nextMaybe >>= \case
-    Nothing  ->  SupplyChain.param <&> Left
-    Just x   ->  pure (Right x)
+peekSome = act \r -> order nextMaybe <&> \case
+    Nothing  ->  Left r
+    Just x   ->  Right x
 
 takeSome :: forall c m r. Chunk c => AtomicMove c m r r c
-takeSome = assumeMovement $ Atom $ act $ order nextMaybe >>= \case
-    Nothing  ->  SupplyChain.param <&> Left
-    Just x   ->  pure $ Right $ trySkipPositive (length @c x) $> x
+takeSome = assumeMovement $ Atom $ act \r -> order nextMaybe <&> \case
+    Nothing  ->  Left r
+    Just x   ->  Right $ trySkipPositive (length @c x) $> x

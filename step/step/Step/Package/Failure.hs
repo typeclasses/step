@@ -4,13 +4,14 @@ import Step.Action.Core
 
 import qualified Step.Do as P
 
+import Control.Applicative (pure)
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
 
 import qualified SupplyChain
 
 fail :: forall c m r a. Failure c m r r a
-fail = Failure SupplyChain.param
+fail = Failure pure
 
 requireTrue :: forall c m r. Bool -> Query c m r r ()
 requireTrue = \case

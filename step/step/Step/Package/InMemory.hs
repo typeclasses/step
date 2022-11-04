@@ -56,7 +56,7 @@ parseSure p xs r = runIdentity (actionParseSure p xs r)
 
 actionParse :: forall p c m r e a. Chunk c => Monad m => Is p Any =>
     p c m r e a -> [c] -> r -> m (Either e a, [c])
-actionParse p xs r = z (run (castTo @Any p)) xs r
+actionParse p xs r = z (run r (castTo @Any p)) xs
 
 actionParseQuery :: forall p c m r e a. Chunk c => Monad m => Is p Query =>
     p c m r e a -> [c] -> r -> m (Either e a)
@@ -64,7 +64,7 @@ actionParseQuery p xs r = actionParse (castTo @Any (castTo @Query p)) xs r <&> \
 
 actionParseSure :: forall p c m r e a. Chunk c => Monad m => Is p Sure =>
     p c m r e a -> [c] -> r -> m (a, [c])
-actionParseSure p xs r = z (run (castTo @Sure p)) xs r
+actionParseSure p xs r = z (run r (castTo @Sure p)) xs
 
 parseSureQuery :: forall p c r e a. Chunk c => Is p SureQuery =>
     p c Identity r e a -> [c] -> r -> a
@@ -72,15 +72,15 @@ parseSureQuery p xs r = runIdentity (actionParseSureQuery p xs r)
 
 actionParseSureQuery :: forall p c m r e a. Chunk c => Monad m => Is p SureQuery =>
     p c m r e a -> [c] -> r -> m a
-actionParseSureQuery p xs r = z (run (castTo @Sure (castTo @SureQuery p))) xs r <&> \(res, _) -> res
+actionParseSureQuery p xs r = z (run r (castTo @Sure (castTo @SureQuery p))) xs <&> \(res, _) -> res
 
-z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f r a -> [c] -> r -> f (a, [c])
-z parser xs r = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> liftJob parser) r) (Buffer (Seq.fromList xs))
+z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])
+z parser xs = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> liftJob parser)) (Buffer (Seq.fromList xs))
         <&> \(a, rem) -> (a, bufferList rem)
 
-liftJob :: forall up m m' r a. Monad m =>
-    MTL.MonadTrans m' => Job up m r a -> Job up (m' m) r a
-liftJob = SupplyChain.alterAction (\(x :: m z) -> MTL.lift x)
+liftJob :: forall up m m' a. Monad m =>
+    MTL.MonadTrans m' => Job up m a -> Job up (m' m) a
+liftJob = SupplyChain.alterAction' (\(x :: m z) -> MTL.lift x)
 
 bufferList :: Buffer c -> [c]
 bufferList (Buffer ys) = toList ys

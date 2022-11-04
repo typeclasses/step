@@ -4,6 +4,7 @@ import Step.Interface
 
 -- The basics
 import Data.Maybe (Maybe (..))
+import Data.Function ((&))
 import Data.Functor (Functor (..), (<$>), (<&>))
 import Data.Function (($), (.), id)
 import Data.Either (Either (..), either)
@@ -14,11 +15,12 @@ import Data.Kind (Type)
 import Prelude (error)
 
 -- Optics
-import Optics (Iso')
+import Optics (Iso', over, iso)
 import qualified Optics
 
 -- Transformers
 import Control.Monad.Trans.Except (ExceptT (..))
+import Control.Monad.Reader (ReaderT (..))
 
 -- Streaming
 import SupplyChain (Job, (>->), NoInterface)
@@ -45,22 +47,24 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m r e a = Any (ResettingSequence (CommittableChunkStream c) m r (Either e a))
+newtype Any c m r e a = Any (r -> ResettingSequence (CommittableChunkStream c) m (Either e a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (ResettingSequence (CommittableChunkStream c) m r)
+        via ExceptT e (ReaderT r (ResettingSequence (CommittableChunkStream c) m))
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m r e a = Query (ResettingSequence (ResettableTerminableStream c) m r (Either e a))
+newtype Query c m r e a = Query (r -> ResettingSequence (ResettableTerminableStream c) m (Either e a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (ResettingSequence (ResettableTerminableStream c) m r)
+        via ExceptT e (ReaderT r (ResettingSequence (ResettableTerminableStream c) m))
 
 -- | Always succeeds
-newtype Sure c m r e a = Sure (ResettingSequence (CommittableChunkStream c) m r a)
-    deriving newtype (Functor, Applicative, Monad)
+newtype Sure c m r e a = Sure (r -> ResettingSequence (CommittableChunkStream c) m a)
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT r (ResettingSequence (CommittableChunkStream c) m))
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m r e a = SureQuery (ResettingSequence (ResettableTerminableStream c) m r a)
-    deriving newtype (Functor, Applicative, Monad)
+newtype SureQuery c m r e a = SureQuery (r -> ResettingSequence (ResettableTerminableStream c) m a)
+    deriving (Functor, Applicative, Monad)
+        via (ReaderT r (ResettingSequence (ResettableTerminableStream c) m))
 
 
 -- Actions defined in terms of others:
@@ -100,7 +104,7 @@ instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' woul
 
 type Failure :: Action
 
-newtype Failure c m r e a = Failure (Job NoInterface m r e)
+newtype Failure c m r e a = Failure (r -> Job NoInterface m e)
     deriving stock Functor
 
 instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m r e) where
@@ -112,7 +116,7 @@ class IsAction p =>
     IsResettingSequence p c m r e a up product
     | p c m r e a -> up product
   where
-    walk :: Iso' (p c m r e a) (ResettingSequence up m r product)
+    walk :: Iso' (p c m r e a) (r -> ResettingSequence up m product)
 
 instance IsResettingSequence Any c m r e a (CommittableChunkStream c) (Either e a) where
     walk = Optics.coerced
@@ -127,12 +131,20 @@ instance IsResettingSequence SureQuery c m r e a (ResettableTerminableStream c) 
     walk = Optics.coerced
 
 
-run :: IsResettingSequence p c m r e a up product => p c m r e a -> Job up m r product
-run = (\(ResettingSequence x) -> x) . Optics.view walk
+run :: IsResettingSequence p c m r e a up product => r -> p c m r e a -> Job up m product
+run r = resettingSequenceJob . ($ r) . Optics.view walk
 
 
-act :: IsResettingSequence p c m r e a up product => Job up m r product -> p c m r e a
-act = Optics.review walk . ResettingSequence
+act :: IsResettingSequence p c m r e a up product => (r -> Job up m product) -> p c m r e a
+act f = Optics.review walk \x -> ResettingSequenceJob $ f x
+
+
+rsj :: Optics.Iso
+  (ResettingSequence up1 action1 a1)
+  (ResettingSequence up2 action2 a2)
+  (Job up1 action1 a1)
+  (Job up2 action2 a2)
+rsj = iso resettingSequenceJob ResettingSequenceJob
 
 
 class IsAction (act :: Action) where
@@ -140,36 +152,36 @@ class IsAction (act :: Action) where
     paramMap :: (r' -> r) -> act c m r e a -> act c m r' e a
 
 instance IsAction Any where
-    actionMap f (Any (ResettingSequence x)) = Any (ResettingSequence (SupplyChain.alterAction f x))
-    paramMap f (Any (ResettingSequence x)) = Any (ResettingSequence (SupplyChain.contramapJob f x))
+    actionMap f (Any x) = Any $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    paramMap f (Any x) = Any $ x . f
 
 instance IsAction Sure where
-    actionMap f (Sure (ResettingSequence x)) = Sure (ResettingSequence (SupplyChain.alterAction f x))
-    paramMap f (Sure (ResettingSequence x)) = Sure (ResettingSequence (SupplyChain.contramapJob f x))
+    actionMap f (Sure x) = Sure $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    paramMap f (Sure x) = Sure $ x . f
 
 instance IsAction Query where
-    actionMap f (Query (ResettingSequence x)) = Query (ResettingSequence (SupplyChain.alterAction f x))
-    paramMap f (Query (ResettingSequence x)) = Query (ResettingSequence (SupplyChain.contramapJob f x))
+    actionMap f (Query x) = Query $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    paramMap f (Query x) = Query (x . f)
 
 instance IsAction SureQuery where
-    actionMap f (SureQuery (ResettingSequence x)) = SureQuery (ResettingSequence (SupplyChain.alterAction f x))
-    paramMap f (SureQuery (ResettingSequence x)) = SureQuery (ResettingSequence (SupplyChain.contramapJob f x))
+    actionMap f (SureQuery x) = SureQuery $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    paramMap f (SureQuery x) = SureQuery $ x . f
 
 instance IsAction Atom where
-    actionMap f (Atom x) = Atom (fmap (actionMap f) (actionMap f x))
-    paramMap f (Atom x) = Atom (fmap (paramMap f) (paramMap f x))
+    actionMap f (Atom x) = Atom $ fmap (actionMap f) (actionMap f x)
+    paramMap f (Atom x) = Atom $ fmap (paramMap f) (paramMap f x)
 
 instance IsAction Move where
-    actionMap f (Move x) = Move (actionMap f x)
-    paramMap f (Move x) = Move (paramMap f x)
+    actionMap f (Move x) = Move $ actionMap f x
+    paramMap f (Move x) = Move $ paramMap f x
 
 instance IsAction AtomicMove where
-    actionMap f (AtomicMove x) = AtomicMove (actionMap f x)
-    paramMap f (AtomicMove x) = AtomicMove (paramMap f x)
+    actionMap f (AtomicMove x) = AtomicMove $ actionMap f x
+    paramMap f (AtomicMove x) = AtomicMove $ paramMap f x
 
 instance IsAction Failure where
-    actionMap f (Failure x) = Failure (SupplyChain.alterAction f x)
-    paramMap f (Failure x) = Failure (SupplyChain.contramapJob f x)
+    actionMap f (Failure x) = Failure $ x & (.) (SupplyChain.alterJobAction' f)
+    paramMap f (Failure x) = Failure $ x . f
 
 
 -- | Action that can be tried noncommittally
@@ -182,7 +194,7 @@ class (IsAction act, IsAction try) =>
 
 instance Atomic Atom Sure where
     try (Atom q) =
-        act (SupplyChain.map stepCast >-> run q) >>= \case
+        (act \r -> SupplyChain.map stepCast >-> run r q) >>= \case
             Left _ -> pure Nothing
             Right x -> fmap Just x
 
@@ -190,7 +202,7 @@ instance Atomic AtomicMove Sure where
     try (AtomicMove a) = try a
 
 instance Atomic Query SureQuery where
-    try q = act (run q <&> either (\_ -> Nothing) Just)
+    try q = act \x -> (run x q <&> either (\_ -> Nothing) Just)
 
 
 -- | Unsafe coercion to action that always moves
@@ -230,19 +242,19 @@ instance {-# overlappable #-} IsAction a => Is a a where
 -- Casting actions via casting steps
 
 instance Is SureQuery Sure where
-    cast x = act (SupplyChain.map stepCast >-> run x)
+    cast x = act \r -> SupplyChain.map stepCast >-> run r x
 
 instance Is Query Any where
-    cast x = act (SupplyChain.map stepCast >-> run x)
+    cast x = act \r -> SupplyChain.map stepCast >-> run r x
 
 instance Is SureQuery Query where
-    cast x = act (run x <&> Right)
+    cast x = act \r -> run r x <&> Right
 
 instance Is Sure Any where
-    cast x = act (run x <&> Right)
+    cast x = act \r -> run r x <&> Right
 
 instance Is SureQuery Any where
-    cast x = act ((SupplyChain.map stepCast >-> run x) <&> Right)
+    cast x = act \r -> (SupplyChain.map stepCast >-> run r x) <&> Right
 
 -- Casting to Atom
 
@@ -279,19 +291,19 @@ instance Is AtomicMove Any where
 -- Casting out of failure
 
 instance Is Failure Any where
-    cast (Failure x) = act (SupplyChain.absurdOrder x <&> Left)
+    cast (Failure x) = act \r -> SupplyChain.absurdOrder (x r) <&> Left
 
 instance Is Failure Query where
-    cast (Failure x) = act (SupplyChain.absurdOrder x <&> Left)
+    cast (Failure x) = act \r -> SupplyChain.absurdOrder (x r) <&> Left
 
 instance Is Failure Move where
-    cast (Failure x) = Move $ act (SupplyChain.absurdOrder x <&> Left)
+    cast (Failure x) = Move $ act \r -> SupplyChain.absurdOrder (x r) <&> Left
 
 instance Is Failure Atom where
-    cast (Failure x) = Atom $ act (SupplyChain.absurdOrder x <&> Left)
+    cast (Failure x) = Atom $ act \r -> SupplyChain.absurdOrder (x r) <&> Left
 
 instance Is Failure AtomicMove where
-    cast (Failure x) = AtomicMove $ Atom $ act (SupplyChain.absurdOrder x <&> Left)
+    cast (Failure x) = AtomicMove $ Atom $ act \r -> SupplyChain.absurdOrder (x r) <&> Left
 
 
 {-| The type @a >> b@ is type of the expression @a >> b@.

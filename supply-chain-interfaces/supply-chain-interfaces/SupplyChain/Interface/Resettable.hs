@@ -24,17 +24,17 @@ class IsResettable (i :: Interface)
 -}
 
 newtype ResettingSequence up action a =
-    ResettingSequence (Job up action a)
+    ResettingSequenceJob{ resettingSequenceJob :: Job up action a }
     deriving newtype Functor
 
 instance IsResettable up => Applicative (ResettingSequence up action)
   where
-    pure = ResettingSequence . pure
+    pure = ResettingSequenceJob . pure
     (<*>) = Monad.ap
 
 instance IsResettable up => Monad (ResettingSequence up action)
   where
-    ResettingSequence step1 >>= step2 = ResettingSequence do
-        x <- step1
+    step1 >>= step2 = ResettingSequenceJob do
+        x <- resettingSequenceJob step1
         order reset
-        case step2 x of ResettingSequence b' -> b'
+        resettingSequenceJob (step2 x)

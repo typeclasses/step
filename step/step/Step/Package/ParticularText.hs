@@ -30,9 +30,9 @@ import qualified SupplyChain
 
 takeParticularText :: forall c m r. Chunk c => Eq c => c -> Move c m r r ()
 takeParticularText = \t -> assumeMovement $
-    Any (ResettingSequence (go t) <&> Right) P.>>= requireTrue
+    (Any \_ -> ResettingSequenceJob (go t) <&> Right) P.>>= requireTrue
   where
-    go :: c -> Job (CommittableChunkStream c) m r Bool
+    go :: c -> Job (CommittableChunkStream c) m Bool
     go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
@@ -51,9 +51,9 @@ takeParticularTextAtomic t = assumeMovement $
 
 nextTextMatchesOn :: forall c m r. Chunk c =>
     ChunkCharacterEquivalence c -> c -> SureQuery c m r r Bool
-nextTextMatchesOn eq = \t -> SureQuery (ResettingSequence (go t))
+nextTextMatchesOn eq = \t -> SureQuery \_ -> ResettingSequenceJob (go t)
   where
-    go :: c -> Job (ResettableTerminableStream c) m r Bool
+    go :: c -> Job (ResettableTerminableStream c) m Bool
     go t = order nextMaybe >>= \case
         Nothing -> pure False
         Just x -> case stripEitherPrefix eq x t of
@@ -64,16 +64,16 @@ nextTextMatchesOn eq = \t -> SureQuery (ResettingSequence (go t))
 
 takeMatchingText :: forall c m r. Chunk c =>
     ChunkCharacterEquivalence c -> c -> Move c m r r c
-takeMatchingText eq = \t -> assumeMovement $ Any $ ResettingSequence $ fmap (fmap concat) $ go t
+takeMatchingText eq = \t -> assumeMovement $ Any \r -> ResettingSequenceJob $ fmap (fmap concat) $ go r t
   where
-    go :: c -> Job (CommittableChunkStream c) m r (Either r (NonEmpty c))
-    go t = order nextMaybe >>= \case
-        Nothing -> SupplyChain.param <&> Left
+    go :: r -> c -> Job (CommittableChunkStream c) m (Either r (NonEmpty c))
+    go r t = order nextMaybe >>= \case
+        Nothing -> pure (Left r)
         Just x -> case stripEitherPrefix eq x t of
-            StripEitherPrefixFail            ->  SupplyChain.param <&> Left
+            StripEitherPrefixFail            ->  pure $ Left r
             StripEitherPrefixAll             ->  pure $ Right $ x :| []
             IsPrefixedBy{ commonPart = x' }  ->  pure $ Right $ x' :| []
-            IsPrefixOf{ extraPart = t' }     ->  go t'
+            IsPrefixOf{ extraPart = t' }     ->  go r t'
 
 takeMatchingTextAtomic :: forall c m r. Chunk c =>
     ChunkCharacterEquivalence c -> c -> AtomicMove c m r r c

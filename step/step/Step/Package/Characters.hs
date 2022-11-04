@@ -30,7 +30,7 @@ import qualified SupplyChain
 
 -- | Take a peek at the next character (if possible) without advancing
 peekCharMaybe :: forall c m r. Chunk c => SureQuery c m r r (Maybe (One c))
-peekCharMaybe = SureQuery $ ResettingSequence $ order nextMaybe <&> fmap @Maybe head
+peekCharMaybe = SureQuery \_ -> ResettingSequenceJob $ order nextMaybe <&> fmap @Maybe head
 
 peekChar :: forall c m r. Chunk c => Query c m r r (One c)
 peekChar = peekCharMaybe P.>>= \case
@@ -44,21 +44,21 @@ takeChar = assumeMovement $ peekCharMaybe P.>>= \case
     Just x   ->  castTo @Atom (trySkipPositive one) $> x
 
 nextCharIs :: forall c m r. Chunk c => Eq (One c) => One c -> SureQuery c m r r Bool
-nextCharIs c = act $ order nextMaybe <&> \case
+nextCharIs c = act \_ -> order nextMaybe <&> \case
     Just x | head x == c  ->  True
     _                     ->  False
 
 takeParticularChar :: forall c m r. Chunk c => Eq (One c) =>
     One c -> AtomicMove c m r r ()
-takeParticularChar c = assumeMovement $ Atom $ act $ order nextMaybe >>= \case
-    Just x | head x == c  ->  pure $ Right $ act $ order (commit one) $> ()
-    _                     ->  SupplyChain.param <&> Left
+takeParticularChar c = assumeMovement $ Atom $ act \r -> order nextMaybe <&> \case
+    Just x | head x == c  ->  Right $ act \_ -> order (commit one) $> ()
+    _                     ->  Left r
 
 satisfyJust :: forall c m r a. Chunk c =>
     (One c -> Maybe a) -> AtomicMove c m r r a
-satisfyJust ok = assumeMovement $ Atom $ act $ order nextMaybe <&> fmap @Maybe head >>= \case
-    Just (ok -> Just x)  ->  pure $ Right $ act $ order (commit one) $> x
-    _                    ->  SupplyChain.param <&> Left
+satisfyJust ok = assumeMovement $ Atom $ act \r -> order nextMaybe <&> fmap @Maybe head <&> \case
+    Just (ok -> Just x)  ->  Right $ act \_ -> order (commit one) $> x
+    _                    ->  Left r
 
 satisfyPredicate :: forall c m r. Chunk c =>
     (One c -> Bool) -> AtomicMove c m r r (One c)

@@ -21,7 +21,7 @@ import Prelude ((+))
 import qualified SupplyChain
 
 match :: Chunk c => Any c m r e a -> Any c m r e (c, a)
-match (Any (ResettingSequence f)) = Any $ ResettingSequence do
+match (Any x) = Any \r -> ResettingSequenceJob do
     _
 
 data Counting (c :: Type) (response :: Type) =
@@ -30,12 +30,12 @@ data Counting (c :: Type) (response :: Type) =
 
 type Counting :: Type -> Interface
 
-counting :: forall c action r.
-    Vendor (CommittableChunkStream c) (Counting c) action r
+counting :: forall c action.
+    Vendor (CommittableChunkStream c) (Counting c) action
 
 counting = go 0
   where
-    go :: Natural -> Vendor i (Counting c) action r
+    go :: Natural -> Vendor i (Counting c) action
     go n = Vendor \case
         AmountCommitted       ->  pure $ Supply n (go n)
         Order (I.Commit n)  ->  _

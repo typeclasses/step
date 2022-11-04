@@ -16,7 +16,7 @@ import SupplyChain (order)
 import qualified SupplyChain
 
 atEnd :: SureQuery c m r e Bool
-atEnd = SureQuery $ ResettingSequence $ order nextMaybe <&> isNothing
+atEnd = SureQuery \_ -> ResettingSequenceJob $ order nextMaybe <&> isNothing
 
 end :: forall c m r. Query c m r r ()
 end = atEnd P.>>= requireTrue

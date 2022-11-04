@@ -43,7 +43,10 @@ module SupplyChain
     {- * Alteration -}
     {- ** Functions -} alterJob, alterVendor,
     {- ** Polymorphically -} Alter (..),
-    {- ** Of particular bits -} alterAction, alterOrder, absurdAction, absurdOrder,
+    {- ** Of particular bits -} alterAction, alterOrder, alterAction', alterOrder',
+        alterJobAction, alterJobOrder, alterVendorAction, alterVendorOrder,
+        alterJobAction', alterJobOrder', alterVendorAction', alterVendorOrder',
+        absurdAction, absurdOrder,
 
   )
   where
@@ -62,7 +65,7 @@ import qualified SupplyChain.Core.Vendor as Vendor
 
 import Control.Applicative (pure)
 import Control.Monad (Monad)
-import Data.Function (($), id)
+import Data.Function (($), id, (.))
 import Data.Functor ((<&>))
 
 
@@ -194,6 +197,10 @@ alterAction f = alter \case
     Effect.Perform x -> f x
     Effect.Request x -> order x
 
+alterAction' :: Alter up up action action' x1 x2 =>
+    (forall x. action x -> action' x) -> x1 -> x2
+alterAction' f = alterAction (perform . f)
+
 
 -- | Changes the upstream 'Interface'
 
@@ -202,6 +209,44 @@ alterOrder :: Alter up up' action action x1 x2 =>
 alterOrder f = alter \case
     Effect.Request x -> f x
     Effect.Perform x -> perform x
+
+alterOrder' :: Alter up up' action action x1 x2 =>
+    (forall x. up x -> up' x) -> x1 -> x2
+alterOrder' f = alterOrder (order . f)
+
+
+alterJobAction :: (forall x. action x -> Job up action' x)
+    -> Job up action product -> Job up action' product
+alterJobAction = alterAction
+
+alterVendorAction :: (forall x. action x -> Job up action' x)
+    -> Vendor up down action -> Vendor up down action'
+alterVendorAction = alterAction
+
+alterJobOrder :: (forall x. up x -> Job up' action x)
+    -> Job up action product -> Job up' action product
+alterJobOrder = alterOrder
+
+alterVendorOrder :: (forall x. up x -> Job up' action x)
+    -> Vendor up down action -> Vendor up' down action
+alterVendorOrder = alterOrder
+
+
+alterJobAction' :: (forall x. action x -> action' x)
+    -> Job up action product -> Job up action' product
+alterJobAction' = alterAction'
+
+alterVendorAction' :: (forall x. action x -> action' x)
+    -> Vendor up down action -> Vendor up down action'
+alterVendorAction' = alterAction'
+
+alterJobOrder' :: (forall x. up x -> up' x)
+    -> Job up action product -> Job up' action product
+alterJobOrder' = alterOrder'
+
+alterVendorOrder' :: (forall x. up x -> up' x)
+    -> Vendor up down action -> Vendor up' down action
+alterVendorOrder' = alterOrder'
 
 
 absurdAction :: Alter up up NoAction action' x1 x2 => x1 -> x2
