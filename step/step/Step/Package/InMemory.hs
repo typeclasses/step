@@ -33,6 +33,7 @@ import SupplyChain ((>->), Job)
 import qualified Data.Sequence as Seq
 import qualified Control.Monad.Trans as MTL
 import qualified SupplyChain
+import qualified SupplyChain.Alter
 
 parse :: forall p c r e a. Chunk c => Is p Any =>
     p c Identity r e a -> [c] -> r -> (Either e a, [c])
@@ -80,7 +81,7 @@ z parser xs = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> 
 
 liftJob :: forall up m m' a. Monad m =>
     MTL.MonadTrans m' => Job up m a -> Job up (m' m) a
-liftJob = SupplyChain.alterAction' (\(x :: m z) -> MTL.lift x)
+liftJob = SupplyChain.Alter.action' (\(x :: m z) -> MTL.lift x)
 
 bufferList :: Buffer c -> [c]
 bufferList (Buffer ys) = toList ys

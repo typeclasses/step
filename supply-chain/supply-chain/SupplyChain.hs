@@ -40,43 +40,25 @@ module SupplyChain
     {- ** Polymorphically (>->) -} Connect (..),
     {- ** Reusing vendors -} vendorToJob',
 
-    {- * Alteration -}
-    {- ** Functions -} alterJob, alterVendor,
-    {- ** Polymorphically -} Alter (..),
-    {- ** Of particular bits -} alterAction, alterOrder, alterAction', alterOrder',
-        alterJobAction, alterJobOrder, alterVendorAction, alterVendorOrder,
-        alterJobAction', alterJobOrder', alterVendorAction', alterVendorOrder',
-        absurdAction, absurdOrder,
-
   )
   where
 
 import SupplyChain.Connect (Connect (..), vendorToJob, vendorToVendor, vendorToJob')
 
-import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.Job (Job)
 import SupplyChain.Core.Kinds (Type, Action, Interface)
 import SupplyChain.Core.Nil (NoAction, NoInterface)
 import SupplyChain.Core.Supply (Supply (..))
 import SupplyChain.Core.Vendor (Vendor (..))
 
-import qualified SupplyChain.Core.Effect as Effect
 import qualified SupplyChain.Core.Job as Job
 import qualified SupplyChain.Core.Vendor as Vendor
 
 import Control.Applicative (pure)
 import Control.Monad (Monad)
-import Data.Function (($), id, (.))
+import Data.Function (($), id)
 import Data.Functor ((<&>))
 
-
-alterJob :: (forall x. Effect up action x -> Job up' action' x)
-    -> Job up action product -> Job up' action' product
-alterJob = Job.alter
-
-alterVendor :: (forall x. Effect up action x -> Job up' action' x)
-    -> Vendor up down action -> Vendor up' down action'
-alterVendor = Vendor.alter
 
 runVendor :: Monad action => Vendor NoInterface down action
     -> down product -> action (Supply NoInterface down action product)
@@ -141,95 +123,6 @@ map :: forall (up :: Interface) (down :: Interface) (action :: Action).
 map f = go
   where
     go = Vendor \x -> order (f x) <&> (`Supply` go)
-
-
-class Alter up up' action action' x1 x2
-    | x1 -> up action
-    , x2 -> up' action'
-    , x1 up' action' -> x2
-    , x2 up action -> x1
-  where
-    -- | Generalizes 'alterJob' and 'alterVendor'
-    alter :: (forall x. Effect up action x -> Job up' action' x) -> x1 -> x2
-
-instance Alter up up' action action'
-    (Job up action product) (Job up' action' product)
-  where
-    alter = alterJob
-
-instance Alter up up' action action'
-    (Vendor up down action)
-    (Vendor up' down action')
-  where
-    alter = alterVendor
-
-
--- | Changes the 'Action' context
-
-alterAction :: Alter up up action action' x1 x2 =>
-    (forall x. action x -> Job up action' x) -> x1 -> x2
-alterAction f = alter \case
-    Effect.Perform x -> f x
-    Effect.Request x -> order x
-
-alterAction' :: Alter up up action action' x1 x2 =>
-    (forall x. action x -> action' x) -> x1 -> x2
-alterAction' f = alterAction (perform . f)
-
-
--- | Changes the upstream 'Interface'
-
-alterOrder :: Alter up up' action action x1 x2 =>
-    (forall x. up x -> Job up' action x) -> x1 -> x2
-alterOrder f = alter \case
-    Effect.Request x -> f x
-    Effect.Perform x -> perform x
-
-alterOrder' :: Alter up up' action action x1 x2 =>
-    (forall x. up x -> up' x) -> x1 -> x2
-alterOrder' f = alterOrder (order . f)
-
-
-alterJobAction :: (forall x. action x -> Job up action' x)
-    -> Job up action product -> Job up action' product
-alterJobAction = alterAction
-
-alterVendorAction :: (forall x. action x -> Job up action' x)
-    -> Vendor up down action -> Vendor up down action'
-alterVendorAction = alterAction
-
-alterJobOrder :: (forall x. up x -> Job up' action x)
-    -> Job up action product -> Job up' action product
-alterJobOrder = alterOrder
-
-alterVendorOrder :: (forall x. up x -> Job up' action x)
-    -> Vendor up down action -> Vendor up' down action
-alterVendorOrder = alterOrder
-
-
-alterJobAction' :: (forall x. action x -> action' x)
-    -> Job up action product -> Job up action' product
-alterJobAction' = alterAction'
-
-alterVendorAction' :: (forall x. action x -> action' x)
-    -> Vendor up down action -> Vendor up down action'
-alterVendorAction' = alterAction'
-
-alterJobOrder' :: (forall x. up x -> up' x)
-    -> Job up action product -> Job up' action product
-alterJobOrder' = alterOrder'
-
-alterVendorOrder' :: (forall x. up x -> up' x)
-    -> Vendor up down action -> Vendor up' down action
-alterVendorOrder' = alterOrder'
-
-
-absurdAction :: Alter up up NoAction action' x1 x2 => x1 -> x2
-absurdAction = alterAction \case{}
-
-
-absurdOrder :: Alter NoInterface up' action action x1 x2 => x1 -> x2
-absurdOrder = alterOrder \case{}
 
 
 {- $job

@@ -25,6 +25,7 @@ import Control.Monad.Reader (ReaderT (..))
 -- Streaming
 import SupplyChain (Job, (>->), NoInterface)
 import qualified SupplyChain
+import qualified SupplyChain.Alter as Alter
 
 -- Etc
 import GHC.TypeLits (TypeError, ErrorMessage (Text))
@@ -164,19 +165,19 @@ class IsAction (act :: Action) where
     paramMap :: (r' -> r) -> act c m r e a -> act c m r' e a
 
 instance IsAction Any where
-    actionMap f (Any x) = Any $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    actionMap f (Any x) = Any $ x & (.) (over rsj (Alter.jobAction' f))
     paramMap f (Any x) = Any $ x . f
 
 instance IsAction Sure where
-    actionMap f (Sure x) = Sure $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    actionMap f (Sure x) = Sure $ x & (.) (over rsj (Alter.jobAction' f))
     paramMap f (Sure x) = Sure $ x . f
 
 instance IsAction Query where
-    actionMap f (Query x) = Query $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    actionMap f (Query x) = Query $ x & (.) (over rsj (Alter.jobAction' f))
     paramMap f (Query x) = Query (x . f)
 
 instance IsAction SureQuery where
-    actionMap f (SureQuery x) = SureQuery $ x & (.) (over rsj (SupplyChain.alterJobAction' f))
+    actionMap f (SureQuery x) = SureQuery $ x & (.) (over rsj (Alter.jobAction' f))
     paramMap f (SureQuery x) = SureQuery $ x . f
 
 instance IsAction Atom where
@@ -192,7 +193,7 @@ instance IsAction AtomicMove where
     paramMap f (AtomicMove x) = AtomicMove $ paramMap f x
 
 instance IsAction Failure where
-    actionMap f (Failure x) = Failure $ x & (.) (SupplyChain.alterJobAction' f)
+    actionMap f (Failure x) = Failure $ x & (.) (Alter.jobAction' f)
     paramMap f (Failure x) = Failure $ x . f
 
 
@@ -303,19 +304,19 @@ instance Is AtomicMove Any where
 -- Casting out of failure
 
 instance Is Failure Any where
-    cast (Failure x) = act \r -> SupplyChain.absurdOrder (x r) <&> Left
+    cast (Failure x) = act \r -> Alter.absurdOrder (x r) <&> Left
 
 instance Is Failure Query where
-    cast (Failure x) = act \r -> SupplyChain.absurdOrder (x r) <&> Left
+    cast (Failure x) = act \r -> Alter.absurdOrder (x r) <&> Left
 
 instance Is Failure Move where
-    cast (Failure x) = Move $ act \r -> SupplyChain.absurdOrder (x r) <&> Left
+    cast (Failure x) = Move $ act \r -> Alter.absurdOrder (x r) <&> Left
 
 instance Is Failure Atom where
-    cast (Failure x) = Atom $ act \r -> SupplyChain.absurdOrder (x r) <&> Left
+    cast (Failure x) = Atom $ act \r -> Alter.absurdOrder (x r) <&> Left
 
 instance Is Failure AtomicMove where
-    cast (Failure x) = AtomicMove $ Atom $ act \r -> SupplyChain.absurdOrder (x r) <&> Left
+    cast (Failure x) = AtomicMove $ Atom $ act \r -> Alter.absurdOrder (x r) <&> Left
 
 
 {-| The type @a >> b@ is type of the expression @a >> b@.

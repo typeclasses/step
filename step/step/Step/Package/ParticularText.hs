@@ -23,7 +23,7 @@ import Data.Eq (Eq, (==))
 import Data.Function (($))
 import Data.Functor ((<&>), fmap)
 import Data.Maybe (Maybe (..))
-import SupplyChain (Job, perform, order, absurdOrder, (>->))
+import SupplyChain (Job, perform, order, (>->))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified SupplyChain

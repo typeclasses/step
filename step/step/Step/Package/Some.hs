@@ -12,7 +12,7 @@ import Data.Either (Either (..))
 import Data.Function (($))
 import Data.Functor (($>), (<&>))
 import Data.Maybe (Maybe (..), maybe)
-import SupplyChain (perform, order, absurdOrder, (>->))
+import SupplyChain (perform, order, (>->))
 
 import qualified SupplyChain
 

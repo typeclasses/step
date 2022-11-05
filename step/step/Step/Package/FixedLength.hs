@@ -27,7 +27,7 @@ import Data.Functor (($>), (<&>), (<$>), fmap, void)
 import Data.Maybe (Maybe (..), maybe)
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
-import SupplyChain (Job, perform, order, absurdOrder, (>->))
+import SupplyChain (Job, perform, order, (>->))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified Data.List.NonEmpty as NE

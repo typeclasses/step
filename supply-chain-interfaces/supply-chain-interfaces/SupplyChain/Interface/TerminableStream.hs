@@ -14,6 +14,7 @@ module SupplyChain.Interface.TerminableStream
   where
 
 import SupplyChain hiding (map)
+import qualified SupplyChain.Alter as Alter
 
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
@@ -137,7 +138,7 @@ concatMapVendor f = go
   where
     go = Vendor \NextMaybe -> order NextMaybe >>= \case
         Nothing -> pure $ Supply Nothing nil
-        Just x -> handle (append (absurdOrder (f x)) go) NextMaybe
+        Just x -> handle (append (Alter.absurdOrder (f x)) go) NextMaybe
 
 
 -- | Flattens a stream of lists
