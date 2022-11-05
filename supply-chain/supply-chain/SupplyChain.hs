@@ -8,7 +8,7 @@ module SupplyChain
     {- * Job -}
     {- ** Type -} Job,
     {- ** How to create a job -} {- $definingJobs -} order, perform,
-    {- ** How to use a job -} runJob, evalJob,
+    {- ** How to use a job -} run, eval,
 
     {- * Vendor -}
     {- ** Type -} Vendor (Vendor, handle), Supply (Supply),
@@ -24,7 +24,7 @@ module SupplyChain
 
 import SupplyChain.Connect (Connect (..), vendorToJob, vendorToVendor, vendorToJob')
 
-import SupplyChain.Core.Job (Job)
+import SupplyChain.Core.Job (Job, run, eval)
 import SupplyChain.Core.Kinds (Type, Action, Interface)
 import SupplyChain.Core.Nil (NoAction, NoInterface)
 import SupplyChain.Core.Supply (Supply (..))
@@ -44,13 +44,6 @@ runVendor = Vendor.run
 evalVendor :: Vendor NoInterface down NoAction
     -> down product -> Supply NoInterface down NoAction product
 evalVendor = Vendor.eval
-
-runJob :: Monad action =>
-    Job NoInterface action product -> action product
-runJob = Job.run
-
-evalJob :: Job NoInterface NoAction product -> product
-evalJob = Job.eval
 
 
 -- | Perform an action in a job's 'Action' context

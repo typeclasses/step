@@ -8,7 +8,7 @@ Description:
 
 module SupplyChain.Interface.DrainableStream where
 
-import SupplyChain hiding (map)
+import SupplyChain
 import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
 
 import Control.Applicative (pure)

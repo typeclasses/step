@@ -76,7 +76,7 @@ actionParseSureQuery :: forall p c m r e a. Chunk c => Monad m => Is p SureQuery
 actionParseSureQuery p xs r = z (run r (castTo @Sure (castTo @SureQuery p))) xs <&> \(res, _) -> res
 
 z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])
-z parser xs = runStateT (SupplyChain.runJob (pureStepper (castOptic simple) >-> liftJob parser)) (Buffer (Seq.fromList xs))
+z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >-> liftJob parser)) (Buffer (Seq.fromList xs))
         <&> \(a, rem) -> (a, bufferList rem)
 
 liftJob :: forall up m m' a. Monad m =>

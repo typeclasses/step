@@ -4,7 +4,7 @@ A "supply chain" represents a flow of information from one `Vendor` to the next,
 and so on, ultimately reaching a `Job` that returns a product.
 
 ```haskell
-runJob (vendor1 >-> vendor2 >-> vendor3 >-> job)
+run (vendor1 >-> vendor2 >-> vendor3 >-> job)
 ```
 
 A job or vendor can place an `order`, which is fulfilled by the vendor
