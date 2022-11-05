@@ -14,21 +14,6 @@ import qualified SupplyChain.Core.Job as Job
 import SupplyChain.Core.Kinds (Interface, Action)
 
 
-{-| If @i@ is the downstream interface of vendor @a@ and the upstream interface of
-    job @b@, then we can form the composition @'vendorToJob' a b@. When the 'Job'
-    makes a request of type @i x@, the 'Vendor' replies with a response of type @x@.
-
-> ┌────────────────────────┐
-> │   Vendor up i action   │
-> └────────────────────────┘
->              ▲   │
->         i x  │   │  x
->              │   ▼
-> ┌────────────────────────┐
-> │  Job i action product  │
-> └────────────────────────┘
--}
-
 vendorToJob :: forall (up :: Interface) (down :: Interface) (action :: Action)
     (product :: Type). Vendor up down action -> Job down action product
     -> Job up action product

@@ -39,7 +39,24 @@ A job or vendor can place an `order`, which is fulfilled by the vendor
          down y  │   │  y
                  │   ▼
 
-### How to create a Vendor
+## Connection
+
+If `i` is the downstream interface of vendor `a` and the upstream interface of
+job `b`, then we can form the composition `vendorToJob a b` (which may also
+written as `a >-> b`). When the `Job` makes a request of type `i x`, the
+`Vendor` replies with a response of type `x`.
+
+    ┌────────────────────────┐
+    │   Vendor up i action   │
+    └────────────────────────┘
+                 ▲   │
+            i x  │   │  x
+                 │   ▼
+    ┌────────────────────────┐
+    │  Job i action product  │
+    └────────────────────────┘
+
+## How to create a Vendor
 
 We define vendors using the `Vendor` constructor. Please inspect its type
 carefully:

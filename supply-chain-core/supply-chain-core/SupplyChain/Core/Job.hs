@@ -51,12 +51,10 @@ order x = Request x id
 perform :: action product -> Job up action product
 perform x = Perform x id
 
--- | Run a job in its 'Action' context
 run :: forall (action :: Action) (product :: Type). Monad action =>
     Job NoInterface action product -> action product
 run = FreeMonad.run Effect.run . freeMonad
 
--- | Run a job that performs no actions
 eval :: forall (product :: Type). Job NoInterface NoAction product -> product
 eval = FreeMonad.eval Effect.absurd . freeMonad
 
