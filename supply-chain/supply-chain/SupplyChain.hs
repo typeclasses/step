@@ -33,7 +33,6 @@ module SupplyChain
     {- ** Type -} Vendor (Vendor, handle), {- $vendor -} Supply (Supply),
     {- ** How to create a vendor -} {- $definingVendors -}
     {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
-    {- ** Some simple vendors -} functionVendor, actionVendor, absurdVendor, map,
 
     {- * Connection -}
     {- ** Functions -} vendorToJob, vendorToVendor,
@@ -54,10 +53,8 @@ import SupplyChain.Core.Vendor (Vendor (..))
 import qualified SupplyChain.Core.Job as Job
 import qualified SupplyChain.Core.Vendor as Vendor
 
-import Control.Applicative (pure)
 import Control.Monad (Monad)
-import Data.Function (($), id)
-import Data.Functor ((<&>))
+import Data.Function (id)
 
 
 runVendor :: Monad action => Vendor NoInterface down action
@@ -90,39 +87,6 @@ order :: forall (up :: Interface) (action :: Action) (response :: Type).
     up response -> Job up action response
 
 order x = Job.Request x id
-
-
--- | A simple stateless vendor that responds to each request by applying a pure function
-
-functionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall response. down response -> response) -> Vendor up down action
-
-functionVendor f = go
-  where
-    go = Vendor \x -> pure $ Supply (f x) go
-
-
--- | A simple stateless vendor that responds to each request by applying an effectful function
-
-actionVendor :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall response. down response -> action response) -> Vendor up down action
-
-actionVendor f = go
-  where
-    go = Vendor \x -> perform (f x) <&> (`Supply` go)
-
-
-absurdVendor :: forall (up :: Interface) (action :: Action).
-    Vendor up NoInterface action
-
-absurdVendor = Vendor \case{}
-
-
-map :: forall (up :: Interface) (down :: Interface) (action :: Action).
-    (forall x. down x -> up x) -> Vendor up down action
-map f = go
-  where
-    go = Vendor \x -> order (f x) <&> (`Supply` go)
 
 
 {- $job

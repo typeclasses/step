@@ -13,7 +13,7 @@ module SupplyChain.Interface.TerminableStream
   )
   where
 
-import SupplyChain hiding (map)
+import SupplyChain
 import qualified SupplyChain.Alter as Alter
 
 import Control.Applicative (pure)
