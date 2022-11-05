@@ -1,22 +1,3 @@
-{- |
-
-A "supply chain" represents a flow of information from one 'Vendor' to the next,
-and so on, ultimately reaching a 'Job' that returns a product.
-
-@
-(vendor1 '>->' vendor2 '>->' vendor3 '>->' job)
-@
-
-In the above example, @vendor2@ is said to be the /client/ which is immediately
-/downstream/ of @vendor1@. A job or vendor can place an 'order', which is
-fulfilled by the vendor /upstream/ of it. So, the orders made by the @job@
-are served by @vendor3@, the orders made by @vendor3@ are served by @vendor2@,
-and so on. If @vendor1@ does not make any requests and thus does not require yet
-another vendor upstream of it, then the above expression can be converted into
-an action using 'runJob'.
-
--}
-
 module SupplyChain
   (
 
@@ -25,13 +6,12 @@ module SupplyChain
     {- ** Action -} Action, NoAction,
 
     {- * Job -}
-    {- ** Type -} Job, {- $job -}
+    {- ** Type -} Job,
     {- ** How to create a job -} {- $definingJobs -} order, perform,
     {- ** How to use a job -} runJob, evalJob,
 
     {- * Vendor -}
-    {- ** Type -} Vendor (Vendor, handle), {- $vendor -} Supply (Supply),
-    {- ** How to create a vendor -} {- $definingVendors -}
+    {- ** Type -} Vendor (Vendor, handle), Supply (Supply),
     {- ** How to use a vendor -} {- $usingVendors -} runVendor, evalVendor,
 
     {- * Connection -}
@@ -89,84 +69,10 @@ order :: forall (up :: Interface) (action :: Action) (response :: Type).
 order x = Job.Request x id
 
 
-{- $job
-
->              ▲   │
->        up x  │   │  x
->              │   ▼
-> ┌─────────────────────────┐
-> │  Job up action product  │
-> └─────────────────────────┘
-
--}
-
-
 {- $definingJobs
 
 In addition to these functions for constructing jobs,
 also keep in mind that 'Job' belongs to the 'Monad' class.
-
--}
-
-
-{- $vendor
-
->              ▲   │
->        up x  │   │  x
->              │   ▼
-> ┌───────────────────────────┐
-> │   Vendor up down action   │
-> └───────────────────────────┘
->              ▲   │
->      down y  │   │  y
->              │   ▼
-
--}
-
-
-{- $definingVendors
-
-We define vendors using the v'Vendor' constructor.
-Please inspect its type carefully.
-
-> forall product. down product -> Job up action (Supply up down action product)
-
-A vendor is a function that accepts a request. The request type is
-polymorphic but constrained by the vendor's downstream interface.
-
-> forall product. down product -> Job up action (Supply up down action product)
->                 ^^^^^^^^^^^^
-
-A vendor has an upstream interface and can do everything a job can,
-therefore the request handler operates in a 'Job' context.
-
-> forall product. down product -> Job up action (Supply up down action product)
->                                 ^^^^^^^^^^^^^^^^^
-
-This allows the vendor to undertake a monadic sequence involving
-'order' and 'perform' while fulfilling the request.
-
-The final step in fulfilling a request is to return a 'Supply'.
-
-> forall product. down product -> Job up action (Supply up down action product)
->                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A 'Supply' is written using its '(:->)' constructor, which has two parameters:
-
-> (:->) :: product -> Vendor up down action -> Supply up down action product
-
-The first is the vendor's response to the client's request.
-
-> (:->) :: product -> Vendor up down action -> Supply up down action product
->          ^^^^^^^
-
-The second is a new 'Vendor'.
-
-> (:->) :: product -> Vendor up down action -> Supply up down action product
->                     ^^^^^^^^^^^^^^^^^^^^^
-
-This latter component is what allows vendors to be stateful, and it is usually
-defined recursively.
 
 -}
 
