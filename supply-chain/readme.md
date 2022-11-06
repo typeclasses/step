@@ -39,6 +39,9 @@ A job or vendor can place an `order`, which is fulfilled by the vendor
          down y  │   │  y
                  │   ▼
 
+The most common way to use a `Vendor` is to connect it to a `Job` using
+`vendorToJob`.
+
 ## Connection
 
 If `i` is the downstream interface of vendor `a` and the upstream interface of
