@@ -14,7 +14,6 @@ import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
 import Control.Applicative (pure)
 import Data.Function (($))
 import Data.Functor (Functor, (<&>), fmap)
-import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
 
 import qualified Data.List as List
@@ -34,15 +33,13 @@ instance List []
     unconsList = List.uncons
 
 
-data DrainableStream (list :: Type -> Type) item response =
+data DrainableStream list item response =
     (response ~ Maybe item) => NextMaybe
         -- ^ The next item, or 'Nothing' if input is exhausted
         --
         -- It is assumed that after a 'Nothing' response is given,
         -- all subsequent responses will also be 'Nothing'.
   | (response ~ list item) => Drain
-
-type DrainableStream :: (Type -> Type) -> Type -> Interface
 
 
 instance IsTerminableStream item (DrainableStream list item)

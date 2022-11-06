@@ -2,14 +2,10 @@ module SupplyChain.Connect (Connect (..),
     vendorToJob, vendorToVendor, vendorToJob') where
 
 import SupplyChain.Core.Connect (vendorToJob, vendorToJob', vendorToVendor)
-import SupplyChain.Core.Kinds (Type, Interface, Action)
 import SupplyChain.Core.Types (Vendor, Job)
 
-class Connect (up :: Interface) (down :: Interface)
-    (action :: Action) (client :: Type) (result :: Type)
-    | up client -> result
-    , client -> down action
-    , result -> up action
+class Connect up down action client result | up client -> result,
+    client -> down action, result -> up action
   where
     {-| Generalizes 'vendorToJob' and 'vendorToVendor'
 
@@ -19,12 +15,12 @@ class Connect (up :: Interface) (down :: Interface)
     -}
     (>->) :: Vendor up down action -> client -> result
 
-instance Connect up down action (Job down action product)
-                                (Job up action product)
+instance Connect up down action
+    (Job down action product) (Job up action product)
   where
     (>->) = vendorToJob
 
-instance Connect up middle action (Vendor middle down action)
-                                  (Vendor up down action)
+instance Connect up middle action
+    (Vendor middle down action) (Vendor up down action)
   where
     (>->) = vendorToVendor

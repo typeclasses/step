@@ -7,7 +7,7 @@ module ActionList
   )
   where
 
-import SupplyChain (NoInterface, NoAction, Vendor, Supply (Supply), (>->))
+import SupplyChain (Nil, Vendor, Supply (Supply), (>->))
 import qualified SupplyChain.Vendor as Vendor
 import qualified SupplyChain.Job as Job
 
@@ -25,7 +25,7 @@ import Data.Traversable (sequence)
 
 newtype ActionList m a =
   VendorActionList
-    { actionListVendor :: Vendor NoInterface (TerminableStream a) m
+    { actionListVendor :: Vendor Nil (TerminableStream a) m
     }
 
 instance Semigroup (ActionList m a)
@@ -61,7 +61,7 @@ perform :: forall m a. m a -> ActionList m a
 perform = VendorActionList . Stream.actionSingleton
 
 -- | Converts an 'ActionList' into an ordinary list
-toList :: forall a. ActionList NoAction a -> [a]
+toList :: forall a. ActionList Nil a -> [a]
 toList xs = Job.eval (actionListVendor xs >-> Stream.all)
 
 -- | Converts an 'ActionList' into an action that returns all the items at once
@@ -71,5 +71,5 @@ runActionList xs = Job.run (actionListVendor xs >-> Stream.all)
 next :: forall m a. Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
 next xs = fmap @m f $ Vendor.run (actionListVendor xs) Stream.NextMaybe
   where
-    f :: Supply NoInterface (TerminableStream a) m (Maybe a) -> Maybe (a, ActionList m a)
+    f :: Supply Nil (TerminableStream a) m (Maybe a) -> Maybe (a, ActionList m a)
     f s = s & sequence & fmap @Maybe \(Supply x v) -> (x, VendorActionList v)

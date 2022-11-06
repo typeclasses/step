@@ -14,7 +14,7 @@ import Control.Applicative (pure)
 import Data.Bool (Bool (..))
 import Data.Function
 import Numeric.Natural
-import SupplyChain (Interface, Vendor (..), Job, Supply (..))
+import SupplyChain (Vendor (..), Job, Supply (..))
 import Data.Functor
 import Prelude ((+))
 
@@ -27,8 +27,6 @@ match (Any x) = Any \r -> ResettingSequenceJob do
 data Counting (c :: Type) (response :: Type) =
     Order (CommittableChunkStream c response)
   | (response ~ Natural) => AmountCommitted
-
-type Counting :: Type -> Interface
 
 counting :: forall c action.
     Vendor (CommittableChunkStream c) (Counting c) action

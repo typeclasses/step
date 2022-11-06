@@ -6,17 +6,15 @@ import Control.Applicative (Applicative)
 import Control.Monad (Monad)
 import Data.Functor (Functor)
 import Data.Function ((.), id)
-import Data.Kind (Type)
 
-import SupplyChain.Core.Kinds (Action, Interface)
-import SupplyChain.Core.Nil (NoInterface, NoAction)
+import SupplyChain.Core.Nil (Nil)
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.FreeMonad (FreeMonad)
 import qualified SupplyChain.Core.Effect as Effect
 import qualified SupplyChain.Core.FreeMonad as FreeMonad
 
 -- | Monadic context that supports making requests and performing actions
-newtype Job (up :: Interface) (action :: Action) (product :: Type) =
+newtype Job up action product =
     FreeMonad { freeMonad :: FreeMonad (Effect up action) product }
 
 pattern Pure :: product -> Job up action product
@@ -54,15 +52,13 @@ perform :: action product -> Job up action product
 perform x = Perform x id
 
 -- | Run a job in its 'Action' context
-run :: forall (action :: Action) (product :: Type). Monad action =>
-    Job NoInterface action product -> action product
+run :: Monad action => Job Nil action product -> action product
 run = FreeMonad.run Effect.run . freeMonad
 
 -- | Run a job that performs no actions
-eval :: forall (product :: Type). Job NoInterface NoAction product -> product
+eval :: Job Nil Nil product -> product
 eval = FreeMonad.eval Effect.absurd . freeMonad
 
-alter :: forall up up' action action' product.
-    (forall x. Effect up action x -> Job up' action' x)
+alter :: (forall x. Effect up action x -> Job up' action' x)
     -> Job up action product -> Job up' action' product
 alter f = FreeMonad . FreeMonad.alter (freeMonad . f) . freeMonad

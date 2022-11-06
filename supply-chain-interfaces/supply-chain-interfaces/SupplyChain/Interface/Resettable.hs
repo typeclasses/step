@@ -9,7 +9,7 @@ import Control.Applicative (Applicative (..))
 
 import qualified Control.Monad as Monad
 
-class IsResettable (i :: Interface)
+class IsResettable i
   where
     -- | Idempotent
     reset :: i ()

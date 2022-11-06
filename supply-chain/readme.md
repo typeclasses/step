@@ -1,6 +1,6 @@
 # supply-chain
 
-A "supply chain" represents a flow of information from one `Vendor` to the next,
+A *supply chain* represents a flow of information from one `Vendor` to the next,
 and so on, ultimately reaching a `Job` that returns a product.
 
 ```haskell
@@ -16,6 +16,27 @@ A job or vendor can place an `order`, which is fulfilled by the vendor
 * The orders made by `vendor3` are served by `vendor2`.
 * `vendor1` does not make any requests (its upstream interface is
   `NoInterface`).
+
+## Interfaces
+
+An *interface* is a type constructor (kind `Type -> Type`) that describes the
+requests and responses exchanged between a vendor and a job.
+
+If a job's upstream interface is `i`, then when the job makes a request of type
+`i x`, it receives a response of type `x`.
+
+Values of a type of this kind represent requests. Each constructor will
+typically have a constraint that specifies what type of response is expected in
+return. Types of this kind are therefore often [GADTs]. Types of this kind are
+also often not functors.
+
+The lack of any interface at all can be expressed as `Nil`.
+
+## Actions
+
+An *action* is a monadic context such as `IO`.
+
+The lack of any actions at all can be expressed as `Nil`.
 
 ## Jobs
 
@@ -116,3 +137,5 @@ Supply :: product -> Vendor up down action -> Supply up down action product
 
 This latter component is what allows vendors to be stateful, and it is usually
 defined recursively.
+
+  [GADTs]: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html

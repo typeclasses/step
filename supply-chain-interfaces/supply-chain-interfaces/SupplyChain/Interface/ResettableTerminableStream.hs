@@ -11,15 +11,12 @@ import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
 import SupplyChain.Interface.Resettable (IsResettable (..))
 
 import Control.Applicative (pure)
-import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
 import Data.Function (($), fix)
 
 data ResettableTerminableStream i response =
     (response ~ Maybe i) => NextMaybe
   | (response ~ ()) => Reset
-
-type ResettableTerminableStream :: Type -> Interface
 
 instance IsTerminableStream item (ResettableTerminableStream item)
   where

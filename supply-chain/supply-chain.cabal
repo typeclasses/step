@@ -18,16 +18,12 @@ common base
 
     default-extensions:
         BlockArguments
-        DataKinds
         DerivingStrategies
         FunctionalDependencies
-        ImpredicativeTypes
         LambdaCase
         NoImplicitPrelude
         NoMonomorphismRestriction
         PatternSynonyms
-        TypeFamilies
-        ViewPatterns
 
     build-depends:
         base ^>= 4.16
@@ -41,7 +37,6 @@ library
         SupplyChain.Alter
         SupplyChain.Connect
         SupplyChain.Job
-        SupplyChain.Kinds
         SupplyChain.Nil
         SupplyChain.Supply
         SupplyChain.Vendor

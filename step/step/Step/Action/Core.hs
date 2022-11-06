@@ -23,7 +23,7 @@ import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.Reader (ReaderT (..))
 
 -- Streaming
-import SupplyChain (Job, (>->), NoInterface)
+import SupplyChain (Job, (>->), Nil)
 import qualified SupplyChain
 import qualified SupplyChain.Alter as Alter
 import qualified SupplyChain.Vendor as Vendor
@@ -34,7 +34,7 @@ import GHC.TypeLits (TypeError, ErrorMessage (Text))
 
 type Action =
      Type -- ^ Chunk of input
-  -> SupplyChain.Action
+  -> (Type -> Type)
   -> Type -- ^ Param
   -> Type -- ^ Error
   -> Type -- ^ Result
@@ -106,7 +106,7 @@ instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' woul
 
 type Failure :: Action
 
-newtype Failure c m r e a = Failure (r -> Job NoInterface m e)
+newtype Failure c m r e a = Failure (r -> Job Nil m e)
     deriving stock Functor
 
 instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m r e) where

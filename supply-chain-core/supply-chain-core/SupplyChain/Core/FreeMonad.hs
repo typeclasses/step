@@ -24,47 +24,41 @@ pattern Map action extract = Step (FreePointedFunctor.Map action extract)
 
 deriving stock instance Functor (FreeMonad con)
 
-instance Applicative (FreeMonad con) where
-    pure = Pure
-    (<*>) = Monad.ap
+instance Applicative (FreeMonad con) where pure = Pure; (<*>) = Monad.ap
 
-instance Monad (FreeMonad con) where
-    (>>=) = Bind
+instance Monad (FreeMonad con) where (>>=) = Bind
 
-run :: forall effect con product. Monad effect =>
-    (forall x. con x -> effect x) -> FreeMonad con product -> effect product
-
-run runEffect = recur
+run :: Monad effect => (forall x. con x -> effect x)
+    -> FreeMonad con product -> effect product
+run (runEffect :: forall x. con x -> effect x) = recur
   where
     runPF :: FreePointedFunctor con x -> effect x
     runPF = FreePointedFunctor.run pure runEffect
 
-    recur :: forall x. FreeMonad con x -> effect x
+    recur :: FreeMonad con x -> effect x
     recur = \case
-        Step a             ->  runPF a
-        Bind (Step a) b    ->  runPF a >>= \x -> recur $ b x
-        Bind (Bind a b) c  ->  recur a >>= \x -> recur $ Bind (b x) c
+        Step a -> runPF a
+        Bind (Step a) b -> runPF a >>= \x -> recur $ b x
+        Bind (Bind a b) c -> recur a >>= \x -> recur $ Bind (b x) c
 
-eval :: forall con product. (forall x. con x -> x)
+eval :: (forall x. con x -> x)
     -> FreeMonad con product -> product
-
-eval evalEffect = recur
+eval (evalEffect :: forall x. con x -> x) = recur
   where
     evalPF :: FreePointedFunctor con x -> x
     evalPF = FreePointedFunctor.eval evalEffect
 
-    recur :: forall x. FreeMonad con x -> x
+    recur :: FreeMonad con x -> x
     recur = \case
-        Step a              ->  evalPF a
-        Bind (Step a) b     ->  evalPF a & \x -> recur $ b x
-        Bind (Bind a b) c   ->  recur  a & \x -> recur $ Bind (b x) c
+        Step a -> evalPF a
+        Bind (Step a) b -> evalPF a & \x -> recur $ b x
+        Bind (Bind a b) c -> recur a & \x -> recur $ Bind (b x) c
 
-alter :: forall con con' product. (forall x. con x -> FreeMonad con' x)
+alter :: (forall x. con x -> FreeMonad con' x)
     -> FreeMonad con product -> FreeMonad con' product
-
-alter f = recur
+alter (f :: forall x. con x -> FreeMonad con' x) = recur
   where
-    recur :: forall x. FreeMonad con x -> FreeMonad con' x
+    recur :: FreeMonad con x -> FreeMonad con' x
     recur = \case
         Pure x -> Pure x
         Map action extract -> f action <&> extract

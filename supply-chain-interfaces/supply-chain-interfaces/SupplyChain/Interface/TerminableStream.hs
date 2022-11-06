@@ -22,13 +22,12 @@ import Data.Bool (Bool (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($), id)
 import Data.Functor ((<$>), (<&>))
-import Data.Kind (Type)
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import Prelude ((+))
 
 
-class IsTerminableStream item (i :: Interface) | i -> item
+class IsTerminableStream item i | i -> item
   where
     nextMaybe :: i (Maybe item)
 
@@ -43,8 +42,6 @@ data TerminableStream item response =
         --
         -- It is assumed that after a 'Nothing' response is given,
         -- all subsequent responses will also be 'Nothing'.
-
-type TerminableStream :: Type -> Interface
 
 
 action :: forall up a action.
@@ -131,7 +128,7 @@ concatMap f = Vendor \NextMaybe -> go []
 -- | Like 'concatMap', but the function gives a vendor instead of a list
 
 concatMapVendor :: forall a b action.
-    (a -> Vendor NoInterface (TerminableStream b) action)
+    (a -> Vendor Nil (TerminableStream b) action)
     -> Vendor (TerminableStream a) (TerminableStream b) action
 
 concatMapVendor f = go

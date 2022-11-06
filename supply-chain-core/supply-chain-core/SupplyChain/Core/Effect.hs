@@ -1,21 +1,17 @@
 module SupplyChain.Core.Effect (Effect (Request, Perform), run, absurd,
     alterRequest, alterPerform) where
 
-import Data.Kind (Type)
+import SupplyChain.Core.Nil (Nil)
 
-import SupplyChain.Core.Kinds (Action, Interface)
-import SupplyChain.Core.Nil (NoInterface, NoAction)
+data Effect up action product =
+    Request (up product) | Perform (action product)
 
-data Effect (up :: Interface) (action :: Action) (product :: Type) =
-    Request (up product)
-  | Perform (action product)
-
-run :: Effect NoInterface action product -> action product
+run :: Effect Nil action product -> action product
 run = \case
     Perform x -> x
     Request x -> \case{} x
 
-absurd :: Effect NoInterface NoAction x -> product
+absurd :: Effect Nil Nil x -> product
 absurd = \case
     Perform x -> \case{} x
     Request x -> \case{} x

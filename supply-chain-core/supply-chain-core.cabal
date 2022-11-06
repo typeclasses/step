@@ -18,15 +18,11 @@ common base
 
     default-extensions:
         BlockArguments
-        DataKinds
         DerivingStrategies
-        FunctionalDependencies
-        ImpredicativeTypes
         LambdaCase
         NoImplicitPrelude
         NoMonomorphismRestriction
         PatternSynonyms
-        TypeFamilies
         ViewPatterns
 
     build-depends:
@@ -41,7 +37,6 @@ library
         SupplyChain.Core.FreePointedFunctor
         SupplyChain.Core.FreeMonad
         SupplyChain.Core.Job
-        SupplyChain.Core.Kinds
         SupplyChain.Core.Nil
         SupplyChain.Core.Supply
         SupplyChain.Core.Types

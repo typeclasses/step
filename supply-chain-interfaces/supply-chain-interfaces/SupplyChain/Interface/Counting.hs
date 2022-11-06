@@ -19,18 +19,12 @@ import Data.Functor ((<&>))
 import Numeric.Natural (Natural)
 import Prelude ((+))
 
-
 data Counting i response =
     Order (i response)
   | (response ~ Natural) => Count
         -- ^ How many items have been fetched so far
 
-type Counting :: Interface -> Interface
-
-
-counting :: forall i action.
-    Vendor i (Counting i) action
-
+counting :: forall i action. Vendor i (Counting i) action
 counting = go 0
   where
     go :: Natural -> Vendor i (Counting i) action
