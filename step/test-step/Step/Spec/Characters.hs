@@ -1,7 +1,7 @@
-module Step.Package.InMemory.Spec (tests) where
+module Step.Spec.Characters (tests) where
 
 import Step.Action
-import Step.Package.General
+import Step.Package.Characters
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
 import Step.Chunk.Text (Text1)
 import Step.Chunk.Gen (genChunks)
@@ -32,9 +32,6 @@ noInput = []
 
 tests :: TestTree
 tests = fromGroup $$(discover)
-
-
----  Single-character parsers  ---
 
 prop_peekChar_empty = withTests 1 $ property do
 
@@ -139,52 +136,3 @@ prop_satisfyJust_no = property do
 
     -- the input should remain unchanged
     r === i
-
-
----  Particular text parsers  ---
-
-prop_takeParticularText_empty = property do
-    xs <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    let (x, r) = parseMaybe (takeParticularText xs) [] ()
-
-    -- takeParticularText, on empty input, should always fail
-    x === Nothing
-
-    -- there should, of course, still be no input remaining
-    r === noInput
-
-prop_takeParticularText_notEnoughInput = property do
-    a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    b <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (Chunk.generalize a))
-    let (r, _) = parseMaybe (takeParticularText (a <> b)) i ()
-
-    -- takeParticularText, when the input is a proper prefix of
-    -- the desired text, should fail
-    r === Nothing
-
-prop_takeParticularText_exact = property do
-    a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (Chunk.generalize a))
-    let (x, r) = parseMaybe (takeParticularText a) i ()
-
-    -- takeParticularText, when the input is exactly the
-    -- desired text, should succeed
-    x === Just ()
-
-    -- all of the input should have been taken
-    r === noInput
-
-prop_takeParticularText_okayAndMore = property do
-    a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    b <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (Chunk.generalize (a <> b)))
-    let (x, r) = parseMaybe (takeParticularText a) i ()
-
-    -- takeParticularText, when the input begins with the desired text
-    -- and contains more thereafter, should succeed
-    x === Just ()
-
-    -- the remainder should consist of the input with the desired
-    -- prefix stripped from it
-    Chunk.concatTrivialize r === Chunk.generalize b

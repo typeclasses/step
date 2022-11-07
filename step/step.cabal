@@ -18,7 +18,7 @@ common base
     -- Temporary for early stage development
     ghc-options: -fno-warn-unused-imports
     ghc-options: -fno-warn-missing-signatures
-    ghc-options: -fno-warn-typed-holes
+    -- ghc-options: -fno-warn-typed-holes
 
     default-extensions:
         BlockArguments
@@ -96,4 +96,7 @@ test-suite test-step
       , tasty-hunit
       , text
     other-modules:
-        Step.Package.InMemory.Spec
+        Step.Spec.Characters
+        Step.Spec.FixedLength
+        Step.Spec.Match
+        Step.Spec.ParticularText

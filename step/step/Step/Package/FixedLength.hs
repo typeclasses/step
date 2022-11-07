@@ -6,6 +6,7 @@ module Step.Package.FixedLength
     skipPositiveAtomic, skipNaturalAtomic,
     remainsAtLeastPositive, remainsAtLeastNatural,
     ensureAtLeastPositive, ensureAtLeastNatural,
+    tryTakeNatural, tryTakePositive,
   )
   where
 
@@ -18,13 +19,14 @@ import Step.Interface
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
 
-import Control.Applicative (pure)
+import Control.Applicative (pure, (*>))
 import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Either (Either (..))
 import Data.Function (($), (&), (.))
 import Data.Functor (($>), (<&>), (<$>), fmap, void)
 import Data.Maybe (Maybe (..), maybe)
+import Data.Monoid (mempty)
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
 import SupplyChain (Job, perform, order, (>->))
@@ -57,6 +59,9 @@ trySkipNatural = ifZero (pure' AdvanceSuccess) trySkipPositive
 
 trySkipNatural_ :: forall c m r. Natural -> Sure c m r r ()
 trySkipNatural_ = ifZero (pure' ()) trySkipPositive_
+
+tryTakeNatural :: forall c m r e. Chunk c => Natural -> Sure c m r e (Maybe c)
+tryTakeNatural = ifZero (pure' Nothing) tryTakePositive
 
 skipPositive :: forall c m r. Positive Natural -> Move c m r r ()
 skipPositive n = assumeMovement $ trySkipPositive n P.>>= requireAdvanceSuccess
@@ -111,6 +116,17 @@ takePositive = \n -> assumeMovement $ Any $ required $ go n
             TakeAll -> order (commit n) $> Just (x :| [])
             TakePart{ takePart } -> order (commit (length takePart)) $> Just (takePart :| [])
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
+
+tryTakePositive :: forall c m r e. Chunk c => Positive Natural -> Sure c m r e (Maybe c)
+tryTakePositive = \n -> act @Sure \_ -> fmap (fmap concat . NE.nonEmpty) $ go n
+  where
+    go :: Positive Natural -> Job (CommittableChunkStream c) m [c]
+    go n = order nextMaybe >>= \case
+        Nothing -> pure []
+        Just x -> case take n x of
+            TakeAll -> order (commit n) $> [x]
+            TakePart{ takePart } -> order (commit (length takePart)) $> [takePart]
+            TakeInsufficient{ takeShortfall } -> order (commit (length x)) *> ((x :) <$> go takeShortfall)
 
 required :: Chunk b => Job up action (Maybe (NonEmpty b)) -> a -> ResettingSequence up action (Either a b)
 required go r = ResettingSequenceJob $ go <&> maybe (Left r) Right <&> fmap concat
