@@ -7,11 +7,12 @@ Description: The 'InfiniteStream' interface, like 'TerminableStream' but for lis
 module SupplyChain.Interface.InfiniteStream
   (
     {- * Interface -} InfiniteStream (..),
-    {- * Vendors -} iterate, concatMap, concat,
+    {- * Vendors -} forever, iterate, concatMap, concat,
   )
   where
 
 import SupplyChain
+import qualified SupplyChain.Vendor as Vendor
 
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
@@ -20,6 +21,9 @@ import Data.Function (($), flip, id)
 data InfiniteStream item response =
     (response ~ item) => Next
         -- ^ The next item from a non-terminating input stream
+
+forever :: Job up action a -> Vendor up (InfiniteStream a) action
+forever j = Vendor.forever \Next -> j
 
 iterate :: forall up a action.
     a -> (a -> a) -> Vendor up (InfiniteStream a) action
