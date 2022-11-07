@@ -40,12 +40,15 @@ The lack of any actions at all can be expressed as `Nil`.
 
 ## Jobs
 
-                 ▲   │
-           up x  │   │  x
-                 │   ▼
+               ▲   │
+         up x  │   │  x
+               │   ▼
     ┌─────────────────────────┐
     │  Job up action product  │
     └─────────────────────────┘
+                 │
+                 │  product
+                 ▼
 
 ## Vendors
 
