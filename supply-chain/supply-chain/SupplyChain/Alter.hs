@@ -9,9 +9,11 @@ module SupplyChain.Alter
   )
   where
 
+import Data.Functor.Const (Const)
+import Data.Void (Void)
+
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.Job (Job)
-import SupplyChain.Core.Nil (Nil)
 import SupplyChain.Core.Vendor (Vendor (..))
 
 import qualified SupplyChain.Core.Effect as Effect
@@ -109,9 +111,9 @@ vendorOrder' :: (forall x. up x -> up' x)
 vendorOrder' = order'
 
 
-absurdAction :: Alter up up Nil action' x1 x2 => x1 -> x2
+absurdAction :: Alter up up (Const Void) action' x1 x2 => x1 -> x2
 absurdAction = action \case{}
 
 
-absurdOrder :: Alter Nil up' action action x1 x2 => x1 -> x2
+absurdOrder :: Alter (Const Void) up' action action x1 x2 => x1 -> x2
 absurdOrder = order \case{}

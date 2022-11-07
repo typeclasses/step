@@ -13,6 +13,8 @@ import qualified Control.Monad as Monad
 import Control.Applicative (Applicative (..))
 import Data.Kind (Type)
 import Prelude (error)
+import Data.Functor.Const (Const)
+import Data.Void (Void)
 
 -- Optics
 import Optics (Iso', over, iso)
@@ -23,7 +25,7 @@ import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.Reader (ReaderT (..))
 
 -- Streaming
-import SupplyChain (Job, (>->), Nil)
+import SupplyChain (Job, (>->))
 import qualified SupplyChain
 import qualified SupplyChain.Alter as Alter
 import qualified SupplyChain.Vendor as Vendor
@@ -106,7 +108,7 @@ instance (TypeError ('Text "AtomicMove cannot be Applicative because 'pure' woul
 
 type Failure :: Action
 
-newtype Failure c m r e a = Failure (r -> Job Nil m e)
+newtype Failure c m r e a = Failure (r -> Job (Const Void) m e)
     deriving stock Functor
 
 instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m r e) where

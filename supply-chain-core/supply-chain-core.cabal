@@ -37,7 +37,6 @@ library
         SupplyChain.Core.FreePointedFunctor
         SupplyChain.Core.FreeMonad
         SupplyChain.Core.Job
-        SupplyChain.Core.Nil
         SupplyChain.Core.Supply
         SupplyChain.Core.Types
         SupplyChain.Core.Vendor

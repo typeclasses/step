@@ -25,6 +25,8 @@ import Data.Functor ((<$>), (<&>))
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
 import Prelude ((+))
+import Data.Functor.Const (Const)
+import Data.Void (Void)
 
 
 class IsTerminableStream item i | i -> item
@@ -128,7 +130,7 @@ concatMap f = Vendor \NextMaybe -> go []
 -- | Like 'concatMap', but the function gives a vendor instead of a list
 
 concatMapVendor :: forall a b action.
-    (a -> Vendor Nil (TerminableStream b) action)
+    (a -> Vendor (Const Void) (TerminableStream b) action)
     -> Vendor (TerminableStream a) (TerminableStream b) action
 
 concatMapVendor f = go

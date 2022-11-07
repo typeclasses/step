@@ -4,10 +4,11 @@ module SupplyChain.Core.Job
 
 import Control.Applicative (Applicative)
 import Control.Monad (Monad)
-import Data.Functor (Functor)
 import Data.Function ((.), id)
+import Data.Functor (Functor)
+import Data.Functor.Const (Const)
+import Data.Void (Void)
 
-import SupplyChain.Core.Nil (Nil)
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.FreeMonad (FreeMonad)
 import qualified SupplyChain.Core.Effect as Effect
@@ -52,11 +53,11 @@ perform :: action product -> Job up action product
 perform x = Perform x id
 
 -- | Run a job in its 'Action' context
-run :: Monad action => Job Nil action product -> action product
+run :: Monad action => Job (Const Void) action product -> action product
 run = FreeMonad.run Effect.run . freeMonad
 
 -- | Run a job that performs no actions
-eval :: Job Nil Nil product -> product
+eval :: Job (Const Void) (Const Void) product -> product
 eval = FreeMonad.eval Effect.absurd . freeMonad
 
 alter :: (forall x. Effect up action x -> Job up' action' x)

@@ -37,7 +37,6 @@ library
         SupplyChain.Alter
         SupplyChain.Connect
         SupplyChain.Job
-        SupplyChain.Nil
         SupplyChain.Supply
         SupplyChain.Vendor
         SupplyChain.Types

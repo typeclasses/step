@@ -30,13 +30,13 @@ typically have a constraint that specifies what type of response is expected in
 return. Types of this kind are therefore often [GADTs]. Types of this kind are
 also often not functors.
 
-The lack of any interface at all can be expressed as `Nil`.
+The lack of any interface at all can be expressed as `Const Void`.
 
 ## Actions
 
 An *action* is a monadic context such as `IO`.
 
-The lack of any actions at all can be expressed as `Nil`.
+The lack of any actions at all can be expressed as `Const Void`.
 
 ## Jobs
 

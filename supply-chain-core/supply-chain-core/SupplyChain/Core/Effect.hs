@@ -1,17 +1,18 @@
 module SupplyChain.Core.Effect (Effect (Request, Perform), run, absurd,
     alterRequest, alterPerform) where
 
-import SupplyChain.Core.Nil (Nil)
+import Data.Functor.Const (Const)
+import Data.Void (Void)
 
 data Effect up action product =
     Request (up product) | Perform (action product)
 
-run :: Effect Nil action product -> action product
+run :: Effect (Const Void) action product -> action product
 run = \case
     Perform x -> x
     Request x -> \case{} x
 
-absurd :: Effect Nil Nil x -> product
+absurd :: Effect (Const Void) (Const Void) x -> product
 absurd = \case
     Perform x -> \case{} x
     Request x -> \case{} x
