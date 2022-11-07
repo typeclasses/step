@@ -1,26 +1,16 @@
-module SupplyChain.Connect (Connect (..),
-    vendorToJob, vendorToVendor, vendorToJob') where
+module SupplyChain.Connect ((>->), (>+>), (:+) (..)) where
 
 import SupplyChain.Core.Connect (vendorToJob, vendorToJob', vendorToVendor)
+import SupplyChain.Core.Supply (Supply)
 import SupplyChain.Core.Types (Vendor, Job)
 
-class Connect up down action client result | up client -> result,
-    client -> down action, result -> up action
-  where
-    {-| Generalizes 'vendorToJob' and 'vendorToVendor'
+import Data.Functor.Const (Const)
 
-        This operation is associative; if @a@ and @b@ are vendors
-        and @c@ is a job, then @(a >-> b) >-> c@ is the same supply
-        chain as @a >-> (b >-> c)@.
-    -}
-    (>->) :: Vendor up down action -> client -> result
+(>->) :: Vendor up middle action -> Vendor middle down action -> Vendor up down action
+(>->) = vendorToVendor
 
-instance Connect up down action
-    (Job down action product) (Job up action product)
-  where
-    (>->) = vendorToJob
+(>+>) :: Vendor up middle action -> Vendor middle down action
+    -> Vendor up (down :+ Vendor up down action) action
+(>+>) = _
 
-instance Connect up middle action
-    (Vendor middle down action) (Vendor up down action)
-  where
-    (>->) = vendorToVendor
+data (:+) i extra product where (:+) :: product ~ (p, extra) => i p -> (:+) i extra product
