@@ -23,6 +23,7 @@ common base
         NoImplicitPrelude
         NoMonomorphismRestriction
         PatternSynonyms
+        TypeFamilies
         ViewPatterns
 
     build-depends:
@@ -37,11 +38,12 @@ library
         SupplyChain.Core.FreePointedFunctor
         SupplyChain.Core.FreeMonad
         SupplyChain.Core.Job
-        SupplyChain.Core.Supply
+        SupplyChain.Core.Referral
         SupplyChain.Core.Types
+        SupplyChain.Core.Unit
         SupplyChain.Core.Vendor
     other-modules:
-        SupplyChain.Core.VendorAndSupply
+        SupplyChain.Core.VendorAndReferral
 
 test-suite test-supply-chain-core
     import: base
