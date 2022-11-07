@@ -24,7 +24,6 @@ common base
         NoImplicitPrelude
         NoMonomorphismRestriction
         PatternSynonyms
-        TypeFamilies
 
     build-depends:
         base ^>= 4.16
