@@ -37,6 +37,6 @@ library
         SupplyChain.Alter
         SupplyChain.Connect
         SupplyChain.Job
-        SupplyChain.Supply
+        SupplyChain.Referral
         SupplyChain.Vendor
         SupplyChain.Types

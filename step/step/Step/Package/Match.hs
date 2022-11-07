@@ -14,7 +14,7 @@ import Control.Applicative (pure)
 import Data.Bool (Bool (..))
 import Data.Function
 import Numeric.Natural
-import SupplyChain (Vendor (..), Job, Supply (..))
+import SupplyChain (Vendor (..), Job, Referral (..))
 import Data.Functor
 import Prelude ((+))
 
@@ -35,7 +35,7 @@ counting = go 0
   where
     go :: Natural -> Vendor i (Counting c) action
     go n = Vendor \case
-        AmountCommitted       ->  pure $ Supply n (go n)
+        AmountCommitted       ->  pure $ Referral n (go n)
         Order (I.Commit n)  ->  _
         Order I.Reset       ->  _
         Order I.NextMaybe   ->  _

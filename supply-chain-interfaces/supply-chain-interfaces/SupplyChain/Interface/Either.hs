@@ -12,7 +12,7 @@ module SupplyChain.Interface.Either
   where
 
 import SupplyChain
-import qualified SupplyChain.Supply as Supply
+import qualified SupplyChain.Referral as Referral
 
 import Data.Functor ((<&>))
 
@@ -25,5 +25,5 @@ offerEither :: forall up down1 down2 action.
   -> Vendor up down2 action
   -> Vendor up (Either down1 down2) action
 offerEither a@(Vendor a') b@(Vendor b') = Vendor \case
-    Left  req -> a' req <&> \s -> s{ Supply.next = offerEither (Supply.next s) b }
-    Right req -> b' req <&> \s -> s{ Supply.next = offerEither a (Supply.next s) }
+    Left  req -> a' req <&> \s -> s{ Referral.next = offerEither (Referral.next s) b }
+    Right req -> b' req <&> \s -> s{ Referral.next = offerEither a (Referral.next s) }

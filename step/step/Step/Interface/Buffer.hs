@@ -30,7 +30,7 @@ import NatOptics.Positive.Unsafe (Positive)
 import Control.Monad.State.Strict (MonadState)
 
 -- Streaming
-import SupplyChain (Vendor (..), Job, Supply (..), (>->), order)
+import SupplyChain (Vendor (..), Job, Referral (..), (>->), order)
 import SupplyChain.Interface.TerminableStream (IsTerminableStream, TerminableStream)
 import qualified SupplyChain
 import qualified SupplyChain.Interface.TerminableStream as Stream
@@ -66,7 +66,7 @@ bufferedStepper buffer = go Start
     -- The "unviewed" buffer is internal state only, not externally accessible.
     go :: ViewBuffer c -> Vendor up (CommittableChunkStream c) action
     go unviewed = Vendor \case
-        I.Reset -> pure $ Supply () (go Start)
+        I.Reset -> pure $ Referral () (go Start)
         I.NextMaybe -> getUnviewedChunks >>= handleNext
         I.Commit n -> getUncommittedChunks >>= handleCommit unviewed n
       where
@@ -81,12 +81,12 @@ bufferedStepper buffer = go Start
     handleNext ::
         Seq c -- unviewed chunks
         -> Job up action
-              (Supply up (CommittableChunkStream c) action (Maybe c))
+              (Referral up (CommittableChunkStream c) action (Maybe c))
     handleNext = \case
-        x :<| xs -> pure $ Supply (Just x) (goUnviewed xs)
+        x :<| xs -> pure $ Referral (Just x) (goUnviewed xs)
         Empty -> order Stream.nextMaybe >>= \case
-            Nothing -> pure $ Supply Nothing (goUnviewed Empty)
-            Just x -> feedCommitBuffer x $> Supply (Just x) (goUnviewed Empty)
+            Nothing -> pure $ Referral Nothing (goUnviewed Empty)
+            Just x -> feedCommitBuffer x $> Referral (Just x) (goUnviewed Empty)
       where
         goUnviewed :: Seq c -> Vendor up (CommittableChunkStream c) action
         goUnviewed unviewed = go (Unviewed (Buffer unviewed))
@@ -100,16 +100,16 @@ bufferedStepper buffer = go Start
         -> Positive Natural -- how much to commit
         -> Seq c -- uncommitted chunks
         -> Job up action
-              (Supply up (CommittableChunkStream c) action AdvanceResult)
+              (Referral up (CommittableChunkStream c) action AdvanceResult)
     handleCommit unviewed n = \case
         x :<| xs -> case drop n x of
             DropAll ->
-                setUncommittedChunks xs $> Supply AdvanceSuccess (go unviewed)
+                setUncommittedChunks xs $> Referral AdvanceSuccess (go unviewed)
             DropPart{ dropRemainder = x' } ->
-                setUncommittedChunks (x' :<| xs) $> Supply AdvanceSuccess (go unviewed)
+                setUncommittedChunks (x' :<| xs) $> Referral AdvanceSuccess (go unviewed)
             DropInsufficient{ dropShortfall = n' } -> handleCommit unviewed n' xs
         Empty -> order Stream.nextMaybe >>= \case
-            Nothing -> pure $ Supply YouCanNotAdvance{ shortfall = n } (go unviewed)
+            Nothing -> pure $ Referral YouCanNotAdvance{ shortfall = n } (go unviewed)
             Just x -> handleCommit unviewed' n (x :<| Empty)
               where
                 unviewed' = case unviewed of

@@ -29,5 +29,5 @@ counting = go 0
   where
     go :: Natural -> Vendor i (Counting i) action
     go n = Vendor \case
-        Count    ->  pure $ Supply n (go n)
-        Order x  ->  order x <&> (`Supply` go (n + 1))
+        Count    ->  pure $ Referral n (go n)
+        Order x  ->  order x <&> (`Referral` go (n + 1))

@@ -5,7 +5,7 @@ module SupplyChain.Vendor
   )
   where
 
-import SupplyChain.Core.Supply (Supply (..))
+import SupplyChain.Core.Referral (Referral (..))
 import SupplyChain.Core.Vendor (Vendor (..), run, eval, alter)
 
 import qualified SupplyChain.Core.Job as Job
@@ -18,14 +18,14 @@ import Data.Void (Void)
 
 -- | A simple stateless vendor that responds to each request by applying a pure function
 function :: (forall response. down response -> response) -> Vendor up down action
-function f = go where go = Vendor \x -> pure $ Supply (f x) go
+function f = go where go = Vendor \x -> pure $ Referral (f x) go
 
 -- | A simple stateless vendor that responds to each request by applying an effectful function
 action :: (forall response. down response -> action response) -> Vendor up down action
-action f = go where go = Vendor \x -> Job.perform (f x) <&> (`Supply` go)
+action f = go where go = Vendor \x -> Job.perform (f x) <&> (`Referral` go)
 
 absurd :: Vendor up (Const Void) action
 absurd = Vendor \case{}
 
 map :: (forall x. down x -> up x) -> Vendor up down action
-map f = go where go = Vendor \x -> Job.order (f x) <&> (`Supply` go)
+map f = go where go = Vendor \x -> Job.order (f x) <&> (`Referral` go)

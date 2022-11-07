@@ -53,7 +53,7 @@ action a = go
   where
     go :: Vendor up (TerminableStream a) action
     go = Vendor \case
-        NextMaybe -> perform a <&> (`Supply` go)
+        NextMaybe -> perform a <&> (`Referral` go)
 
 
 -- | Yields each item from the list, then stops
@@ -66,7 +66,7 @@ list = go
     go :: [a] -> Vendor up (TerminableStream a) action
     go = \case
         []      ->  nil
-        x : xs  ->  Vendor \NextMaybe -> pure $ Supply (Just x) (go xs)
+        x : xs  ->  Vendor \NextMaybe -> pure $ Referral (Just x) (go xs)
 
 
 -- | The empty stream
@@ -77,7 +77,7 @@ nil :: forall up a action.
 nil = go
   where
     go :: Vendor up (TerminableStream a) action
-    go = Vendor \NextMaybe -> pure $ Supply Nothing go
+    go = Vendor \NextMaybe -> pure $ Referral Nothing go
 
 
 -- | Yields one item, then stops
@@ -85,7 +85,7 @@ nil = go
 singleton :: forall up a action.
     a -> Vendor up (TerminableStream a) action
 
-singleton x = Vendor \NextMaybe -> pure $ Supply (Just x) nil
+singleton x = Vendor \NextMaybe -> pure $ Referral (Just x) nil
 
 
 -- | Performs one action, yields the resulting item, then stops
@@ -94,7 +94,7 @@ actionSingleton :: forall up a action.
     action a -> Vendor up (TerminableStream a) action
 
 actionSingleton mx =
-    Vendor \NextMaybe -> perform mx <&> \x -> Supply (Just x) nil
+    Vendor \NextMaybe -> perform mx <&> \x -> Referral (Just x) nil
 
 
 -- | Apply a function to each item in the stream
@@ -105,8 +105,8 @@ map :: forall a b action.
 map f = go
   where
     go = Vendor \NextMaybe -> order NextMaybe <&> \case
-        Nothing  ->  Supply Nothing nil
-        Just a   ->  Supply (Just (f a)) go
+        Nothing  ->  Referral Nothing nil
+        Just a   ->  Referral (Just (f a)) go
 
 
 {-| Applies the function to each result obtained from upstream,
@@ -119,11 +119,11 @@ concatMap :: forall a b action.
 concatMap f = Vendor \NextMaybe -> go []
   where
     go :: [b] -> Job (TerminableStream a) action
-        (Supply (TerminableStream a) (TerminableStream b) action (Maybe b))
+        (Referral (TerminableStream a) (TerminableStream b) action (Maybe b))
     go = \case
-        b : bs' -> pure $ Supply (Just b) $ Vendor \NextMaybe -> go bs'
+        b : bs' -> pure $ Referral (Just b) $ Vendor \NextMaybe -> go bs'
         [] -> order NextMaybe >>= \case
-            Nothing -> pure $ Supply Nothing nil
+            Nothing -> pure $ Referral Nothing nil
             Just a  -> go (f a)
 
 
@@ -136,7 +136,7 @@ concatMapVendor :: forall a b action.
 concatMapVendor f = go
   where
     go = Vendor \NextMaybe -> order NextMaybe >>= \case
-        Nothing -> pure $ Supply Nothing nil
+        Nothing -> pure $ Referral Nothing nil
         Just x -> handle (append (Alter.absurdOrder (f x)) go) NextMaybe
 
 
@@ -158,8 +158,8 @@ while ok = v
   where
     v = Vendor \NextMaybe ->
         order NextMaybe >>= \case
-            Just x | ok x  ->  pure $ Supply (Just x) v
-            _              ->  pure $ Supply Nothing nil
+            Just x | ok x  ->  pure $ Referral (Just x) v
+            _              ->  pure $ Referral Nothing nil
 
 
 {-| Yields all the items of the first stream,
@@ -173,8 +173,8 @@ append :: forall up a action.
 
 append a b = Vendor \NextMaybe ->
     handle a NextMaybe >>= \case
-        Supply Nothing _ -> handle b NextMaybe
-        Supply (Just x) a' -> pure $ Supply (Just x) (append a' b)
+        Referral Nothing _ -> handle b NextMaybe
+        Referral (Just x) a' -> pure $ Referral (Just x) (append a' b)
 
 
 -- | Collects everything from the stream
@@ -209,18 +209,18 @@ group :: forall a action. Eq a =>
 
 group = Vendor \NextMaybe ->
     order NextMaybe >>= \case
-        Nothing -> pure $ Supply Nothing nil
+        Nothing -> pure $ Referral Nothing nil
         Just x -> start x
   where
     start :: a -> Job (TerminableStream a) action
-        ( Supply (TerminableStream a) (TerminableStream (Natural, a))
+        ( Referral (TerminableStream a) (TerminableStream (Natural, a))
           action (Maybe (Natural, a))
         )
     start = go 0
 
     go n x = order NextMaybe >>= \case
-        Nothing -> pure $ Supply (Just (n, x)) nil
+        Nothing -> pure $ Referral (Just (n, x)) nil
         Just y ->
           if y == x
           then go (n + 1) x
-          else pure $ Supply (Just (n, x)) $ Vendor \NextMaybe -> start y
+          else pure $ Referral (Just (n, x)) $ Vendor \NextMaybe -> start y

@@ -28,7 +28,7 @@ iterate = flip it
     it f = go
       where
         go :: a -> Vendor up (InfiniteStream a) action
-        go x = Vendor \Next -> pure $ Supply x (go (f x))
+        go x = Vendor \Next -> pure $ Referral x (go (f x))
 
 concatMap :: forall a b action.
     (a -> [b]) -> Vendor (InfiniteStream a) (InfiniteStream b) action
@@ -36,7 +36,7 @@ concatMap f = go []
   where
     go :: [b] -> Vendor (InfiniteStream a) (InfiniteStream b) action
     go bs = Vendor \Next -> case bs of
-        b : bs' -> pure $ Supply b (go bs')
+        b : bs' -> pure $ Referral b (go bs')
         [] -> order Next >>= \a -> handle (go (f a)) Next
 
 concat :: forall a action.

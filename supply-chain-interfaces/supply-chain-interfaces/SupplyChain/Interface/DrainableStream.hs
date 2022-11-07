@@ -59,8 +59,8 @@ list = go
     go xs = case unconsList xs of
         Nothing -> nil
         Just (x, xs') -> Vendor \case
-            NextMaybe  ->  pure $ Supply (Just x) (go xs')
-            Drain      ->  pure $ Supply xs nil
+            NextMaybe  ->  pure $ Referral (Just x) (go xs')
+            Drain      ->  pure $ Referral xs nil
 
 
 -- | The empty stream
@@ -72,8 +72,8 @@ nil = go
   where
     go :: Vendor up (DrainableStream list a) action
     go = Vendor \case
-        NextMaybe  ->  pure $ Supply Nothing   go
-        Drain      ->  pure $ Supply emptyList go
+        NextMaybe  ->  pure $ Referral Nothing   go
+        Drain      ->  pure $ Referral emptyList go
 
 
 -- | Yields one item, then stops
@@ -82,8 +82,8 @@ singleton :: forall up list a action. List list =>
     a -> Vendor up (DrainableStream list a) action
 
 singleton x = Vendor \case
-    NextMaybe  ->  pure $ Supply (Just x)          nil
-    Drain      ->  pure $ Supply (singletonList x) nil
+    NextMaybe  ->  pure $ Referral (Just x)          nil
+    Drain      ->  pure $ Referral (singletonList x) nil
 
 
 -- | Performs one action, yields the resulting item, then stops
@@ -93,8 +93,8 @@ actionSingleton :: forall up list a action. List list =>
 
 actionSingleton mx =
     Vendor \case
-        NextMaybe  ->  perform mx <&> \x -> Supply (Just x)          nil
-        Drain      ->  perform mx <&> \x -> Supply (singletonList x) nil
+        NextMaybe  ->  perform mx <&> \x -> Referral (Just x)          nil
+        Drain      ->  perform mx <&> \x -> Referral (singletonList x) nil
 
 
 -- | Apply a function to each item in the stream
@@ -107,10 +107,10 @@ map f = go
   where
     go = Vendor \case
         NextMaybe -> order NextMaybe <&> \case
-            Nothing  ->  Supply Nothing      nil
-            Just a   ->  Supply (Just (f a)) go
+            Nothing  ->  Referral Nothing      nil
+            Just a   ->  Referral (Just (f a)) go
         Drain -> order Drain <&> \xs ->
-            Supply (fmap f xs) nil
+            Referral (fmap f xs) nil
 
 
 -- | Collects everything from the stream

@@ -7,7 +7,7 @@ module ActionList
   )
   where
 
-import SupplyChain ( Vendor, Supply (Supply), (>->))
+import SupplyChain ( Vendor, Referral (Referral), (>->))
 import qualified SupplyChain.Vendor as Vendor
 import qualified SupplyChain.Job as Job
 
@@ -73,5 +73,5 @@ runActionList xs = Job.run (actionListVendor xs >-> Stream.all)
 next :: forall m a. Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
 next xs = fmap @m f $ Vendor.run (actionListVendor xs) Stream.NextMaybe
   where
-    f :: Supply (Const Void) (TerminableStream a) m (Maybe a) -> Maybe (a, ActionList m a)
-    f s = s & sequence & fmap @Maybe \(Supply x v) -> (x, VendorActionList v)
+    f :: Referral (Const Void) (TerminableStream a) m (Maybe a) -> Maybe (a, ActionList m a)
+    f s = s & sequence & fmap @Maybe \(Referral x v) -> (x, VendorActionList v)

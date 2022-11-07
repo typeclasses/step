@@ -1,5 +1,5 @@
-module SupplyChain.Core.VendorAndSupply (Vendor (..), Supply (..),
-    alterVendor, alterSupply) where
+module SupplyChain.Core.VendorAndReferral (Vendor (..), Referral (..),
+    alterVendor, alterReferral) where
 
 import Data.Functor (Functor, fmap)
 import Data.Function ((.))
@@ -14,24 +14,24 @@ import qualified SupplyChain.Core.Job as Job
 newtype Vendor up down action =
   Vendor
     { handle :: forall product.
-        down product -> Job up action (Supply up down action product) }
+        down product -> Job up action (Referral up down action product) }
 
 -- | The conclusion of a vendor's handling of a client request
-data Supply up down action product =
-  Supply
+data Referral up down action product =
+  Referral
     { product :: product -- ^ The requested product
     , next :: Vendor up down action -- ^ A new vendor to handle subsequent requests
     }
 
-deriving stock instance Functor (Supply up down action)
-deriving stock instance Foldable (Supply up down action)
-deriving stock instance Traversable (Supply up down action)
+deriving stock instance Functor (Referral up down action)
+deriving stock instance Foldable (Referral up down action)
+deriving stock instance Traversable (Referral up down action)
 
 alterVendor :: (forall x. Effect up action x -> Job up' action' x)
     -> Vendor up down action -> Vendor up' down action'
 alterVendor f Vendor{ handle } =
-    Vendor{ handle = fmap (alterSupply f) . Job.alter f . handle }
+    Vendor{ handle = fmap (alterReferral f) . Job.alter f . handle }
 
-alterSupply :: (forall x. Effect up action x -> Job up' action' x)
-    -> Supply up down action product -> Supply up' down action' product
-alterSupply f s = s{ next = alterVendor f (next s) }
+alterReferral :: (forall x. Effect up action x -> Job up' action' x)
+    -> Referral up down action product -> Referral up' down action' product
+alterReferral f s = s{ next = alterVendor f (next s) }

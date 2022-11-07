@@ -35,8 +35,8 @@ nil = go
   where
     go :: Vendor up (ResettableTerminableStream a) action
     go = Vendor \case
-        NextMaybe -> pure $ Supply Nothing go
-        Reset -> pure $ Supply () go
+        NextMaybe -> pure $ Referral Nothing go
+        Reset -> pure $ Referral () go
 
 -- | Yields one item, then stops
 
@@ -44,10 +44,10 @@ singleton :: forall up a action.
     a -> Vendor up (ResettableTerminableStream a) action
 
 singleton x = fix \r -> Vendor \case
-    NextMaybe -> pure $ Supply (Just x) $ fix \go -> Vendor \case
-        NextMaybe -> pure $ Supply Nothing go
-        Reset -> pure $ Supply () r
-    Reset -> pure $ Supply () r
+    NextMaybe -> pure $ Referral (Just x) $ fix \go -> Vendor \case
+        NextMaybe -> pure $ Referral Nothing go
+        Reset -> pure $ Referral () r
+    Reset -> pure $ Referral () r
 
 -- | Yields each item from the list, then stops
 
@@ -58,7 +58,7 @@ list oxs = go oxs
   where
     go :: [a] -> Vendor up (ResettableTerminableStream a) action
     go xs = fix \v -> Vendor \case
-        Reset -> pure $ Supply () (go oxs)
+        Reset -> pure $ Referral () (go oxs)
         NextMaybe -> case xs of
-            [] -> pure $ Supply Nothing v
-            x : xs' -> pure $ Supply (Just x) (go xs')
+            [] -> pure $ Referral Nothing v
+            x : xs' -> pure $ Referral (Just x) (go xs')
