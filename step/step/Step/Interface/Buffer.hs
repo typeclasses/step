@@ -56,8 +56,9 @@ pureStepper buffer =
 bufferedStepper :: forall s up action c. Chunk c => MonadState s action =>
     IsTerminableStream c up =>
     Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
-bufferedStepper buffer = SupplyChain.jobOfVendor $
-    SupplyChain.perform (use buffer) <&> \b -> doubleBuffer report b
+bufferedStepper buffer = Vendor \request -> do
+    b <- SupplyChain.perform $ use buffer
+    handle (doubleBuffer report b) request
   where
     report b = SupplyChain.perform (assign buffer b)
 
