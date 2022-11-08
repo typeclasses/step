@@ -28,7 +28,7 @@ common base
 
     build-depends:
         base ^>= 4.16
-      , supply-chain-core
+      , supply-chain-core ^>= 0.0
 
 library
     import: base
