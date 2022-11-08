@@ -6,7 +6,6 @@ module SupplyChain
     {- * Referral -} {- $referral -} Referral (Referral),
     {- * Job/vendor -} {- $jobVendor -} (>-), (>+), loop, once,
     {- * Unit -} {- $unit -} Unit (Unit),
-
   )
   where
 
@@ -30,3 +29,6 @@ import SupplyChain.Unit (Unit (Unit))
 
 -- $jobVendor
 -- See also: "SupplyChain.JobAndVendor"
+
+-- $alter
+-- See also: "SupplyChain.Alter"

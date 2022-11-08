@@ -23,7 +23,7 @@ import Control.Monad (Monad)
 import Control.Monad.State.Strict (runStateT)
 import Data.Either (Either (..), either)
 import Data.Foldable (toList)
-import Data.Function ((&), ($))
+import Data.Function ((&), ($), (.))
 import Data.Functor ((<&>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Data.Maybe (Maybe (..))
@@ -34,7 +34,7 @@ import SupplyChain ((>->), Job, (>-))
 import qualified Data.Sequence as Seq
 import qualified Control.Monad.Trans as MTL
 import qualified SupplyChain
-import qualified SupplyChain.Alter
+import qualified SupplyChain.Alter as Alter
 
 parse :: forall p c r e a. Chunk c => Is p Any =>
     p c Identity r e a -> [c] -> r -> (Either e a, [c])
@@ -77,9 +77,5 @@ actionParseSureQuery :: forall p c m r e a. Chunk c => Monad m => Is p SureQuery
 actionParseSureQuery p xs r = z (run r (castTo @Sure (castTo @SureQuery p))) xs <&> \(res, _) -> res
 
 z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])
-z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >- liftJob parser)) (Buffer (Seq.fromList xs))
+z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >- Alter.job' (Alter.perform' MTL.lift) parser)) (Buffer (Seq.fromList xs))
         <&> \(a, List rem) -> (a, rem)
-
-liftJob :: forall up m m' a. Monad m =>
-    MTL.MonadTrans m' => Job up m a -> Job up (m' m) a
-liftJob = SupplyChain.Alter.action' (\(x :: m z) -> MTL.lift x)

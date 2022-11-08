@@ -1,4 +1,8 @@
-module SupplyChain.Referral (Referral (Referral, product, next), alter)
-    where
+module SupplyChain.Referral
+  (
+    {- * Type -} Referral (Referral, product, next),
+    {- * Alteration -} alter,
+  )
+  where
 
 import SupplyChain.Core.Referral

@@ -1,7 +1,11 @@
 module SupplyChain.Vendor
   (
-    Vendor (Vendor, handle), (>->), run, eval, alter,
-    {- ** Some simple vendors -} function, action, absurd, map, forever, id,
+    {- * Type -} Vendor (Vendor, handle),
+    {- * Connection -} (>->), id,
+    {- * Running -} run, eval,
+    {- * Alteration -} alter,
+    {- ** Some simple vendors -}
+        function, action, absurd, map, forever,
   )
   where
 
@@ -21,7 +25,7 @@ import Data.Void (Void)
 absurd :: Vendor up (Const Void) action
 absurd = Vendor \case{}
 
--- | Does nothing at all; the identity for '>->'.
+-- | The identity for '(>->)'; does nothing at all
 id :: Vendor i i action
 id = forever Job.order
 

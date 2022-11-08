@@ -36,6 +36,7 @@ library
     exposed-modules:
         SupplyChain
         SupplyChain.Alter
+        SupplyChain.Effect
         SupplyChain.Job
         SupplyChain.JobAndVendor
         SupplyChain.Referral

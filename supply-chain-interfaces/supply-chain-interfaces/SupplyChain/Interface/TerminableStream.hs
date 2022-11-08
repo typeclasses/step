@@ -20,7 +20,7 @@ import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
 import Data.Eq (Eq, (==))
-import Data.Function (($), id)
+import Data.Function (($), id, (&))
 import Data.Functor ((<$>), (<&>))
 import Data.Maybe (Maybe (..))
 import Numeric.Natural (Natural)
@@ -137,7 +137,9 @@ concatMapVendor f = go
   where
     go = Vendor \NextMaybe -> order NextMaybe >>= \case
         Nothing -> pure $ Referral Nothing nil
-        Just x -> handle (append (Alter.absurdOrder (f x)) go) NextMaybe
+        Just x -> handle (append v go) NextMaybe
+          where
+            v = f x & Alter.vendor' (Alter.request' \case{})
 
 
 -- | Flattens a stream of lists
