@@ -4,12 +4,13 @@ module SupplyChain
     {- * Job -} {- $job -} Job, order, perform, run, eval,
     {- * Vendor -} {- $vendor -} Vendor (Vendor, handle),
     {- * Referral -} {- $referral -} Referral (Referral),
-    {- * Connect -} {- $connect -} vendorToJob, vendorToVendor, Connect ((>->)), vendorToJob',
+    {- * Connect -} {- $connect -} vendorToJob, vendorToVendor,
+        Connect ((>->)), vendorToJob', jobOfVendor,
 
   )
   where
 
-import SupplyChain.Connect (Connect ((>->)), vendorToJob, vendorToJob', vendorToVendor)
+import SupplyChain.Connect (Connect ((>->)), vendorToJob, vendorToJob', vendorToVendor, jobOfVendor)
 import SupplyChain.Job (Job, order, perform, run, eval)
 import SupplyChain.Referral (Referral (Referral))
 import SupplyChain.Vendor (Vendor (Vendor, handle))

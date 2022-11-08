@@ -1,7 +1,7 @@
 module Step.Interface.Buffer
   (
     Buffer (..), bufferedStepper, pureStepper,
-    doubleBuffer,
+    doubleBuffer, privateDoubleBuffer,
   )
   where
 
@@ -38,12 +38,6 @@ import qualified SupplyChain.Interface.TerminableStream as Stream
 
 newtype Buffer c = Buffer{ bufferSeq :: Seq c }
 
-data ViewBuffer c =
-    Start
-      -- ^ The unseen and unviewed buffers are the same
-  | Unviewed (Buffer c)
-      -- ^ The unviewed buffer, which may differ from the uncommitted buffer
-
 pureStepper :: forall s up action c. Chunk c => MonadState s action =>
     Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
 pureStepper buffer =
@@ -62,87 +56,52 @@ pureStepper buffer =
 bufferedStepper :: forall s up action c. Chunk c => MonadState s action =>
     IsTerminableStream c up =>
     Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
-bufferedStepper buffer = go Start
+bufferedStepper buffer = SupplyChain.jobOfVendor $
+    SupplyChain.perform (use buffer) <&> \b -> doubleBuffer report b
   where
-    -- The "unviewed" buffer is internal state only, not externally accessible.
-    go :: ViewBuffer c -> Vendor up (CommittableChunkStream c) action
-    go unviewed = Vendor \case
-        I.Reset -> pure $ Referral () (go Start)
-        I.NextMaybe -> getUnviewedChunks >>= handleNext
-        I.Commit n -> getUncommittedChunks >>= handleCommit unviewed n
-      where
-        getUncommittedChunks :: Job up action (Seq c)
-        getUncommittedChunks = bufferSeq <$> SupplyChain.perform (use buffer)
+    report b = SupplyChain.perform (assign buffer b)
 
-        getUnviewedChunks :: Job up action (Seq c)
-        getUnviewedChunks = case unviewed of
-            Unviewed b -> pure (bufferSeq b)
-            Start -> getUncommittedChunks
+data DoubleBuffer c = DoubleBuffer{ dbCommit :: Buffer c, dbView :: Buffer c }
 
-    handleNext ::
-        Seq c -- unviewed chunks
-        -> Job up action
-              (Referral up (CommittableChunkStream c) action (Maybe c))
-    handleNext = \case
-        x :<| xs -> pure $ Referral (Just x) (goUnviewed xs)
-        Empty -> order Stream.nextMaybe >>= \case
-            Nothing -> pure $ Referral Nothing (goUnviewed Empty)
-            Just x -> feedCommitBuffer x $> Referral (Just x) (goUnviewed Empty)
-      where
-        goUnviewed :: Seq c -> Vendor up (CommittableChunkStream c) action
-        goUnviewed unviewed = go (Unviewed (Buffer unviewed))
-
-        feedCommitBuffer :: c -> Job up action ()
-        feedCommitBuffer x = SupplyChain.perform $
-            modifying buffer \(Buffer xs) -> Buffer (xs :|> x)
-
-    handleCommit ::
-        ViewBuffer c
-        -> Positive Natural -- how much to commit
-        -> Seq c -- uncommitted chunks
-        -> Job up action
-              (Referral up (CommittableChunkStream c) action AdvanceResult)
-    handleCommit unviewed n = \case
-        x :<| xs -> case drop n x of
-            DropAll ->
-                setUncommittedChunks xs $> Referral AdvanceSuccess (go unviewed)
-            DropPart{ dropRemainder = x' } ->
-                setUncommittedChunks (x' :<| xs) $> Referral AdvanceSuccess (go unviewed)
-            DropInsufficient{ dropShortfall = n' } -> handleCommit unviewed n' xs
-        Empty -> order Stream.nextMaybe >>= \case
-            Nothing -> pure $ Referral YouCanNotAdvance{ shortfall = n } (go unviewed)
-            Just x -> handleCommit unviewed' n (x :<| Empty)
-              where
-                unviewed' = case unviewed of
-                    Start -> Unviewed (Buffer (x :<| Empty))
-                    Unviewed (Buffer xs) -> Unviewed (Buffer (x :<| xs))
-      where
-        setUncommittedChunks :: Seq c -> Job up action ()
-        setUncommittedChunks xs = SupplyChain.perform $ assign buffer (Buffer xs)
-
-data DoubleBuffer c = DoubleBuffer{ dbCommit :: Seq c, dbView :: Seq c }
+privateDoubleBuffer :: forall c up action. Chunk c => IsTerminableStream c up =>
+    Vendor up (CommittableChunkStream c) action
+privateDoubleBuffer = doubleBuffer (\_ -> pure ()) (Buffer Empty)
 
 doubleBuffer :: forall c up action. Chunk c => IsTerminableStream c up =>
-    Vendor up (CommittableChunkStream c) action
-doubleBuffer = go (DoubleBuffer Empty Empty)
+    (Buffer c -> Job up action ()) ->
+    Buffer c -> Vendor up (CommittableChunkStream c) action
+doubleBuffer report b = go (DoubleBuffer b b)
   where
-    go :: DoubleBuffer c -> Vendor up (CommittableChunkStream c) action
+    go :: Chunk c => IsTerminableStream c up =>
+        DoubleBuffer c -> Vendor up (CommittableChunkStream c) action
     go s = Vendor \case
-        I.Reset -> pure $ Referral () $ go s{ dbView = dbCommit s }
+        I.Reset -> handleReset go s
+        I.NextMaybe -> handleNext report go s
+        I.Commit n -> handleCommit report go s n
 
-        I.NextMaybe ->
-            case dbView s of
-                x :<| xs -> pure $ Referral (Just x) $ go s{ dbView = xs }
-                Empty -> SupplyChain.order Stream.nextMaybe >>= \case
-                    Nothing -> pure $ Referral Nothing $ go s
-                    Just x -> pure $ Referral (Just x) $ go s{ dbCommit = dbCommit s :|> x }
+handleReset :: (DoubleBuffer c -> Vendor up down action) -> DoubleBuffer c
+    -> Job up action (Referral up down action ())
+handleReset go s = pure $ Referral () $ go s{ dbView = dbCommit s }
 
-        c@(I.Commit n) ->
-            case dbCommit s of
-                x :<| xs -> case drop n x of
-                    DropAll -> pure $ Referral AdvanceSuccess $ go s{ dbCommit = xs }
-                    DropPart{ dropRemainder = x' } -> pure $ Referral AdvanceSuccess $ go s{ dbCommit = x' :<| xs }
-                    DropInsufficient{ dropShortfall = n' } -> go s{ dbCommit = xs } `handle` I.Commit n'
-                Empty -> SupplyChain.order Stream.nextMaybe >>= \case
-                    Nothing -> pure $ Referral YouCanNotAdvance{ shortfall = n } $ go s
-                    Just x -> go s{ dbCommit = Empty :|> x, dbView = dbView s :|> x } `handle` c
+handleNext :: IsTerminableStream c up =>
+    (Buffer c -> Job up action ()) -> (DoubleBuffer c -> Vendor up down action)
+    -> DoubleBuffer c -> Job up action (Referral up down action (Maybe c))
+handleNext report go s =  case dbView s of
+    Buffer (x :<| xs) -> pure $ Referral (Just x) $ go s{ dbView = Buffer xs }
+    Buffer Empty -> SupplyChain.order Stream.nextMaybe >>= \case
+        Nothing -> pure $ Referral Nothing $ go s
+        Just x -> report (Buffer (bufferSeq (dbCommit s) :|> x)) $> Referral (Just x) (go s{ dbCommit = Buffer (bufferSeq (dbCommit s) :|> x) })
+
+handleCommit :: Chunk c => IsTerminableStream c up =>
+    (Buffer c -> Job up action ())
+    -> (DoubleBuffer c -> Vendor up (CommittableChunkStream c) action)
+    -> DoubleBuffer c -> Positive Natural
+    -> Job up action (Referral up (CommittableChunkStream c) action AdvanceResult)
+handleCommit report go s n = case dbCommit s of
+      Buffer (x :<| xs) -> case drop n x of
+          DropAll -> report (Buffer xs) $> Referral AdvanceSuccess (go s{ dbCommit = Buffer xs })
+          DropPart{ dropRemainder = x' } -> report (Buffer (x' :<| xs)) $> Referral AdvanceSuccess (go s{ dbCommit = Buffer (x' :<| xs) })
+          DropInsufficient{ dropShortfall = n' } -> report (Buffer xs) *> (go s{ dbCommit = Buffer xs } `handle` I.Commit n')
+      Buffer Empty -> SupplyChain.order Stream.nextMaybe >>= \case
+          Nothing -> pure $ Referral YouCanNotAdvance{ shortfall = n } $ go s
+          Just x -> report (Buffer (Empty :|> x)) *> (go s{ dbCommit = Buffer (Empty :|> x), dbView = Buffer (bufferSeq (dbView s) :|> x) } `handle` I.Commit n)

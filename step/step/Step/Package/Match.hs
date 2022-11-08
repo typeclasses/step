@@ -6,7 +6,7 @@ import Step.Chunk
 import Step.Interface
 import qualified Step.Interface.Core as I
 import Step.Package.FixedLength (tryTakeNatural)
-import Step.Interface.Buffer (doubleBuffer)
+import Step.Interface.Buffer (privateDoubleBuffer)
 
 import qualified Step.Do as P
 import qualified Step.Interface as Interface
@@ -39,12 +39,10 @@ import SupplyChain.Interface.TerminableStream (IsTerminableStream)
 match :: Chunk c => Any c m r e a -> Any c m r e (Maybe c, a)
 match (Any x) =
   P.do
-    (n, a) <- act @Any \r -> doubleBuffer >-> counting >-> do
+    (n, a) <- act @Any \r -> privateDoubleBuffer >-> counting >-> do
         ea <- Vendor.map Order >-> resettingSequenceJob (x r)
         n <- SupplyChain.order AmountCommitted
-        pure case ea of
-            Left e -> Left e
-            Right a -> Right (n, a)
+        pure $ ea <&> \a -> (n, a)
     c <- tryTakeNatural n
     P.pure (c, a)
 
