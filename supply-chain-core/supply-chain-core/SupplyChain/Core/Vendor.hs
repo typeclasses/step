@@ -12,12 +12,12 @@ module SupplyChain.Core.Vendor
 import Control.Monad (Monad)
 import Data.Functor.Const (Const)
 import Data.Void (Void)
-
-import SupplyChain.Core.VendorAndReferral (Vendor (..), Referral (..))
-import qualified SupplyChain.Core.Job as Job
-import SupplyChain.Core.Job (Job)
-import qualified SupplyChain.Core.VendorAndReferral as VendorAndReferral
 import SupplyChain.Core.Effect (Effect)
+import SupplyChain.Core.Job (Job)
+import SupplyChain.Core.VendorAndReferral (Vendor (..), Referral (..))
+
+import qualified SupplyChain.Core.Job as Job
+import qualified SupplyChain.Core.VendorAndReferral as VendorAndReferral
 
 {-| An action in which a vendor handles a single request
 

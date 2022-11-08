@@ -8,13 +8,13 @@ module SupplyChain.Core.FreeMonad
   )
   where
 
-import Data.Functor (Functor, (<&>))
-import Data.Function ((&), ($), (.))
 import Control.Applicative (Applicative (pure, (<*>)))
 import Control.Monad (Monad ((>>=)))
-import qualified Control.Monad as Monad
-
+import Data.Function ((&), ($), (.))
+import Data.Functor (Functor, (<&>))
 import SupplyChain.Core.FreePointedFunctor (FreePointedFunctor)
+
+import qualified Control.Monad as Monad
 import qualified SupplyChain.Core.FreePointedFunctor as FreePointedFunctor
 
 data FreeMonad f a =

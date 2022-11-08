@@ -10,8 +10,8 @@ module SupplyChain.Core.FreePointedFunctor
 
 import Control.Applicative (pure)
 import Control.Monad (Monad)
-import Data.Functor (Functor, (<&>))
 import Data.Function ((&))
+import Data.Functor (Functor, (<&>))
 
 data FreePointedFunctor f product =
     Pure product

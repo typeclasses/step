@@ -7,13 +7,13 @@ module SupplyChain.Core.VendorAndReferral
   )
   where
 
-import Data.Functor (Functor, fmap)
-import Data.Function ((.))
 import Data.Foldable (Foldable)
+import Data.Function ((.))
+import Data.Functor (Functor, fmap)
 import Data.Traversable (Traversable)
-
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.Job (Job)
+
 import qualified SupplyChain.Core.Job as Job
 
 -- | Makes requests, responds to requests, and performs actions

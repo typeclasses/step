@@ -8,12 +8,12 @@ module SupplyChain.Core.JobAndVendor
   )
   where
 
-import SupplyChain.Core.Job
-import SupplyChain.Core.Vendor
+import SupplyChain.Core.Effect (Effect)
+import SupplyChain.Core.Job (Job)
+import SupplyChain.Core.Referral (Referral (Referral))
+import SupplyChain.Core.Unit (Unit (Unit))
+import SupplyChain.Core.Vendor (Vendor (Vendor, handle))
 import SupplyChain.Core.VendorAndReferral (alterVendor)
-import SupplyChain.Core.Unit
-import SupplyChain.Core.Referral (Referral (..))
-import SupplyChain.Core.Effect
 
 import qualified SupplyChain.Core.Job as Job
 import qualified SupplyChain.Core.Referral as Referral

@@ -1,24 +1,21 @@
 module Main (main) where
 
-import Prelude (Int, succ)
-import System.IO (IO)
-import Data.Functor.Identity (Identity (Identity))
-import Data.Functor ((<&>), (<$>))
-import Data.Semigroup ((<>))
 import Control.Applicative (pure, (<*>))
 import Data.Function (($))
+import Data.Functor ((<&>), (<$>))
+import Data.Functor.Identity (Identity (Identity))
 import Data.Maybe (Maybe (..))
-
-import qualified Data.List as List
-
-import Test.Tasty
-import Test.Tasty.HUnit ((@?=), testCase)
-
+import Data.Semigroup ((<>))
+import Prelude (Int, succ)
+import SupplyChain.Core.Connect ((>-))
 import SupplyChain.Core.Job (order, perform)
 import SupplyChain.Core.Referral (Referral (Referral))
 import SupplyChain.Core.Vendor (Vendor (Vendor, handle))
-import SupplyChain.Core.Connect ((>-))
+import System.IO (IO)
+import Test.Tasty (defaultMain, testGroup, TestTree)
+import Test.Tasty.HUnit ((@?=), testCase)
 
+import qualified Data.List as List
 import qualified SupplyChain.Core.Job as Job
 
 main :: IO ()

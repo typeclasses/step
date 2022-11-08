@@ -15,9 +15,9 @@ import Data.Function ((.), id)
 import Data.Functor (Functor)
 import Data.Functor.Const (Const)
 import Data.Void (Void)
-
 import SupplyChain.Core.Effect (Effect)
 import SupplyChain.Core.FreeMonad (FreeMonad)
+
 import qualified SupplyChain.Core.Effect as Effect
 import qualified SupplyChain.Core.FreeMonad as FreeMonad
 

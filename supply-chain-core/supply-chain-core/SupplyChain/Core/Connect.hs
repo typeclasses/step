@@ -11,12 +11,13 @@ module SupplyChain.Core.Connect
 import Control.Monad ((>>=))
 import Data.Functor ((<&>), fmap)
 
-import SupplyChain.Core.Vendor (Vendor (Vendor, handle))
-import SupplyChain.Core.Referral (Referral (Referral))
 import SupplyChain.Core.Job (Job)
-import qualified SupplyChain.Core.Vendor as Vendor
-import qualified SupplyChain.Core.Referral as Referral
+import SupplyChain.Core.Referral (Referral (Referral))
+import SupplyChain.Core.Vendor (Vendor (Vendor, handle))
+
 import qualified SupplyChain.Core.Job as Job
+import qualified SupplyChain.Core.Referral as Referral
+import qualified SupplyChain.Core.Vendor as Vendor
 
 infixl 6 >-
 infixl 6 >+
