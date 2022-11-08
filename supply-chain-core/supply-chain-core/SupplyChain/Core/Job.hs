@@ -1,5 +1,13 @@
-module SupplyChain.Core.Job (Job (FreeMonad, Pure, Effect, Request, Perform,
-Bind), effect, perform, order, run, eval, alter) where
+-- | Description: a /job/ makes requests, performs actions, and returns
+
+module SupplyChain.Core.Job
+  (
+    {- * Type -} Job (FreeMonad, Pure, Effect, Request, Perform, Bind),
+    {- * Constructing -} effect, perform, order,
+    {- * Running -} run, eval,
+    {- * Alteration -} alter,
+  )
+  where
 
 import Control.Applicative (Applicative)
 import Control.Monad (Monad)
@@ -13,7 +21,8 @@ import SupplyChain.Core.FreeMonad (FreeMonad)
 import qualified SupplyChain.Core.Effect as Effect
 import qualified SupplyChain.Core.FreeMonad as FreeMonad
 
--- | Monadic context that supports making requests and performing actions
+{-| Monadic context that supports making requests, performing actions,
+    and returning a single result -}
 newtype Job up action product =
     FreeMonad { freeMonad :: FreeMonad (Effect up action) product }
 

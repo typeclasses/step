@@ -32,7 +32,6 @@ library
         SupplyChain.Core.Job
         SupplyChain.Core.JobAndVendor
         SupplyChain.Core.Referral
-        SupplyChain.Core.Types
         SupplyChain.Core.Unit
         SupplyChain.Core.Vendor
         SupplyChain.Core.VendorAndReferral

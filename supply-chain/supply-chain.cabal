@@ -41,4 +41,3 @@ library
         SupplyChain.Referral
         SupplyChain.Unit
         SupplyChain.Vendor
-        SupplyChain.Types

@@ -1,5 +1,11 @@
-module SupplyChain.Core.VendorAndReferral (Vendor (..), Referral (..),
-alterVendor, alterReferral) where
+-- | Description: /vendor/ + /referral/
+
+module SupplyChain.Core.VendorAndReferral
+  (
+    {- * Types -} Vendor (..), Referral (..),
+    {- * Alteration -} alterVendor, alterReferral,
+  )
+  where
 
 import Data.Functor (Functor, fmap)
 import Data.Function ((.))
@@ -20,7 +26,8 @@ newtype Vendor up down action =
 data Referral up down action product =
   Referral
     { product :: product -- ^ The requested product
-    , next :: Vendor up down action -- ^ A new vendor to handle subsequent requests
+    , next :: Vendor up down action
+        -- ^ A new vendor to handle subsequent requests
     }
 
 deriving instance Functor (Referral up down action)

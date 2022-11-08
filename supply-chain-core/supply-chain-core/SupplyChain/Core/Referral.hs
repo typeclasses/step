@@ -1,4 +1,11 @@
-module SupplyChain.Core.Referral (Referral (..), alter) where
+-- | Description: a /referral/ consists of a product and a new vendor
+
+module SupplyChain.Core.Referral
+  (
+    {- * Type -} Referral (..),
+    {- * Alteration -} alter,
+  )
+  where
 
 import SupplyChain.Core.VendorAndReferral (Referral (..))
 import SupplyChain.Core.Job (Job)

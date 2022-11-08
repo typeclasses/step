@@ -1,5 +1,12 @@
-module SupplyChain.Core.JobAndVendor (Job (..), Vendor (..), alterJob,
-alterVendor, loop, once) where
+-- | Description: /job/ + /vendor/
+
+module SupplyChain.Core.JobAndVendor
+  (
+    {- * Types -} Job (..), Vendor (..),
+    {- * Alteration -} alterJob, alterVendor,
+    {- * Conversion -} loop, once,
+  )
+  where
 
 import SupplyChain.Core.Job
 import SupplyChain.Core.Vendor

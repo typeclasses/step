@@ -1,4 +1,12 @@
-module SupplyChain.Core.Connect ((>->), (>-), (>+), joinReferral) where
+-- | Description: functions to combine vendors and jobs
+
+module SupplyChain.Core.Connect
+  (
+    {- * Vendor to job -} (>-), (>+),
+    {- * Vendor to vendor -} (>->),
+    {- * Referral -} joinReferral,
+  )
+  where
 
 import Control.Monad ((>>=))
 import Data.Functor ((<&>), fmap)
@@ -14,12 +22,16 @@ infixl 6 >-
 infixl 6 >+
 infixl 7 >->
 
-(>-) :: Vendor up down action -> Job down action product
-    -> Job up action product
+{-| Modify a job with a vendor that interprets its requests -}
+(>-) :: Vendor up down action -- ^ Upstream
+     -> Job down action product -- ^ Downstream
+     -> Job up action product
 up >- down = up >+ down <&> Referral.product
 
-(>->) :: Vendor up middle action -> Vendor middle down action
-    -> Vendor up down action
+{-| Connect two vendors; the first interprets requests made by the second -}
+(>->) :: Vendor up middle action -- ^ Upstream
+      -> Vendor middle down action -- ^ Downstream
+      -> Vendor up down action
 up >-> down = Vendor { handle = \request ->
     up >+ (Vendor.handle down request) <&> joinReferral }
 
@@ -33,10 +45,11 @@ joinReferral (Referral (Referral product nextDown) nextUp) =
 {-| Connect a vendor to a job, producing a job which returns both the product
     and a new version of the vendor.
 
-    Use this function instead of 'vendorToJob' if you need to attach a succession
+    Use this function instead of '(>-)' if you need to attach a succession
     of jobs to one stateful vendor. -}
-(>+) :: Vendor up down action -> Job down action product
-    -> Job up action (Referral up down action product)
+(>+) :: Vendor up down action -- ^ Upstream
+     -> Job down action product -- ^ Downstream
+     -> Job up action (Referral up down action product)
 up >+ job = case job of
     Job.Pure product -> Job.Pure (Referral product up)
     Job.Perform action extract -> Job.Perform action extract <&> (`Referral` up)

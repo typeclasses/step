@@ -1,30 +1,40 @@
-module SupplyChain.Core.FreePointedFunctor (FreePointedFunctor (Pure, Map), run,
-eval, alter) where
+-- | Description: makes a pointed functor of any type constructor
 
+module SupplyChain.Core.FreePointedFunctor
+  (
+    {- * Type -} FreePointedFunctor (Pure, Map),
+    {- * Running -} run, eval,
+    {- * Alteration -} alter,
+  )
+  where
+
+import Control.Applicative (pure)
 import Control.Monad (Monad)
 import Data.Functor (Functor, (<&>))
 import Data.Function ((&))
 
-data FreePointedFunctor con product =
+data FreePointedFunctor f product =
     Pure product
-  | forall x. Map (con x) (x -> product)
+  | forall x. Map (f x) (x -> product)
 
-deriving instance Functor (FreePointedFunctor con)
+deriving instance Functor (FreePointedFunctor f)
 
-run :: Monad effect => (product -> effect product)
-    -> (forall x. con x -> effect x)
-    -> FreePointedFunctor con product -> effect product
-run runPure runEffect = \case
-    Pure product -> runPure product
+run :: Monad effect =>
+    (forall x. f x -> effect x) -- ^ How to interpret @f@ actions
+    -> FreePointedFunctor f product -> effect product
+run runEffect = \case
+    Pure product -> pure product
     Map action extract -> runEffect action <&> extract
 
-eval :: (forall x. con x -> x) -> FreePointedFunctor con product -> product
-eval evalCon = \case
+eval ::
+    (forall x. f x -> x) -- ^ How to interpret @f@ actions
+    -> FreePointedFunctor f product -> product
+eval evalF = \case
     Pure product -> product
-    Map action extract -> evalCon action & extract
+    Map action extract -> evalF action & extract
 
-alter :: (forall x. con x -> FreePointedFunctor con' x)
-    -> FreePointedFunctor con product -> FreePointedFunctor con' product
+alter :: (forall x. f x -> FreePointedFunctor f' x)
+    -> FreePointedFunctor f product -> FreePointedFunctor f' product
 alter f = \case
     Pure product -> Pure product
     Map action extract -> f action <&> extract

@@ -1,5 +1,12 @@
-module SupplyChain.Core.FreeMonad (FreeMonad (Step, Bind, Pure, Map), run, eval,
-alter) where
+-- | Description: makes a monad of any type constructor
+
+module SupplyChain.Core.FreeMonad
+  (
+    {- * Type -} FreeMonad (Step, Bind, Pure, Map),
+    {- * Running -} run, eval,
+    {- * Alteration -} alter,
+  )
+  where
 
 import Data.Functor (Functor, (<&>))
 import Data.Function ((&), ($), (.))
@@ -10,55 +17,57 @@ import qualified Control.Monad as Monad
 import SupplyChain.Core.FreePointedFunctor (FreePointedFunctor)
 import qualified SupplyChain.Core.FreePointedFunctor as FreePointedFunctor
 
-data FreeMonad con product =
-    Step (FreePointedFunctor con product)
-  | forall x. Bind (FreeMonad con x) (x -> FreeMonad con product)
+data FreeMonad f a =
+    Step (FreePointedFunctor f a)
+  | forall x. Bind (FreeMonad f x) (x -> FreeMonad f a)
 
-pattern Pure :: product -> FreeMonad con product
-pattern Pure product = Step (FreePointedFunctor.Pure product)
+pattern Pure :: a -> FreeMonad f a
+pattern Pure a = Step (FreePointedFunctor.Pure a)
 
-pattern Map :: con x -> (x -> product) -> FreeMonad con product
+pattern Map :: f x -> (x -> a) -> FreeMonad f a
 pattern Map action extract = Step (FreePointedFunctor.Map action extract)
 
 {-# complete Pure, Map, Bind #-}
 
-deriving instance Functor (FreeMonad con)
+deriving instance Functor (FreeMonad f)
 
-instance Applicative (FreeMonad con) where pure = Pure; (<*>) = Monad.ap
+instance Applicative (FreeMonad f) where pure = Pure; (<*>) = Monad.ap
 
-instance Monad (FreeMonad con) where (>>=) = Bind
+instance Monad (FreeMonad f) where (>>=) = Bind
 
-run :: Monad effect => (forall x. con x -> effect x)
-    -> FreeMonad con product -> effect product
-run (runEffect :: forall x. con x -> effect x) = recur
+run :: Monad effect =>
+    (forall x. f x -> effect x) -- ^ How to interpret @f@ actions
+    -> FreeMonad f a -> effect a
+run (runEffect :: forall x. f x -> effect x) = recur
   where
-    runPF :: FreePointedFunctor con x -> effect x
-    runPF = FreePointedFunctor.run pure runEffect
+    runPF :: FreePointedFunctor f x -> effect x
+    runPF = FreePointedFunctor.run runEffect
 
-    recur :: FreeMonad con x -> effect x
+    recur :: FreeMonad f x -> effect x
     recur = \case
         Step a -> runPF a
         Bind (Step a) b -> runPF a >>= \x -> recur $ b x
         Bind (Bind a b) c -> recur a >>= \x -> recur $ Bind (b x) c
 
-eval :: (forall x. con x -> x)
-    -> FreeMonad con product -> product
-eval (evalEffect :: forall x. con x -> x) = recur
+eval :: (forall x. f x -> x) -- ^ How to interpret @f@ actions
+    -> FreeMonad f a
+    -> a
+eval (evalEffect :: forall x. f x -> x) = recur
   where
-    evalPF :: FreePointedFunctor con x -> x
+    evalPF :: FreePointedFunctor f x -> x
     evalPF = FreePointedFunctor.eval evalEffect
 
-    recur :: FreeMonad con x -> x
+    recur :: FreeMonad f x -> x
     recur = \case
         Step a -> evalPF a
         Bind (Step a) b -> evalPF a & \x -> recur $ b x
         Bind (Bind a b) c -> recur a & \x -> recur $ Bind (b x) c
 
-alter :: (forall x. con x -> FreeMonad con' x)
-    -> FreeMonad con product -> FreeMonad con' product
-alter (f :: forall x. con x -> FreeMonad con' x) = recur
+alter :: (forall x. f x -> FreeMonad f' x)
+    -> FreeMonad f a -> FreeMonad f' a
+alter (f :: forall x. f x -> FreeMonad f' x) = recur
   where
-    recur :: FreeMonad con x -> FreeMonad con' x
+    recur :: FreeMonad f x -> FreeMonad f' x
     recur = \case
         Pure x -> Pure x
         Map action extract -> f action <&> extract
