@@ -4,7 +4,7 @@ A *supply chain* represents a flow of information from one `Vendor` to the next,
 and so on, ultimately reaching a `Job` that returns a product.
 
 ```haskell
-run (vendor1 >-> vendor2 >-> vendor3 >-> job)
+run (vendor1 >-> vendor2 >-> vendor3 >-| job)
 ```
 
 A job or vendor can place an `order`, which is fulfilled by the vendor
@@ -14,8 +14,7 @@ A job or vendor can place an `order`, which is fulfilled by the vendor
   by `vendor1`.
 * The orders made by the `job` are served by `vendor3`.
 * The orders made by `vendor3` are served by `vendor2`.
-* `vendor1` does not make any requests (its upstream interface is
-  `NoInterface`).
+* `vendor1` does not make any requests (its upstream interface is `Const Void`).
 
 ## Interfaces
 
@@ -36,67 +35,163 @@ The lack of any interface at all can be expressed as `Const Void`.
 
 An *action* is a monadic context such as `IO`.
 
-The lack of any actions at all can be expressed as `Const Void`.
+The lack of any actions at all can be expressed as `Const Void`. (If you are
+used to dealing with monad transformers, you might be familiar with using
+`Identity` as a trivial context, but such a layer is not needed here.)
 
 ## Jobs
 
-               ▲   │
-         up x  │   │  x
-               │   ▼
-    ┌─────────────────────────┐
-    │  Job up action product  │
-    └─────────────────────────┘
-                 │
-                 │  product
-                 ▼
+`Job up action product` is a monadic context that supports:
+
+  - Making requests on the `up` interface
+  - Performing side effects in the `action` context
+  - Returning a single `product` value
+
+```
+            ▲   │
+      up a  │   │  a
+            │   ▼
+┌─────────────────────────┐
+│  Job up action product  │
+└─────────────────────────┘
+              │
+              │  product
+              ▼
+```
+
+## Writing jobs
+
+`Job` belongs to the `Monad` class, and there are two functions for making
+requests and performing actions respectively:
+
+```haskell
+order :: up product -> Job up action product
+```
+
+```haskell
+perform :: action product -> Job up action product
+```
+
+A job may also be altered by connecting it to a vendor; see *Vendor-to-job
+connection* below.
 
 ## Vendors
 
+`Vendor up down action` can:
 
-                 ▲   │
-           up x  │   │  x
-                 │   ▼
-    ┌───────────────────────────┐
-    │   Vendor up down action   │
-    └───────────────────────────┘
-                 ▲   │
-         down y  │   │  y
-                 │   ▼
+  - Respond to requests received via the `down` interface
+  - Make requests on the `up` interface
+  - Perform side effects in the `action` context
 
-The most common way to use a `Vendor` is to connect it to a `Job` using
-`vendorToJob`.
+```
+              ▲   │
+        up a  │   │  a
+              │   ▼
+┌───────────────────────────┐
+│   Vendor up down action   │
+└───────────────────────────┘
+              ▲   │
+      down b  │   │  b
+              │   ▼
+```
 
-## Connection
+The most common way to use vendors is to connect them to jobs using `(>->)` and
+`(>-|)`.
 
-If `i` is the downstream interface of vendor `a` and the upstream interface of
-job `b`, then we can form the composition `vendorToJob a b` (which may also
-written as `a >-> b`). When the `Job` makes a request of type `i x`, the
-`Vendor` replies with a response of type `x`.
+## Vendor-to-vendor connection
 
-    ┌────────────────────────┐
-    │   Vendor up i action   │
-    └────────────────────────┘
-                 ▲   │
-            i x  │   │  x
-                 │   ▼
-    ┌────────────────────────┐
-    │  Job i action product  │
-    └────────────────────────┘
+If `i` is the downstream interface of vendor `v1` and the upstream interface of
+vendor `v2`, then we can form the composition `v1 >-> v2`.
 
-## How to create a Vendor
+```haskell
+(>->) :: Vendor up i action
+      -> Vendor i down action
+      -> Vendor up down action
+```
+
+```
+             ▲   │
+       up a  │   │  a
+             │   ▼              ─┐
+┌────────────────────────┐       │
+│   Vendor up i action   │  v1   │
+└────────────────────────┘       │
+             ▲   │               │
+        i b  │   │  b            │  v1 >-> v2
+             │   ▼               │
+┌────────────────────────┐       │
+│  Vendor i down action  │  v2   │
+└────────────────────────┘       │
+             ▲   │              ─┘
+     down c  │   │  c
+             │   ▼
+```
+
+When the downstream vendor makes a request of type `i b`, the upstream vendor
+replies with a response of type `b`.
+
+`(>->)` and `id` in the `SupplyChain.Vendor` module form a category.
+
+```haskell
+id :: Vendor i i action  -- From "SupplyChain.Vendor"
+```
+
+The `(>->)` operator is associative, and `id` is its identity.
+
+- `(a >-> b) >-> c` = `a >-> (b >-> c)`
+- `a >-> id` = `a`
+- `a` = `id >-> a`
+
+## Vendor-to-job connection
+
+If `i` is the downstream interface of vendor `v` and the upstream interface of
+job `j`, then we can form the composition `v >-| j`.
+
+```haskell
+(>-|) :: Vendor up i action
+      -> Job i action product
+      -> Job up action product
+```
+
+```
+             ▲   │
+       up a  │   │  a
+             │   ▼              ─┐
+┌────────────────────────┐       │
+│   Vendor up i action   │  v    │
+└────────────────────────┘       │
+             ▲   │               │
+        i b  │   │  b            │  v >-| j
+             │   ▼               │
+┌────────────────────────┐       │
+│  Job i action product  │  j    │
+└────────────────────────┘       │
+             │                  ─┘
+             │  product
+             ▼
+```
+
+When the job makes a request of type `i b`, the vendor replies with a response
+of type `b`.
+
+`(>->)` and `(>-|)` together are associative.
+
+- `(a >-> b) >-| c` = `a >-> (b >-| c)`
+
+## Writing vendors
 
 We define vendors using the `Vendor` constructor. Please inspect its type
 carefully:
 
 ```haskell
-forall product. down product -> Job up action (Supply up down action product)
+forall product. down product -> Job up action (Referral up down action product)
 ```
 
 A vendor is a function that accepts a request. The request type is polymorphic
 but constrained by the vendor's downstream interface.
 
 ```haskell
-forall product. down product -> Job up action (Supply up down action product)
+forall product. down product -> Job up action (Referral up down action product)
                 ^^^^^^^^^^^^
 ```
 
@@ -104,38 +199,38 @@ A vendor has an upstream interface and can do everything a job can, therefore
 the request handler operates in a `Job` context.
 
 ```haskell
-forall product. down product -> Job up action (Supply up down action product)
+forall product. down product -> Job up action (Referral up down action product)
                                 ^^^^^^^^^^^^^
 ```
 
 This allows the vendor to undertake a monadic sequence involving `order` and
 `perform` while fulfilling the request.
 
-The final step in fulfilling a request is to return a `Supply`.
+The final step in fulfilling a request is to return a `Referral`.
 
 ```haskell
-forall product. down product -> Job up action (Supply up down action product)
-                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+forall product. down product -> Job up action (Referral up down action product)
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
 
-A `Supply` is written using its `Supply` constructor, which has two parameters:
+A `Referral` is written using its `Referral` constructor, which has two parameters:
 
 ```haskell
-Supply :: product -> Vendor up down action -> Supply up down action product
+Referral :: product -> Vendor up down action -> Referral up down action product
 ```
 
 The first is the vendor's response to the client's request.
 
 ```haskell
-Supply :: product -> Vendor up down action -> Supply up down action product
-          ^^^^^^^
+Referral :: product -> Vendor up down action -> Referral up down action product
+            ^^^^^^^
 ```
 
 The second is a new `Vendor`.
 
 ```haskell
-Supply :: product -> Vendor up down action -> Supply up down action product
-                     ^^^^^^^^^^^^^^^^^^^^^
+Referral :: product -> Vendor up down action -> Referral up down action product
+                       ^^^^^^^^^^^^^^^^^^^^^
 ```
 
 This latter component is what allows vendors to be stateful, and it is usually

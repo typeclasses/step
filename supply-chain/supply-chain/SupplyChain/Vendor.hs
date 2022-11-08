@@ -21,7 +21,7 @@ import Data.Void (Void)
 absurd :: Vendor up (Const Void) action
 absurd = Vendor \case{}
 
--- | Does nothing at all; the identity for 'SupplyChain.Connect.>->'.
+-- | Does nothing at all; the identity for '>->'.
 id :: Vendor i i action
 id = forever Job.order
 
