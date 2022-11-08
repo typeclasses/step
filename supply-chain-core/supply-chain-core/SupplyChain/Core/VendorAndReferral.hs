@@ -1,12 +1,3 @@
-{-
-
-Vender and Referral are defined in one module together because their definitions
-are mutually recursive. This module is not exported by the package; instead, the
-definitions from this module are re-exported by "SupplyChain.Core.Vendor" and
-"SupplyChain.Core.Referral".
-
--}
-
 module SupplyChain.Core.VendorAndReferral (Vendor (..), Referral (..),
 alterVendor, alterReferral) where
 

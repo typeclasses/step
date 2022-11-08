@@ -25,7 +25,7 @@ import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.Reader (ReaderT (..))
 
 -- Streaming
-import SupplyChain (Job, (>->), once, loop)
+import SupplyChain (Job, (>->), (>-|))
 import qualified SupplyChain
 import qualified SupplyChain.Alter as Alter
 import qualified SupplyChain.Vendor as Vendor
@@ -210,7 +210,7 @@ class (IsAction act, IsAction try) =>
 
 instance Atomic Atom Sure where
     try (Atom q) =
-        (act \r -> once (Vendor.map stepCast >-> loop (run r q))) >>= \case
+        (act \r -> Vendor.map stepCast >-| run r q) >>= \case
             Left _ -> pure Nothing
             Right x -> fmap Just x
 
@@ -258,10 +258,10 @@ instance {-# overlappable #-} IsAction a => Is a a where
 -- Casting actions via casting steps
 
 instance Is SureQuery Sure where
-    cast x = act \r -> once $ Vendor.map stepCast >-> loop (run r x)
+    cast x = act \r -> Vendor.map stepCast >-| run r x
 
 instance Is Query Any where
-    cast x = act \r -> once $ Vendor.map stepCast >-> loop (run r x)
+    cast x = act \r -> Vendor.map stepCast >-| run r x
 
 instance Is SureQuery Query where
     cast x = act \r -> run r x <&> Right
@@ -270,7 +270,7 @@ instance Is Sure Any where
     cast x = act \r -> run r x <&> Right
 
 instance Is SureQuery Any where
-    cast x = act \r -> once (Vendor.map stepCast >-> loop (run r x)) <&> Right
+    cast x = act \r -> Vendor.map stepCast >-| run r x <&> Right
 
 -- Casting to Atom
 

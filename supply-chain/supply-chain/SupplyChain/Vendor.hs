@@ -1,6 +1,6 @@
 module SupplyChain.Vendor
   (
-    Vendor (Vendor, handle), run, eval, alter,
+    Vendor (Vendor, handle), (>->), run, eval, alter,
     {- ** Some simple vendors -} function, action, absurd, map, forever, id,
   )
   where
@@ -8,6 +8,7 @@ module SupplyChain.Vendor
 import SupplyChain.Core.Job (Job)
 import SupplyChain.Core.Referral (Referral (..))
 import SupplyChain.Core.Vendor (Vendor (..), run, eval, alter)
+import SupplyChain.Core.Connect ((>->))
 
 import qualified SupplyChain.Core.Job as Job
 

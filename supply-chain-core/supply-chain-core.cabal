@@ -15,6 +15,7 @@ common base
         LambdaCase
         NoImplicitPrelude
         PatternSynonyms
+        TypeFamilies
         ViewPatterns
 
     build-depends:
@@ -29,10 +30,11 @@ library
         SupplyChain.Core.FreeMonad
         SupplyChain.Core.FreePointedFunctor
         SupplyChain.Core.Job
+        SupplyChain.Core.JobAndVendor
         SupplyChain.Core.Referral
         SupplyChain.Core.Types
+        SupplyChain.Core.Unit
         SupplyChain.Core.Vendor
-    other-modules:
         SupplyChain.Core.VendorAndReferral
 
 test-suite test-supply-chain-core

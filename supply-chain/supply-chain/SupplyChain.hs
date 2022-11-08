@@ -2,17 +2,19 @@ module SupplyChain
   (
 
     {- * Job -} {- $job -} Job, order, perform, run, eval,
-    {- * Vendor -} {- $vendor -} Vendor (Vendor, handle),
+    {- * Vendor -} {- $vendor -} Vendor (Vendor, handle), (>->),
     {- * Referral -} {- $referral -} Referral (Referral),
-    {- * Connect -} {- $connect -} (>->), vendorToJob', loop, once,
+    {- * Job/vendor -} {- $jobVendor -} (>-|), loop, once,
+    {- * Unit -} {- $unit -} Unit (Unit),
 
   )
   where
 
-import SupplyChain.Connect ((>->), vendorToJob', loop, once)
+import SupplyChain.JobAndVendor (loop, once, (>-|))
 import SupplyChain.Job (Job, order, perform, run, eval)
 import SupplyChain.Referral (Referral (Referral))
-import SupplyChain.Vendor (Vendor (Vendor, handle))
+import SupplyChain.Vendor (Vendor (Vendor, handle), (>->))
+import SupplyChain.Unit (Unit (Unit))
 
 -- $job
 -- See also: "SupplyChain.Job"
@@ -23,5 +25,8 @@ import SupplyChain.Vendor (Vendor (Vendor, handle))
 -- $referral
 -- See also: "SupplyChain.Referral"
 
--- $connect
--- See also: "SupplyChain.Connect"
+-- $unit
+-- See also: "SupplyChain.Unit"
+
+-- $jobVendor
+-- See also: "SupplyChain.JobAndVendor"

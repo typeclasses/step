@@ -36,8 +36,9 @@ library
     exposed-modules:
         SupplyChain
         SupplyChain.Alter
-        SupplyChain.Connect
         SupplyChain.Job
+        SupplyChain.JobAndVendor
         SupplyChain.Referral
+        SupplyChain.Unit
         SupplyChain.Vendor
         SupplyChain.Types
