@@ -27,6 +27,7 @@ common base
         FunctionalDependencies
         LambdaCase
         NoImplicitPrelude
+        PatternSynonyms
         QualifiedDo
         TypeFamilies
         UndecidableInstances
