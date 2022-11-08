@@ -6,6 +6,12 @@ version: 0.0.0.0
 category: Monads, Streaming
 synopsis: Composable request-response pipelines
 
+author: Chris Martin
+maintainer: Chris Martin, Julie Moronuki
+
+homepage: https://github.com/typeclasses/supply-chain-core
+bug-reports: https://github.com/typeclasses/supply-chain-core/issues
+
 license: Apache-2.0
 license-file: license.txt
 
