@@ -19,7 +19,7 @@ import Data.Either (Either (..))
 import Data.Function
 import Data.Maybe (Maybe (..))
 import Numeric.Natural
-import SupplyChain (Vendor (..), Job, Referral (..), (>->), order)
+import SupplyChain (Vendor (..), Job, Referral (..), (>->), order, once, loop)
 import Data.Functor
 import Prelude ((+), (-))
 import Data.Foldable (traverse_)
@@ -39,8 +39,8 @@ import SupplyChain.Interface.TerminableStream (IsTerminableStream)
 match :: Chunk c => Any c m r e a -> Any c m r e (Maybe c, a)
 match (Any x) =
   P.do
-    (n, a) <- act @Any \r -> privateDoubleBuffer >-> counting >-> do
-        ea <- Vendor.map Order >-> resettingSequenceJob (x r)
+    (n, a) <- act @Any \r -> once $ privateDoubleBuffer >-> counting >-> loop do
+        ea <- once $ Vendor.map Order >-> loop (resettingSequenceJob (x r))
         n <- SupplyChain.order AmountCommitted
         pure $ ea <&> \a -> (n, a)
     c <- tryTakeNatural n

@@ -1,26 +1,21 @@
-module SupplyChain.Connect (Connect (..),
-    vendorToJob, vendorToVendor, vendorToJob') where
+module SupplyChain.Connect ((>->),
+    vendorToJob, vendorToJob', loop, once, Unit (..)) where
 
 import SupplyChain.Core.Connect (vendorToJob, vendorToJob', vendorToVendor)
 import SupplyChain.Core.Types (Vendor, Job)
+import SupplyChain.Vendor (Vendor (..))
+import SupplyChain.Referral (Referral (..))
+import qualified SupplyChain.Referral as Referral
 
-class Connect up down action client result | up client -> result,
-    client -> down action, result -> up action
-  where
-    {-| Generalizes 'vendorToJob' and 'vendorToVendor'
+import Data.Functor
 
-        This operation is associative; if @a@ and @b@ are vendors
-        and @c@ is a job, then @(a >-> b) >-> c@ is the same supply
-        chain as @a >-> (b >-> c)@.
-    -}
-    (>->) :: Vendor up down action -> client -> result
+(>->) :: Vendor up middle action -> Vendor middle down action -> Vendor up down action
+(>->) = vendorToVendor
 
-instance Connect up down action
-    (Job down action product) (Job up action product)
-  where
-    (>->) = vendorToJob
+data Unit a b = a ~ b => Unit
 
-instance Connect up middle action
-    (Vendor middle down action) (Vendor up down action)
-  where
-    (>->) = vendorToVendor
+loop :: Job up action product -> Vendor up (Unit product) action
+loop j = go where go = Vendor{ handle = \Unit -> j <&> \product -> Referral product go }
+
+once :: Vendor up (Unit product) action -> Job up action product
+once v = handle v Unit <&> Referral.product

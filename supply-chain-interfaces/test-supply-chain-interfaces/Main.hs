@@ -3,6 +3,7 @@ module Main (main) where
 import Data.Maybe (Maybe (..))
 import Control.Monad (replicateM)
 import Data.Char (Char)
+import Data.Function
 import Numeric.Natural (Natural)
 import System.IO (IO)
 
@@ -31,31 +32,31 @@ tests = testGroup "TerminableStream"
 listTest :: Assertion
 listTest = eval job @?= result
   where
-    job = list "abc" >-> replicateM 4 (order NextMaybe)
+    job = once $ list "abc" >-> loop (replicateM 4 (order NextMaybe))
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
 concatTest1 :: Assertion
 concatTest1 = eval job @?= result
   where
-    job = list ["a", "bc", "def", "ghij"] >-> concat
-                    >-> replicateM 5 (order NextMaybe)
+    job = once $ list ["a", "bc", "def", "ghij"] >-> concat
+                    >-> loop (replicateM 5 (order NextMaybe))
     result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
 
 concatTest2 :: Assertion
 concatTest2 = eval job @?= result
   where
-    job = list ["a", "bc"] >-> concat
-                    >-> replicateM 5 (order NextMaybe)
+    job = once $ list ["a", "bc"] >-> concat
+                    >-> loop (replicateM 5 (order NextMaybe))
     result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]
 
 groupLetters :: Assertion
 groupLetters = eval job @?= result
   where
-    job = (list "Hrmm..." >-> group >-> all)
+    job = once $ list "Hrmm..." >-> group >-> loop all
     result = [(0, 'H'), (0, 'r'), (1, 'm'), (2, '.')]
 
 groupEmpty :: Assertion
 groupEmpty = eval job @?= result
   where
-    job = nil >-> group >-> all
+    job = once $ nil >-> group >-> loop all
     result = [] :: [(Natural, Char)]

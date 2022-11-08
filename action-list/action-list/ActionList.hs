@@ -7,7 +7,7 @@ module ActionList
   )
   where
 
-import SupplyChain ( Vendor, Referral (Referral), (>->))
+import SupplyChain ( Vendor, Referral (Referral), (>->), loop, once)
 import qualified SupplyChain.Vendor as Vendor
 import qualified SupplyChain.Job as Job
 
@@ -64,11 +64,11 @@ perform = VendorActionList . Stream.actionSingleton
 
 -- | Converts an 'ActionList' into an ordinary list
 toList :: forall a. ActionList (Const Void) a -> [a]
-toList xs = Job.eval (actionListVendor xs >-> Stream.all)
+toList xs = Job.eval $ once $ actionListVendor xs >-> loop Stream.all
 
 -- | Converts an 'ActionList' into an action that returns all the items at once
 runActionList :: forall m a. Monad m => ActionList m a -> m [a]
-runActionList xs = Job.run (actionListVendor xs >-> Stream.all)
+runActionList xs = Job.run $ once $ actionListVendor xs >-> loop Stream.all
 
 next :: forall m a. Monad m => ActionList m a -> m (Maybe (a, ActionList m a))
 next xs = fmap @m f $ Vendor.run (actionListVendor xs) Stream.NextMaybe
