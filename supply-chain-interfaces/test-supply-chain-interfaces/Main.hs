@@ -31,29 +31,29 @@ tests = testGroup "TerminableStream"
 listTest :: Assertion
 listTest = eval job @?= result
   where
-    job = list "abc" >-| replicateM 4 (order NextMaybe)
+    job = list "abc" >- replicateM 4 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing]
 
 concatTest1 :: Assertion
 concatTest1 = eval job @?= result
   where
-    job = list ["a", "bc", "def", "ghij"] >-> concat >-| replicateM 5 (order NextMaybe)
+    job = list ["a", "bc", "def", "ghij"] >-> concat >- replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
 
 concatTest2 :: Assertion
 concatTest2 = eval job @?= result
   where
-    job = list ["a", "bc"] >-> concat >-| replicateM 5 (order NextMaybe)
+    job = list ["a", "bc"] >-> concat >- replicateM 5 (order NextMaybe)
     result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]
 
 groupLetters :: Assertion
 groupLetters = eval job @?= result
   where
-    job = list "Hrmm..." >-> group >-| all
+    job = list "Hrmm..." >-> group >- all
     result = [(0, 'H'), (0, 'r'), (1, 'm'), (2, '.')]
 
 groupEmpty :: Assertion
 groupEmpty = eval job @?= result
   where
-    job = nil >-> group >-| all
+    job = nil >-> group >- all
     result = [] :: [(Natural, Char)]

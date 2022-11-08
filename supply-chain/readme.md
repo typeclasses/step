@@ -4,7 +4,7 @@ A *supply chain* represents a flow of information from one `Vendor` to the next,
 and so on, ultimately reaching a `Job` that returns a product.
 
 ```haskell
-run (vendor1 >-> vendor2 >-> vendor3 >-| job)
+run (vendor1 >-> vendor2 >-> vendor3 >- job)
 ```
 
 A job or vendor can place an `order`, which is fulfilled by the vendor
@@ -96,7 +96,7 @@ connection* below.
 ```
 
 The most common way to use vendors is to connect them to jobs using `(>->)` and
-`(>-|)`.
+`(>-)`.
 
 ## Vendor-to-vendor connection
 
@@ -145,12 +145,12 @@ The `(>->)` operator is associative, and `id` is its identity.
 ## Vendor-to-job connection
 
 If `i` is the downstream interface of vendor `v` and the upstream interface of
-job `j`, then we can form the composition `v >-| j`.
+job `j`, then we can form the composition `v >- j`.
 
 ```haskell
-(>-|) :: Vendor up i action
-      -> Job i action product
-      -> Job up action product
+(>-) :: Vendor up i action
+     -> Job i action product
+     -> Job up action product
 ```
 
 ```
@@ -161,7 +161,7 @@ job `j`, then we can form the composition `v >-| j`.
 │   Vendor up i action   │  v    │
 └────────────────────────┘       │
              ▲   │               │
-        i b  │   │  b            │  v >-| j
+        i b  │   │  b            │  v >- j
              │   ▼               │
 ┌────────────────────────┐       │
 │  Job i action product  │  j    │
@@ -174,9 +174,9 @@ job `j`, then we can form the composition `v >-| j`.
 When the job makes a request of type `i b`, the vendor replies with a response
 of type `b`.
 
-`(>->)` and `(>-|)` together are associative.
+`(>->)` and `(>-)` together are associative.
 
-- `(a >-> b) >-| c` = `a >-> (b >-| c)`
+- `(a >-> b) >- c` = `a >-> (b >- c)`
 
 ## Writing vendors
 

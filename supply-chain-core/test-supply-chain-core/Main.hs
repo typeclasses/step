@@ -17,7 +17,7 @@ import Test.Tasty.HUnit ((@?=), testCase)
 import SupplyChain.Core.Job (order, perform)
 import SupplyChain.Core.Referral (Referral (Referral))
 import SupplyChain.Core.Vendor (Vendor (Vendor, handle))
-import SupplyChain.Core.Connect ((>-|))
+import SupplyChain.Core.Connect ((>-))
 
 import qualified SupplyChain.Core.Job as Job
 
@@ -53,7 +53,7 @@ tests = testGroup "Core"
     , testGroup "order" $
         let
           -- Converts dynamic effects to static effects
-          f = (go >-|)
+          f = (go >-)
             where
               go = Vendor { handle = \x -> perform x <&> (`Referral` go) }
         in
