@@ -3,6 +3,9 @@ cabal-version: 3.0
 name: supply-chain-core
 version: 0.0.0.0
 
+category: Monads, Streaming
+synopsis: Composable request-response pipelines
+
 license: Apache-2.0
 license-file: license.txt
 
