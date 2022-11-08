@@ -6,6 +6,13 @@ version: 0.0.0.0
 category: Monads, Streaming
 synopsis: Composable request-response pipelines
 
+description:
+    This package defines the @Job@ and @Vendor@ types that are the
+    focus of the @supply-chain@ package. The core package is provided
+    for the sake of exposing all of the internal detail. More likely
+    you want to use @supply-chain@ instead, which aims to be
+    friendlier and subject to fewer breaking releases.
+
 author: Chris Martin
 maintainer: Chris Martin, Julie Moronuki
 
