@@ -1,5 +1,3 @@
-# supply-chain-core
-
 ## Story
 
 The initial idea for this library stemmed from the [pipes] library. The
