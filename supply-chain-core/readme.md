@@ -156,4 +156,4 @@ conveniences could be designed.
 
   [functional dependencies]: https://downloads.haskell.org/~ghc/latest/docs/users_guide/exts/functional_dependencies.html
 
-  [Eff]: https://hackage.haskell.org/package/effectful-core/docs/Effectful.html#t:Eff
+  [Eff]: https://github.com/haskell-effectful/effectful/blob/c385b16b2b756cf27f60116714dfbcc7dc1c272d/effectful-core/src/Effectful/Internal/Monad.hs#L104-L122
