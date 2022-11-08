@@ -1,6 +1,7 @@
 module Step.Interface.Buffer
   (
     Buffer (..), bufferedStepper, pureStepper,
+    doubleBuffer,
   )
   where
 
@@ -118,3 +119,30 @@ bufferedStepper buffer = go Start
       where
         setUncommittedChunks :: Seq c -> Job up action ()
         setUncommittedChunks xs = SupplyChain.perform $ assign buffer (Buffer xs)
+
+data DoubleBuffer c = DoubleBuffer{ dbCommit :: Seq c, dbView :: Seq c }
+
+doubleBuffer :: forall c up action. Chunk c => IsTerminableStream c up =>
+    Vendor up (CommittableChunkStream c) action
+doubleBuffer = go (DoubleBuffer Empty Empty)
+  where
+    go :: DoubleBuffer c -> Vendor up (CommittableChunkStream c) action
+    go s = Vendor \case
+        I.Reset -> pure $ Referral () $ go s{ dbView = dbCommit s }
+
+        I.NextMaybe ->
+            case dbView s of
+                x :<| xs -> pure $ Referral (Just x) $ go s{ dbView = xs }
+                Empty -> SupplyChain.order Stream.nextMaybe >>= \case
+                    Nothing -> pure $ Referral Nothing $ go s
+                    Just x -> pure $ Referral (Just x) $ go s{ dbCommit = dbCommit s :|> x }
+
+        c@(I.Commit n) ->
+            case dbCommit s of
+                x :<| xs -> case drop n x of
+                    DropAll -> pure $ Referral AdvanceSuccess $ go s{ dbCommit = xs }
+                    DropPart{ dropRemainder = x' } -> pure $ Referral AdvanceSuccess $ go s{ dbCommit = x' :<| xs }
+                    DropInsufficient{ dropShortfall = n' } -> go s{ dbCommit = xs } `handle` I.Commit n'
+                Empty -> SupplyChain.order Stream.nextMaybe >>= \case
+                    Nothing -> pure $ Referral YouCanNotAdvance{ shortfall = n } $ go s
+                    Just x -> go s{ dbCommit = Empty :|> x, dbView = dbView s :|> x } `handle` c
