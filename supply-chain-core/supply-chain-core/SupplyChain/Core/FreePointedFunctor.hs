@@ -15,16 +15,16 @@ run :: Monad effect => (product -> effect product)
     -> (forall x. con x -> effect x)
     -> FreePointedFunctor con product -> effect product
 run runPure runEffect = \case
-    Pure product        ->  runPure product
-    Map action extract  ->  runEffect action <&> extract
+    Pure product -> runPure product
+    Map action extract -> runEffect action <&> extract
 
 eval :: (forall x. con x -> x) -> FreePointedFunctor con product -> product
 eval evalCon = \case
-    Pure product        ->  product
-    Map action extract  ->  evalCon action & extract
+    Pure product -> product
+    Map action extract -> evalCon action & extract
 
 alter :: (forall x. con x -> FreePointedFunctor con' x)
     -> FreePointedFunctor con product -> FreePointedFunctor con' product
 alter f = \case
-    Pure product        ->  Pure product
-    Map action extract  ->  f action <&> extract
+    Pure product -> Pure product
+    Map action extract -> f action <&> extract

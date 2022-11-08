@@ -10,12 +10,12 @@ data Effect up action product =
 run :: Effect (Const Void) action product -> action product
 run = \case
     Perform x -> x
-    Request x -> \case{} x
+    Request x -> case x of {}
 
 absurd :: Effect (Const Void) (Const Void) x -> product
 absurd = \case
-    Perform x -> \case{} x
-    Request x -> \case{} x
+    Perform x -> case x of {}
+    Request x -> case x of {}
 
 alterRequest :: (up product -> Effect up' action product)
     -> Effect up action product -> Effect up' action product

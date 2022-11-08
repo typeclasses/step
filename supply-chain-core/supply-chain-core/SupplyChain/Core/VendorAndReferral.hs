@@ -29,8 +29,8 @@ deriving stock instance Traversable (Referral up down action)
 
 alterVendor :: (forall x. Effect up action x -> Job up' action' x)
     -> Vendor up down action -> Vendor up' down action'
-alterVendor f Vendor{ handle } =
-    Vendor{ handle = fmap (alterReferral f) . Job.alter f . handle }
+alterVendor f v =
+    Vendor{ handle = fmap (alterReferral f) . Job.alter f . handle v }
 
 alterReferral :: (forall x. Effect up action x -> Job up' action' x)
     -> Referral up down action product -> Referral up' down action' product

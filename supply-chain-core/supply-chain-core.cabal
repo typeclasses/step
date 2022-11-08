@@ -17,7 +17,6 @@ common base
         -fdefer-typed-holes
 
     default-extensions:
-        BlockArguments
         DerivingStrategies
         LambdaCase
         NoImplicitPrelude

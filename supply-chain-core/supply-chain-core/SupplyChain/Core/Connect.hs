@@ -4,7 +4,7 @@ module SupplyChain.Core.Connect (vendorToJob, vendorToVendor,
 import Control.Monad ((>>=))
 import Data.Functor ((<&>), fmap)
 
-import SupplyChain.Core.Vendor (Vendor (Vendor))
+import SupplyChain.Core.Vendor (Vendor (Vendor, handle))
 import SupplyChain.Core.Referral (Referral (Referral))
 import SupplyChain.Core.Job (Job)
 import qualified SupplyChain.Core.Vendor as Vendor
@@ -17,8 +17,8 @@ vendorToJob up down = vendorToJob' up down <&> Referral.product
 
 vendorToVendor :: Vendor up middle action -> Vendor middle down action
     -> Vendor up down action
-vendorToVendor up down = Vendor \request ->
-    vendorToJob' up (Vendor.handle down request) <&> joinReferral
+vendorToVendor up down = Vendor { handle = \request ->
+    vendorToJob' up (Vendor.handle down request) <&> joinReferral }
 
 {-| Sort of resembles what a 'Control.Monad.join' implementation for 'Referral'
     might look like, modulo a subtle difference in the types -}

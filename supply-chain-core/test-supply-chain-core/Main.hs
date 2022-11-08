@@ -17,7 +17,7 @@ import Test.Tasty.HUnit ((@?=), testCase)
 import SupplyChain.Core.Connect ( vendorToJob )
 import SupplyChain.Core.Job (order, perform)
 import SupplyChain.Core.Referral (Referral (Referral))
-import SupplyChain.Core.Vendor (Vendor (Vendor))
+import SupplyChain.Core.Vendor (Vendor (Vendor, handle))
 
 import qualified SupplyChain.Core.Job as Job
 
@@ -42,26 +42,35 @@ tests = testGroup "Core"
         , testCase "Applicative composition" $
             Job.run ((<>) <$> perform ["a", "b"] <*> perform ["c", "d"])
             @?= ["ac", "ad", "bc", "bd"]
-        , testCase "Monadic composition" $ Job.run
-            do { a <- perform [1 :: Int, 3]
-               ; b <- perform ['a', 'b', 'c']
-               ; perform (List.replicate a b)
-               } @?= "abcaaabbbccc"
+        , let
+            j = do
+              a <- perform [1 :: Int, 3]
+              b <- perform ['a', 'b', 'c']
+              perform (List.replicate a b)
+          in
+            testCase "Monadic composition" $ Job.run j @?= "abcaaabbbccc"
         ]
-    , testGroup "order"
+    , testGroup "order" $
         let
           -- Converts dynamic effects to static effects
-          f = vendorToJob go where go = Vendor \x -> perform x <&> (`Referral` go)
+          f = vendorToJob go
+            where
+              go = Vendor { handle = \x -> perform x <&> (`Referral` go) }
         in
         [ testCase "Single" $ Job.run (f $ order ['a', 'b']) @?= ['a', 'b']
         , testCase "Functor" $ Job.run (f $ order ['a', 'b'] <&> succ) @?= ['b', 'c']
-        , testCase "Applicative composition" $ Job.run
-            (f $ (<>) <$> order ["a", "b"] <*> order ["c", "d"])
-            @?= ["ac", "ad", "bc", "bd"]
-        , testCase "Monadic composition" $ Job.run
-            (f $ do { a <- order [1 :: Int, 3]
-                    ; b <- order ['a', 'b', 'c']
-                    ; order (List.replicate a b)
-                    }) @?= "abcaaabbbccc"
+        , testCase "Applicative composition" $
+            let
+              j = f $ (<>) <$> order ["a", "b"] <*> order ["c", "d"]
+            in
+              Job.run j @?= ["ac", "ad", "bc", "bd"]
+        , testCase "Monadic composition" $
+            let
+              j = do
+                a <- order [1 :: Int, 3]
+                b <- order ['a', 'b', 'c']
+                order (List.replicate a b)
+            in
+              Job.run (f j) @?= "abcaaabbbccc"
         ]
     ]
