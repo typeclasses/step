@@ -6,7 +6,7 @@ import Step.Chunk
 import Step.Interface
 import qualified Step.Interface.Core as I
 import Step.Package.FixedLength (tryTakeNatural)
-import Step.Interface.Buffer (privateDoubleBuffer)
+import Step.Buffer.Private (privateDoubleBuffer)
 
 import qualified Step.Do as P
 import qualified Step.Interface as Interface

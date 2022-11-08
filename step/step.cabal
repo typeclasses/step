@@ -66,8 +66,12 @@ library
         Step.Chunk.Text
         Step.Chunk.Text.Core
 
+        Step.Buffer.Buffer
+        Step.Buffer.Double
+        Step.Buffer.Private
+        Step.Buffer.State
+
         Step.Interface
-        Step.Interface.Buffer
         Step.Interface.Core
 
         Step.Package.AttoparsecText

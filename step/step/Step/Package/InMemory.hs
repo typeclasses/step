@@ -16,7 +16,8 @@ module Step.Package.InMemory
 import Step.Action
 import Step.Chunk
 import Step.Interface
-import Step.Interface.Buffer
+import Step.Buffer.State
+import Step.Buffer.Buffer
 
 import Control.Monad (Monad)
 import Control.Monad.State.Strict (runStateT)
@@ -77,11 +78,8 @@ actionParseSureQuery p xs r = z (run r (castTo @Sure (castTo @SureQuery p))) xs 
 
 z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])
 z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >-> liftJob parser)) (Buffer (Seq.fromList xs))
-        <&> \(a, rem) -> (a, bufferList rem)
+        <&> \(a, List rem) -> (a, rem)
 
 liftJob :: forall up m m' a. Monad m =>
     MTL.MonadTrans m' => Job up m a -> Job up (m' m) a
 liftJob = SupplyChain.Alter.action' (\(x :: m z) -> MTL.lift x)
-
-bufferList :: Buffer c -> [c]
-bufferList (Buffer ys) = toList ys
