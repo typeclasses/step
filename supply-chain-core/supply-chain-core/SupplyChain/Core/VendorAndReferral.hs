@@ -1,5 +1,14 @@
+{-
+
+Vender and Referral are defined in one module together because their definitions
+are mutually recursive. This module is not exported by the package; instead, the
+definitions from this module are re-exported by "SupplyChain.Core.Vendor" and
+"SupplyChain.Core.Referral".
+
+-}
+
 module SupplyChain.Core.VendorAndReferral (Vendor (..), Referral (..),
-    alterVendor, alterReferral) where
+alterVendor, alterReferral) where
 
 import Data.Functor (Functor, fmap)
 import Data.Function ((.))
@@ -23,9 +32,9 @@ data Referral up down action product =
     , next :: Vendor up down action -- ^ A new vendor to handle subsequent requests
     }
 
-deriving stock instance Functor (Referral up down action)
-deriving stock instance Foldable (Referral up down action)
-deriving stock instance Traversable (Referral up down action)
+deriving instance Functor (Referral up down action)
+deriving instance Foldable (Referral up down action)
+deriving instance Traversable (Referral up down action)
 
 alterVendor :: (forall x. Effect up action x -> Job up' action' x)
     -> Vendor up down action -> Vendor up' down action'

@@ -10,17 +10,10 @@ extra-doc-files: readme.md
 
 common base
     default-language: GHC2021
-
-    ghc-options:
-        -Wall
-        -Wmissing-deriving-strategies
-        -fdefer-typed-holes
-
+    ghc-options: -Wall
     default-extensions:
-        DerivingStrategies
         LambdaCase
         NoImplicitPrelude
-        NoMonomorphismRestriction
         PatternSynonyms
         ViewPatterns
 
@@ -33,8 +26,8 @@ library
     exposed-modules:
         SupplyChain.Core.Connect
         SupplyChain.Core.Effect
-        SupplyChain.Core.FreePointedFunctor
         SupplyChain.Core.FreeMonad
+        SupplyChain.Core.FreePointedFunctor
         SupplyChain.Core.Job
         SupplyChain.Core.Referral
         SupplyChain.Core.Types

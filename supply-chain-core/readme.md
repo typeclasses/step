@@ -1,3 +1,7 @@
+# supply-chain-core
+
+## Story
+
 The initial idea for this library stemmed from the [pipes] library. The interfaces of a pipes [Proxy] are given by four types: What the proxy sends upstream, receives from upstream, sends downstream, and receives from downstream. A value of type `Proxy a' a b' b m r` is depicted in the pipes documentation as follows:
 
     Upstream | Downstream

@@ -1,5 +1,5 @@
-module SupplyChain.Core.FreeMonad (FreeMonad (Step, Bind, Pure, Map),
-    run, eval, alter) where
+module SupplyChain.Core.FreeMonad (FreeMonad (Step, Bind, Pure, Map), run, eval,
+alter) where
 
 import Data.Functor (Functor, (<&>))
 import Data.Function ((&), ($), (.))
@@ -22,7 +22,7 @@ pattern Map action extract = Step (FreePointedFunctor.Map action extract)
 
 {-# complete Pure, Map, Bind #-}
 
-deriving stock instance Functor (FreeMonad con)
+deriving instance Functor (FreeMonad con)
 
 instance Applicative (FreeMonad con) where pure = Pure; (<*>) = Monad.ap
 

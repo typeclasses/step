@@ -1,6 +1,5 @@
-module SupplyChain.Core.Job
-    (Job (FreeMonad, Pure, Effect, Request, Perform, Bind),
-    effect, perform, order, run, eval, alter) where
+module SupplyChain.Core.Job (Job (FreeMonad, Pure, Effect, Request, Perform,
+Bind), effect, perform, order, run, eval, alter) where
 
 import Control.Applicative (Applicative)
 import Control.Monad (Monad)
@@ -32,14 +31,14 @@ pattern Perform action extract = Effect (Effect.Perform action) extract
 
 pattern Bind :: (Job up action x) -> (x -> Job up action a) -> Job up action a
 pattern Bind a b <- FreeMonad (FreeMonad.Bind (FreeMonad -> a) ((FreeMonad .) -> b))
-  where Bind a b =  FreeMonad (FreeMonad.Bind (freeMonad    a)  (freeMonad .     b))
+  where Bind a b = FreeMonad (FreeMonad.Bind (freeMonad a) (freeMonad . b))
 
 {-# complete Pure, Effect, Bind #-}
 {-# complete Pure, Request, Perform, Bind #-}
 
-deriving newtype instance Functor     (Job up action)
-deriving newtype instance Applicative (Job up action)
-deriving newtype instance Monad       (Job up action)
+deriving instance Functor (Job up action)
+deriving instance Applicative (Job up action)
+deriving instance Monad (Job up action)
 
 effect :: Effect up action product -> Job up action product
 effect x = Effect x id

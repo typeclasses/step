@@ -1,5 +1,5 @@
-module SupplyChain.Core.Connect (vendorToJob, vendorToVendor,
-    vendorToJob', joinReferral) where
+module SupplyChain.Core.Connect (vendorToJob, vendorToVendor, vendorToJob',
+joinReferral) where
 
 import Control.Monad ((>>=))
 import Data.Functor ((<&>), fmap)

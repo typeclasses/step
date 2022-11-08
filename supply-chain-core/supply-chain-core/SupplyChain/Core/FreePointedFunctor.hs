@@ -1,5 +1,5 @@
-module SupplyChain.Core.FreePointedFunctor
-    (FreePointedFunctor (Pure, Map), run, eval, alter) where
+module SupplyChain.Core.FreePointedFunctor (FreePointedFunctor (Pure, Map), run,
+eval, alter) where
 
 import Control.Monad (Monad)
 import Data.Functor (Functor, (<&>))
@@ -9,7 +9,7 @@ data FreePointedFunctor con product =
     Pure product
   | forall x. Map (con x) (x -> product)
 
-deriving stock instance Functor (FreePointedFunctor con)
+deriving instance Functor (FreePointedFunctor con)
 
 run :: Monad effect => (product -> effect product)
     -> (forall x. con x -> effect x)

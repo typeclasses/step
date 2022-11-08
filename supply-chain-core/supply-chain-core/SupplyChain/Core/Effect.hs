@@ -1,5 +1,5 @@
 module SupplyChain.Core.Effect (Effect (Request, Perform), run, absurd,
-    alterRequest, alterPerform) where
+alterRequest, alterPerform) where
 
 import Data.Functor.Const (Const)
 import Data.Void (Void)
