@@ -7,15 +7,10 @@ import Step.Chunk.Text (Text1)
 import Step.Chunk.Gen (genChunks)
 
 import qualified Step.Chunk as Chunk
-import qualified Step.Chunk.Text as T
-import qualified Step.Chunk.Text.Core as T
 
 import Data.Char (Char)
 import Data.Function (($))
-import Data.Functor ((<$>))
 import Data.Maybe (Maybe (..))
-import Data.Text (Text)
-import Data.Semigroup ((<>))
 
 import qualified Data.Char as Char
 import qualified Data.Text as Text

@@ -50,22 +50,22 @@ infix 0 <?>
 p <?> c =
     p & A.paramMap \(Trace cs) -> Trace (c : cs)
 
-char :: Monad m => Char -> Parser m AtomicMove Char
+char :: Monad m => Char -> Parser m Atom Char
 char x = A.satisfyPredicate (== x) <?> ("char " <> Text.pack (show x))
 
-anyChar :: Monad m => Parser m AtomicMove Char
+anyChar :: Monad m => Parser m Atom Char
 anyChar = A.takeChar <?> "anyChar"
 
-notChar :: Monad m => Char -> Parser m AtomicMove Char
+notChar :: Monad m => Char -> Parser m Atom Char
 notChar x = A.satisfyPredicate (/= x) <?> ("not " <> Text.singleton x)
 
-satisfy :: Monad m => (Char -> Bool) -> Parser m AtomicMove Char
+satisfy :: Monad m => (Char -> Bool) -> Parser m Atom Char
 satisfy f = A.satisfyPredicate f <?> "satisfy"
 
-satisfyWith :: Monad m => (Char -> a) -> (a -> Bool) -> Parser m AtomicMove a
+satisfyWith :: Monad m => (Char -> a) -> (a -> Bool) -> Parser m Atom a
 satisfyWith f ok = A.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) <?> "satisfyWith"
 
-skip :: Monad m => (Char -> Bool) -> Parser m AtomicMove ()
+skip :: Monad m => (Char -> Bool) -> Parser m Atom ()
 skip f = void (A.satisfyPredicate f) <?> "skip"
 
 peekChar :: Monad m => Parser m SureQuery (Maybe Char)
@@ -74,13 +74,13 @@ peekChar = A.try A.peekChar
 peekChar' :: Monad m => Parser m Query Char
 peekChar' = A.peekChar <?> "peekChar'"
 
-digit :: Monad m => Parser m AtomicMove Char
+digit :: Monad m => Parser m Atom Char
 digit = A.satisfyPredicate Char.isDigit <?> "digit"
 
-letter :: Monad m => Parser m AtomicMove Char
+letter :: Monad m => Parser m Atom Char
 letter = A.satisfyPredicate Char.isAlpha <?> "letter"
 
-space :: Monad m => Parser m AtomicMove Char
+space :: Monad m => Parser m Atom Char
 space = A.satisfyPredicate Char.isSpace <?> "space"
 
 string :: Monad m => Text -> Parser m Atom ()
@@ -160,11 +160,11 @@ asciiCI x = case Chunk.refine x of
 --     a -> Parser s m k1 a -> Parser s m k2 a
 -- option b p = fromMaybe b P.<$> P.try p
 
--- many, many' :: Monad m => Parser s m AtomicMove a -> Parser s m Sure [a]
+-- many, many' :: Monad m => Parser s m Atom a -> Parser s m Sure [a]
 -- many = P.repetition0
 -- many' p = many P.do{ x <- p; P.return $! x }
 
--- many1, many1' :: Monad m => Parser s m AtomicMove a -> Parser s m AtomicMove (NonEmpty a)
+-- many1, many1' :: Monad m => Parser s m Atom a -> Parser s m Atom (NonEmpty a)
 -- many1 = P.repetition1
 -- many1' p = many1 P.do{ x <- p; P.return $! x }
 

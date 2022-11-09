@@ -59,8 +59,8 @@ trySkipNatural_ = ifZero (pure' ()) trySkipPositive_
 tryTakeNatural :: forall c m r e. Chunk c => Natural -> Sure c m r e (Maybe c)
 tryTakeNatural = ifZero (pure' Nothing) tryTakePositive
 
-skipPositive :: forall c m r. Positive Natural -> Move c m r r ()
-skipPositive n = assumeMovement $ trySkipPositive n P.>>= requireAdvanceSuccess
+skipPositive :: forall c m r. Positive Natural -> Any c m r r ()
+skipPositive n = trySkipPositive n P.>>= requireAdvanceSuccess
 
 skipNatural :: forall c m r. Natural -> Any c m r r ()
 skipNatural = ifZero (pure' ()) $ cast . skipPositive
@@ -85,8 +85,8 @@ ensureAtLeastPositive n = remainsAtLeastPositive n P.>>= requireTrue
 ensureAtLeastNatural :: forall c m r. Chunk c => Natural -> Query c m r r ()
 ensureAtLeastNatural = ifZero (pure' ()) ensureAtLeastPositive
 
-skipPositiveAtomic :: forall c m r. Chunk c => Positive Natural -> AtomicMove c m r r ()
-skipPositiveAtomic n = assumeMovement $ ensureAtLeastPositive n P.<* trySkipPositive n
+skipPositiveAtomic :: forall c m r. Chunk c => Positive Natural -> Atom c m r r ()
+skipPositiveAtomic n = ensureAtLeastPositive n P.<* trySkipPositive n
 
 skipNaturalAtomic :: forall c m r. Chunk c => Natural -> Atom c m r r ()
 skipNaturalAtomic = ifZero (pure' ()) $ cast . skipPositiveAtomic
@@ -102,8 +102,8 @@ peekPositive = \n -> Query $ required $ go n
             TakePart{ takePart } -> pure $ Just $ takePart :| []
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
-takePositive :: forall c m r. Chunk c => Positive Natural -> Move c m r r c
-takePositive = \n -> assumeMovement $ Any $ required $ go n
+takePositive :: forall c m r. Chunk c => Positive Natural -> Any c m r r c
+takePositive = \n -> Any $ required $ go n
   where
     go :: Positive Natural -> Job (CommittableChunkStream c) m (Maybe (NonEmpty c))
     go n = order nextMaybe >>= \case
@@ -127,5 +127,5 @@ tryTakePositive = \n -> act @Sure \_ -> fmap (fmap concat . NE.nonEmpty) $ go n
 required :: Chunk b => Job up action (Maybe (NonEmpty b)) -> a -> ResettingSequence up action (Either a b)
 required go r = ResettingSequenceJob $ go <&> maybe (Left r) Right <&> fmap concat
 
-takePositiveAtomic :: forall c m r. Chunk c => Positive Natural -> AtomicMove c m r r c
-takePositiveAtomic = \n -> assumeMovement $ peekPositive n P.<* trySkipPositive n
+takePositiveAtomic :: forall c m r. Chunk c => Positive Natural -> Atom c m r r c
+takePositiveAtomic = \n -> peekPositive n P.<* trySkipPositive n

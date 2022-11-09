@@ -8,8 +8,7 @@ module Step.Action.Types
 
       -- * Types
       Any, Query, Sure, SureQuery,
-      Atom, Move, AtomicMove,
-      Failure,
+      Atom, Failure,
   )
   where
 

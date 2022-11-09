@@ -14,6 +14,6 @@ import SupplyChain (order)
 peekSome :: forall c m r. Query c m r r c
 peekSome = act \r -> order nextMaybe <&> maybe (Left r) Right
 
-takeSome :: forall c m r. Chunk c => AtomicMove c m r r c
-takeSome = assumeMovement $ Atom $ act \r -> order nextMaybe <&> maybe (Left r) \x ->
+takeSome :: forall c m r. Chunk c => Atom c m r r c
+takeSome = Atom $ act \r -> order nextMaybe <&> maybe (Left r) \x ->
     Right $ trySkipPositive (length @c x) $> x
