@@ -81,18 +81,6 @@ instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not p
     (<*>) = error "unreachable"
 
 
--- Failure action:
-
-type Failure :: Action
-
-newtype Failure c m r e a = Failure (r -> Job (Const Void) m e)
-    deriving stock Functor
-
-instance (TypeError ('Text "Failure cannot be Applicative because 'pure' would succeed")) => Applicative (Failure c m r e) where
-    pure = error "unreachable"
-    (<*>) = error "unreachable"
-
-
 class IsAction p =>
     IsResettingSequence p c m r e a up product
     | p c m r e a -> up product
@@ -161,10 +149,6 @@ instance IsAction SureQuery where
 instance IsAction Atom where
     actionMap f (Atom x) = Atom $ fmap (actionMap f) (actionMap f x)
     paramMap f (Atom x) = Atom $ fmap (paramMap f) (paramMap f x)
-
-instance IsAction Failure where
-    actionMap f (Failure x) = Failure $ x & (.) (Alter.job' (Alter.perform' f))
-    paramMap f (Failure x) = Failure $ x . f
 
 
 -- | Action that can be tried noncommittally
@@ -237,17 +221,6 @@ instance Is Sure Atom where
 instance Is Atom Any where
     cast (Atom x) = Monad.join (cast @Sure @Any <$> cast @Query @Any x)
 
--- Casting out of failure
-
-instance Is Failure Any where
-    cast (Failure x) = act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
-
-instance Is Failure Query where
-    cast (Failure x) = act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
-
-instance Is Failure Atom where
-    cast (Failure x) = Atom $ act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
-
 
 {-| The type @a >> b@ is type of the expression @a >> b@.
 
@@ -259,15 +232,6 @@ instance Is Failure Atom where
 type family (act1 :: Action) >> (act2 :: Action) :: Action
   where
 
-    -- When failure is first, the second step is irrelevant.
-    Failure >> k = Failure
-
-    -- When failure is second, sureness and atomicity are lost.
-    Sure >> Failure = Any
-    SureQuery >> Failure = Query
-    Atom >> Failure = Any
-    k >> Failure = k
-
     -- Joining with SureQuery has no effect on the type
     SureQuery >> k = k
     k >> SureQuery = k
@@ -275,7 +239,6 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
     -- Properties other than atomicity are closed under composition.
     Query >> Query = Query
     Sure >> Sure = Sure
-    -- (Move >> Move = Move) is covered later below.
 
     -- When an atomic step is followed by an infallible step, atomicity is preserved.
     Atom >> Sure = Atom
@@ -307,9 +270,6 @@ instance Join Any Any where
 instance Join Any Atom where
     join = join @Any @Any . cast2 @Any
 
-instance Join Any Failure where
-    join = join @Any @Any . cast2 @Any
-
 instance Join Any Query where
     join = join @Any @Any . cast2 @Any
 
@@ -327,9 +287,6 @@ instance Join Atom Any where
 instance Join Atom Atom where
     join = join @Any @Any . castTo @Any . cast2 @Any
 
-instance Join Atom Failure where
-    join = join @Any @Any . castTo @Any . cast2 @Any
-
 instance Join Atom Query where
     join = castTo @Any . join @Any @Any . castTo @Any . cast2 @Any
 
@@ -339,26 +296,6 @@ instance Join Atom SureQuery where
 instance Join Atom Sure where
     join = Atom . fmap (join @Sure @Sure) . (\(Atom q) -> q)
 
--- Failure >> ...
-
-instance Join Failure Any where
-    join (Failure f) = Failure f
-
-instance Join Failure Atom where
-    join (Failure f) = Failure f
-
-instance Join Failure Failure where
-    join (Failure f) = Failure f
-
-instance Join Failure Query where
-    join (Failure f) = Failure f
-
-instance Join Failure Sure where
-    join (Failure f) = Failure f
-
-instance Join Failure SureQuery where
-    join (Failure f) = Failure f
-
 -- Query >> ...
 
 instance Join Query Any where
@@ -366,9 +303,6 @@ instance Join Query Any where
 
 instance Join Query Atom where
     join = Atom . join . fmap (\(Atom q) -> q)
-
-instance Join Query Failure where
-    join = join @Query @Query . cast2 @Query
 
 instance Join Query Query where
     join = Monad.join
@@ -387,9 +321,6 @@ instance Join Sure Any where
 instance Join Sure Atom where
     join = castTo @Any . join @Any @Any . castTo @Any . cast2 @Any
 
-instance Join Sure Failure where
-    join = join @Any @Any . castTo @Any . cast2 @Any
-
 instance Join Sure Query where
     join = castTo @Any . join @Any @Any . castTo @Any . cast2 @Any
 
@@ -406,9 +337,6 @@ instance Join SureQuery Any where
 
 instance Join SureQuery Atom where
     join = Atom . join @SureQuery @Query . fmap (\(Atom q) -> q)
-
-instance Join SureQuery Failure where
-    join = join @Query @Failure . castTo @Query
 
 instance Join SureQuery Query where
     join = join @Query @Query . castTo @Query
@@ -442,8 +370,6 @@ Arrows in the graph below indicate permitted use of 'cast'. (Not pictured: 'Fail
 | 'Sure'       | Yes      |            |            |
 +--------------+----------+------------+------------+
 | 'SureQuery'  | Yes      | No         | No         |
-+--------------+----------+------------+------------+
-| 'Fail'       | No       | No         | No         |
 +--------------+----------+------------+------------+
 | 'Any'        |          |            |            |
 +--------------+----------+------------+------------+

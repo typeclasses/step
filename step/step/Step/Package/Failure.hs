@@ -6,24 +6,32 @@ import Step.Interface.Core
 import Control.Applicative (pure)
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
+import Data.Void
+import Data.Functor.Const
+import SupplyChain
+import qualified SupplyChain.Alter as Alter
+import Data.Function
+import Data.Functor
+import Data.Either
 
-fail :: forall c m r a. Failure c m r r a
-fail = Failure pure
+class CanFail (act :: Action) where
+    fail :: (r -> Job (Const Void) m e) -> act c m r e a
 
-fail' :: forall p c m r a. Is Failure p => p c m r r a
-fail' = cast fail
+instance CanFail Any where fail x = act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
+instance CanFail Query where fail x = act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
+instance CanFail Atom where fail x = Atom $ act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
 
 requireTrue :: forall c m r. Bool -> Query c m r r ()
 requireTrue = \case
     True -> pure' ()
-    False -> fail'
+    False -> fail pure
 
 requireJust :: forall c m r a. Maybe a -> Query c m r r a
 requireJust = \case
     Just x -> pure' x
-    Nothing -> fail'
+    Nothing -> fail pure
 
 requireAdvanceSuccess :: AdvanceResult -> Query c m e e ()
 requireAdvanceSuccess = \case
     AdvanceSuccess -> pure' ()
-    YouCanNotAdvance{} -> fail'
+    YouCanNotAdvance{} -> fail pure

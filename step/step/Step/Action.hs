@@ -1,7 +1,7 @@
 module Step.Action
   (
     {- * Actions -} Action, {- $types -}
-      Any, Query, Sure, SureQuery, Atom (..), Failure (..),
+      Any, Query, Sure, SureQuery, Atom (..),
 
     {- * Classes -} IsAction (..), Atomic (..), IsResettingSequence (..), run, act,
 

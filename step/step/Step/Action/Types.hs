@@ -7,8 +7,7 @@ module Step.Action.Types
       IsAction,
 
       -- * Types
-      Any, Query, Sure, SureQuery,
-      Atom, Failure,
+      Any, Query, Sure, SureQuery, Atom,
   )
   where
 
