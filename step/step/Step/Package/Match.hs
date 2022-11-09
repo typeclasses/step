@@ -23,9 +23,9 @@ import qualified NatOptics.Positive as Positive
 
 import qualified SupplyChain.Vendor as Vendor
 
+-- todo: generalize to Any, Sure, Atom
 match :: Chunk c => Any c m r a -> Any c m r (Maybe c, a)
-match (Any x) =
-  P.do
+match (Any x) = P.do
     (n, a) <- act @Any \r -> privateDoubleBuffer >-> counting >- do
         ea <- Vendor.map Order >- resettingSequenceJob (x r)
         n <- SupplyChain.order AmountCommitted

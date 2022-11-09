@@ -178,8 +178,8 @@ asciiCI x = case Chunk.refine x of
 -- todo
 -- eitherP :: Parser a -> Parser b -> Parser (Either a b)
 
--- todo
 -- match :: Parser a -> Parser (Text, a)
+-- match p = _
 
 -- endOfInput :: Parser s m Query ()
 -- endOfInput = (P.atEnd P.>>= \case{ True -> castTo @Query (P.return ()); False -> castTo @Query P.fail }) <?> "endOfInput"
