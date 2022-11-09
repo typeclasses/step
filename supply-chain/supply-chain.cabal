@@ -10,21 +10,12 @@ extra-doc-files: readme.md
 
 common base
     default-language: GHC2021
-
-    ghc-options:
-        -Wall
-        -Wmissing-deriving-strategies
-        -fdefer-typed-holes
+    ghc-options: -Wall
 
     default-extensions:
         BlockArguments
-        DerivingStrategies
-        FunctionalDependencies
         LambdaCase
         NoImplicitPrelude
-        NoMonomorphismRestriction
-        PatternSynonyms
-        TypeFamilies
 
     build-depends:
         base ^>= 4.16
