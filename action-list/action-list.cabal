@@ -14,7 +14,7 @@ common base
         NoImplicitPrelude
     build-depends:
         base ^>= 4.16
-      , supply-chain
+      , supply-chain ^>= 0.0
       , supply-chain-interfaces
 
 library

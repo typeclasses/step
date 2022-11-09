@@ -1,6 +1,5 @@
 packages:
     action-list
-  , supply-chain
   , supply-chain-interfaces
   , step
 
