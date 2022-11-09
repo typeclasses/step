@@ -23,7 +23,7 @@ import Data.Function ((.))
 import Data.Void (Void)
 
 absurd :: Vendor up (Const Void) action
-absurd = Vendor \case{}
+absurd = Vendor (\case{})
 
 -- | The identity for '(>->)'; does nothing at all
 id :: Vendor i i action
@@ -41,4 +41,4 @@ map :: (forall x. down x -> up x) -> Vendor up down action
 map f = forever (Job.order . f)
 
 forever :: (forall x. down x -> Job up action x) -> Vendor up down action
-forever f = go where go = Vendor \x -> f x <&> (`Referral` go)
+forever f = go where go = Vendor (\x -> f x <&> (`Referral` go))

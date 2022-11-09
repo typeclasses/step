@@ -13,7 +13,6 @@ common base
     ghc-options: -Wall
 
     default-extensions:
-        BlockArguments
         LambdaCase
         NoImplicitPrelude
 
