@@ -1,7 +1,6 @@
 module Step.Package.Match (match) where
 
 import Step.Action.Core
-import Step.Package.Failure
 import Step.Chunk
 import Step.Interface
 import qualified Step.Interface.Core as I
@@ -9,32 +8,20 @@ import Step.Package.FixedLength (tryTakeNatural)
 import Step.Buffer.Private (privateDoubleBuffer)
 
 import qualified Step.Do as P
-import qualified Step.Interface as Interface
 
 import Data.Kind (Type)
 import Control.Applicative (pure)
-import Control.Monad ((>>=))
-import Data.Bool (Bool (..))
-import Data.Either (Either (..))
 import Data.Function
 import Data.Maybe (Maybe (..))
 import Numeric.Natural
-import SupplyChain (Vendor (..), Job, Referral (..), (>->), order, (>-))
+import SupplyChain (Vendor (..), Referral (..), (>->), order, (>-))
 import Data.Functor
-import Prelude ((+), (-))
-import Data.Foldable (traverse_)
-import Data.Sequence (Seq (..))
-import NatOptics.Positive (Positive)
+import Prelude ((+))
 
-import qualified Data.Sequence as Seq
 import qualified Optics
 import qualified NatOptics.Positive as Positive
 
-import qualified SupplyChain
-import qualified SupplyChain.Job as Job
 import qualified SupplyChain.Vendor as Vendor
-import qualified SupplyChain.Interface.TerminableStream as Stream
-import SupplyChain.Interface.TerminableStream (IsTerminableStream)
 
 match :: Chunk c => Any c m r e a -> Any c m r e (Maybe c, a)
 match (Any x) =

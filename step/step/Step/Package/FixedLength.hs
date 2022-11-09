@@ -14,10 +14,8 @@ import Step.Action.Core
 import Step.Chunk
 import Step.Interface
 import Step.Package.Failure
-import Step.Interface
 
 import qualified Step.Do as P
-import qualified Step.Interface as Interface
 
 import Control.Applicative (pure, (*>))
 import Control.Monad ((>>=))
@@ -26,10 +24,9 @@ import Data.Either (Either (..))
 import Data.Function (($), (&), (.))
 import Data.Functor (($>), (<&>), (<$>), fmap, void)
 import Data.Maybe (Maybe (..), maybe)
-import Data.Monoid (mempty)
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
-import SupplyChain (Job, perform, order, (>->))
+import SupplyChain (Job, order)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import qualified Data.List.NonEmpty as NE
@@ -37,7 +34,6 @@ import qualified NatOptics.Positive as Positive
 import qualified NatOptics.Positive.Math as Positive
 import qualified NatOptics.Signed as Signed
 import qualified Optics
-import qualified SupplyChain
 
 ifZero :: a -> (Positive Natural -> a) -> Natural -> a
 ifZero z p n = Optics.preview Positive.refine n & maybe z p

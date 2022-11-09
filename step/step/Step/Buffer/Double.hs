@@ -6,31 +6,19 @@ import qualified Step.Interface.Core as I
 import Step.Buffer.Buffer
 
 -- The basics
-import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..), isNothing)
-import Data.Functor (Functor (..), (<&>), ($>), (<$>))
+import Data.Maybe (Maybe (..))
+import Data.Functor (($>))
 import Data.Function (($))
 import Control.Monad (Monad (..))
 import Control.Applicative (Applicative (..))
-
--- Containers
-import Data.Sequence (Seq)
-import qualified Data.Sequence as Seq
-
--- Optics
-import Optics (Lens', use, assign, modifying)
 
 -- Math
 import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive)
 
--- Transformers
-import Control.Monad.State.Strict (MonadState)
-
 -- Streaming
-import SupplyChain (Vendor (..), Job, Referral (..), (>->), order)
-import SupplyChain.Interface.TerminableStream (IsTerminableStream, TerminableStream)
-import qualified SupplyChain
+import SupplyChain (Vendor (..), Job, Referral (..), order)
+import SupplyChain.Interface.TerminableStream (IsTerminableStream)
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
 data DoubleBuffer c = DoubleBuffer{ commitBuffer :: Buffer c, viewBuffer :: Buffer c }
@@ -65,5 +53,3 @@ doubleBuffer report b = go (DoubleBuffer b b)
             Just x -> report com *> handleCommit s{ commitBuffer = com, viewBuffer = viewBuffer s :> x } n
               where
                 com = One x
-
-

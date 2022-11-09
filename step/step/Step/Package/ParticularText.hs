@@ -10,10 +10,8 @@ import Step.Chunk
 import Step.Interface
 import Step.Package.FixedLength
 import Step.Package.Failure
-import Step.Interface
 
 import qualified Step.Do as P
-import qualified Step.Interface as Interface
 
 import Control.Applicative (pure, (*>))
 import Control.Monad ((>>=))
@@ -23,10 +21,8 @@ import Data.Eq (Eq, (==))
 import Data.Function (($))
 import Data.Functor ((<&>), fmap)
 import Data.Maybe (Maybe (..))
-import SupplyChain (Job, perform, order, (>->))
+import SupplyChain (Job, order)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-
-import qualified SupplyChain
 
 takeParticularText :: forall c m r. Chunk c => Eq c => c -> Move c m r r ()
 takeParticularText = \t -> assumeMovement $

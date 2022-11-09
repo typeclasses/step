@@ -22,14 +22,13 @@ import Step.Buffer.Buffer
 import Control.Monad (Monad)
 import Control.Monad.State.Strict (runStateT)
 import Data.Either (Either (..), either)
-import Data.Foldable (toList)
-import Data.Function ((&), ($), (.))
+import Data.Function ((&))
 import Data.Functor ((<&>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Data.Maybe (Maybe (..))
 import Data.Void (Void)
 import Optics (simple, castOptic)
-import SupplyChain ((>->), Job, (>-))
+import SupplyChain (Job, (>-))
 
 import qualified Data.Sequence as Seq
 import qualified Control.Monad.Trans as MTL

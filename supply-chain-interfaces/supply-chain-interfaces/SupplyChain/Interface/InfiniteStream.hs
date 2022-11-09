@@ -12,7 +12,6 @@ module SupplyChain.Interface.InfiniteStream
   where
 
 import SupplyChain
-import qualified SupplyChain.Vendor as Vendor
 
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
@@ -23,7 +22,7 @@ data InfiniteStream item response =
         -- ^ The next item from a non-terminating input stream
 
 forever :: Job up action a -> Vendor up (InfiniteStream a) action
-forever j = Vendor.forever \Next -> j
+forever j = SupplyChain.loop' \Next -> j
 
 iterate :: forall up a action.
     a -> (a -> a) -> Vendor up (InfiniteStream a) action

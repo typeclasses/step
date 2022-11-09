@@ -12,19 +12,17 @@ Attoparsec version: @0.14.4@
 
 module Step.Package.AttoparsecText where
 
-import Control.Applicative (Applicative, pure)
 import Control.Monad.Reader
 import Data.Bool
 import Data.Char (Char)
 import Data.Eq ((==), (/=))
 import Data.Function
 import Data.Functor
-import Data.Maybe (Maybe (..), maybe)
+import Data.Maybe (Maybe (..))
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Prelude (Eq, Ord, Show)
 import Step.Action.Types
-import Step.Action.Core
 import Step.Chunk.Text (Text1)
 import Text.Show (show)
 
@@ -35,8 +33,6 @@ import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Step.Chunk.Text as Text1
 import qualified Step.Chunk as Chunk
-import qualified SupplyChain
-import qualified Control.Monad.Reader as Reader
 
 ---  Not part of the API  ---
 

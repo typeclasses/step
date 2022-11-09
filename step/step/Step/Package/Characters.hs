@@ -12,20 +12,15 @@ import Step.Package.Failure
 import Step.Interface
 
 import qualified Step.Do as P
-import qualified Step.Interface as Interface
 
-import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
-import Data.Either (Either (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($))
 import Data.Functor (($>), (<&>), fmap)
 import Data.Maybe (Maybe (..))
-import Numeric.Natural (Natural)
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
-import SupplyChain (perform, order)
+import SupplyChain (order)
 
-import qualified SupplyChain
 
 -- | Take a peek at the next character (if possible) without advancing
 peekCharMaybe :: forall c m r. Chunk c => SureQuery c m r r (Maybe (One c))

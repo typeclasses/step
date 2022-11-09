@@ -3,13 +3,9 @@ module Step.Package.Failure where
 import Step.Action.Core
 import Step.Interface.Core
 
-import qualified Step.Do as P
-
 import Control.Applicative (pure)
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
-
-import qualified SupplyChain
 
 fail :: forall c m r a. Failure c m r r a
 fail = Failure pure

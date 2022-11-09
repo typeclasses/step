@@ -25,8 +25,7 @@ import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.Reader (ReaderT (..))
 
 -- Streaming
-import SupplyChain (Job, (>->), (>-))
-import qualified SupplyChain
+import SupplyChain (Job, (>-))
 import qualified SupplyChain.Alter as Alter
 import qualified SupplyChain.Vendor as Vendor
 
