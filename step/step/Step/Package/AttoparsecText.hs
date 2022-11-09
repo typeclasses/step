@@ -34,61 +34,53 @@ import qualified Data.Text as Text
 import qualified Step.Chunk.Text as Text1
 import qualified Step.Chunk as Chunk
 
----  Not part of the API  ---
+newtype Trace = Trace [Text] deriving newtype (Eq, Ord, Show)
 
-newtype Trace = Trace [Text]
-  deriving newtype (Eq, Ord, Show)
-
----
-
-type Parser m (act :: Action) a =
-    act Text1 m Trace a
+type Parser m (act :: Action) a = act Text1 m Trace a
 
 infix 0 <?>
-(<?>) :: Monad m => IsAction act =>
-    Parser m act a -> Text -> Parser m act a
-p <?> c =
-    p & A.paramMap \(Trace cs) -> Trace (c : cs)
+(<?>) :: IsAction act => Parser m act a -> Text -> Parser m act a
+p <?> c = p & A.paramMap \(Trace cs) -> Trace (c : cs)
 
-char :: Monad m => Char -> Parser m Atom Char
+char :: Char -> Parser m Atom Char
 char x = A.satisfyPredicate (== x) <?> ("char " <> Text.pack (show x))
 
-anyChar :: Monad m => Parser m Atom Char
+anyChar :: Parser m Atom Char
 anyChar = A.takeChar <?> "anyChar"
 
-notChar :: Monad m => Char -> Parser m Atom Char
+notChar :: Char -> Parser m Atom Char
 notChar x = A.satisfyPredicate (/= x) <?> ("not " <> Text.singleton x)
 
-satisfy :: Monad m => (Char -> Bool) -> Parser m Atom Char
+satisfy :: (Char -> Bool) -> Parser m Atom Char
 satisfy f = A.satisfyPredicate f <?> "satisfy"
 
-satisfyWith :: Monad m => (Char -> a) -> (a -> Bool) -> Parser m Atom a
+satisfyWith :: (Char -> a) -> (a -> Bool) -> Parser m Atom a
 satisfyWith f ok = A.satisfyJust ((\x -> if ok x then Just x else Nothing) . f) <?> "satisfyWith"
 
-skip :: Monad m => (Char -> Bool) -> Parser m Atom ()
+skip :: (Char -> Bool) -> Parser m Atom ()
 skip f = void (A.satisfyPredicate f) <?> "skip"
 
-peekChar :: Monad m => Parser m SureQuery (Maybe Char)
+peekChar :: Parser m SureQuery (Maybe Char)
 peekChar = A.try A.peekChar
 
-peekChar' :: Monad m => Parser m Query Char
+peekChar' :: Parser m Query Char
 peekChar' = A.peekChar <?> "peekChar'"
 
-digit :: Monad m => Parser m Atom Char
+digit :: Parser m Atom Char
 digit = A.satisfyPredicate Char.isDigit <?> "digit"
 
-letter :: Monad m => Parser m Atom Char
+letter :: Parser m Atom Char
 letter = A.satisfyPredicate Char.isAlpha <?> "letter"
 
-space :: Monad m => Parser m Atom Char
+space :: Parser m Atom Char
 space = A.satisfyPredicate Char.isSpace <?> "space"
 
-string :: Monad m => Text -> Parser m Atom ()
+string :: Text -> Parser m Atom ()
 string x = case Chunk.refine x of
     Nothing -> A.pure' ()
     Just x' -> A.cast (A.takeParticularTextAtomic x') <?> "string"
 
-asciiCI :: Monad m => Text -> Parser m Atom Text
+asciiCI :: Text -> Parser m Atom Text
 asciiCI x = case Chunk.refine x of
     Nothing -> A.pure' x
     Just x' -> A.cast $ A.takeMatchingTextAtomic Text1.asciiCI x' <&> Chunk.generalize
@@ -117,7 +109,7 @@ asciiCI x = case Chunk.refine x of
 -- todo
 -- takeTill :: (Char -> Bool) -> Parser Text
 
--- takeText :: Monad m => Parser s m Sure Text
+-- takeText :: Parser s m Sure Text
 -- takeText = repetition0 P.takeNext <&> ListLike.foldMap Nontrivial.generalize
 
 -- todo
@@ -156,15 +148,15 @@ asciiCI x = case Chunk.refine x of
 --     Natural -> Parser s m k a -> Parser s m k' [a]
 -- count = P.count0
 
--- option :: Monad m => Atomic k1 k2 =>
+-- option :: Atomic k1 k2 =>
 --     a -> Parser s m k1 a -> Parser s m k2 a
 -- option b p = fromMaybe b P.<$> P.try p
 
--- many, many' :: Monad m => Parser s m Atom a -> Parser s m Sure [a]
+-- many, many' :: Parser s m Atom a -> Parser s m Sure [a]
 -- many = P.repetition0
 -- many' p = many P.do{ x <- p; P.return $! x }
 
--- many1, many1' :: Monad m => Parser s m Atom a -> Parser s m Atom (NonEmpty a)
+-- many1, many1' :: Parser s m Atom a -> Parser s m Atom (NonEmpty a)
 -- many1 = P.repetition1
 -- many1' p = many1 P.do{ x <- p; P.return $! x }
 
@@ -189,8 +181,8 @@ asciiCI x = case Chunk.refine x of
 -- todo
 -- match :: Parser a -> Parser (Text, a)
 
--- endOfInput :: Monad m => Parser s m Query ()
+-- endOfInput :: Parser s m Query ()
 -- endOfInput = (P.atEnd P.>>= \case{ True -> castTo @Query (P.return ()); False -> castTo @Query P.fail }) <?> "endOfInput"
 
--- atEnd :: Monad m => Parser s m SureQuery Bool
+-- atEnd :: Parser s m SureQuery Bool
 -- atEnd = P.atEnd
