@@ -11,9 +11,9 @@ import Data.Functor (($>), (<&>))
 import Data.Maybe (maybe)
 import SupplyChain (order)
 
-peekSome :: forall c m r. Query c m r r c
+peekSome :: forall c m r. Query c m r c
 peekSome = act \r -> order nextMaybe <&> maybe (Left r) Right
 
-takeSome :: forall c m r. Chunk c => Atom c m r r c
+takeSome :: forall c m r. Chunk c => Atom c m r c
 takeSome = Atom $ act \r -> order nextMaybe <&> maybe (Left r) \x ->
     Right $ trySkipPositive (length @c x) $> x

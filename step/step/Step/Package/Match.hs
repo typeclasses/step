@@ -23,7 +23,7 @@ import qualified NatOptics.Positive as Positive
 
 import qualified SupplyChain.Vendor as Vendor
 
-match :: Chunk c => Any c m r e a -> Any c m r e (Maybe c, a)
+match :: Chunk c => Any c m r a -> Any c m r (Maybe c, a)
 match (Any x) =
   P.do
     (n, a) <- act @Any \r -> privateDoubleBuffer >-> counting >- do

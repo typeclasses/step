@@ -15,23 +15,23 @@ import Data.Functor
 import Data.Either
 
 class CanFail (act :: Action) where
-    fail :: (r -> Job (Const Void) m e) -> act c m r e a
+    fail :: (r -> Job (Const Void) m r) -> act c m r a
 
 instance CanFail Any where fail x = act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
 instance CanFail Query where fail x = act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
 instance CanFail Atom where fail x = Atom $ act \r -> Alter.job' (Alter.request' \case{}) (x r) <&> Left
 
-requireTrue :: forall c m r. Bool -> Query c m r r ()
+requireTrue :: forall c m r. Bool -> Query c m r ()
 requireTrue = \case
     True -> pure' ()
     False -> fail pure
 
-requireJust :: forall c m r a. Maybe a -> Query c m r r a
+requireJust :: forall c m r a. Maybe a -> Query c m r a
 requireJust = \case
     Just x -> pure' x
     Nothing -> fail pure
 
-requireAdvanceSuccess :: AdvanceResult -> Query c m e e ()
+requireAdvanceSuccess :: AdvanceResult -> Query c m r ()
 requireAdvanceSuccess = \case
     AdvanceSuccess -> pure' ()
     YouCanNotAdvance{} -> fail pure

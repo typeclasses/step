@@ -35,44 +35,44 @@ import qualified Control.Monad.Trans as MTL
 import qualified SupplyChain
 import qualified SupplyChain.Alter as Alter
 
-parse :: forall p c r e a. Chunk c => Is p Any =>
-    p c Identity r e a -> [c] -> r -> (Either e a, [c])
+parse :: forall p c r a. Chunk c => Is p Any =>
+    p c Identity r a -> [c] -> r -> (Either r a, [c])
 parse p xs r = runIdentity (actionParse p xs r)
 
 parseMaybe :: forall p c r a. Chunk c => Is p Any =>
-    p c Identity r () a -> [c] -> r -> (Maybe a, [c])
+    p c Identity r a -> [c] -> r -> (Maybe a, [c])
 parseMaybe p xs r = parse p xs r & \(x, rem) -> (either (\_ -> Nothing) Just x, rem)
 
-parseQuery :: forall p c r e a. Chunk c => Is p Query =>
-    p c Identity r e a -> [c] -> r -> Either e a
+parseQuery :: forall p c r a. Chunk c => Is p Query =>
+    p c Identity r a -> [c] -> r -> Either r a
 parseQuery p xs r = runIdentity (actionParseQuery p xs r)
 
 parseQueryMaybe :: forall p c r a. Chunk c => Is p Query =>
-    p c Identity r () a -> [c] -> r -> Maybe a
+    p c Identity r a -> [c] -> r -> Maybe a
 parseQueryMaybe p xs r = parseQuery p xs r & either (\_ -> Nothing) Just
 
 parseSure :: forall p c r a. Chunk c => Is p Sure =>
-    p c Identity r Void a -> [c] -> r -> (a, [c])
+    p c Identity r a -> [c] -> r -> (a, [c])
 parseSure p xs r = runIdentity (actionParseSure p xs r)
 
-actionParse :: forall p c m r e a. Chunk c => Monad m => Is p Any =>
-    p c m r e a -> [c] -> r -> m (Either e a, [c])
+actionParse :: forall p c m r a. Chunk c => Monad m => Is p Any =>
+    p c m r a -> [c] -> r -> m (Either r a, [c])
 actionParse p xs r = z (run r (castTo @Any p)) xs
 
-actionParseQuery :: forall p c m r e a. Chunk c => Monad m => Is p Query =>
-    p c m r e a -> [c] -> r -> m (Either e a)
+actionParseQuery :: forall p c m r a. Chunk c => Monad m => Is p Query =>
+    p c m r a -> [c] -> r -> m (Either r a)
 actionParseQuery p xs r = actionParse (castTo @Any (castTo @Query p)) xs r <&> \(res, _) -> res
 
-actionParseSure :: forall p c m r e a. Chunk c => Monad m => Is p Sure =>
-    p c m r e a -> [c] -> r -> m (a, [c])
+actionParseSure :: forall p c m r a. Chunk c => Monad m => Is p Sure =>
+    p c m r a -> [c] -> r -> m (a, [c])
 actionParseSure p xs r = z (run r (castTo @Sure p)) xs
 
-parseSureQuery :: forall p c r e a. Chunk c => Is p SureQuery =>
-    p c Identity r e a -> [c] -> r -> a
+parseSureQuery :: forall p c r a. Chunk c => Is p SureQuery =>
+    p c Identity r a -> [c] -> r -> a
 parseSureQuery p xs r = runIdentity (actionParseSureQuery p xs r)
 
-actionParseSureQuery :: forall p c m r e a. Chunk c => Monad m => Is p SureQuery =>
-    p c m r e a -> [c] -> r -> m a
+actionParseSureQuery :: forall p c m r a. Chunk c => Monad m => Is p SureQuery =>
+    p c m r a -> [c] -> r -> m a
 actionParseSureQuery p xs r = z (run r (castTo @Sure (castTo @SureQuery p))) xs <&> \(res, _) -> res
 
 z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])

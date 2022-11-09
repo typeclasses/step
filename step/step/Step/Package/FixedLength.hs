@@ -44,28 +44,28 @@ ifZero z p n = Optics.preview Positive.refine n & maybe z p
     cursor advances to the end of input, and the returned
     'AdvanceResult' gives the size of the difference.
 -}
-trySkipPositive :: forall c m r. Positive Natural -> Sure c m r r AdvanceResult
+trySkipPositive :: forall c m r. Positive Natural -> Sure c m r AdvanceResult
 trySkipPositive n = Sure \_ -> ResettingSequenceJob $ order $ commit n
 
-trySkipPositive_ :: Positive Natural -> Sure c m r r ()
+trySkipPositive_ :: Positive Natural -> Sure c m r ()
 trySkipPositive_ = void . trySkipPositive
 
-trySkipNatural :: forall c m r. Natural -> Sure c m r r AdvanceResult
+trySkipNatural :: forall c m r. Natural -> Sure c m r AdvanceResult
 trySkipNatural = ifZero (pure' AdvanceSuccess) trySkipPositive
 
-trySkipNatural_ :: forall c m r. Natural -> Sure c m r r ()
+trySkipNatural_ :: forall c m r. Natural -> Sure c m r ()
 trySkipNatural_ = ifZero (pure' ()) trySkipPositive_
 
-tryTakeNatural :: forall c m r e. Chunk c => Natural -> Sure c m r e (Maybe c)
+tryTakeNatural :: forall c m r. Chunk c => Natural -> Sure c m r (Maybe c)
 tryTakeNatural = ifZero (pure' Nothing) tryTakePositive
 
-skipPositive :: forall c m r. Positive Natural -> Any c m r r ()
+skipPositive :: forall c m r. Positive Natural -> Any c m r ()
 skipPositive n = trySkipPositive n P.>>= requireAdvanceSuccess
 
-skipNatural :: forall c m r. Natural -> Any c m r r ()
+skipNatural :: forall c m r. Natural -> Any c m r ()
 skipNatural = ifZero (pure' ()) $ cast . skipPositive
 
-remainsAtLeastPositive :: forall c m r. Chunk c => Positive Natural -> SureQuery c m r r Bool
+remainsAtLeastPositive :: forall c m r. Chunk c => Positive Natural -> SureQuery c m r Bool
 remainsAtLeastPositive = \n -> act @SureQuery \r -> go r n
   where
     go :: r -> Positive Natural -> Job (ResettableTerminableStream c) m Bool
@@ -76,22 +76,22 @@ remainsAtLeastPositive = \n -> act @SureQuery \r -> go r n
             _ -> pure True
 
 remainsAtLeastNatural :: forall c m r. Chunk c =>
-    Natural -> SureQuery c m r r Bool
+    Natural -> SureQuery c m r Bool
 remainsAtLeastNatural = ifZero (pure' True) remainsAtLeastPositive
 
-ensureAtLeastPositive :: forall c m r. Chunk c => Positive Natural -> Query c m r r ()
+ensureAtLeastPositive :: forall c m r. Chunk c => Positive Natural -> Query c m r ()
 ensureAtLeastPositive n = remainsAtLeastPositive n P.>>= requireTrue
 
-ensureAtLeastNatural :: forall c m r. Chunk c => Natural -> Query c m r r ()
+ensureAtLeastNatural :: forall c m r. Chunk c => Natural -> Query c m r ()
 ensureAtLeastNatural = ifZero (pure' ()) ensureAtLeastPositive
 
-skipPositiveAtomic :: forall c m r. Chunk c => Positive Natural -> Atom c m r r ()
+skipPositiveAtomic :: forall c m r. Chunk c => Positive Natural -> Atom c m r ()
 skipPositiveAtomic n = ensureAtLeastPositive n P.<* trySkipPositive n
 
-skipNaturalAtomic :: forall c m r. Chunk c => Natural -> Atom c m r r ()
+skipNaturalAtomic :: forall c m r. Chunk c => Natural -> Atom c m r ()
 skipNaturalAtomic = ifZero (pure' ()) $ cast . skipPositiveAtomic
 
-peekPositive :: forall c m r. Chunk c => Positive Natural -> Query c m r r c
+peekPositive :: forall c m r. Chunk c => Positive Natural -> Query c m r c
 peekPositive = \n -> Query $ required $ go n
   where
     go :: Positive Natural -> Job (ResettableTerminableStream c) m (Maybe (NonEmpty c))
@@ -102,7 +102,7 @@ peekPositive = \n -> Query $ required $ go n
             TakePart{ takePart } -> pure $ Just $ takePart :| []
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
-takePositive :: forall c m r. Chunk c => Positive Natural -> Any c m r r c
+takePositive :: forall c m r. Chunk c => Positive Natural -> Any c m r c
 takePositive = \n -> Any $ required $ go n
   where
     go :: Positive Natural -> Job (CommittableChunkStream c) m (Maybe (NonEmpty c))
@@ -113,7 +113,7 @@ takePositive = \n -> Any $ required $ go n
             TakePart{ takePart } -> order (commit (length takePart)) $> Just (takePart :| [])
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
-tryTakePositive :: forall c m r e. Chunk c => Positive Natural -> Sure c m r e (Maybe c)
+tryTakePositive :: forall c m r. Chunk c => Positive Natural -> Sure c m r (Maybe c)
 tryTakePositive = \n -> act @Sure \_ -> fmap (fmap concat . NE.nonEmpty) $ go n
   where
     go :: Positive Natural -> Job (CommittableChunkStream c) m [c]
@@ -127,5 +127,5 @@ tryTakePositive = \n -> act @Sure \_ -> fmap (fmap concat . NE.nonEmpty) $ go n
 required :: Chunk b => Job up action (Maybe (NonEmpty b)) -> a -> ResettingSequence up action (Either a b)
 required go r = ResettingSequenceJob $ go <&> maybe (Left r) Right <&> fmap concat
 
-takePositiveAtomic :: forall c m r. Chunk c => Positive Natural -> Atom c m r r c
+takePositiveAtomic :: forall c m r. Chunk c => Positive Natural -> Atom c m r c
 takePositiveAtomic = \n -> peekPositive n P.<* trySkipPositive n

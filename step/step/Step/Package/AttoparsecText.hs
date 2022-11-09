@@ -42,7 +42,7 @@ newtype Trace = Trace [Text]
 ---
 
 type Parser m (act :: Action) a =
-    act Text1 m Trace Trace a
+    act Text1 m Trace a
 
 infix 0 <?>
 (<?>) :: Monad m => IsAction act =>

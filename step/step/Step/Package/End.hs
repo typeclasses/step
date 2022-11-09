@@ -12,8 +12,8 @@ import Data.Functor
 import Data.Maybe
 import SupplyChain (order)
 
-atEnd :: SureQuery c m r e Bool
+atEnd :: SureQuery c m r Bool
 atEnd = SureQuery \_ -> ResettingSequenceJob $ order nextMaybe <&> isNothing
 
-end :: forall c m r. Query c m r r ()
+end :: forall c m r. Query c m r ()
 end = atEnd P.>>= requireTrue

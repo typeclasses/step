@@ -37,7 +37,6 @@ type Action =
      Type -- ^ Chunk of input
   -> (Type -> Type)
   -> Type -- ^ Param
-  -> Type -- ^ Error
   -> Type -- ^ Result
   -> Type
 
@@ -50,22 +49,22 @@ type Sure :: Action
 type SureQuery :: Action
 
 -- | The most general of the actions
-newtype Any c m r e a = Any (r -> ResettingSequence (CommittableChunkStream c) m (Either e a))
+newtype Any c m r a = Any (r -> ResettingSequence (CommittableChunkStream c) m (Either r a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (ReaderT r (ResettingSequence (CommittableChunkStream c) m))
+        via ExceptT r (ReaderT r (ResettingSequence (CommittableChunkStream c) m))
 
 -- | Like 'Any', but cannot move the cursor
-newtype Query c m r e a = Query (r -> ResettingSequence (ResettableTerminableStream c) m (Either e a))
+newtype Query c m r a = Query (r -> ResettingSequence (ResettableTerminableStream c) m (Either r a))
     deriving (Functor, Applicative, Monad)
-        via ExceptT e (ReaderT r (ResettingSequence (ResettableTerminableStream c) m))
+        via ExceptT r (ReaderT r (ResettingSequence (ResettableTerminableStream c) m))
 
 -- | Always succeeds
-newtype Sure c m r e a = Sure (r -> ResettingSequence (CommittableChunkStream c) m a)
+newtype Sure c m r a = Sure (r -> ResettingSequence (CommittableChunkStream c) m a)
     deriving (Functor, Applicative, Monad)
         via (ReaderT r (ResettingSequence (CommittableChunkStream c) m))
 
 -- | Always succeeds, does not move the cursor
-newtype SureQuery c m r e a = SureQuery (r -> ResettingSequence (ResettableTerminableStream c) m a)
+newtype SureQuery c m r a = SureQuery (r -> ResettingSequence (ResettableTerminableStream c) m a)
     deriving (Functor, Applicative, Monad)
         via (ReaderT r (ResettingSequence (ResettableTerminableStream c) m))
 
@@ -73,38 +72,38 @@ newtype SureQuery c m r e a = SureQuery (r -> ResettingSequence (ResettableTermi
 type Atom :: Action
 
 -- | Fails noncommittally; see 'try'
-newtype Atom c m r e a = Atom (Query c m r e (Sure c m r e a))
+newtype Atom c m r a = Atom (Query c m r (Sure c m r a))
     deriving stock Functor
 
-instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom c m r e) where
+instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not preserve atomicity")) => Applicative (Atom c m r) where
     pure = error "unreachable"
     (<*>) = error "unreachable"
 
 
 class IsAction p =>
-    IsResettingSequence p c m r e a up product
-    | p c m r e a -> up product
+    IsResettingSequence p c m r a up product
+    | p c m r a -> up product
   where
-    walk :: Iso' (p c m r e a) (r -> ResettingSequence up m product)
+    walk :: Iso' (p c m r a) (r -> ResettingSequence up m product)
 
-instance IsResettingSequence Any c m r e a (CommittableChunkStream c) (Either e a) where
+instance IsResettingSequence Any c m r a (CommittableChunkStream c) (Either r a) where
     walk = Optics.coerced
 
-instance IsResettingSequence Sure c m r e a (CommittableChunkStream c) a where
+instance IsResettingSequence Sure c m r a (CommittableChunkStream c) a where
     walk = Optics.coerced
 
-instance IsResettingSequence Query c m r e a (ResettableTerminableStream c) (Either e a) where
+instance IsResettingSequence Query c m r a (ResettableTerminableStream c) (Either r a) where
     walk = Optics.coerced
 
-instance IsResettingSequence SureQuery c m r e a (ResettableTerminableStream c) a where
+instance IsResettingSequence SureQuery c m r a (ResettableTerminableStream c) a where
     walk = Optics.coerced
 
 
-run :: IsResettingSequence p c m r e a up product => r -> p c m r e a -> Job up m product
+run :: IsResettingSequence p c m r a up product => r -> p c m r a -> Job up m product
 run r = resettingSequenceJob . ($ r) . Optics.view walk
 
 
-act :: IsResettingSequence p c m r e a up product => (r -> Job up m product) -> p c m r e a
+act :: IsResettingSequence p c m r a up product => (r -> Job up m product) -> p c m r a
 act f = Optics.review walk \x -> ResettingSequenceJob $ f x
 
 
@@ -117,7 +116,7 @@ rsj = iso resettingSequenceJob ResettingSequenceJob
 
 
 class CanSucceed (act :: Action) where
-    pure' :: a -> act c m r e a
+    pure' :: a -> act c m r a
 
 instance CanSucceed Any where pure' = pure
 instance CanSucceed Sure where pure' = pure
@@ -127,8 +126,8 @@ instance CanSucceed Atom where pure' = Atom . pure' . pure'
 
 
 class IsAction (act :: Action) where
-    actionMap :: (forall x. m x -> m' x) -> act c m r e a -> act c m' r e a
-    paramMap :: (r' -> r) -> act c m r e a -> act c m r' e a
+    actionMap :: (forall x. m x -> m' x) -> act c m r a -> act c m' r a
+    paramMap :: (r -> r) -> act c m r a -> act c m r a
 
 instance IsAction Any where
     actionMap f (Any x) = Any $ x & (.) (over rsj (Alter.job' (Alter.perform' f)))
@@ -157,7 +156,7 @@ class (IsAction act, IsAction try) =>
     Atomic (act :: Action) (try :: Action)
     | act -> try
   where
-    try :: act c m r e a -> try c m r e (Maybe a)
+    try :: act c m r a -> try c m r (Maybe a)
 
 instance Atomic Atom Sure where
     try (Atom q) =
@@ -174,13 +173,13 @@ instance Atomic Query SureQuery where
 class (IsAction act1, IsAction act2) =>
     Is (act1 :: Action) (act2 :: Action)
   where
-    cast :: act1 c m r e a -> act2 c m r e a
+    cast :: act1 c m r a -> act2 c m r a
 
 -- | Same as 'cast', but with type parameters reordered so that the action we're casting to is first, which is more convenient for type application in some circumstances
-castTo :: forall act2 act1 c m r e a. Is act1 act2 => act1 c m r e a -> act2 c m r e a
+castTo :: forall act2 act1 c m r a. Is act1 act2 => act1 c m r a -> act2 c m r a
 castTo = cast @act1 @act2
 
-cast2 :: forall act2 act1 f c m r e a. Is act1 act2 => Functor f => f (act1 c m r e a) -> f (act2 c m r e a)
+cast2 :: forall act2 act1 f c m r a. Is act1 act2 => Functor f => f (act1 c m r a) -> f (act2 c m r a)
 cast2 = fmap (castTo @act2)
 
 -- Everything is itself
@@ -254,11 +253,11 @@ type family (act1 :: Action) >> (act2 :: Action) :: Action
 
 
 class Join (act1 :: Action) (act2 :: Action) where
-    join :: act1 c m r e (act2 c m r e a) -> (act1 >> act2) c m r e a
+    join :: act1 c m r (act2 c m r a) -> (act1 >> act2) c m r a
 
 -- | See also: '(Step.Do.>>=)'
-bindAction :: (Join act1 act2, Functor (act1 c m r e), act1 >> act2 ~ act3) =>
-    act1 c m r e a -> (a -> act2 c m r e b) -> act3 c m r e b
+bindAction :: (Join act1 act2, Functor (act1 c m r), act1 >> act2 ~ act3) =>
+    act1 c m r a -> (a -> act2 c m r b) -> act3 c m r b
 bindAction x f = join (fmap f x)
 infixl 1 `bindAction`
 
