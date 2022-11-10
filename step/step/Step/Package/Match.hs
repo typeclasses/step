@@ -23,15 +23,29 @@ import qualified NatOptics.Positive as Positive
 
 import qualified SupplyChain.Vendor as Vendor
 
--- todo: generalize to Any, Sure, Atom
-match :: Chunk c => Any c m r a -> Any c m r (Maybe c, a)
-match (Any x) = P.do
-    (n, a) <- act @Any \r -> privateDoubleBuffer >-> counting >- do
-        ea <- Vendor.map Order >- resettingSequenceJob (x r)
-        n <- SupplyChain.order AmountCommitted
-        pure $ ea <&> \a -> (n, a)
-    c <- tryTakeNatural n
-    P.pure (c, a)
+class Match p where
+    match :: Chunk c => p c m r a -> p c m r (Maybe c, a)
+
+instance Match Any where
+    match (Any x) = P.do
+        (n, a) <- act @Any \r -> privateDoubleBuffer >-> counting >- do
+            ea <- Vendor.map Order >- resettingSequenceJob (x r)
+            n <- SupplyChain.order AmountCommitted
+            pure $ ea <&> \a -> (n, a)
+        c <- tryTakeNatural n
+        P.pure (c, a)
+
+instance Match Sure where
+    match (Sure x) = P.do
+        (n, a) <- act @Sure \r -> privateDoubleBuffer >-> counting >- do
+            a <- Vendor.map Order >- resettingSequenceJob (x r)
+            n <- SupplyChain.order AmountCommitted
+            pure (n, a)
+        c <- tryTakeNatural n
+        P.pure (c, a)
+
+instance Match Atom where
+    match (Atom x) = Atom (fmap match x)
 
 data Counting (c :: Type) (response :: Type) =
     Order (CommittableChunkStream c response)
