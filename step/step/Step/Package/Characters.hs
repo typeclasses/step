@@ -10,12 +10,13 @@ import Step.Chunk
 import Step.Package.FixedLength
 import Step.Package.Failure
 import Step.Interface
+import Step.LeftRight
 
 import qualified Step.Do as P
 
 import Data.Bool (Bool (..))
 import Data.Eq (Eq, (==))
-import Data.Function (($))
+import Data.Function (($), (.))
 import Data.Functor (($>), (<&>), fmap)
 import Data.Maybe (Maybe (..))
 import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
@@ -34,7 +35,7 @@ takeChar :: forall c m r. Chunk c => Atom c m r (One c)
 takeChar = peekCharMaybe P.>>= requireJust P.>>= (trySkipChar $>)
 
 nextCharIs :: forall c m r. Chunk c => Eq (One c) => One c -> SureQuery c m r Bool
-nextCharIs c = act \_ -> order nextMaybe <&> \case{ Just x | head x == c -> True; _ -> False }
+nextCharIs c = act \_ -> order nextMaybe <&> right . \case{ Just x | head x == c -> True; _ -> False }
 
 takeParticularChar :: forall c m r. Chunk c => Eq (One c) => One c -> Atom c m r ()
 takeParticularChar c = P.do{ nextCharIs c P.>>= requireTrue; trySkipChar }

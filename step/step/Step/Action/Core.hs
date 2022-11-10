@@ -1,6 +1,7 @@
 module Step.Action.Core where
 
 import Step.Interface
+import Step.LeftRight
 
 -- The basics
 import Data.Maybe (Maybe (..))
@@ -80,31 +81,20 @@ instance (TypeError ('Text "Atom cannot be Applicative because (<*>) would not p
     (<*>) = error "unreachable"
 
 
-class IsAction p =>
-    IsResettingSequence p c m r a up product
-    | p c m r a -> up product
+class IsAction p => IsResettingSequence p up e | p -> up e
   where
-    walk :: Iso' (p c m r a) (r -> ResettingSequence up m product)
+    gen :: Iso' (p c m r a) (r -> ResettingSequence (up c) m (e r a))
 
-instance IsResettingSequence Any c m r a (CommittableChunkStream c) (Either r a) where
-    walk = Optics.coerced
+instance IsResettingSequence Any CommittableChunkStream Either where gen = Optics.coerced
+instance IsResettingSequence Sure CommittableChunkStream Right where gen = Optics.coerced
+instance IsResettingSequence Query ResettableTerminableStream Either where gen = Optics.coerced
+instance IsResettingSequence SureQuery ResettableTerminableStream Right where gen = Optics.coerced
 
-instance IsResettingSequence Sure c m r a (CommittableChunkStream c) a where
-    walk = Optics.coerced
+run :: IsResettingSequence p up e => r -> p c m r a -> Job (up c) m (e r a)
+run r = resettingSequenceJob . ($ r) . Optics.view gen
 
-instance IsResettingSequence Query c m r a (ResettableTerminableStream c) (Either r a) where
-    walk = Optics.coerced
-
-instance IsResettingSequence SureQuery c m r a (ResettableTerminableStream c) a where
-    walk = Optics.coerced
-
-
-run :: IsResettingSequence p c m r a up product => r -> p c m r a -> Job up m product
-run r = resettingSequenceJob . ($ r) . Optics.view walk
-
-
-act :: IsResettingSequence p c m r a up product => (r -> Job up m product) -> p c m r a
-act f = Optics.review walk \x -> ResettingSequenceJob $ f x
+act :: IsResettingSequence p up e => (r -> Job (up c) m (e r a)) -> p c m r a
+act f = Optics.review gen \x -> ResettingSequenceJob $ f x
 
 
 rsj :: Optics.Iso
@@ -159,13 +149,15 @@ class (IsAction act, IsAction try) =>
     try :: act c m r a -> try c m r (Maybe a)
 
 instance Atomic Atom Sure where
-    try (Atom q) =
-        (act \r -> Vendor.map stepCast >- run r q) >>= \case
-            Left _ -> pure Nothing
-            Right x -> fmap Just x
+    try (Atom q) = act \r -> (Vendor.map stepCast >- run r q) >>= \case
+        Left _ -> pure $ right Nothing
+        Right (Sure x) -> resettingSequenceJob $ fmap (right . Just) (x r)
 
 instance Atomic Query SureQuery where
-    try q = act \x -> (run x q <&> either (\_ -> Nothing) Just)
+    try q = act \x -> (run x q <&> right . either (\_ -> Nothing) Just)
+
+instance Atomic Sure Sure where
+    try x = Just <$> x
 
 
 -- | Action subtype relationship
@@ -196,13 +188,13 @@ instance Is Query Any where
     cast x = act \r -> Vendor.map stepCast >- run r x
 
 instance Is SureQuery Query where
-    cast x = act \r -> run r x <&> Right
+    cast x = act \r -> run r x <&> toEither
 
 instance Is Sure Any where
-    cast x = act \r -> run r x <&> Right
+    cast x = act \r -> run r x <&> toEither
 
 instance Is SureQuery Any where
-    cast x = act \r -> Vendor.map stepCast >- run r x <&> Right
+    cast x = act \r -> Vendor.map stepCast >- run r x <&> toEither
 
 -- Casting to Atom
 

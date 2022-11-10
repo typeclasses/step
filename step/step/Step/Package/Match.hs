@@ -6,6 +6,7 @@ import Step.Interface
 import qualified Step.Interface.Core as I
 import Step.Package.FixedLength (tryTakeNatural)
 import Step.Buffer.Private (privateDoubleBuffer)
+import Step.LeftRight
 
 import qualified Step.Do as P
 
@@ -40,7 +41,7 @@ instance Match Sure where
         (n, a) <- act @Sure \r -> privateDoubleBuffer >-> counting >- do
             a <- Vendor.map Order >- resettingSequenceJob (x r)
             n <- SupplyChain.order AmountCommitted
-            pure (n, a)
+            pure (right (n, a))
         c <- tryTakeNatural n
         P.pure (c, a)
 

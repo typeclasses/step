@@ -74,6 +74,8 @@ library
         Step.Interface
         Step.Interface.Core
 
+        Step.LeftRight
+
         Step.Package.AttoparsecText
         Step.Package.Characters
         Step.Package.Document

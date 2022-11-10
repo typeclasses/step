@@ -18,12 +18,13 @@ import Step.Chunk
 import Step.Interface
 import Step.Buffer.State
 import Step.Buffer.Buffer
+import Step.LeftRight
 
 import Control.Monad (Monad)
 import Control.Monad.State.Strict (runStateT)
 import Data.Either (Either (..), either)
 import Data.Function ((&))
-import Data.Functor ((<&>))
+import Data.Functor ((<&>), (<$>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Data.Maybe (Maybe (..))
 import Data.Void (Void)
@@ -65,7 +66,7 @@ actionParseQuery p xs r = actionParse (castTo @Any (castTo @Query p)) xs r <&> \
 
 actionParseSure :: forall p c m r a. Chunk c => Monad m => Is p Sure =>
     p c m r a -> [c] -> r -> m (a, [c])
-actionParseSure p xs r = z (run r (castTo @Sure p)) xs
+actionParseSure p xs r = z (getRight <$> run r (castTo @Sure p)) xs
 
 parseSureQuery :: forall p c r a. Chunk c => Is p SureQuery =>
     p c Identity r a -> [c] -> r -> a
@@ -73,7 +74,7 @@ parseSureQuery p xs r = runIdentity (actionParseSureQuery p xs r)
 
 actionParseSureQuery :: forall p c m r a. Chunk c => Monad m => Is p SureQuery =>
     p c m r a -> [c] -> r -> m a
-actionParseSureQuery p xs r = z (run r (castTo @Sure (castTo @SureQuery p))) xs <&> \(res, _) -> res
+actionParseSureQuery p xs r = z (run r (castTo @Sure (castTo @SureQuery p))) xs <&> \(res, _) -> getRight res
 
 z :: (Chunk c, Monad f) => Job (CommittableChunkStream c) f a -> [c] -> f (a, [c])
 z parser xs = runStateT (SupplyChain.run (pureStepper (castOptic simple) >- Alter.job' (Alter.perform' MTL.lift) parser)) (Buffer (Seq.fromList xs))

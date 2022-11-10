@@ -14,6 +14,7 @@ import Step.Action.Core
 import Step.Chunk
 import Step.Interface
 import Step.Package.Failure
+import Step.LeftRight
 
 import qualified Step.Do as P
 
@@ -66,7 +67,7 @@ skipNatural :: forall c m r. Natural -> Any c m r ()
 skipNatural = ifZero (pure' ()) $ cast . skipPositive
 
 remainsAtLeastPositive :: forall c m r. Chunk c => Positive Natural -> SureQuery c m r Bool
-remainsAtLeastPositive = \n -> act @SureQuery \r -> go r n
+remainsAtLeastPositive = \n -> act @SureQuery \r -> fmap right $ go r n
   where
     go :: r -> Positive Natural -> Job (ResettableTerminableStream c) m Bool
     go r n = order nextMaybe >>= \case
@@ -114,7 +115,7 @@ takePositive = \n -> Any $ required $ go n
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
 
 tryTakePositive :: forall c m r. Chunk c => Positive Natural -> Sure c m r (Maybe c)
-tryTakePositive = \n -> act @Sure \_ -> fmap (fmap concat . NE.nonEmpty) $ go n
+tryTakePositive = \n -> act @Sure \_ -> fmap (right . fmap concat . NE.nonEmpty) $ go n
   where
     go :: Positive Natural -> Job (CommittableChunkStream c) m [c]
     go n = order nextMaybe >>= \case
