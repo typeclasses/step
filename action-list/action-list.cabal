@@ -10,17 +10,17 @@ common base
     default-language: GHC2021
     ghc-options: -Wall
     default-extensions:
-        BlockArguments
         NoImplicitPrelude
+        TypeFamilies
     build-depends:
         base ^>= 4.16
       , supply-chain ^>= 0.0
-      , supply-chain-interfaces
 
 library
     import: base
     hs-source-dirs: action-list
     exposed-modules: ActionList
+    other-modules: Internal
 
 test-suite test-action-list
     import: base
