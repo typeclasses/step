@@ -124,21 +124,6 @@ all = go
         Nothing -> pure []
         Just x -> (x :) <$> go
 
-{-| Removes consecutive duplicate items, and yields each item along
-    with the number of duplicates that were removed.
-
-    For example:
-
-    @
-    'eval' ('list' "Hrmm..." '>->' 'group' '>->' 'all')
-    @
-
-    produces the result
-
-    @
-    [(0, \'H'), (0, \'r'), (1, \'m'), (2, \'.')]
-    @
--}
 group :: forall a action. Eq a => Vendor (Unit (Maybe a)) (Unit (Maybe (Natural, a))) action
 group = Vendor
     { handle = \Unit ->
@@ -154,7 +139,7 @@ group = Vendor
                 action
                 (Maybe (Natural, a))
             )
-    start = go 0
+    start = go 1
 
     go n x = order Unit >>= \ym -> case ym of
         Nothing -> pure $ Referral (Just (n, x)) nil
