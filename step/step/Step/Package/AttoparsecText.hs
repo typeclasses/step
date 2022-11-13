@@ -23,7 +23,7 @@ import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Prelude (Eq, Ord, Show)
 import Step.Action.Types
-import Step.Chunk.Text (Text1)
+import Chunk.Text (Text1)
 import Text.Show (show)
 
 import qualified Step.Action as A
@@ -31,8 +31,8 @@ import qualified Step.Package.General as A
 import qualified Step.Do as A
 import qualified Data.Char as Char
 import qualified Data.Text as Text
-import qualified Step.Chunk.Text as Text1
-import qualified Step.Chunk as Chunk
+import qualified Chunk.Text as Text1
+import qualified Chunk as Chunk
 
 newtype Trace = Trace [Text] deriving newtype (Eq, Ord, Show)
 

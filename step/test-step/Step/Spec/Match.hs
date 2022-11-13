@@ -4,10 +4,10 @@ import Step.Action
 import Step.Package.FixedLength
 import Step.Package.Match
 import Step.Package.InMemory (parseMaybe)
-import Step.Chunk.Text (Text1)
-import Step.Chunk.Gen (genChunks)
+import Chunk.Text (Text1)
+import Chunk.Gen (genChunks)
 
-import qualified Step.Chunk as Chunk
+import qualified Chunk as Chunk
 
 import Data.Function (($))
 import Data.Maybe (Maybe (..))

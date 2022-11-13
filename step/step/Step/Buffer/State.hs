@@ -1,6 +1,6 @@
 module Step.Buffer.State where
 
-import Step.Chunk
+import Chunk
 import Step.Interface
 import Step.Buffer.Double
 import Step.Buffer.Buffer

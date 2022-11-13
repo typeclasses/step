@@ -6,20 +6,20 @@ module Step.Package.Characters
   where
 
 import Step.Action.Core
-import Step.Chunk
+import Chunk
 import Step.Package.FixedLength
 import Step.Package.Failure
 import Step.Interface
 import Step.LeftRight
 
 import qualified Step.Do as P
+import qualified Integer.Positive as Positive
 
 import Data.Bool (Bool (..))
 import Data.Eq (Eq, (==))
 import Data.Function (($), (.))
 import Data.Functor (($>), (<&>), fmap)
 import Data.Maybe (Maybe (..))
-import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
 import SupplyChain (order)
 
 
@@ -47,4 +47,4 @@ satisfyPredicate :: forall c m r. Chunk c => (One c -> Bool) -> Atom c m r (One 
 satisfyPredicate ok = P.do{ x <- peekChar; requireTrue (ok x); trySkipChar; P.pure x }
 
 trySkipChar :: Sure c m r ()
-trySkipChar = trySkipPositive_ (PositiveUnsafe 1)
+trySkipChar = trySkipPositive_ Positive.one

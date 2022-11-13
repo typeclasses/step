@@ -1,24 +1,18 @@
 module Step.Buffer.Double (doubleBuffer) where
 
-import Step.Chunk
+import Chunk
 import Step.Interface
-import qualified Step.Interface.Core as I
 import Step.Buffer.Buffer
-
--- The basics
 import Data.Maybe (Maybe (..))
 import Data.Functor (($>))
 import Data.Function (($))
 import Control.Monad (Monad (..))
 import Control.Applicative (Applicative (..))
-
--- Math
-import Numeric.Natural (Natural)
-import NatOptics.Positive.Unsafe (Positive)
-
--- Streaming
 import SupplyChain (Vendor (..), Job, Referral (..), order)
 import SupplyChain.Interface.TerminableStream (IsTerminableStream)
+import Integer (Positive)
+
+import qualified Step.Interface.Core as I
 import qualified SupplyChain.Interface.TerminableStream as Stream
 
 data DoubleBuffer c = DoubleBuffer{ commitBuffer :: Buffer c, viewBuffer :: Buffer c }
@@ -38,7 +32,7 @@ doubleBuffer report b = go (DoubleBuffer b b)
                   where com = commitBuffer s :> x
         I.Commit n -> handleCommit s n
 
-    handleCommit :: DoubleBuffer c -> Positive Natural
+    handleCommit :: DoubleBuffer c -> Positive
         -> Job up action (Referral up (CommittableChunkStream c) action AdvanceResult)
     handleCommit s n = case commitBuffer s of
         x :< xs -> case drop n x of

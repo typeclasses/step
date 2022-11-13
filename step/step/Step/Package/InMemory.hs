@@ -14,7 +14,7 @@ module Step.Package.InMemory
   where
 
 import Step.Action
-import Step.Chunk
+import Chunk
 import Step.Interface
 import Step.Buffer.State
 import Step.Buffer.Buffer

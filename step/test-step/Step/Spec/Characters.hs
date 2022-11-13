@@ -3,10 +3,10 @@ module Step.Spec.Characters (tests) where
 import Step.Action
 import Step.Package.Characters
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
-import Step.Chunk.Text (Text1)
-import Step.Chunk.Gen (genChunks)
+import Chunk.Text (Text1)
+import Chunk.Gen (genChunks)
 
-import qualified Step.Chunk as Chunk
+import qualified Chunk
 
 import Data.Char (Char)
 import Data.Function (($))

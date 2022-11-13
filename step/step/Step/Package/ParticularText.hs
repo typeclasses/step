@@ -6,7 +6,7 @@ module Step.Package.ParticularText
   where
 
 import Step.Action.Core
-import Step.Chunk
+import Chunk
 import Step.Interface
 import Step.Package.FixedLength
 import Step.Package.Failure

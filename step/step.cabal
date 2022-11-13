@@ -36,7 +36,6 @@ common base
     build-depends:
         text
       , loc
-      , nat-optics
       , optics
       , base
       , containers

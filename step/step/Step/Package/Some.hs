@@ -1,7 +1,7 @@
 module Step.Package.Some where
 
 import Step.Action.Core
-import Step.Chunk
+import Chunk
 import Step.Package.FixedLength
 import Step.Interface
 

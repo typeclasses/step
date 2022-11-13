@@ -2,11 +2,11 @@ module Step.Spec.ParticularText (tests) where
 
 import Step.Package.ParticularText
 import Step.Package.InMemory (parseMaybe)
-import Step.Chunk.Text (Text1)
-import Step.Chunk.Gen (genChunks)
+import Chunk.Text (Text1)
+import Chunk.Gen (genChunks)
 
-import qualified Step.Chunk as Chunk
-import qualified Step.Chunk.Text.Core as T
+import qualified Chunk as Chunk
+import qualified Chunk.Text.Core as T
 
 import Data.Functor ((<$>))
 import Data.Maybe (Maybe (..))
