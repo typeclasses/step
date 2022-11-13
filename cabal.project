@@ -1,6 +1,7 @@
 packages:
     action-list
   , supply-chain-interfaces
+  , supply-chain-parsing
   , step
 
 with-compiler: ghc-9.2.4

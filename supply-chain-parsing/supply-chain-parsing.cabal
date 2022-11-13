@@ -1,0 +1,24 @@
+cabal-version: 3.0
+
+name: supply-chain-parsing
+version: 0
+
+library
+    default-language: GHC2021
+    ghc-options: -Wall
+    hs-source-dirs: supply-chain-parsing
+
+    default-extensions:
+        DataKinds
+        NoImplicitPrelude
+        TypeFamilies
+
+    build-depends:
+        base
+      , supply-chain
+
+    exposed-modules:
+        Cursor.Advancement
+        Cursor.Interface
+        Positive
+        Positive.Unsafe
