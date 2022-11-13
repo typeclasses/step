@@ -1,8 +1,8 @@
-module Step.Chunk.Text.Core (Text1 (..), assume) where
+module Chunk.Text.Core (Text1 (..), assume) where
 
-import Step.Chunk
-import Step.Chunk.ListLike.Core (NonEmptyListLike)
-import qualified Step.Chunk.ListLike.Core as LL
+import Chunk
+import Chunk.ListLike.Core (NonEmptyListLike)
+import qualified Chunk.ListLike.Core as LL
 
 import Data.Char (Char)
 import Data.Function
@@ -11,14 +11,21 @@ import Data.Ord
 import Text.Show
 import Data.Functor
 import Data.Text (Text)
-import Data.Semigroup (Semigroup)
+import Data.Semigroup (Semigroup, (<>))
 import Data.Coerce
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 
 newtype Text1 = Text1 (NonEmptyListLike Text)
-  deriving newtype (Eq, Ord, Show, Semigroup, Trivializable)
+  deriving (Eq, Ord, Show)
+
+instance Semigroup Text1 where
+  Text1 a <> Text1 b = Text1 (a <> b)
+
+instance Trivializable Text1 where
+  refine = fmap Text1 . refine
+  generalize (Text1 x) = generalize x
 
 type instance One Text1 = Char
 

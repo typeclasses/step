@@ -1,7 +1,9 @@
-module Step.Chunk.ListLike.Core (NonEmptyListLike (..), assume) where
+{-# language UndecidableInstances #-}
 
-import Step.Chunk hiding (length, generalize)
-import qualified Step.Chunk as Chunk
+module Chunk.ListLike.Core (NonEmptyListLike (..), assume) where
+
+import Chunk hiding (length, generalize)
+import qualified Chunk as Chunk
 
 import Data.Eq (Eq ((==)))
 import Data.Function (($), (&), (.), on)
@@ -12,24 +14,22 @@ import Data.Maybe (Maybe (..), fromMaybe)
 import Data.Ord (Ord (compare))
 import Data.String (IsString (..))
 import GHC.Exts (IsList (..))
-import NatOptics.Positive.Unsafe (Positive (PositiveUnsafe))
-import Numeric.Natural (Natural)
-import Optics (preview, review)
+import Integer (Positive)
 import Prelude (error)
 import Prelude (fromIntegral)
 import Text.Show (Show (showsPrec))
 import Data.Semigroup (Semigroup (..))
 import Data.Monoid (Monoid)
+import Integer.Signed (Signed (..))
 
 import qualified Data.ListLike as LL
-import qualified NatOptics.Positive as Positive
-import qualified NatOptics.Positive.Math as Positive
-import qualified NatOptics.Signed as Signed
+import qualified Integer.Positive as Positive
+import qualified Integer.Positive.Unsafe as Positive.Unsafe
 
 data NonEmptyListLike c =
   NonEmptyListLike
     { generalize :: !c
-    , length :: !(Positive Natural)
+    , length :: !Positive
     }
 
 instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c)
@@ -41,16 +41,16 @@ instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c)
 instance Semigroup c => Semigroup (NonEmptyListLike c)
   where
     NonEmptyListLike c1 l1 <> NonEmptyListLike c2 l2 =
-        NonEmptyListLike (c1 <> c2) (Positive.plus l1 l2)
+        NonEmptyListLike (c1 <> c2) (Positive.add l1 l2)
 
 assume :: ListLike c (Item c) => c -> NonEmptyListLike c
-assume c = NonEmptyListLike c (PositiveUnsafe (fromIntegral (LL.length c)))
+assume c = NonEmptyListLike c (Positive.Unsafe.fromInt (LL.length c))
 
 type instance Nullable (NonEmptyListLike c) = c
 
 instance (Monoid c, ListLike c (Item c)) => Trivializable (NonEmptyListLike c)
   where
-    refine c = preview Positive.natPrism (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
+    refine c = Positive.fromNatural (fromIntegral (LL.length c)) <&> \l -> NonEmptyListLike c l
     generalize = generalize
 
 instance Eq c => Eq (NonEmptyListLike c) where
@@ -76,23 +76,23 @@ instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
             if LL.null a then SpanNone else
             SpanPart (assume a) (assume b)
 
-    drop = \n whole -> case Positive.minus (length whole) n of
-        Signed.Zero ->
+    drop = \n whole -> case Positive.subtract (length whole) n of
+        Zero ->
             DropAll
-        Signed.Plus _ ->
+        Plus _ ->
             DropPart
               { dropRemainder = assume $
-                  LL.drop (fromIntegral (review Positive.refine n)) (generalize whole)
+                  LL.drop (Positive.Unsafe.toInt n) (generalize whole)
               }
-        Signed.Minus dropShortfall ->
+        Minus dropShortfall ->
             DropInsufficient{ dropShortfall }
 
-    take = \n whole -> case Positive.minus (length whole) n of
-        Signed.Zero ->
+    take = \n whole -> case Positive.subtract (length whole) n of
+        Zero ->
             TakeAll
-        Signed.Plus{} ->
-            TakePart{ takePart = assume (LL.take (fromIntegral (review Positive.refine n)) (generalize whole)) }
-        Signed.Minus takeShortfall ->
+        Plus{} ->
+            TakePart{ takePart = assume (LL.take (Positive.Unsafe.toInt n) (generalize whole)) }
+        Minus takeShortfall ->
             TakeInsufficient{ takeShortfall }
 
     while = \f x -> case refine (LL.takeWhile (getPredicate f) (generalize x)) of
@@ -102,12 +102,10 @@ instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
             then WhileAll
             else WhilePrefix y
 
-    split = \n whole -> case Positive.minus (length whole) n of
-        Signed.Plus _ -> Split (assume a) (assume b)
+    split = \n whole -> case Positive.subtract (length whole) n of
+        Plus _ -> Split (assume a) (assume b)
           where
-            (a, b) = LL.splitAt
-                (fromIntegral (review Positive.refine n))
-                (generalize whole)
+            (a, b) = LL.splitAt (Positive.Unsafe.toInt n) (generalize whole)
         _ -> SplitInsufficient
 
     leftView a = a
@@ -117,7 +115,7 @@ instance (ListLike c (Item c)) => Chunk (NonEmptyListLike c)
         & \(x, b) -> Pop
             { popItem = x
             , popRemainder =
-                case Positive.minus (length a) (PositiveUnsafe 1) of
-                    Signed.Plus n -> Just (NonEmptyListLike b n )
+                case Positive.subtract (length a) Positive.one of
+                    Plus n -> Just (NonEmptyListLike b n )
                     _ -> Nothing
             }

@@ -11,14 +11,30 @@ library
     default-extensions:
         DataKinds
         NoImplicitPrelude
+        PatternSynonyms
         TypeFamilies
 
     build-depends:
         base
+      , containers
+      , hedgehog
+      , ListLike
       , supply-chain
+      , text
 
     exposed-modules:
         Cursor.Advancement
         Cursor.Interface
-        Positive
-        Positive.Unsafe
+
+        Integer
+        Integer.Positive
+        Integer.Positive.Unsafe
+        Integer.Sign
+        Integer.Signed
+
+        Chunk
+        Chunk.Gen
+        Chunk.ListLike
+        Chunk.ListLike.Core
+        Chunk.Text
+        Chunk.Text.Core

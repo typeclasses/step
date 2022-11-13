@@ -1,6 +1,6 @@
 module Cursor.Advancement where
 
-import Positive
+import Integer
 
 data Advancement =
     AdvanceSuccess

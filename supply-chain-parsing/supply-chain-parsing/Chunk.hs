@@ -1,4 +1,4 @@
-module Step.Chunk where
+module Chunk where
 
 import Data.Eq (Eq)
 import Data.Function ((.))
@@ -7,8 +7,7 @@ import Data.Functor.Contravariant (Predicate (..))
 import Data.Kind (Type)
 import Data.Maybe (Maybe (..), maybe)
 import Data.Ord (Ord)
-import NatOptics.Positive.Unsafe (Positive)
-import Numeric.Natural (Natural)
+import Integer (Positive)
 import Text.Show (Show)
 import Data.Ord (Ord (compare), Ordering (..))
 import Data.Bool (Bool (..))
@@ -28,15 +27,15 @@ class Semigroup c => Chunk c
 
     span :: Predicate (One c) -> c -> Span c
 
-    split :: Positive Natural -> c -> Split c
+    split :: Positive -> c -> Split c
 
-    take :: Positive Natural -> c -> Take c
+    take :: Positive -> c -> Take c
 
-    drop :: Positive Natural -> c -> Drop c
+    drop :: Positive -> c -> Drop c
 
     while :: Predicate (One c) -> c -> While c
 
-    length :: c -> Positive Natural
+    length :: c -> Positive
 
     concat :: NonEmpty c -> c
     concat = Semigroup.sconcat
@@ -68,38 +67,38 @@ data Span c =
       { spannedPart :: c
       , spanRemainder :: c
       }
-  deriving stock (Eq, Ord, Show, Functor)
+  deriving (Eq, Ord, Show, Functor)
 
 data Split c =
     SplitInsufficient
   | Split c c
-  deriving stock (Eq, Ord, Show, Functor)
+  deriving (Eq, Ord, Show, Functor)
 
 data Drop c =
     DropAll
   | DropInsufficient
-      { dropShortfall :: Positive Natural
+      { dropShortfall :: Positive
       }
   | DropPart
       { dropRemainder :: c
       }
-  deriving stock (Eq, Ord, Show, Functor)
+  deriving (Eq, Ord, Show, Functor)
 
 data Take c =
     TakeAll
   | TakeInsufficient
-      { takeShortfall :: Positive Natural
+      { takeShortfall :: Positive
       }
   | TakePart
       { takePart :: c
       }
-  deriving stock (Eq, Ord, Show, Functor)
+  deriving (Eq, Ord, Show, Functor)
 
 data While c =
     WhileNone
   | WhilePrefix c
   | WhileAll
-  deriving stock (Eq, Ord, Show, Functor)
+  deriving (Eq, Ord, Show, Functor)
 
 concatMaybe :: Chunk c => [c] -> Maybe c
 concatMaybe = fmap concat . nonEmpty

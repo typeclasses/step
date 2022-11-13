@@ -2,11 +2,11 @@ module Cursor.Interface where
 
 import Cursor.Advancement
 import Data.Maybe (Maybe)
-import Positive
+import Integer
 
 data Mode = R | RW
 
-data Cursor (mode :: Mode) item product =
-    (product ~ Maybe item) => NextMaybe
-  | (product ~ ()) => Reset
-  | (product ~ Advancement, mode ~ 'RW) => Commit Positive
+data Cursor (mode :: Mode) chunk product =
+    ( product ~ Maybe chunk             ) => NextChunk
+  | ( product ~ ()                      ) => Reset
+  | ( product ~ Advancement, mode ~ 'RW ) => Commit Positive

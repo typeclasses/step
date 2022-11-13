@@ -1,7 +1,7 @@
-module Step.Chunk.Text (Text1, asciiCI) where
+module Chunk.Text (Text1, asciiCI) where
 
-import Step.Chunk
-import Step.Chunk.Text.Core
+import Chunk
+import Chunk.Text.Core
 
 import Data.Bool
 import Data.Char
@@ -13,10 +13,10 @@ import qualified Data.Text as Text
 
 asciiCI :: ChunkCharacterEquivalence Text1
 asciiCI =
-    ChunkCharacterEquivalence \a b ->
+    ChunkCharacterEquivalence $ \a b ->
       ( length a == length b ) &&
       ( Text.zip (generalize a) (generalize b)
-          & List.all \(x, y) -> eq x y
+          & List.all (\(x, y) -> eq x y)
       )
   where
     eq :: Char -> Char -> Bool

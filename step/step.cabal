@@ -44,6 +44,7 @@ common base
       , ListLike
       , supply-chain ^>= 0.0
       , supply-chain-interfaces
+      , supply-chain-parsing
       , mtl
       , transformers
 
@@ -58,13 +59,6 @@ library
         Step.Action
         Step.Action.Core
         Step.Action.Types
-
-        Step.Chunk
-        Step.Chunk.Gen
-        Step.Chunk.ListLike
-        Step.Chunk.ListLike.Core
-        Step.Chunk.Text
-        Step.Chunk.Text.Core
 
         Step.Buffer.Buffer
         Step.Buffer.Double
