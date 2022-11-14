@@ -4,7 +4,7 @@ module Integer.Signed
   (
     {- * Type -} Signed (Zero, NonZero, Plus, Minus),
     {- * Conversion -} fromInteger, toInteger,
-    {- * Arithmetic -} add, negate, multiply, abs,
+    {- * Arithmetic -} add, subtract, negate, multiply, abs,
   )
   where
 
@@ -52,6 +52,9 @@ add (NonZero sa a) (NonZero sb b) = case (sa, sb) of
 negate :: Signed -> Signed
 negate Zero = Zero
 negate (NonZero s x) = NonZero (Sign.negate s) x
+
+subtract :: Signed -> Signed -> Signed
+subtract a b = add a (negate b)
 
 multiply :: Signed -> Signed -> Signed
 multiply Zero _ = Zero

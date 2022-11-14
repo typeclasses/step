@@ -4,8 +4,8 @@ module Integer.Positive
   (
     {- * Type -} Positive,
     {- * Conversion -} toNatural, fromNatural,
-    {- * One (1) -} one, addOne, subtractOne,
     {- * Arithmetic -} add, subtract, multiply,
+    {- * One (1) -} one, addOne, subtractOne,
   )
   where
 
