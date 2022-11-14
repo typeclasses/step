@@ -3,7 +3,7 @@
 module Integer.Positive
   (
     {- * Type -} Positive,
-    {- * Arithmetic -} add, subtract, multiply,
+    {- * Arithmetic -} subtract,
     {- * Conversion -}
     {- ** Natural -} toNatural, fromNatural,
     {- ** Integer -} toInteger, fromInteger,
@@ -14,7 +14,7 @@ module Integer.Positive
 
 import Data.Function (($))
 import Data.Maybe (Maybe (..))
-import Integer.Positive.Unsafe (Positive, toNatural, one, add, addOne, multiply, toInteger)
+import Integer.Positive.Unsafe (Positive, toNatural, one, addOne, toInteger)
 import Integer.Signed (Signed (..))
 import Numeric.Natural (Natural)
 import Prelude (Integer)

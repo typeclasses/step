@@ -7,7 +7,7 @@ module Integer.Positive.Unsafe
     {- ** Natural -} toNatural, fromNatural, fromNaturalChecked,
     {- ** Integer -} toInteger, fromInteger, fromIntegerChecked,
     {- ** Int -} toInt, fromInt, fromIntChecked,
-    {- * Arithmetic -} add, subtract, subtractChecked, multiply,
+    {- * Arithmetic -} subtract, subtractChecked,
     {- * One (1) -} one, addOne, subtractOne, subtractOneChecked,
   )
   where

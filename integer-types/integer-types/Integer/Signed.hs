@@ -3,7 +3,6 @@
 module Integer.Signed
   (
     {- * Type -} Signed (Zero, NonZero, Plus, Minus),
-    {- * Arithmetic -} add, subtract, negate, multiply, abs,
     {- * Conversion -}
     {- ** Integer -} fromInteger, toInteger,
     {- ** Natural -} fromNatural, toNatural,
@@ -57,8 +56,8 @@ add :: Signed -> Signed -> Signed
 add Zero x = x
 add x Zero = x
 add (NonZero sa a) (NonZero sb b) = case (sa, sb) of
-    (PlusSign, PlusSign)   -> Plus  $ Positive.Unsafe.add a b
-    (MinusSign, MinusSign) -> Minus $ Positive.Unsafe.add a b
+    (PlusSign, PlusSign)   -> Plus  $ a Num.+ b
+    (MinusSign, MinusSign) -> Minus $ a Num.+ b
 
     (MinusSign, PlusSign) -> case compare a b of
         EQ -> Zero
@@ -74,14 +73,11 @@ negate :: Signed -> Signed
 negate Zero = Zero
 negate (NonZero s x) = NonZero (Sign.negate s) x
 
-subtract :: Signed -> Signed -> Signed
-subtract a b = add a (negate b)
-
 multiply :: Signed -> Signed -> Signed
 multiply Zero _ = Zero
 multiply _ Zero = Zero
 multiply (NonZero sa a) (NonZero sb b) =
-    NonZero (Sign.multiply sa sb) (Positive.Unsafe.multiply a b)
+    NonZero (Sign.multiply sa sb) (a Num.* b)
 
 abs :: Signed -> Signed
 abs Zero = Zero

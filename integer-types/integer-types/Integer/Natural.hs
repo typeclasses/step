@@ -3,7 +3,7 @@
 module Integer.Natural
   (
     {- * Type -} Natural,
-    {- * Arithmetic -} add, subtract, multiply,
+    {- * Arithmetic -} subtract,
     {- * Conversion -}
     {- ** Positive -} toPositive, fromPositive,
     {- ** Integer -} toInteger, fromInteger,
@@ -41,12 +41,6 @@ toSigned = Signed.fromNatural
 
 fromSigned :: Signed -> Maybe Natural
 fromSigned = Signed.toNatural
-
-add :: Integer -> Integer -> Integer
-add = (Num.+)
-
-multiply :: Integer -> Integer -> Integer
-multiply = (Num.*)
 
 subtract :: Natural -> Natural -> Signed
 subtract a b = case Ord.compare a b of

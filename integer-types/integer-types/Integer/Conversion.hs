@@ -1,7 +1,9 @@
+{-# language Safe #-}
+
 module Integer.Conversion
   (
-    IntegerNarrow (..),
-    IntegerConvert (..),
+    IntegerNarrow (narrow),
+    IntegerConvert (convert),
     IntegerEquiv,
   )
   where

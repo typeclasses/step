@@ -3,7 +3,6 @@
 module Integer.Integer
   (
     {- * Type -} Integer,
-    {- * Arithmetic -} {- $arithmetic -}
     {- * Conversion -}
     {- ** Positive -} toPositive, fromPositive,
     {- ** Natural -} toNatural, fromNatural,
@@ -20,13 +19,6 @@ import Prelude (Integer)
 import qualified Integer.Natural as Natural
 import qualified Integer.Positive as Positive
 import qualified Integer.Signed as Signed
-
-{- $arithmetic
-
-This module offers no arithmetic operations because
-"Prelude.Num" class already suits the integer well enough.
-
--}
 
 toPositive :: Integer -> Maybe Positive
 toPositive = Positive.fromInteger

@@ -12,6 +12,7 @@ library
 
     default-extensions:
         MultiParamTypeClasses
+        NoGeneralizedNewtypeDeriving
         NoImplicitPrelude
         PatternSynonyms
 
@@ -24,6 +25,9 @@ library
         Integer.Integer
         Integer.Natural
         Integer.Positive
-        Integer.Positive.Unsafe
         Integer.Sign
         Integer.Signed
+        Integer.Subtraction
+
+    other-modules:
+        Integer.Positive.Unsafe
