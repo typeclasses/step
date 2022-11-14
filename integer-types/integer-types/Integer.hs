@@ -2,11 +2,8 @@
 
 module Integer
   (
-    Integer,
-    Natural,
-    Positive,
-    Signed (..),
-    Sign (..),
+    {- ** Types -}
+    Integer, Natural, Positive, Signed (..), Sign (..),
   )
   where
 
