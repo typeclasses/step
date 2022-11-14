@@ -2,8 +2,8 @@
 
 module Integer
   (
-    Natural,
     Integer,
+    Natural,
     Positive,
     Signed (..),
     Sign (..),

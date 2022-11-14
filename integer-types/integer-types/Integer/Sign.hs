@@ -1,11 +1,16 @@
 {-# language Safe #-}
 
-module Integer.Sign where
+module Integer.Sign
+  (
+    {- * Type -} Sign (..),
+    {- * Operations -} negate, multiply,
+  )
+  where
 
-import Prelude (Eq, Ord, (==))
+import Prelude (Eq, Ord, (==), Show)
 
 data Sign = MinusSign | PlusSign
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 negate :: Sign -> Sign
 negate PlusSign = MinusSign

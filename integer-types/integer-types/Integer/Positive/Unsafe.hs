@@ -1,13 +1,23 @@
 {-# language Unsafe #-}
 
-module Integer.Positive.Unsafe where
+module Integer.Positive.Unsafe
+  (
+    {- * Type -} Positive (FromNatural),
+    {- * Conversion -}
+    {- ** Natural -} toNatural, fromNatural, fromNaturalChecked,
+    {- ** Integer -} toInteger, fromInteger, fromIntegerChecked,
+    {- ** Int -} toInt, fromInt, fromIntChecked,
+    {- * Arithmetic -} add, subtract, subtractChecked, multiply,
+    {- * One (1) -} one, addOne, subtractOne, subtractOneChecked,
+  )
+  where
 
 import Numeric.Natural (Natural)
 
-import Data.Ord (Ord (..))
 import Data.Function (($), (.), const, id)
-import Prelude (Eq, Num, Integral, Real, Integer, Enum, Show, Int)
+import Prelude (Eq, Ord, Num, Integral, Real, Integer, Enum, Show, Int)
 
+import qualified Data.Ord as Ord
 import qualified Text.Show as Show
 import qualified Control.Exception as Exception
 import qualified Data.Maybe as Maybe
@@ -40,7 +50,7 @@ subtract :: Positive -> Positive -> Positive
 subtract a b = fromNatural (toNatural a Num.- toNatural b)
 
 subtractChecked :: Positive -> Positive -> Positive
-subtractChecked a b = if a > b then subtract a b else Exception.throw Exception.Underflow
+subtractChecked a b = if a Ord.> b then subtract a b else Exception.throw Exception.Underflow
 
 multiply :: Positive -> Positive -> Positive
 multiply a b = fromNatural (toNatural a Num.* toNatural b)
@@ -64,7 +74,7 @@ toIntChecked :: Positive -> Int
 toIntChecked = Maybe.fromMaybe (Exception.throw Exception.Overflow) . Bits.toIntegralSized . toNatural
 
 fromInt :: Int -> Positive
-fromInt = fromNatural . Enum.toEnum
+fromInt = fromNatural . Num.fromIntegral
 
 fromIntChecked :: Int -> Positive
 fromIntChecked x = case Num.signum x of { 1 -> fromInt x; _ -> Exception.throw Exception.Underflow }
@@ -76,17 +86,17 @@ enumFromTo :: Positive -> Positive -> [Positive]
 enumFromTo a b = List.map fromNatural $ Enum.enumFromTo (toNatural a) (toNatural b)
 
 enumFromThen :: Positive -> Positive -> [Positive]
-enumFromThen a b = if b > a then descending else ascending
+enumFromThen a b = if b Ord.> a then descending else ascending
   where
     ascending = List.map fromNatural $ Enum.enumFromThen (toNatural a) (toNatural b)
-    descending = List.map fromInteger $ List.takeWhile (>= 1) $
+    descending = List.map fromInteger $ List.takeWhile (Ord.>= 1) $
         Enum.enumFromThen (toInteger a) (toInteger b)
 
 enumFromThenTo :: Positive -> Positive -> Positive -> [Positive]
-enumFromThenTo a b c = if b > a then descending else ascending
+enumFromThenTo a b c = if b Ord.> a then descending else ascending
   where
     ascending = List.map fromNatural $ Enum.enumFromThenTo (toNatural a) (toNatural b) (toNatural c)
-    descending = List.map fromInteger $ List.takeWhile (>= 1) $
+    descending = List.map fromInteger $ List.takeWhile (Ord.>= 1) $
         Enum.enumFromThenTo (toInteger a) (toInteger b) (toInteger c)
 
 instance Num Positive

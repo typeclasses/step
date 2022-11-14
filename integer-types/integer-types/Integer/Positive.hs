@@ -2,15 +2,15 @@
 
 module Integer.Positive
   (
-    Positive,
-    toNatural, fromNatural,
-    one, addOne, subtractOne,
-    add, subtract,
+    {- * Type -} Positive,
+    {- * Conversion -} toNatural, fromNatural,
+    {- * One (1) -} one, addOne, subtractOne,
+    {- * Arithmetic -} add, subtract, multiply,
   )
   where
 
 import Data.Maybe (Maybe (..))
-import Integer.Positive.Unsafe (Positive, toNatural, one, add, addOne)
+import Integer.Positive.Unsafe (Positive, toNatural, one, add, addOne, multiply)
 import Numeric.Natural (Natural)
 import Integer.Signed (Signed (..))
 import Data.Function (($))

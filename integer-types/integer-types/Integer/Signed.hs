@@ -2,9 +2,9 @@
 
 module Integer.Signed
   (
-    Signed (Zero, NonZero, Plus, Minus),
-    fromInteger, toInteger,
-    add, negate, multiply, abs, signum,
+    {- * Type -} Signed (Zero, NonZero, Plus, Minus),
+    {- * Conversion -} fromInteger, toInteger,
+    {- * Arithmetic -} add, negate, multiply, abs, signum,
   )
   where
 
