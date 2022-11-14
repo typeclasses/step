@@ -7,7 +7,7 @@ module Integer
     Signed (Zero, NonZero, Minus, Plus),
     Sign (MinusSign, PlusSign),
 
-    {- ** Arithmetic -}
+    {- ** Subtraction -}
     Subtraction (subtractInteger, subtractSigned),
     Subtraction' (subtract),
 
