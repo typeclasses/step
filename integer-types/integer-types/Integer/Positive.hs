@@ -3,10 +3,11 @@
 module Integer.Positive
   (
     {- * Type -} Positive,
+    {- * Arithmetic -} add, subtract, multiply,
     {- * Conversion -}
     {- ** Natural -} toNatural, fromNatural,
     {- ** Integer -} toInteger, fromInteger,
-    {- * Arithmetic -} add, subtract, multiply,
+    {- ** Signed -} toSigned, fromSigned,
     {- * One (1) -} one, addOne, subtractOne,
   )
   where
@@ -36,3 +37,10 @@ subtract a b = case Ord.compare a b of
 
 subtractOne :: Positive -> Natural
 subtractOne x = toNatural x Num.- 1
+
+toSigned :: Positive -> Signed
+toSigned = Plus
+
+fromSigned :: Signed -> Maybe Positive
+fromSigned (Plus x) = Just x
+fromSigned _ = Nothing

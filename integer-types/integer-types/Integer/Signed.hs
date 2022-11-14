@@ -6,7 +6,8 @@ module Integer.Signed
     {- * Arithmetic -} add, subtract, negate, multiply, abs,
     {- * Conversion -}
     {- ** Integer -} fromInteger, toInteger,
-    {- ** Natural -} fromNatural, toNatural
+    {- ** Natural -} fromNatural, toNatural,
+    {- ** Positive -} fromPositive, toPositive,
   )
   where
 
@@ -35,6 +36,13 @@ pattern Plus :: Positive -> Signed
 pattern Plus x = NonZero PlusSign x
 
 {-# complete Zero, Minus, Plus #-}
+
+fromPositive :: Positive -> Signed
+fromPositive = Plus
+
+toPositive :: Signed -> Maybe Positive
+toPositive (Plus x) = Just x
+toPositive _ = Nothing
 
 fromNatural :: Natural -> Signed
 fromNatural 0 = Zero

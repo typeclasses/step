@@ -9,6 +9,7 @@ library
     hs-source-dirs: integer-types
 
     default-extensions:
+        MultiParamTypeClasses
         NoImplicitPrelude
         PatternSynonyms
 
@@ -17,6 +18,7 @@ library
 
     exposed-modules:
         Integer
+        Integer.Conversion
         Integer.Integer
         Integer.Natural
         Integer.Positive
