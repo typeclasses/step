@@ -3,8 +3,11 @@
 module Integer.Natural
   (
     {- * Type -} Natural,
-    {- * Conversion -} toPositive, fromPositive,
     {- * Arithmetic -} add, subtract, multiply,
+    {- * Conversion -}
+    {- ** Positive -} toPositive, fromPositive,
+    {- ** Integer -} toInteger, fromInteger,
+    {- ** Signed -} toSigned, fromSigned,
     {- * One (1) -} one, addOne, subtractOne,
   )
   where
@@ -18,13 +21,26 @@ import Prelude (Integer)
 import qualified Data.Ord as Ord
 import qualified Integer.Positive as Positive
 import qualified Integer.Positive.Unsafe as Positive.Unsafe
-import qualified Prelude as Num (Num (..))
+import qualified Integer.Signed as Signed
+import qualified Prelude as Num (Num (..), Integral (..))
 
 toPositive :: Natural -> Maybe Positive.Unsafe.Positive
 toPositive = Positive.fromNatural
 
 fromPositive :: Positive.Unsafe.Positive -> Natural
 fromPositive = Positive.toNatural
+
+fromInteger :: Integer -> Maybe Natural
+fromInteger x = if x Ord.>= 0 then Just (Num.fromInteger x) else Nothing
+
+toInteger :: Natural -> Integer
+toInteger = Num.toInteger
+
+toSigned :: Natural -> Signed
+toSigned = Signed.fromNatural
+
+fromSigned :: Signed -> Maybe Natural
+fromSigned = Signed.toNatural
 
 add :: Integer -> Integer -> Integer
 add = (Num.+)

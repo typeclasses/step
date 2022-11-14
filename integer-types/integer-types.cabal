@@ -17,6 +17,7 @@ library
 
     exposed-modules:
         Integer
+        Integer.Integer
         Integer.Natural
         Integer.Positive
         Integer.Positive.Unsafe
