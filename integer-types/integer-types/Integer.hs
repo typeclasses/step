@@ -11,7 +11,7 @@ module Integer
     Subtraction (subtractInteger, subtractSigned),
     Subtraction' (subtract),
 
-    {- ** Conversion classes -}
+    {- ** Conversion -}
     IntegerNarrow (narrow),
     IntegerConvert (convert),
     IntegerEquiv,
