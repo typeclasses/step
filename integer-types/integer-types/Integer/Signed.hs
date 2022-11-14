@@ -4,7 +4,7 @@ module Integer.Signed
   (
     {- * Type -} Signed (Zero, NonZero, Plus, Minus),
     {- * Conversion -} fromInteger, toInteger,
-    {- * Arithmetic -} add, negate, multiply, abs, signum,
+    {- * Arithmetic -} add, negate, multiply, abs,
   )
   where
 
