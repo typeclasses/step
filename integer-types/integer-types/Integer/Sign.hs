@@ -1,3 +1,5 @@
+{-# language Safe #-}
+
 module Integer.Sign where
 
 import Prelude (Eq, Ord, (==))

@@ -18,6 +18,7 @@ library
         base
       , containers
       , hedgehog
+      , integer-types
       , ListLike
       , supply-chain
       , text
@@ -25,12 +26,6 @@ library
     exposed-modules:
         Cursor.Advancement
         Cursor.Interface
-
-        Integer
-        Integer.Positive
-        Integer.Positive.Unsafe
-        Integer.Sign
-        Integer.Signed
 
         Chunk
         Chunk.Gen

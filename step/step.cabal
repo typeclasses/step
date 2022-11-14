@@ -40,6 +40,7 @@ common base
       , base
       , containers
       , hedgehog ^>= 1.1
+      , integer-types
       , ListLike
       , supply-chain ^>= 0.0
       , supply-chain-interfaces
