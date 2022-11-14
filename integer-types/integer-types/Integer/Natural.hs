@@ -3,7 +3,7 @@
 module Integer.Natural
   (
     {- * Type -} Natural,
-    {- * Arithmetic -} subtract,
+    {- * Subtraction -} subtract,
     {- * Conversion -}
     {- ** Positive -} toPositive, fromPositive,
     {- ** Integer -} toInteger, fromInteger,
