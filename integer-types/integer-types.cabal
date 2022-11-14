@@ -9,10 +9,8 @@ library
     hs-source-dirs: integer-types
 
     default-extensions:
-        DataKinds
         NoImplicitPrelude
         PatternSynonyms
-        TypeFamilies
 
     build-depends:
         base
