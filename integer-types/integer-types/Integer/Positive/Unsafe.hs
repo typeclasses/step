@@ -59,10 +59,10 @@ one :: Positive
 one = fromNatural 1
 
 addOne :: Positive -> Positive
-addOne = fromNatural . Enum.succ . toNatural
+addOne = fromNatural . (Num.+ 1) . toNatural
 
 subtractOne :: Positive -> Positive
-subtractOne = fromNatural . Enum.pred . toNatural
+subtractOne = fromNatural . (Num.- 1) . toNatural
 
 subtractOneChecked :: Positive -> Positive
 subtractOneChecked x = case x of { 1 -> Exception.throw Exception.Underflow; _ -> subtractOne x }
