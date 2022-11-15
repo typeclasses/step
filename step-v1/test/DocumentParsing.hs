@@ -4,32 +4,25 @@ module Step.Spec.DocumentParsing (tests) where
 
 import Step.Internal.Prelude
 
+import Char (Char)
+import Hedgehog
+import Loc (loc)
 import Test.Tasty
 import Test.Tasty.Hedgehog
-
-import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-
-import qualified ListLike
-
-import Loc (loc)
-import qualified Loc
-import qualified SpanOrLoc
-
-import qualified Char
-import Char (Char)
-
 import Text (Text)
-import qualified Text
-
-import qualified Step.Cursor as Cursor
 import Step.Cursor (genChunks)
-
 import Step.Nontrivial.Unsafe (Nontrivial (NontrivialUnsafe))
 
--- The module under test
+import qualified Char
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+import qualified Integer
+import qualified ListLike
+import qualified Loc
+import qualified SpanOrLoc
+import qualified Step.Cursor as Cursor
 import qualified Step.Document as P
+import qualified Text
 
 type TextChunks = [Nontrivial Text Char]
 
@@ -160,7 +153,7 @@ prop_linePosition_oneLine = property do
         else P.do{ P.skip0 n; P.position }
     input :: TextChunks <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
     let x = P.parseSimple p input
-    x === Right (Loc.loc 1 (fromIntegral $ n + 1))
+    x === Right (Loc.loc 1 (Integer.yolo $ n + 1))
 
 prop_linePosition_oneColumn = property do
     n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
@@ -170,7 +163,7 @@ prop_linePosition_oneColumn = property do
             else P.do{ P.skip0 n; P.position }
     input :: TextChunks <- forAll (genChunks (ListLike.replicate 50 '\n'))
     let x = P.parseSimple p input
-    x === Right (Loc.loc (fromIntegral $ 1 + n) 1)
+    x === Right (Loc.loc (Integer.yolo $ 1 + n) 1)
 
 prop_linePosition_both = property do
     input :: TextChunks <- forAll $ genChunks $ times 10 $ Text.replicate 19 "a" <> "\n"
@@ -181,7 +174,7 @@ prop_linePosition_both = property do
             else P.do{ P.skip0 n; P.position }
     let x = P.parseSimple p input
     let (a, b) = n `quotRem` 20
-    let l = Loc.loc (fromIntegral $ 1 + a) (fromIntegral $ 1 + b)
+    let l = Loc.loc (Integer.yolo $ 1 + a) (Integer.yolo $ 1 + b)
     x === Right l
 
     -- describe "withLocation" do

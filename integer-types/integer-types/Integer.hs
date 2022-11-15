@@ -15,6 +15,7 @@ module Integer
     IntegerNarrow (narrow),
     IntegerConvert (convert),
     IntegerEquiv,
+    yolo,
   )
   where
 
@@ -26,7 +27,7 @@ import Integer.Sign (Sign (MinusSign, PlusSign))
 import Integer.Signed (Signed (Zero, NonZero, Minus, Plus))
 
 import Integer.Conversion (IntegerNarrow (narrow),
-    IntegerConvert (convert), IntegerEquiv)
+    IntegerConvert (convert), IntegerEquiv, yolo)
 
 import Integer.Subtraction (
     Subtraction (subtractInteger, subtractSigned),

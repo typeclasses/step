@@ -65,7 +65,7 @@ locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh && terminat
     Just $ CursorAt $ loc l c
   where
     l = 1 + lineTracker lh
-    c = fromIntegral $ 1 + cursorDiff cp (cursorPosition lh)
+    c = Integer.yolo $ 1 + cursorDiff cp (cursorPosition lh)
 
 locateCursorInDocument cp lh | cp == cursorPosition lh && afterCR lh =
     Just CursorLocationNeedsMoreInput
@@ -79,7 +79,7 @@ locateCursorInDocument cp lh =
             Nothing -> Nothing
             Just (cp', l) -> Just (CursorAt (loc l c))
               where
-                c = fromIntegral (1 + cursorDiff cp cp')
+                c = Integer.yolo (1 + cursorDiff cp cp')
 
 empty :: LineHistory
 empty =
@@ -137,7 +137,7 @@ startNewLine = do
     let l' = l + 1
     cp <- use cursorPositionLens
     modifying lineStartPositionLens $
-        Map.insert cp $ fromIntegral $ Loc.toNat l'
+        Map.insert cp $ Integer.yolo $ Loc.toNat l'
     assign lineTrackerLens l'
 
 recordCR :: Monad m => RST r LineHistory m ()

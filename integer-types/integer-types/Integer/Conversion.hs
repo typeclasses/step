@@ -5,6 +5,7 @@ module Integer.Conversion
     IntegerNarrow (narrow),
     IntegerConvert (convert),
     IntegerEquiv,
+    yolo,
   )
   where
 
@@ -19,6 +20,7 @@ import qualified Integer.Integer as Integer
 import qualified Integer.Natural as Natural
 import qualified Integer.Positive as Positive
 import qualified Integer.Signed as Signed
+import qualified Prelude as Num (Num (..), Integral (..), fromIntegral)
 
 class IntegerNarrow a b => IntegerConvert a b where
     convert :: a -> b
@@ -77,3 +79,9 @@ instance IntegerConvert Positive Natural  where convert = Positive.toNatural
 instance IntegerNarrow  Signed   Positive where narrow  = Signed.toPositive
 instance IntegerNarrow  Positive Signed   where narrow  = Just . convert
 instance IntegerConvert Positive Signed   where convert = Positive.toSigned
+
+
+---  lol  ---
+
+yolo :: (Num.Integral a, Num.Num b) => a -> b
+yolo = Num.fromIntegral

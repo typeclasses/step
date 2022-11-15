@@ -1,26 +1,22 @@
 module Step.Spec.FixedLength (tests) where
 
-import Step.Package.FixedLength
-import Step.Package.InMemory (parseMaybe)
 import Chunk.Text (Text1)
 import Chunk.Gen (genChunks)
-
-import qualified Chunk
-
 import Data.Function (($))
 import Data.Maybe (Maybe (..))
 import Data.Semigroup ((<>))
 import Numeric.Natural (Natural)
-import Prelude (fromIntegral)
-
-import qualified Data.Text as Text
-
+import Hedgehog
+import Step.Package.FixedLength
+import Step.Package.InMemory (parseMaybe)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
-import Hedgehog
+import qualified Chunk
+import qualified Data.Text as Text
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import qualified Integer
 
 noInput :: [Text1]
 noInput = []
@@ -33,7 +29,7 @@ prop_skipPositive_success = property do
     ys <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
     i <- forAll (genChunks @Text1 (xs <> ys))
 
-    let (xm, r) = parseMaybe (skipNatural (fromIntegral $ Text.length xs)) i ()
+    let (xm, r) = parseMaybe (skipNatural $ Integer.yolo $ Text.length xs) i ()
 
     xm === Just ()
 
@@ -46,6 +42,6 @@ prop_tryTakeNatural = property do
 
     let (xm, r) = parseMaybe (tryTakeNatural n) i ()
 
-    xm === Just (Chunk.refine (Text.take (fromIntegral n) xs))
+    xm === Just (Chunk.refine (Text.take (Integer.yolo n) xs))
 
-    Chunk.concatMaybe r === Chunk.refine (Text.drop (fromIntegral n) xs)
+    Chunk.concatMaybe r === Chunk.refine (Text.drop (Integer.yolo n) xs)
