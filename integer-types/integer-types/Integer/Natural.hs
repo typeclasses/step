@@ -8,6 +8,7 @@ module Integer.Natural
     {- ** Positive -} toPositive, fromPositive,
     {- ** Integer -} toInteger, fromInteger,
     {- ** Signed -} toSigned, fromSigned,
+    {- ** Int -} toInt, fromInt,
     {- * One (1) -} one, addOne, subtractOne,
   )
   where
@@ -17,11 +18,13 @@ import Data.Maybe (Maybe (..))
 import Integer.Signed (Signed (..))
 import Numeric.Natural (Natural)
 import Prelude (Integer)
+import Data.Int (Int)
 
 import qualified Data.Ord as Ord
 import qualified Integer.Positive as Positive
 import qualified Integer.Positive.Unsafe as Positive.Unsafe
 import qualified Integer.Signed as Signed
+import qualified Prelude as Bounded (Bounded (..))
 import qualified Prelude as Num (Num (..), Integral (..))
 
 toPositive :: Natural -> Maybe Positive.Unsafe.Positive
@@ -41,6 +44,18 @@ toSigned = Signed.fromNatural
 
 fromSigned :: Signed -> Maybe Natural
 fromSigned = Signed.toNatural
+
+toInt :: Natural -> Maybe Int
+toInt x = if ok then Just (Num.fromInteger x') else Nothing
+  where
+    ok = x' Ord.<= Num.toInteger (Bounded.maxBound :: Int)
+    x' = Num.toInteger x
+
+fromInt :: Int -> Maybe Natural
+fromInt x = if ok then Just (Num.fromInteger x') else Nothing
+  where
+    ok = x Ord.>= 0
+    x' = Num.toInteger x
 
 subtract :: Natural -> Natural -> Signed
 subtract a b = case Ord.compare a b of

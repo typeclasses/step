@@ -14,14 +14,12 @@ import Data.Maybe (Maybe (..), fromMaybe)
 import Data.Ord (Ord (compare))
 import Data.String (IsString (..))
 import GHC.Exts (IsList (..))
-import Integer (Positive)
+import Integer (Positive, Signed (..))
 import Prelude (error, (+))
 import Text.Show (Show (showsPrec))
 import Data.Semigroup (Semigroup (..))
 import Data.Monoid (Monoid)
-import Integer.Signed (Signed (..))
 
-import qualified Prelude as Num (Integral (..))
 import qualified Data.ListLike as LL
 import qualified Integer.Positive as Positive
 import qualified Integer
@@ -50,7 +48,7 @@ type instance Nullable (NonEmptyListLike c) = c
 
 instance (Monoid c, ListLike c (Item c)) => Trivializable (NonEmptyListLike c)
   where
-    refine c = Positive.fromInteger (Num.toInteger (LL.length c)) <&> \l -> NonEmptyListLike c l
+    refine c = Positive.fromInt (LL.length c) <&> \l -> NonEmptyListLike c l
     generalize = generalize
 
 instance Eq c => Eq (NonEmptyListLike c) where

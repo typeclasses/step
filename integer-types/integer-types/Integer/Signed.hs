@@ -4,15 +4,16 @@ module Integer.Signed
   (
     {- * Type -} Signed (Zero, NonZero, Plus, Minus),
     {- * Conversion -}
-    {- ** Integer -} fromInteger, toInteger,
-    {- ** Natural -} fromNatural, toNatural,
-    {- ** Positive -} fromPositive, toPositive,
+    {- ** Integer -} toInteger, fromInteger,
+    {- ** Natural -} toNatural, fromNatural,
+    {- ** Positive -} toPositive, fromPositive,
+    {- ** Int -} toInt, fromInt,
   )
   where
 
-import Prelude (Eq, Num, Integral, Real, Integer, Enum, Show)
+import Prelude (Eq, Ord, Num, Integral, Real, Integer, Enum, Show)
 import Data.Function (($), (.))
-import Data.Ord (Ord (..), Ordering (..))
+import Data.Int (Int)
 import Data.Maybe (Maybe (..))
 import Integer.Positive.Unsafe (Positive)
 import Integer.Sign (Sign (..))
@@ -20,10 +21,12 @@ import Numeric.Natural (Natural)
 
 import qualified Integer.Sign as Sign
 import qualified Integer.Positive.Unsafe as Positive.Unsafe
-import qualified Text.Show as Show
+import qualified Data.Ord as Ord
 import qualified Data.List as List
 import qualified Prelude as Enum (Enum (..))
 import qualified Prelude as Num (Num (..), Integral (..), Real (..))
+import qualified Prelude as Bounded (Bounded (..))
+import qualified Text.Show as Show
 
 data Signed = Zero | NonZero Sign Positive
     deriving (Eq, Ord)
@@ -59,15 +62,15 @@ add (NonZero sa a) (NonZero sb b) = case (sa, sb) of
     (PlusSign, PlusSign)   -> Plus  $ a Num.+ b
     (MinusSign, MinusSign) -> Minus $ a Num.+ b
 
-    (MinusSign, PlusSign) -> case compare a b of
-        EQ -> Zero
-        LT -> Plus  $ Positive.Unsafe.subtract b a
-        GT -> Minus $ Positive.Unsafe.subtract a b
+    (MinusSign, PlusSign) -> case Ord.compare a b of
+        Ord.EQ -> Zero
+        Ord.LT -> Plus  $ Positive.Unsafe.subtract b a
+        Ord.GT -> Minus $ Positive.Unsafe.subtract a b
 
-    (PlusSign, MinusSign) -> case compare a b of
-        EQ -> Zero
-        LT -> Minus $ Positive.Unsafe.subtract b a
-        GT -> Plus  $ Positive.Unsafe.subtract a b
+    (PlusSign, MinusSign) -> case Ord.compare a b of
+        Ord.EQ -> Zero
+        Ord.LT -> Minus $ Positive.Unsafe.subtract b a
+        Ord.GT -> Plus  $ Positive.Unsafe.subtract a b
 
 negate :: Signed -> Signed
 negate Zero = Zero
@@ -90,15 +93,33 @@ signum Zero = Zero
 signum (NonZero s _) = NonZero s Positive.Unsafe.one
 
 fromInteger :: Integer -> Signed
-fromInteger x = case compare x 0 of
-    EQ -> Zero
-    LT -> Minus $ Positive.Unsafe.fromInteger $ Num.abs x
-    GT -> Plus  $ Positive.Unsafe.fromInteger x
+fromInteger x = case Ord.compare x 0 of
+    Ord.EQ -> Zero
+    Ord.LT -> Minus $ Positive.Unsafe.fromInteger $ Num.abs x
+    Ord.GT -> Plus  $ Positive.Unsafe.fromInteger x
 
 toInteger :: Signed -> Integer
 toInteger Zero = 0
 toInteger (Plus x) = Positive.Unsafe.toInteger x
 toInteger (Minus x) = Num.negate $ Positive.Unsafe.toInteger x
+
+toInt :: Signed -> Maybe Int
+toInt x = case x of
+    Zero -> Just 0
+    Plus p -> if ok then Just (Num.fromInteger i) else Nothing
+      where
+        ok = i Ord.<= Num.toInteger (Bounded.maxBound :: Int)
+        i = Positive.Unsafe.toInteger p
+    Minus p -> if ok then Just (Num.fromInteger i) else Nothing
+      where
+        ok = i Ord.>= Num.toInteger (Bounded.minBound :: Int)
+        i = Num.negate (Positive.Unsafe.toInteger p)
+
+fromInt :: Int -> Signed
+fromInt x = case Ord.compare x 0 of
+    Ord.EQ -> Zero
+    Ord.GT -> Plus $ Positive.Unsafe.fromInt x
+    Ord.LT -> Minus $ Positive.Unsafe.fromInteger $ Num.negate $ Num.toInteger x
 
 instance Num Signed
   where
