@@ -20,7 +20,7 @@ import qualified Integer.Integer as Integer
 import qualified Integer.Natural as Natural
 import qualified Integer.Positive as Positive
 import qualified Integer.Signed as Signed
-import qualified Prelude as Num (Num (..), Integral (..), fromIntegral)
+import qualified Prelude as Num (Num (..), Integral (..))
 
 class IntegerNarrow a b => IntegerConvert a b where
     convert :: a -> b
@@ -83,5 +83,11 @@ instance IntegerConvert Positive Signed   where convert = Positive.toSigned
 
 ---  lol  ---
 
+-- | Partial conversion between 'Num.Integral' types via 'Integer'
+--
+-- @
+-- yolo = 'Num.fromInteger' . 'Num.toInteger'
+-- @
+--
 yolo :: (Num.Integral a, Num.Num b) => a -> b
-yolo = Num.fromIntegral
+yolo = Num.fromInteger . Num.toInteger
