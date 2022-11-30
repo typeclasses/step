@@ -1,6 +1,5 @@
 packages:
     action-list
-  , integer-types
   , supply-chain-interfaces
   , supply-chain-parsing
   , step
