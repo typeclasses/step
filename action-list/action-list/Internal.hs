@@ -1,7 +1,7 @@
 module Internal
   (
     {- * Vendors -} nil, singleton, actionSingleton, action,
-        list, map, concatMap, concat, while, group,
+        map, concatMap, concat, while,
     {- * Vendor composition -} append, concatMapVendor,
     {- * Jobs -} all,
   )
@@ -13,12 +13,9 @@ import qualified SupplyChain.Alter as Alter
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
 import Data.Bool (Bool (..))
-import Data.Eq (Eq, (==))
 import Data.Function (($), id, (&))
 import Data.Functor ((<$>), (<&>))
 import Data.Maybe (Maybe (..))
-import Numeric.Natural (Natural)
-import Prelude ((+))
 import Data.Functor.Const (Const)
 import Data.Void (Void)
 
@@ -27,14 +24,6 @@ action a = go
   where
     go :: Vendor up (Unit (Maybe a)) action
     go = Vendor{ handle = \Unit -> perform a <&> (`Referral` go) }
-
--- | Yields each item from the list, then stops
-list :: forall up a action. [a] -> Vendor up (Unit (Maybe a)) action
-list = go
-  where
-    go :: [a] -> Vendor up (Unit (Maybe a)) action
-    go [] = nil
-    go (x : xs) = Vendor{ handle = \Unit -> pure $ Referral (Just x) (go xs) }
 
 -- | The empty stream
 nil :: forall up a action. Vendor up (Unit (Maybe a)) action
@@ -123,27 +112,3 @@ all = go
     go = order Unit >>= \xm -> case xm of
         Nothing -> pure []
         Just x -> (x :) <$> go
-
-group :: forall a action. Eq a => Vendor (Unit (Maybe a)) (Unit (Maybe (Natural, a))) action
-group = Vendor
-    { handle = \Unit ->
-        order Unit >>= \xm -> case xm of
-            Nothing -> pure $ Referral Nothing nil
-            Just x -> start x
-    }
-  where
-    start :: a
-        -> Job (Unit (Maybe a)) action
-            ( Referral
-                (Unit (Maybe a)) (Unit (Maybe (Natural, a)))
-                action
-                (Maybe (Natural, a))
-            )
-    start = go 1
-
-    go n x = order Unit >>= \ym -> case ym of
-        Nothing -> pure $ Referral (Just (n, x)) nil
-        Just y ->
-          if y == x
-          then go (n + 1) x
-          else pure $ Referral (Just (n, x)) Vendor{ handle = \Unit -> start y }

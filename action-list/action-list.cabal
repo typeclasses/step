@@ -10,6 +10,7 @@ common base
     default-language: GHC2021
     ghc-options: -Wall
     default-extensions:
+        BlockArguments
         NoImplicitPrelude
         TypeFamilies
     build-depends:
