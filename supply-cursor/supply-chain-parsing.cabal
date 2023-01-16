@@ -29,3 +29,9 @@ library
     exposed-modules:
         Cursor.Interface
         Cursor.Interface.Type
+
+        Cursor.Feed.Type
+
+        Cursor.Transcoder.Type
+
+        Cursor.Reader.Type
