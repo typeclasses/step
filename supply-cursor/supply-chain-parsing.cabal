@@ -26,5 +26,5 @@ library
       , text
 
     exposed-modules:
-        Cursor.Advancement
         Cursor.Interface
+        Cursor.Interface.Type
