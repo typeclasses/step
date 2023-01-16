@@ -4,11 +4,9 @@ import Step.Action.Core
 import Chunk
 import Step.Package.FixedLength
 import Step.Interface
+import Essentials
 
 import Data.Either (Either (..))
-import Data.Function (($))
-import Data.Functor (($>), (<&>))
-import Data.Maybe (maybe)
 import SupplyChain (order)
 
 peekSome :: forall c m r. Query c m r c

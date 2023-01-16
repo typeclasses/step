@@ -1,20 +1,12 @@
 module Chunk where
 
-import Data.Eq (Eq)
-import Data.Function ((.))
-import Data.Functor (Functor, fmap)
+import Essentials
+
 import Data.Functor.Contravariant (Predicate (..))
-import Data.Kind (Type)
-import Data.Maybe (Maybe (..), maybe)
-import Data.Ord (Ord)
 import Integer (Positive)
-import Text.Show (Show)
 import Data.Ord (Ord (compare), Ordering (..))
-import Data.Bool (Bool (..))
 import Prelude (error)
-import Data.Semigroup (Semigroup)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
-import Data.Monoid (Monoid)
 
 import qualified Data.Monoid as Monoid
 import qualified Data.Semigroup as Semigroup

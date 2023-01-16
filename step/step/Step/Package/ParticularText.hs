@@ -5,6 +5,7 @@ module Step.Package.ParticularText
   )
   where
 
+import Essentials
 import Step.Action.Core
 import Chunk
 import Step.Interface
@@ -13,14 +14,7 @@ import Step.Package.Failure
 
 import qualified Step.Do as P
 
-import Control.Applicative (pure, (*>))
-import Control.Monad ((>>=))
-import Data.Bool (Bool (..))
 import Data.Either (Either (..))
-import Data.Eq (Eq, (==))
-import Data.Function (($))
-import Data.Functor ((<&>), fmap)
-import Data.Maybe (Maybe (..))
 import SupplyChain (Job, order)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 

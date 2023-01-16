@@ -3,15 +3,11 @@ module Step.Buffer.Double (doubleBuffer) where
 import Chunk
 import Step.Interface
 import Step.Buffer.Buffer
-import Data.Maybe (Maybe (..))
-import Data.Functor (($>))
-import Data.Function (($))
-import Control.Monad (Monad (..))
-import Control.Applicative (Applicative (..))
+import Essentials
+
 import SupplyChain (Vendor (..), Job, Referral (..), order)
 import Next.Interface (TerminableStream)
 import Integer (Positive)
-import Next.Interface (Step (..))
 
 import qualified Step.Interface.Core as I
 import qualified Next.Interface as Stream

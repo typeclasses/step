@@ -5,6 +5,7 @@ module Step.Package.Characters
   )
   where
 
+import Essentials
 import Step.Action.Core
 import Chunk
 import Step.Package.FixedLength
@@ -15,11 +16,6 @@ import Step.LeftRight
 import qualified Step.Do as P
 import qualified Integer.Positive as Positive
 
-import Data.Bool (Bool (..))
-import Data.Eq (Eq, (==))
-import Data.Function (($), (.))
-import Data.Functor (($>), (<&>), fmap)
-import Data.Maybe (Maybe (..))
 import SupplyChain (order)
 
 

@@ -12,17 +12,11 @@ Attoparsec version: @0.14.4@
 
 module Step.Package.AttoparsecText where
 
-import Control.Monad.Reader
-import Data.Bool
-import Data.Char (Char)
-import Data.Eq ((==), (/=))
-import Data.Function
-import Data.Functor
-import Data.Maybe (Maybe (..))
-import Data.Semigroup ((<>))
-import Data.Text (Text)
-import Prelude (Eq, Ord, Show)
+import Essentials
 import Step.Action.Types
+
+import Data.Char (Char)
+import Data.Text (Text)
 import Chunk.Text (Text1)
 import Text.Show (show)
 

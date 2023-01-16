@@ -1,21 +1,17 @@
 module Step.Spec.ParticularText (tests) where
 
+import Essentials
 import Step.Package.ParticularText
+import Hedgehog
+
 import Step.Package.InMemory (parseMaybe)
 import Chunk.Text (Text1)
 import Chunk.Gen (genChunks)
-
-import qualified Chunk as Chunk
-import qualified Chunk.Text.Core as T
-
-import Data.Functor ((<$>))
-import Data.Maybe (Maybe (..))
-import Data.Semigroup ((<>))
-
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
-import Hedgehog
+import qualified Chunk as Chunk
+import qualified Chunk.Text.Core as T
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 

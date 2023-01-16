@@ -1,24 +1,20 @@
 module Step.Spec.Characters (tests) where
 
+import Essentials
 import Step.Action
 import Step.Package.Characters
+import Hedgehog
+
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
 import Chunk.Text (Text1)
 import Chunk.Gen (genChunks)
-
-import qualified Chunk
-
 import Data.Char (Char)
-import Data.Function (($))
-import Data.Maybe (Maybe (..))
-
-import qualified Data.Char as Char
-import qualified Data.Text as Text
-
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
-import Hedgehog
+import qualified Chunk
+import qualified Data.Char as Char
+import qualified Data.Text as Text
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 

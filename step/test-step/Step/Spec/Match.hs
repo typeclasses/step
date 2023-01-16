@@ -1,16 +1,13 @@
 module Step.Spec.Match (tests) where
 
-
-
-import Chunk.Text (Text1)
-import Chunk.Gen (genChunks)
-import Data.Function (($))
-import Data.Maybe (Maybe (..))
-import Data.Semigroup ((<>))
+import Essentials
 import Hedgehog
 import Step.Action
 import Step.Package.FixedLength
 import Step.Package.Match
+
+import Chunk.Text (Text1)
+import Chunk.Gen (genChunks)
 import Step.Package.InMemory (parseMaybe)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)

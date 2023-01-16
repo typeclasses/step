@@ -1,15 +1,14 @@
 module Main (main) where
 
+import Test.Tasty
+import SupplyChain
+import Next.Interface
+
 import Control.Monad (replicateM)
 import Data.Char (Char)
 import System.IO (IO)
 import Integer (Positive)
-
-import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
-
-import SupplyChain
-import Next.Interface
 
 import qualified Next
 import qualified SupplyChain.Job as Job

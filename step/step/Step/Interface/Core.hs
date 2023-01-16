@@ -1,8 +1,7 @@
 module Step.Interface.Core where
 
-import Data.Maybe (Maybe (..))
-import Data.Kind (Type)
-import Numeric.Natural (Natural)
+import Essentials
+
 import Integer (Positive)
 
 import SupplyChain.Interface.ResettableTerminableStream (ResettableTerminableStream)

@@ -1,14 +1,11 @@
 module Chunk.Gen (genChunks, genChunks') where
 
 import Chunk
+import Essentials
 
-import Control.Applicative (pure, (<*>))
-import Data.Functor ((<&>))
-import Data.Maybe (Maybe (..))
 import Data.Sequence (Seq (..))
 import Hedgehog (Gen)
 import Prelude (error)
-import Data.Semigroup (Semigroup (..))
 
 import qualified Integer.Positive as Positive
 import qualified Data.ListLike as LL

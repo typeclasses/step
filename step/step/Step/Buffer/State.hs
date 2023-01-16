@@ -4,8 +4,8 @@ import Chunk
 import Step.Interface
 import Step.Buffer.Double
 import Step.Buffer.Buffer
+import Essentials
 
-import Data.Function (($))
 import Optics (Lens', use, assign)
 import Control.Monad.State.Strict (MonadState)
 

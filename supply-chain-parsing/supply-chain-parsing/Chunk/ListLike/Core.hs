@@ -2,23 +2,21 @@
 
 module Chunk.ListLike.Core (NonEmptyListLike (..), assume) where
 
+import Essentials
+
 import Chunk hiding (length, generalize)
 import qualified Chunk as Chunk
 
-import Data.Eq (Eq ((==)))
-import Data.Function (($), (&), (.), on)
-import Data.Functor ((<&>))
+import Data.Function (on)
 import Data.Functor.Contravariant (Predicate (..))
 import Data.ListLike (ListLike)
-import Data.Maybe (Maybe (..), fromMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Ord (Ord (compare))
 import Data.String (IsString (..))
 import GHC.Exts (IsList (..))
 import Integer (Positive, Signed (..))
 import Prelude (error, (+))
 import Text.Show (Show (showsPrec))
-import Data.Semigroup (Semigroup (..))
-import Data.Monoid (Monoid)
 
 import qualified Data.ListLike as LL
 import qualified Integer.Positive as Positive

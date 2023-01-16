@@ -4,8 +4,7 @@ import Chunk
 import Step.Interface
 import Step.Buffer.Double
 import Step.Buffer.Buffer
-
-import Control.Applicative (Applicative (..))
+import Essentials
 
 import SupplyChain (Vendor (..))
 import Next.Interface (TerminableStream)

@@ -15,11 +15,12 @@ library
         TypeFamilies
 
     build-depends:
-        base
+      , base
       , containers
       , hedgehog
       , integer-types
       , ListLike
+      , quaalude ^>= 0.0
       , supply-chain
       , text
 

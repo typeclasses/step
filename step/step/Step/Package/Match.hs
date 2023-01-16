@@ -1,25 +1,21 @@
 module Step.Package.Match (match) where
 
+import Essentials
 import Step.Action.Core
 import Chunk
 import Step.Interface
-import qualified Step.Interface.Core as I
-import Step.Package.FixedLength (tryTakeNatural)
-import Step.Buffer.Private (privateDoubleBuffer)
 import Step.LeftRight
 
+import Step.Package.FixedLength (tryTakeNatural)
+import Step.Buffer.Private (privateDoubleBuffer)
+
+import qualified Step.Interface.Core as I
 import qualified Step.Do as P
 
-import Data.Kind (Type)
-import Control.Applicative (pure)
-import Data.Function
-import Data.Maybe (Maybe (..))
 import Numeric.Natural
 import SupplyChain (Vendor (..), Referral (..), (>->), order, (>-))
-import Data.Functor
 import Prelude ((+))
 
-import qualified Optics
 import qualified Integer.Positive as Positive
 
 import qualified SupplyChain.Vendor as Vendor

@@ -1,12 +1,10 @@
 module Chunk.Text (Text1, asciiCI) where
 
+import Essentials
 import Chunk
 import Chunk.Text.Core
-
 import Data.Bool
 import Data.Char
-import Data.Eq
-import Data.Function
 
 import qualified Data.List as List
 import qualified Data.Text as Text

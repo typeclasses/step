@@ -7,8 +7,9 @@ module Step.LeftRight
   )
   where
 
+import Essentials
+
 import Data.Either (Either (Left, Right))
-import Data.Function (id, (.))
 
 class LeftRight x where toEither :: x l r -> Either l r
 class MaybeRight x where right :: r -> x l r

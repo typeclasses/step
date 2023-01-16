@@ -1,17 +1,13 @@
 module Chunk.Text.Core (Text1 (..), assume) where
 
+import Essentials
+
 import Chunk
 import Chunk.ListLike.Core (NonEmptyListLike)
 import qualified Chunk.ListLike.Core as LL
 
 import Data.Char (Char)
-import Data.Function
-import Data.Eq
-import Data.Ord
-import Text.Show
-import Data.Functor
 import Data.Text (Text)
-import Data.Semigroup (Semigroup, (<>))
 import Data.Coerce
 
 import qualified Data.Foldable as Foldable

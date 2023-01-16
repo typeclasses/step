@@ -10,6 +10,7 @@ module Step.Package.FixedLength
   )
   where
 
+import Essentials
 import Step.Action.Core
 import Chunk
 import Step.Interface
@@ -18,13 +19,6 @@ import Step.LeftRight
 
 import qualified Step.Do as P
 
-import Control.Applicative (pure, (*>))
-import Control.Monad ((>>=))
-import Data.Bool (Bool (..))
-import Data.Either (Either (..))
-import Data.Function (($), (&), (.))
-import Data.Functor (($>), (<&>), (<$>), fmap, void)
-import Data.Maybe (Maybe (..), maybe)
 import Numeric.Natural (Natural)
 import Integer (Positive)
 import SupplyChain (Job, order)
@@ -33,7 +27,6 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NE
 import qualified Integer.Positive as Positive
 import qualified Integer.Signed as Signed
-import qualified Optics
 
 ifZero :: a -> (Positive -> a) -> Natural -> a
 ifZero z p n = Positive.fromNatural n & maybe z p

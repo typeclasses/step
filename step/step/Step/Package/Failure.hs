@@ -1,16 +1,11 @@
 module Step.Package.Failure where
 
+import Essentials
 import Step.Action.Core
 import Step.Interface.Core
 
-import Control.Applicative (pure)
-import Data.Bool (Bool (..))
 import Data.Either
-import Data.Functor
-import Data.Maybe (Maybe (..))
 import Next.Interface (Step (..))
-
-import qualified SupplyChain.Alter as Alter
 
 class Fallible (act :: Action) where
     fail :: act c m r a

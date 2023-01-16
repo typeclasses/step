@@ -1,21 +1,14 @@
 module Step.Action.Core where
 
+import Essentials
+
 import Step.Interface
 import Step.LeftRight
 
 -- The basics
-import Data.Maybe (Maybe (..))
-import Data.Function ((&))
-import Data.Functor (Functor (..), (<$>), (<&>))
-import Data.Function (($), (.), id)
-import Data.Either (Either (..), either)
-import Control.Monad (Monad (..))
+import Data.Either (either)
 import qualified Control.Monad as Monad
-import Control.Applicative (Applicative (..))
-import Data.Kind (Type)
 import Prelude (error)
-import Data.Functor.Const (Const)
-import Data.Void (Void)
 
 -- Optics
 import Optics (Iso', over, iso)
@@ -26,7 +19,7 @@ import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.Reader (ReaderT (..))
 
 -- Streaming
-import SupplyChain (Job, (>-), Vendor)
+import SupplyChain (Job, (>-))
 import qualified SupplyChain.Alter as Alter
 import qualified SupplyChain.Vendor as Vendor
 
@@ -199,13 +192,13 @@ instance Is SureQuery Any where
 -- Casting to Atom
 
 instance Is SureQuery Atom where
-    cast = Atom . fmap return . castTo @Query
+    cast = Atom . fmap pure . castTo @Query
 
 instance Is Query Atom where
-    cast = Atom . fmap return
+    cast = Atom . fmap pure
 
 instance Is Sure Atom where
-    cast = Atom . return
+    cast = Atom . pure
 
 -- Casting out of atomicity
 

@@ -16,7 +16,7 @@ common base
         -Wmissing-deriving-strategies
 
     -- Temporary for early stage development
-    ghc-options: -fno-warn-unused-imports
+    -- ghc-options: -fno-warn-unused-imports
     ghc-options: -fno-warn-missing-signatures
     -- ghc-options: -fno-warn-typed-holes
 

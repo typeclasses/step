@@ -1,13 +1,12 @@
 module Step.Spec.FixedLength (tests) where
 
-import Chunk.Text (Text1)
-import Chunk.Gen (genChunks)
-import Data.Function (($))
-import Data.Maybe (Maybe (..))
-import Data.Semigroup ((<>))
-import Numeric.Natural (Natural)
+import Essentials
 import Hedgehog
 import Step.Package.FixedLength
+
+import Chunk.Text (Text1)
+import Chunk.Gen (genChunks)
+import Numeric.Natural (Natural)
 import Step.Package.InMemory (parseMaybe)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
