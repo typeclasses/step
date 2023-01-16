@@ -44,14 +44,3 @@ library
         SupplyChain.Interface.InfiniteStream
         SupplyChain.Interface.Resettable
         SupplyChain.Interface.ResettableTerminableStream
-
-test-suite test-supply-chain-interfaces
-    import: base
-    type: exitcode-stdio-1.0
-    hs-source-dirs: test-supply-chain-interfaces
-    main-is: Main.hs
-    build-depends:
-      , supply-chain-interfaces
-      , tasty
-      , tasty-hedgehog
-      , tasty-hunit
