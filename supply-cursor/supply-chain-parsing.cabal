@@ -29,6 +29,7 @@ library
     exposed-modules:
         Cursor.Interface
         Cursor.Interface.Type
+        Cursor.Interface.Class
 
         Cursor.Feed.Type
 
