@@ -4,8 +4,9 @@ module Chunk.ListLike.Core (NonEmptyListLike (..), assume) where
 
 import Essentials
 
-import Block.Class hiding (length, generalize)
+import Block.Class hiding (length, generalize, Item)
 import qualified Block.Class as Chunk
+import qualified Block.Class as Block
 
 import Data.Function (on)
 import Data.Functor.Contravariant (Predicate (..))
@@ -58,7 +59,7 @@ instance Ord c => Ord (NonEmptyListLike c) where
 instance Show c => Show (NonEmptyListLike c) where
     showsPrec p = showsPrec p . generalize
 
-type instance One (NonEmptyListLike c) = Item c
+type instance Block.Item (NonEmptyListLike c) = Item c
 
 instance (ListLike c (Item c)) => Block (NonEmptyListLike c)
   where

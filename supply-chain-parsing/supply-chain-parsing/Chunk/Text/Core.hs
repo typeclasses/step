@@ -1,17 +1,17 @@
 module Chunk.Text.Core (Text1 (..), assume) where
 
 import Essentials
-
 import Block.Class
-import Chunk.ListLike.Core (NonEmptyListLike)
-import qualified Chunk.ListLike.Core as LL
 
+import Chunk.ListLike.Core (NonEmptyListLike)
 import Data.Char (Char)
 import Data.Text (Text)
-import Data.Coerce
+import Data.Coerce (coerce)
 
+import qualified Chunk.ListLike.Core as LL
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
+import qualified Block.Class as Block
 
 newtype Text1 = Text1 (NonEmptyListLike Text)
   deriving (Eq, Ord, Show)
@@ -23,7 +23,7 @@ instance Trivializable Text1 where
   refine = fmap Text1 . refine
   generalize (Text1 x) = generalize x
 
-type instance One Text1 = Char
+type instance Block.Item Text1 = Char
 
 type instance Nullable Text1 = Text
 

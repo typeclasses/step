@@ -11,13 +11,13 @@ import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import qualified Data.Monoid as Monoid
 import qualified Data.Semigroup as Semigroup
 
-type family One (c :: Type) :: Type
+type family Item (c :: Type) :: Type
 
 class Semigroup c => Block c
   where
     leftView :: c -> Pop c
 
-    span :: Predicate (One c) -> c -> Span c
+    span :: Predicate (Item c) -> c -> Span c
 
     split :: Positive -> c -> Split c
 
@@ -25,7 +25,7 @@ class Semigroup c => Block c
 
     drop :: Positive -> c -> Drop c
 
-    while :: Predicate (One c) -> c -> While c
+    while :: Predicate (Item c) -> c -> While c
 
     length :: c -> Positive
 
@@ -48,7 +48,7 @@ data StripEitherPrefix c =
 
 data Pop c =
   Pop
-    { popItem :: One c
+    { popItem :: Item c
     , popRemainder :: Maybe c
     }
 
@@ -98,7 +98,7 @@ concatMaybe = fmap concat . nonEmpty
 concatTrivialize :: Trivializable c => [c] -> Nullable c
 concatTrivialize = maybe Monoid.mempty generalize . concatMaybe
 
-head :: Block c => c -> One c
+head :: Block c => c -> Item c
 head = popItem . leftView
 
 -- | An equivalence on characters, expressed as an equivalence on blocks.
