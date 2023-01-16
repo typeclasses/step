@@ -1,40 +1,29 @@
-{-|
-
-Description:
-    Like 'TerminableStream', but with an additional operation
-    for taking the entire remainder
-
--}
-
+{-| Like 'TerminableStream', but with an additional operation
+    for taking the entire remainder -}
 module SupplyChain.Interface.DrainableStream where
 
+import Essentials
 import SupplyChain
-import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
 
-import Control.Applicative (pure)
-import Data.Function (($))
-import Data.Functor (Functor, (<&>), fmap)
-import Data.Maybe (Maybe (..))
+import Next.Interface (TerminableStream (..), Next (..), Step (..))
 
 import qualified Data.List as List
 
 
-class Functor list => List list
-  where
+class Functor list => List list where
     emptyList :: list a
     singletonList :: a -> list a
     unconsList :: list a -> Maybe (a, list a)
 
 
-instance List []
-  where
+instance List [] where
     emptyList = []
     singletonList = (: [])
     unconsList = List.uncons
 
 
 data DrainableStream list item response =
-    (response ~ Maybe item) => NextMaybe
+    (response ~ Step item) => NextMaybe
         -- ^ The next item, or 'Nothing' if input is exhausted
         --
         -- It is assumed that after a 'Nothing' response is given,
@@ -42,9 +31,8 @@ data DrainableStream list item response =
   | (response ~ list item) => Drain
 
 
-instance IsTerminableStream item (DrainableStream list item)
-  where
-    nextMaybe = NextMaybe
+instance TerminableStream item (DrainableStream list item) where
+    liftNext Next = NextMaybe
 
 
 -- | Yields each item from the list, then stops
@@ -59,7 +47,7 @@ list = go
     go xs = case unconsList xs of
         Nothing -> nil
         Just (x, xs') -> Vendor \case
-            NextMaybe  ->  pure $ Referral (Just x) (go xs')
+            NextMaybe  ->  pure $ Referral (Item x) (go xs')
             Drain      ->  pure $ Referral xs nil
 
 
@@ -72,7 +60,7 @@ nil = go
   where
     go :: Vendor up (DrainableStream list a) action
     go = Vendor \case
-        NextMaybe  ->  pure $ Referral Nothing   go
+        NextMaybe  ->  pure $ Referral End       go
         Drain      ->  pure $ Referral emptyList go
 
 
@@ -82,7 +70,7 @@ singleton :: forall up list a action. List list =>
     a -> Vendor up (DrainableStream list a) action
 
 singleton x = Vendor \case
-    NextMaybe  ->  pure $ Referral (Just x)          nil
+    NextMaybe  ->  pure $ Referral (Item x)          nil
     Drain      ->  pure $ Referral (singletonList x) nil
 
 
@@ -93,7 +81,7 @@ actionSingleton :: forall up list a action. List list =>
 
 actionSingleton mx =
     Vendor \case
-        NextMaybe  ->  perform mx <&> \x -> Referral (Just x)          nil
+        NextMaybe  ->  perform mx <&> \x -> Referral (Item x)          nil
         Drain      ->  perform mx <&> \x -> Referral (singletonList x) nil
 
 
@@ -107,8 +95,8 @@ map f = go
   where
     go = Vendor \case
         NextMaybe -> order NextMaybe <&> \case
-            Nothing  ->  Referral Nothing      nil
-            Just a   ->  Referral (Just (f a)) go
+            End    ->  Referral End          nil
+            Item a ->  Referral (Item (f a)) go
         Drain -> order Drain <&> \xs ->
             Referral (fmap f xs) nil
 

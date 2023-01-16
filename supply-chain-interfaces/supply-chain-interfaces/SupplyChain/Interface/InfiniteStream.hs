@@ -1,9 +1,5 @@
-{- |
-
-Description: The 'InfiniteStream' interface, like 'TerminableStream' but for lists that never end
-
--}
-
+{-| The 'InfiniteStream' interface, like 'TerminableStream'
+    but for lists that never end -}
 module SupplyChain.Interface.InfiniteStream
   (
     {- * Interface -} InfiniteStream (..),
@@ -11,11 +7,8 @@ module SupplyChain.Interface.InfiniteStream
   )
   where
 
+import Essentials
 import SupplyChain
-
-import Control.Applicative (pure)
-import Control.Monad ((>>=))
-import Data.Function (($), flip, id)
 
 data InfiniteStream item response =
     (response ~ item) => Next
@@ -26,7 +19,7 @@ forever j = SupplyChain.loop' \Next -> j
 
 iterate :: forall up a action.
     a -> (a -> a) -> Vendor up (InfiniteStream a) action
-iterate = flip it
+iterate = \x f -> it f x
   where
     it f = go
       where

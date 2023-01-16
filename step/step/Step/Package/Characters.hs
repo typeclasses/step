@@ -24,18 +24,18 @@ import SupplyChain (order)
 
 
 -- | Take a peek at the next character (if possible) without advancing
-peekCharMaybe :: forall c m r. Chunk c => SureQuery c m r (Maybe (One c))
-peekCharMaybe = SureQuery \_ -> ResettingSequenceJob $ order nextMaybe <&> fmap @Maybe head
+peekCharMaybe :: forall c m r. Chunk c => SureQuery c m r (Step (One c))
+peekCharMaybe = SureQuery \_ -> ResettingSequenceJob $ order next <&> fmap @Step head
 
 peekChar :: forall c m r. Chunk c => Query c m r (One c)
-peekChar = peekCharMaybe P.>>= requireJust
+peekChar = peekCharMaybe P.>>= requireItem
 
 -- | Advance over the next character and return it; fail if end of input
 takeChar :: forall c m r. Chunk c => Atom c m r (One c)
-takeChar = peekCharMaybe P.>>= requireJust P.>>= (trySkipChar $>)
+takeChar = peekCharMaybe P.>>= requireItem P.>>= (trySkipChar $>)
 
 nextCharIs :: forall c m r. Chunk c => Eq (One c) => One c -> SureQuery c m r Bool
-nextCharIs c = act \_ -> order nextMaybe <&> right . \case{ Just x | head x == c -> True; _ -> False }
+nextCharIs c = act \_ -> order next <&> right . \case{ Item x | head x == c -> True; _ -> False }
 
 takeParticularChar :: forall c m r. Chunk c => Eq (One c) => One c -> Atom c m r ()
 takeParticularChar c = P.do{ nextCharIs c P.>>= requireTrue; trySkipChar }

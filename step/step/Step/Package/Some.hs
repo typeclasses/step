@@ -12,8 +12,9 @@ import Data.Maybe (maybe)
 import SupplyChain (order)
 
 peekSome :: forall c m r. Query c m r c
-peekSome = act \r -> order nextMaybe <&> maybe (Left r) Right
+peekSome = act \r -> order next <&> \case{ End -> Left r; Item x -> Right x }
 
 takeSome :: forall c m r. Chunk c => Atom c m r c
-takeSome = Atom $ act \r -> order nextMaybe <&> maybe (Left r) \x ->
-    Right $ trySkipPositive (length @c x) $> x
+takeSome = Atom $ act \r -> order next <&> \case
+    End -> Left r
+    Item x -> Right $ trySkipPositive (length @c x) $> x

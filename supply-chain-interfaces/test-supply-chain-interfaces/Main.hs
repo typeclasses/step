@@ -1,16 +1,18 @@
 module Main (main) where
 
-import Data.Maybe (Maybe (..))
 import Control.Monad (replicateM)
 import Data.Char (Char)
-import Numeric.Natural (Natural)
 import System.IO (IO)
+import Integer (Positive)
 
 import Test.Tasty
 import Test.Tasty.HUnit ((@?=), testCase, Assertion)
 
 import SupplyChain
-import SupplyChain.Interface.TerminableStream
+import Next.Interface
+
+import qualified Next
+import qualified SupplyChain.Job as Job
 
 main :: IO ()
 main = defaultMain tests
@@ -29,31 +31,31 @@ tests = testGroup "TerminableStream"
     ]
 
 listTest :: Assertion
-listTest = eval job @?= result
+listTest = Job.eval job @?= result
   where
-    job = list "abc" >- replicateM 4 (order NextMaybe)
-    result = [Just 'a', Just 'b', Just 'c', Nothing]
+    job = Next.each "abc" >- replicateM 4 (order next)
+    result = [Item 'a', Item 'b', Item 'c', End]
 
 concatTest1 :: Assertion
-concatTest1 = eval job @?= result
+concatTest1 = Job.eval job @?= result
   where
-    job = list ["a", "bc", "def", "ghij"] >-> concat >- replicateM 5 (order NextMaybe)
-    result = [Just 'a', Just 'b', Just 'c', Just 'd', Just 'e']
+    job = Next.each ["a", "bc", "def", "ghij"] >-> Next.concat >- replicateM 5 (order next)
+    result = [Item 'a', Item 'b', Item 'c', Item 'd', Item 'e']
 
 concatTest2 :: Assertion
-concatTest2 = eval job @?= result
+concatTest2 = Job.eval job @?= result
   where
-    job = list ["a", "bc"] >-> concat >- replicateM 5 (order NextMaybe)
-    result = [Just 'a', Just 'b', Just 'c', Nothing, Nothing]
+    job = Next.each ["a", "bc"] >-> Next.concat >- replicateM 5 (order next)
+    result = [Item 'a', Item 'b', Item 'c', End, End]
 
 groupLetters :: Assertion
-groupLetters = eval job @?= result
+groupLetters = Job.eval job @?= result
   where
-    job = list "Hrmm..." >-> group >- all
-    result = [(0, 'H'), (0, 'r'), (1, 'm'), (2, '.')]
+    job = Next.each "Hrmm..." >-> Next.group >- Next.toList
+    result = [(1, 'H'), (1, 'r'), (2, 'm'), (3, '.')]
 
 groupEmpty :: Assertion
-groupEmpty = eval job @?= result
+groupEmpty = Job.eval job @?= result
   where
-    job = nil >-> group >- all
-    result = [] :: [(Natural, Char)]
+    job = Next.empty >-> Next.group >- Next.toList
+    result = [] :: [(Positive, Char)]

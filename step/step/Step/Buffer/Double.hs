@@ -9,15 +9,16 @@ import Data.Function (($))
 import Control.Monad (Monad (..))
 import Control.Applicative (Applicative (..))
 import SupplyChain (Vendor (..), Job, Referral (..), order)
-import SupplyChain.Interface.TerminableStream (IsTerminableStream)
+import Next.Interface (TerminableStream)
 import Integer (Positive)
+import Next.Interface (Step (..))
 
 import qualified Step.Interface.Core as I
-import qualified SupplyChain.Interface.TerminableStream as Stream
+import qualified Next.Interface as Stream
 
 data DoubleBuffer c = DoubleBuffer{ commitBuffer :: Buffer c, viewBuffer :: Buffer c }
 
-doubleBuffer :: forall c up action. Chunk c => IsTerminableStream c up =>
+doubleBuffer :: forall c up action. Chunk c => TerminableStream c up =>
     (Buffer c -> Job up action ()) ->
     Buffer c -> Vendor up (CommittableChunkStream c) action
 doubleBuffer report b = go (DoubleBuffer b b)
@@ -25,10 +26,10 @@ doubleBuffer report b = go (DoubleBuffer b b)
     go s = Vendor \case
         I.Reset -> pure $ Referral () $ go s{ viewBuffer = commitBuffer s }
         I.NextMaybe -> case viewBuffer s of
-            x :< xs -> pure $ Referral (Just x) $ go s{ viewBuffer = xs }
-            Empty -> SupplyChain.order Stream.nextMaybe >>= \case
-                Nothing -> pure $ Referral Nothing $ go s
-                Just x -> report com $> Referral (Just x) (go s{ commitBuffer = com })
+            x :< xs -> pure $ Referral (Item x) $ go s{ viewBuffer = xs }
+            Empty -> SupplyChain.order Stream.next >>= \case
+                End -> pure $ Referral End $ go s
+                Item x -> report com $> Referral (Item x) (go s{ commitBuffer = com })
                   where com = commitBuffer s :> x
         I.Commit n -> handleCommit s n
 
@@ -42,8 +43,8 @@ doubleBuffer report b = go (DoubleBuffer b b)
               where
                 com = x' :< xs
             DropInsufficient{ dropShortfall = n' } -> report xs *> handleCommit s{ commitBuffer = xs } n'
-        Empty -> SupplyChain.order Stream.nextMaybe >>= \case
-            Nothing -> pure $ Referral YouCanNotAdvance{ shortfall = n } $ go s
-            Just x -> report com *> handleCommit s{ commitBuffer = com, viewBuffer = viewBuffer s :> x } n
+        Empty -> SupplyChain.order Stream.next >>= \case
+            End -> pure $ Referral YouCanNotAdvance{ shortfall = n } $ go s
+            Item x -> report com *> handleCommit s{ commitBuffer = com, viewBuffer = viewBuffer s :> x } n
               where
                 com = One x

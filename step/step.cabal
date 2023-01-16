@@ -34,18 +34,20 @@ common base
         ViewPatterns
 
     build-depends:
-        text
-      , loc
-      , optics
       , base
       , containers
       , hedgehog ^>= 1.1
       , integer-types
       , ListLike
+      , loc
+      , mtl
+      , optics
+      , quaalude ^>= 0.0
       , supply-chain ^>= 0.0
       , supply-chain-interfaces
       , supply-chain-parsing
-      , mtl
+      , supply-next ^>= 0.0.1
+      , text
       , transformers
 
 library
@@ -91,7 +93,7 @@ test-suite test-step
     hs-source-dirs: test-step
     main-is: Main.hs
     build-depends:
-        step
+      , step
       , tasty
       , tasty-hedgehog
       , tasty-hunit

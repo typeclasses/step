@@ -8,6 +8,7 @@ import Data.Bool (Bool (..))
 import Data.Either
 import Data.Functor
 import Data.Maybe (Maybe (..))
+import Next.Interface (Step (..))
 
 import qualified SupplyChain.Alter as Alter
 
@@ -22,6 +23,11 @@ requireTrue :: forall c m r. Bool -> Query c m r ()
 requireTrue = \case
     True -> pure' ()
     False -> fail
+
+requireItem :: forall c m r a. Step a -> Query c m r a
+requireItem = \case
+    Item x -> pure' x
+    End -> fail
 
 requireJust :: forall c m r a. Maybe a -> Query c m r a
 requireJust = \case

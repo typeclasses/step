@@ -8,8 +8,8 @@ import Step.Buffer.Buffer
 import Control.Applicative (Applicative (..))
 
 import SupplyChain (Vendor (..))
-import SupplyChain.Interface.TerminableStream (IsTerminableStream)
+import Next.Interface (TerminableStream)
 
-privateDoubleBuffer :: forall c up action. Chunk c => IsTerminableStream c up =>
+privateDoubleBuffer :: forall c up action. Chunk c => TerminableStream c up =>
     Vendor up (CommittableChunkStream c) action
 privateDoubleBuffer = doubleBuffer (\_ -> pure ()) Empty

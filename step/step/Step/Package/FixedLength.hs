@@ -69,9 +69,9 @@ remainsAtLeastPositive :: forall c m r. Chunk c => Positive -> SureQuery c m r B
 remainsAtLeastPositive = \n -> act @SureQuery \r -> fmap right $ go r n
   where
     go :: r -> Positive -> Job (ResettableTerminableStream c) m Bool
-    go r n = order nextMaybe >>= \case
-        Nothing -> pure False
-        Just x -> case Positive.subtract n (length @c x) of
+    go r n = order next >>= \case
+        End -> pure False
+        Item x -> case Positive.subtract n (length @c x) of
             Signed.Plus n' -> go r n'
             _ -> pure True
 
@@ -95,9 +95,9 @@ peekPositive :: forall c m r. Chunk c => Positive -> Query c m r c
 peekPositive = \n -> Query $ required $ go n
   where
     go :: Positive -> Job (ResettableTerminableStream c) m (Maybe (NonEmpty c))
-    go n = order nextMaybe >>= \case
-        Nothing -> pure Nothing
-        Just x -> case take n x of
+    go n = order next >>= \case
+        End -> pure Nothing
+        Item x -> case take n x of
             TakeAll -> pure $ Just $ x :| []
             TakePart{ takePart } -> pure $ Just $ takePart :| []
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
@@ -106,9 +106,9 @@ takePositive :: forall c m r. Chunk c => Positive -> Any c m r c
 takePositive = \n -> Any $ required $ go n
   where
     go :: Positive -> Job (CommittableChunkStream c) m (Maybe (NonEmpty c))
-    go n = order nextMaybe >>= \case
-        Nothing -> pure Nothing
-        Just x -> case take n x of
+    go n = order next >>= \case
+        End -> pure Nothing
+        Item x -> case take n x of
             TakeAll -> order (commit n) $> Just (x :| [])
             TakePart{ takePart } -> order (commit (length takePart)) $> Just (takePart :| [])
             TakeInsufficient{ takeShortfall } -> fmap (NE.cons x) <$> go takeShortfall
@@ -117,9 +117,9 @@ tryTakePositive :: forall c m r. Chunk c => Positive -> Sure c m r (Maybe c)
 tryTakePositive = \n -> act @Sure \_ -> fmap (right . fmap concat . NE.nonEmpty) $ go n
   where
     go :: Positive -> Job (CommittableChunkStream c) m [c]
-    go n = order nextMaybe >>= \case
-        Nothing -> pure []
-        Just x -> case take n x of
+    go n = order next >>= \case
+        End -> pure []
+        Item x -> case take n x of
             TakeAll -> order (commit n) $> [x]
             TakePart{ takePart } -> order (commit (length takePart)) $> [takePart]
             TakeInsufficient{ takeShortfall } -> order (commit (length x)) *> ((x :) <$> go takeShortfall)

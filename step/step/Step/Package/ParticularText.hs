@@ -29,9 +29,9 @@ takeParticularText = \t ->
     (Any \_ -> ResettingSequenceJob (go t) <&> Right) P.>>= requireTrue
   where
     go :: c -> Job (CommittableChunkStream c) m Bool
-    go t = order nextMaybe >>= \case
-        Nothing -> pure False
-        Just x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
+    go t = order next >>= \case
+        End -> pure False
+        Item x -> case stripEitherPrefix (ChunkCharacterEquivalence (==)) x t of
             StripEitherPrefixFail         ->  pure False
             StripEitherPrefixAll          ->  order (commit (length t)) <&> \_ -> True
             IsPrefixedBy{}                ->  order (commit (length t)) <&> \_ -> True
@@ -50,9 +50,9 @@ nextTextMatchesOn :: forall c m r. Chunk c =>
 nextTextMatchesOn eq = \t -> SureQuery \_ -> ResettingSequenceJob (go t)
   where
     go :: c -> Job (ResettableTerminableStream c) m Bool
-    go t = order nextMaybe >>= \case
-        Nothing -> pure False
-        Just x -> case stripEitherPrefix eq x t of
+    go t = order next >>= \case
+        End -> pure False
+        Item x -> case stripEitherPrefix eq x t of
             StripEitherPrefixFail         ->  pure False
             StripEitherPrefixAll          ->  pure True
             IsPrefixedBy{}                ->  pure True
@@ -63,9 +63,9 @@ takeMatchingText :: forall c m r. Chunk c =>
 takeMatchingText eq = \t -> Any \r -> ResettingSequenceJob $ fmap (fmap concat) $ go r t
   where
     go :: r -> c -> Job (CommittableChunkStream c) m (Either r (NonEmpty c))
-    go r t = order nextMaybe >>= \case
-        Nothing -> pure (Left r)
-        Just x -> case stripEitherPrefix eq x t of
+    go r t = order next >>= \case
+        End -> pure (Left r)
+        Item x -> case stripEitherPrefix eq x t of
             StripEitherPrefixFail            ->  pure $ Left r
             StripEitherPrefixAll             ->  pure $ Right $ x :| []
             IsPrefixedBy{ commonPart = x' }  ->  pure $ Right $ x' :| []

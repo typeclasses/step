@@ -5,25 +5,22 @@ module SupplyChain.Interface.ResettableTerminableStream
   )
   where
 
+import Essentials
 import SupplyChain
 
-import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
+import Next.Interface (TerminableStream (..), Next (..), Step (..))
 import SupplyChain.Interface.Resettable (IsResettable (..))
 
-import Control.Applicative (pure)
-import Data.Maybe (Maybe (..))
-import Data.Function (($), fix)
+import Data.Function (fix)
 
 data ResettableTerminableStream i response =
-    (response ~ Maybe i) => NextMaybe
+    (response ~ Step i) => NextMaybe
   | (response ~ ()) => Reset
 
-instance IsTerminableStream item (ResettableTerminableStream item)
-  where
-    nextMaybe = NextMaybe
+instance TerminableStream item (ResettableTerminableStream item) where
+    liftNext Next = NextMaybe
 
-instance IsResettable (ResettableTerminableStream item)
-  where
+instance IsResettable (ResettableTerminableStream item) where
     reset = Reset
 
 -- | The empty stream
@@ -35,7 +32,7 @@ nil = go
   where
     go :: Vendor up (ResettableTerminableStream a) action
     go = Vendor \case
-        NextMaybe -> pure $ Referral Nothing go
+        NextMaybe -> pure $ Referral End go
         Reset -> pure $ Referral () go
 
 -- | Yields one item, then stops
@@ -44,8 +41,8 @@ singleton :: forall up a action.
     a -> Vendor up (ResettableTerminableStream a) action
 
 singleton x = fix \r -> Vendor \case
-    NextMaybe -> pure $ Referral (Just x) $ fix \go -> Vendor \case
-        NextMaybe -> pure $ Referral Nothing go
+    NextMaybe -> pure $ Referral (Item x) $ fix \go -> Vendor \case
+        NextMaybe -> pure $ Referral End go
         Reset -> pure $ Referral () r
     Reset -> pure $ Referral () r
 
@@ -60,5 +57,5 @@ list oxs = go oxs
     go xs = fix \v -> Vendor \case
         Reset -> pure $ Referral () (go oxs)
         NextMaybe -> case xs of
-            [] -> pure $ Referral Nothing v
-            x : xs' -> pure $ Referral (Just x) (go xs')
+            [] -> pure $ Referral End v
+            x : xs' -> pure $ Referral (Item x) (go xs')

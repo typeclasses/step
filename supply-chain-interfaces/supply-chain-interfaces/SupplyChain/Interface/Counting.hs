@@ -1,9 +1,5 @@
-{- |
-
-Description: The 'Counting' interface, for a vendor that keeps track of how many requests it has served
-
--}
-
+{-| The 'Counting' interface, for a vendor that keeps
+    track of how many requests it has served -}
 module SupplyChain.Interface.Counting
   (
     {- * Interface -} Counting (..),
@@ -11,11 +7,9 @@ module SupplyChain.Interface.Counting
   )
   where
 
+import Essentials
 import SupplyChain
 
-import Control.Applicative (pure)
-import Data.Function (($))
-import Data.Functor ((<&>))
 import Numeric.Natural (Natural)
 import Prelude ((+))
 

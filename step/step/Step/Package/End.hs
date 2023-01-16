@@ -13,7 +13,8 @@ import Data.Maybe
 import SupplyChain (order)
 
 atEnd :: SureQuery c m r Bool
-atEnd = SureQuery \_ -> ResettingSequenceJob $ order nextMaybe <&> isNothing
+atEnd = SureQuery \_ -> ResettingSequenceJob $ order next
+    <&> \case{ End -> True; _ -> False }
 
 end :: forall c m r. Query c m r ()
 end = atEnd P.>>= requireTrue

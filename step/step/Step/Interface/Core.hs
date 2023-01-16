@@ -8,10 +8,10 @@ import Integer (Positive)
 import SupplyChain.Interface.ResettableTerminableStream (ResettableTerminableStream)
 import qualified SupplyChain.Interface.ResettableTerminableStream as RTS
 import SupplyChain.Interface.Resettable (IsResettable (..))
-import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
+import Next.Interface (TerminableStream (..), Next (..), Step (..))
 
 data CommittableChunkStream (chunk :: Type) (product :: Type) =
-    (product ~ Maybe chunk) => NextMaybe
+    (product ~ Step chunk) => NextMaybe
   | (product ~ ()) => Reset
   | (product ~ AdvanceResult) => Commit Positive
 
@@ -19,9 +19,9 @@ instance IsResettable (CommittableChunkStream chunk)
   where
     reset = Reset
 
-instance IsTerminableStream chunk (CommittableChunkStream chunk)
+instance TerminableStream chunk (CommittableChunkStream chunk)
   where
-    nextMaybe = NextMaybe
+    liftNext Next = NextMaybe
 
 data AdvanceResult =
     AdvanceSuccess

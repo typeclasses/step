@@ -10,14 +10,14 @@ import Optics (Lens', use, assign)
 import Control.Monad.State.Strict (MonadState)
 
 import SupplyChain (Vendor (..), (>->))
-import SupplyChain.Interface.TerminableStream (IsTerminableStream, TerminableStream)
+import Next.Interface (TerminableStream, Next)
 import qualified SupplyChain
-import qualified SupplyChain.Interface.TerminableStream as Stream
+import qualified Next as Stream
 
 pureStepper :: forall s up action c. Chunk c => MonadState s action =>
     Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
 pureStepper buffer =
-    (Stream.nil :: Vendor up (TerminableStream c) action)
+    (Stream.empty :: Vendor up (Next c) action)
     >-> bufferedStepper buffer
 
 {-| Turns an unbuffered stream (the 'IsTerminableStream' interface)
@@ -30,7 +30,7 @@ pureStepper buffer =
     that is yet to be obtained from the unbuffered stream.
 -}
 bufferedStepper :: forall s up action c. Chunk c => MonadState s action =>
-    IsTerminableStream c up =>
+    TerminableStream c up =>
     Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
 bufferedStepper buffer = Vendor \request -> do
     b <- SupplyChain.perform $ use buffer

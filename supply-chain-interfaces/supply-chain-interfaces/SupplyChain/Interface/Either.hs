@@ -1,9 +1,5 @@
-{- |
-
-Description: The 'Either' interface, a general way to connect a job to two vendors by merging them into one
-
--}
-
+{-| The 'Either' interface, a general way to connect a
+    job to two vendors by merging them into one -}
 module SupplyChain.Interface.Either
   (
     {- * Interface -} Either (..),
@@ -11,10 +7,10 @@ module SupplyChain.Interface.Either
   )
   where
 
+import Essentials
 import SupplyChain
-import qualified SupplyChain.Referral as Referral
 
-import Data.Functor ((<&>))
+import qualified SupplyChain.Referral as Referral
 
 -- | Combination of two interfaces
 data Either a b response = Left (a response) | Right (b response)

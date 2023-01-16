@@ -3,7 +3,7 @@ module Step.Interface
     CommittableChunkStream, ResettableTerminableStream,
     AdvanceResult (..),
     ResettingSequence (..),
-    nextMaybe, reset, commit,
+    next, Step (..), reset, commit,
     stepCast,
   )
   where
@@ -11,4 +11,4 @@ module Step.Interface
 import Step.Interface.Core
 import SupplyChain.Interface.ResettableTerminableStream (ResettableTerminableStream)
 import SupplyChain.Interface.Resettable (IsResettable (..), ResettingSequence (..))
-import SupplyChain.Interface.TerminableStream (IsTerminableStream (..))
+import Next.Interface (next, Step (..))
