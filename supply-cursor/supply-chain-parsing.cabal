@@ -1,12 +1,12 @@
 cabal-version: 3.0
 
-name: supply-chain-parsing
+name: supply-cursor
 version: 0
 
 library
     default-language: GHC2021
     ghc-options: -Wall
-    hs-source-dirs: supply-chain-parsing
+    hs-source-dirs: supply-cursor
 
     default-extensions:
         DataKinds

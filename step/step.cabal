@@ -47,7 +47,7 @@ common base
       , quaalude ^>= 0.0
       , supply-chain ^>= 0.0
       , supply-chain-interfaces
-      , supply-chain-parsing
+      , supply-cursor
       , supply-next ^>= 0.0.1
       , text
       , transformers

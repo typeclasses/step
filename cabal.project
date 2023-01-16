@@ -4,7 +4,7 @@ packages:
   , block-gen
   , block-text
   , supply-chain-interfaces
-  , supply-chain-parsing
+  , supply-cursor
   , step
 
 with-compiler: ghc-9.2.4
