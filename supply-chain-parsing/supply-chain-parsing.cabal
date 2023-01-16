@@ -28,4 +28,3 @@ library
     exposed-modules:
         Cursor.Advancement
         Cursor.Interface
-        Chunk.Gen

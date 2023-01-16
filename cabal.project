@@ -1,6 +1,7 @@
 packages:
     block-class
   , block-listlike
+  , block-gen
   , block-text
   , supply-chain-interfaces
   , supply-chain-parsing

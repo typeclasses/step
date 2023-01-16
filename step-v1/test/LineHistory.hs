@@ -8,7 +8,7 @@ import Hedgehog
 
 import qualified Hedgehog.Gen as Gen
 
-import Step.Cursor (genChunks)
+import Step.Cursor (genBlocks)
 
 import Test.Tasty
 import qualified Test.Tasty.Hedgehog as Hedgehog
@@ -40,7 +40,7 @@ tests = testGroup "LineHistory"
   ]
 
 prop_ex1 = property do
-    input :: TextChunks <- forAll (genChunks "Move\r\nTwo\rThree")
+    input :: TextChunks <- forAll (genBlocks "Move\r\nTwo\rThree")
 
     t <- forAll Gen.bool
     let lh = Lines.build NT.spanOperation NT.leftViewOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
@@ -64,7 +64,7 @@ prop_ex1 = property do
     locateCursorInDocument 16 lh === Nothing
 
 prop_ex2 = property do
-    input :: TextChunks <- forAll (genChunks "ab\r")
+    input :: TextChunks <- forAll (genBlocks "ab\r")
 
     t <- forAll Gen.bool
     let lh = Lines.build NT.spanOperation NT.leftViewOperation Lines.charTerminators input & (if t then runIdentity . execRST Lines.terminate () else id)
@@ -89,7 +89,7 @@ prop_ex3 = property do
     locateCursorInDocument 3 lh === Just (CursorAt (loc 1 4))
 
 prop_oneLine = property do
-    input :: TextChunks <- forAll (genChunks "abc")
+    input :: TextChunks <- forAll (genBlocks "abc")
 
     let lh = Lines.build NT.spanOperation NT.leftViewOperation Lines.charTerminators input
 

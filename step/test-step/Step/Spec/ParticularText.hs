@@ -6,7 +6,7 @@ import Hedgehog
 
 import Step.Package.InMemory (parseMaybe)
 import Block.Text (Text1)
-import Chunk.Gen (genChunks)
+import Block.Gen (genBlocks)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
@@ -34,7 +34,7 @@ prop_takeParticularText_empty = property do
 prop_takeParticularText_notEnoughInput = property do
     a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (Chunk.generalize a))
+    i <- forAll (genBlocks (Chunk.generalize a))
     let (r, _) = parseMaybe (takeParticularText (a <> b)) i ()
 
     -- takeParticularText, when the input is a proper prefix of
@@ -43,7 +43,7 @@ prop_takeParticularText_notEnoughInput = property do
 
 prop_takeParticularText_exact = property do
     a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (Chunk.generalize a))
+    i <- forAll (genBlocks (Chunk.generalize a))
     let (x, r) = parseMaybe (takeParticularText a) i ()
 
     -- takeParticularText, when the input is exactly the
@@ -56,7 +56,7 @@ prop_takeParticularText_exact = property do
 prop_takeParticularText_okayAndMore = property do
     a <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
     b <- T.assume <$> forAll (Gen.text (Range.linear 1 3) Gen.alpha)
-    i <- forAll (genChunks (Chunk.generalize (a <> b)))
+    i <- forAll (genBlocks (Chunk.generalize (a <> b)))
     let (x, r) = parseMaybe (takeParticularText a) i ()
 
     -- takeParticularText, when the input begins with the desired text

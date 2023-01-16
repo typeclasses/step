@@ -7,7 +7,7 @@ import Hedgehog
 
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
 import Block.Text (Text1)
-import Chunk.Gen (genChunks)
+import Block.Gen (genBlocks)
 import Data.Char (Char)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
@@ -32,7 +32,7 @@ prop_peekChar_empty = withTests 1 $ property do
 prop_peekChar_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @Text1 (Text.cons x xs))
+    i <- forAll (genBlocks @Text1 (Text.cons x xs))
 
     -- peekChar, on non-empty input, should return the first character
     parseQueryMaybe peekChar i () === Just x
@@ -45,7 +45,7 @@ prop_peekCharMaybe_empty = withTests 1 $ property do
 prop_peekCharMaybe_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @Text1 (Text.cons x xs))
+    i <- forAll (genBlocks @Text1 (Text.cons x xs))
 
     -- (try peekChar), on non-empty input, should return Just the first character
     parseSureQuery (try peekChar) i () === Just x
@@ -62,7 +62,7 @@ prop_takeCharMaybe_empty = withTests 1 $ property do
 prop_takeCharMaybe_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @Text1 (Text.cons x xs))
+    i <- forAll (genBlocks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe (try takeChar) i ()
 
     -- (try takeChar), on non-empty input, should succeed and
@@ -84,7 +84,7 @@ prop_takeChar_empty = withTests 1 $ property do
 prop_takeChar_nonEmpty = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.lower)
-    i <- forAll (genChunks @Text1 (Text.cons x xs))
+    i <- forAll (genBlocks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe takeChar i ()
 
     -- takeChar, on non-empty input, should return the first character
@@ -107,7 +107,7 @@ prop_satisfyJust_empty = withTests 1 $ property do
 prop_satisfyJust_yes = property do
     x <-forAll Gen.upper
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    i <- forAll (genChunks @Text1 (Text.cons x xs))
+    i <- forAll (genBlocks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe (satisfyJust upperOrd) i ()
 
     -- satisfyJust, if the first characters matches, should succeed
@@ -119,7 +119,7 @@ prop_satisfyJust_yes = property do
 prop_satisfyJust_no = property do
     x <- forAll Gen.lower
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    i <- forAll (genChunks @Text1 (Text.cons x xs))
+    i <- forAll (genBlocks @Text1 (Text.cons x xs))
     let (e, r) = parseMaybe (satisfyJust upperOrd) i ()
 
     -- satisfyJust, if the first character does not match, should fail

@@ -1,4 +1,4 @@
-module Chunk.Gen (genChunks, genChunks') where
+module Block.Gen (genBlocks, genBlocks') where
 
 import Block.Class
 import Essentials
@@ -15,19 +15,19 @@ import qualified Hedgehog.Range as Range
 {-| Break up a text into a list of texts
 
     This can be useful for generating parser inputs for testing -}
-genChunks :: Trivializable c => Nullable c -> Gen [c]
-genChunks x = genChunksSeq x <&> LL.toList
+genBlocks :: Trivializable c => Nullable c -> Gen [c]
+genBlocks x = genBlocksSeq x <&> LL.toList
 
-genChunksSeq :: Trivializable c => Nullable c -> Gen (Seq c)
-genChunksSeq x = case refine x of
+genBlocksSeq :: Trivializable c => Nullable c -> Gen (Seq c)
+genBlocksSeq x = case refine x of
     Nothing -> pure LL.empty
-    Just y -> genChunksSeq' y
+    Just y -> genBlocksSeq' y
 
-genChunks' :: Block c => c -> Gen [c]
-genChunks' x = genChunksSeq' x <&> LL.toList
+genBlocks' :: Block c => c -> Gen [c]
+genBlocks' x = genBlocksSeq' x <&> LL.toList
 
-genChunksSeq' :: Block c => c -> Gen (Seq c)
-genChunksSeq' x = Gen.recursive Gen.choice [pure (x :<| Empty)] [z x]
+genBlocksSeq' :: Block c => c -> Gen (Seq c)
+genBlocksSeq' x = Gen.recursive Gen.choice [pure (x :<| Empty)] [z x]
 
 z :: Block c => c -> Gen (Seq c)
 z x = case Positive.fromNatural (Positive.subtractOne (length x)) of
@@ -36,5 +36,5 @@ z x = case Positive.fromNatural (Positive.subtractOne (length x)) of
       Just i <- Gen.integral (Range.constant 1 (Positive.toNatural len))
                   <&> Positive.fromNatural
       case split i x of
-          SplitInsufficient -> error "genChunks: SplitInsufficient"
-          Split a b -> pure (<>) <*> genChunksSeq' a <*> genChunksSeq' b
+          SplitInsufficient -> error "genBlocks: SplitInsufficient"
+          Split a b -> pure (<>) <*> genBlocksSeq' a <*> genBlocksSeq' b

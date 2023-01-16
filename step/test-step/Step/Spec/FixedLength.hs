@@ -5,7 +5,7 @@ import Hedgehog
 import Step.Package.FixedLength
 
 import Block.Text (Text1)
-import Chunk.Gen (genChunks)
+import Block.Gen (genBlocks)
 import Numeric.Natural (Natural)
 import Step.Package.InMemory (parseMaybe)
 import Test.Tasty (TestTree)
@@ -26,7 +26,7 @@ tests = fromGroup $$(discover)
 prop_skipPositive_success = property do
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
     ys <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    i <- forAll (genChunks @Text1 (xs <> ys))
+    i <- forAll (genBlocks @Text1 (xs <> ys))
 
     let (xm, r) = parseMaybe (skipNatural $ Integer.yolo $ Text.length xs) i ()
 
@@ -36,7 +36,7 @@ prop_skipPositive_success = property do
 
 prop_tryTakeNatural = property do
     xs <- forAll (Gen.text (Range.linear 0 3) Gen.alpha)
-    i <- forAll (genChunks @Text1 xs)
+    i <- forAll (genBlocks @Text1 xs)
     n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
 
     let (xm, r) = parseMaybe (tryTakeNatural n) i ()

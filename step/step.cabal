@@ -95,6 +95,7 @@ test-suite test-step
     hs-source-dirs: test-step
     main-is: Main.hs
     build-depends:
+      , block-gen
       , step
       , tasty
       , tasty-hedgehog

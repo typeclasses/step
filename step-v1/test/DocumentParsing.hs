@@ -10,7 +10,7 @@ import Loc (loc)
 import Test.Tasty
 import Test.Tasty.Hedgehog
 import Text (Text)
-import Step.Cursor (genChunks)
+import Step.Cursor (genBlocks)
 import Step.Nontrivial.Unsafe (Nontrivial (NontrivialUnsafe))
 
 import qualified Char
@@ -44,17 +44,17 @@ charCharCharTests = testGroup "p = char, char, char"
 charCharChar = P.do{ a <- P.satisfyJust Just; b <- P.satisfyJust Just; c <- P.satisfyJust Just; P.return (a, b, c) }
 
 prop_charCharChar1 = property do
-    input :: TextChunks <- forAll (genChunks "abc")
+    input :: TextChunks <- forAll (genBlocks "abc")
     let x = P.parseSimple (charCharChar P.<* P.end) input
     x === Right ('a', 'b', 'c')
 
 prop_charCharChar2 = property do
-    input :: TextChunks <- forAll (genChunks "abcd")
+    input :: TextChunks <- forAll (genBlocks "abcd")
     let x = P.parseSimple charCharChar input
     x === Right ('a', 'b', 'c')
 
 prop_charCharChar3 = property do
-    input :: TextChunks <- forAll (genChunks "abcd")
+    input :: TextChunks <- forAll (genBlocks "abcd")
     let x = P.parseSimple (charCharChar P.<* P.end) input
     x === Left (P.DocError [])
 
@@ -66,12 +66,12 @@ contextualizeTests = testGroup "p = contextualize \"Digit\" (require (satisfy is
 digit = P.contextualize "Digit" (P.satisfyJust \x -> if Char.isDigit x then Just x else Nothing)
 
 prop_digit2 = property do
-    input :: TextChunks <- forAll (genChunks "2")
+    input :: TextChunks <- forAll (genBlocks "2")
     let x = P.parseSimple digit input
     x === Right '2'
 
 prop_digitA = property do
-    input :: TextChunks <- forAll (genChunks "a")
+    input :: TextChunks <- forAll (genBlocks "a")
     let x = P.parseSimple digit input
     x === Left (P.DocError ["Digit"])
 
@@ -83,12 +83,12 @@ repetitionTests = testGroup "p = repetition0 (satisfy isDigit)"
 digitList = P.repetition0 (P.satisfyJust \x -> if Char.isDigit x then Just x else Nothing)
 
 prop_digitList_part = property do
-    input :: TextChunks <- forAll (genChunks "123abc")
+    input :: TextChunks <- forAll (genBlocks "123abc")
     let x = P.parseSimple digitList input
     x === Right ("123" :: [Char])
 
 prop_digitList_nothing = property do
-    input :: TextChunks <- forAll (genChunks "abc")
+    input :: TextChunks <- forAll (genBlocks "abc")
     let x = P.parseSimple digitList input
     x === Right ([] :: [Char])
 
@@ -96,12 +96,12 @@ prop_digitList_nothing = property do
 --     let p = P.text (NontrivialUnsafe "abc")
 
 --     specify "p parses \"abc\" and \"abcd\"" $ hedgehog do
---         input :: TextChunks <- forAll (Gen.element ["abc", "abcd"] >>= genChunks)
+--         input :: TextChunks <- forAll (Gen.element ["abc", "abcd"] >>= genBlocks)
 --         let x = input & evalStateT (P.parseOnly def p Cursor.list) & runIdentity
 --         x === Right ()
 
 --     specify "p fails on any input that does not start with abc" $ hedgehog do
---         input :: TextChunks <- forAll (Gen.element ["", "ab", "bc"] >>= genChunks)
+--         input :: TextChunks <- forAll (Gen.element ["", "ab", "bc"] >>= genBlocks)
 --         let x = input & evalStateT (P.parseOnly def p Cursor.list) & runIdentity
 --         x === Left (P.Error [])
 
@@ -112,20 +112,20 @@ cursorPositionTests = testGroup "cursorPosition"
   ]
 
 prop_cursorPosition_origin = property do
-    input :: TextChunks <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
+    input :: TextChunks <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genBlocks)
     let p = P.cursorPosition
     let x = P.parseSimple p input
     x === Right 0
 
 prop_cursorPosition_increases = property do
-    input :: TextChunks <- forAll (genChunks (ListLike.replicate 10 'a'))
+    input :: TextChunks <- forAll (genBlocks (ListLike.replicate 10 'a'))
     n :: Natural <- forAll (Gen.integral (Range.linear 0 5))
     let p = P.do{ _ <- P.count0 n (P.satisfyJust Just); P.cursorPosition }
     let x = P.parseSimple p input
     x === Right (P.CursorPosition n)
 
 prop_cursorPosition_increases2 = property do
-    input :: TextChunks <- forAll (genChunks (ListLike.replicate 10 'a'))
+    input :: TextChunks <- forAll (genBlocks (ListLike.replicate 10 'a'))
     n1 :: Natural <- forAll (Gen.integral (Range.linear 0 5))
     n2 :: Natural <- forAll (Gen.integral (Range.linear 0 5))
     let p = P.do{ _ <- P.count0 n1 (P.satisfyJust Just); _ <- P.count0 n2 (P.satisfyJust Just); P.cursorPosition }
@@ -140,7 +140,7 @@ linePositionTests = testGroup "Line position"
   ]
 
 prop_linePosition_origin = property do
-    input :: TextChunks <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genChunks)
+    input :: TextChunks <- forAll (Gen.element ["", "a", "bc", "abc", "abcd"] >>= genBlocks)
     let p = P.position
     let x = P.parseSimple p input
     x === Right (Loc.loc 1 1)
@@ -151,7 +151,7 @@ prop_linePosition_oneLine = property do
     let p = if atomic
         then P.castTo @P.Any P.do{ P.skipAtomically0 n; P.position }
         else P.do{ P.skip0 n; P.position }
-    input :: TextChunks <- forAll (genChunks (ListLike.fromList ['a' .. 'z']))
+    input :: TextChunks <- forAll (genBlocks (ListLike.fromList ['a' .. 'z']))
     let x = P.parseSimple p input
     x === Right (Loc.loc 1 (Integer.yolo $ n + 1))
 
@@ -161,12 +161,12 @@ prop_linePosition_oneColumn = property do
     let p = if atomic
             then P.castTo @P.Any P.do{ P.skipAtomically0 n; P.position }
             else P.do{ P.skip0 n; P.position }
-    input :: TextChunks <- forAll (genChunks (ListLike.replicate 50 '\n'))
+    input :: TextChunks <- forAll (genBlocks (ListLike.replicate 50 '\n'))
     let x = P.parseSimple p input
     x === Right (Loc.loc (Integer.yolo $ 1 + n) 1)
 
 prop_linePosition_both = property do
-    input :: TextChunks <- forAll $ genChunks $ times 10 $ Text.replicate 19 "a" <> "\n"
+    input :: TextChunks <- forAll $ genBlocks $ times 10 $ Text.replicate 19 "a" <> "\n"
     n :: Natural <- forAll (Gen.integral (Range.linear 0 200))
     atomic <- forAll Gen.bool
     let p = if atomic
@@ -186,19 +186,19 @@ prop_linePosition_both = property do
 
         -- specify "one-line example" $ hedgehog do
         --     let p = P.do{ P.text (NontrivialUnsafe "abc"); x <- withLocation (P.text (NontrivialUnsafe "def")); P.text (NontrivialUnsafe "ghi"); P.return x }
-        --     input :: TextChunks <- forAll (genChunks "abcdefghi")
+        --     input :: TextChunks <- forAll (genBlocks "abcdefghi")
         --     let x = input & evalStateT (P.parseOnly def p Cursor.list) & runIdentity
         --     x === Right (SpanOrLoc.fromTo (loc 1 4) (loc 1 7), ())
 
         -- specify "second-line example" $ hedgehog do
         --     let p = P.do{ P.text (NontrivialUnsafe "xyz\nabc"); x <- withLocation (P.text (NontrivialUnsafe "def")); P.text (NontrivialUnsafe "ghi"); P.return x }
-        --     input :: TextChunks <- forAll (genChunks "xyz\nabcdefghi")
+        --     input :: TextChunks <- forAll (genBlocks "xyz\nabcdefghi")
         --     let x = input & evalStateT (P.parseOnly def p Cursor.list) & runIdentity
         --     x === Right (SpanOrLoc.fromTo (loc 2 4) (loc 2 7), ())
 
         -- specify "empty example" $ hedgehog do
         --     let p = P.do{ P.text (NontrivialUnsafe "abc"); x <- withLocation (P.return ()); P.text (NontrivialUnsafe "def"); P.return x }
-        --     input :: TextChunks <- forAll (genChunks "abcdef")
+        --     input :: TextChunks <- forAll (genBlocks "abcdef")
         --     let x = input & evalStateT (P.parseOnly def p Cursor.list) & runIdentity
         --     x === Right (SpanOrLoc.loc (loc 1 4), ())
 
