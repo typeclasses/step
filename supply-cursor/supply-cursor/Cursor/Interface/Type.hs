@@ -6,7 +6,7 @@ import Next.Interface (Next (..), Step (..), TerminableStream (..))
 data Mode = R | RW
 
 data Cursor (mode :: Mode) block product =
-    ( product ~ Step block             ) => NextBlock
+    ( product ~ Step block              ) => NextBlock
   | ( product ~ ()                      ) => Reset
   | ( product ~ Advancement, mode ~ 'RW ) => Commit Positive
 
