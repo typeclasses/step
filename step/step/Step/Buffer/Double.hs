@@ -1,6 +1,6 @@
 module Step.Buffer.Double (doubleBuffer) where
 
-import Chunk
+import Block.Class
 import Step.Interface
 import Step.Buffer.Buffer
 import Essentials
@@ -14,7 +14,7 @@ import qualified Next.Interface as Stream
 
 data DoubleBuffer c = DoubleBuffer{ commitBuffer :: Buffer c, viewBuffer :: Buffer c }
 
-doubleBuffer :: forall c up action. Chunk c => TerminableStream c up =>
+doubleBuffer :: forall c up action. Block c => TerminableStream c up =>
     (Buffer c -> Job up action ()) ->
     Buffer c -> Vendor up (CommittableChunkStream c) action
 doubleBuffer report b = go (DoubleBuffer b b)

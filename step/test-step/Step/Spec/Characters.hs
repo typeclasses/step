@@ -12,7 +12,7 @@ import Data.Char (Char)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
-import qualified Chunk
+import qualified Block.Class as Chunk
 import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Hedgehog.Gen as Gen

@@ -1,0 +1,38 @@
+cabal-version: 3.0
+
+name: block-class
+version: 0
+
+license: Apache-2.0
+license-file: license.txt
+
+common base
+    default-language: GHC2021
+
+    ghc-options:
+        -Wall
+        -Wmissing-deriving-strategies
+
+    default-extensions:
+        BlockArguments
+        DataKinds
+        DerivingStrategies
+        FunctionalDependencies
+        ImpredicativeTypes
+        LambdaCase
+        NoImplicitPrelude
+        NoMonomorphismRestriction
+        PatternSynonyms
+        TypeFamilies
+        ViewPatterns
+
+    build-depends:
+      , base ^>= 4.16 || ^>= 4.17
+      , integer-types ^>= 0.0
+      , quaalude ^>= 0.0
+
+library
+    import: base
+    hs-source-dirs: block-class
+    exposed-modules:
+        Block.Class

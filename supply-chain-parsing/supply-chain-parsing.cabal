@@ -16,6 +16,7 @@ library
 
     build-depends:
       , base
+      , block-class
       , containers
       , hedgehog
       , integer-types
@@ -28,7 +29,6 @@ library
         Cursor.Advancement
         Cursor.Interface
 
-        Chunk
         Chunk.Gen
         Chunk.ListLike
         Chunk.ListLike.Core

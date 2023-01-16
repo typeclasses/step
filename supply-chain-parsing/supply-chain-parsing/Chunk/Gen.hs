@@ -1,6 +1,6 @@
 module Chunk.Gen (genChunks, genChunks') where
 
-import Chunk
+import Block.Class
 import Essentials
 
 import Data.Sequence (Seq (..))
@@ -23,13 +23,13 @@ genChunksSeq x = case refine x of
     Nothing -> pure LL.empty
     Just y -> genChunksSeq' y
 
-genChunks' :: Chunk c => c -> Gen [c]
+genChunks' :: Block c => c -> Gen [c]
 genChunks' x = genChunksSeq' x <&> LL.toList
 
-genChunksSeq' :: Chunk c => c -> Gen (Seq c)
+genChunksSeq' :: Block c => c -> Gen (Seq c)
 genChunksSeq' x = Gen.recursive Gen.choice [pure (x :<| Empty)] [z x]
 
-z :: Chunk c => c -> Gen (Seq c)
+z :: Block c => c -> Gen (Seq c)
 z x = case Positive.fromNatural (Positive.subtractOne (length x)) of
     Nothing -> pure (x :<| Empty)
     Just len -> do

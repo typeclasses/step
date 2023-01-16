@@ -1,5 +1,6 @@
 packages:
-    supply-chain-interfaces
+    block-class
+  , supply-chain-interfaces
   , supply-chain-parsing
   , step
 

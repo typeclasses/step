@@ -26,7 +26,7 @@ import qualified Step.Do as A
 import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Chunk.Text as Text1
-import qualified Chunk as Chunk
+import qualified Block.Class as Chunk
 
 newtype Trace = Trace [Text] deriving newtype (Eq, Ord, Show)
 

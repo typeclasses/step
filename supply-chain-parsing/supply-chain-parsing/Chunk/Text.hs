@@ -1,7 +1,7 @@
 module Chunk.Text (Text1, asciiCI) where
 
 import Essentials
-import Chunk
+import Block.Class
 import Chunk.Text.Core
 import Data.Bool
 import Data.Char
@@ -9,9 +9,9 @@ import Data.Char
 import qualified Data.List as List
 import qualified Data.Text as Text
 
-asciiCI :: ChunkCharacterEquivalence Text1
+asciiCI :: BlockCharacterEquivalence Text1
 asciiCI =
-    ChunkCharacterEquivalence $ \a b ->
+    BlockCharacterEquivalence $ \a b ->
       ( length a == length b ) &&
       ( Text.zip (generalize a) (generalize b)
           & List.all (\(x, y) -> eq x y)

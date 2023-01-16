@@ -2,7 +2,7 @@ module Step.Package.Match (match) where
 
 import Essentials
 import Step.Action.Core
-import Chunk
+import Block.Class
 import Step.Interface
 import Step.LeftRight
 
@@ -21,7 +21,7 @@ import qualified Integer.Positive as Positive
 import qualified SupplyChain.Vendor as Vendor
 
 class Match p where
-    match :: Chunk c => p c m r a -> p c m r (Maybe c, a)
+    match :: Block c => p c m r a -> p c m r (Maybe c, a)
 
 instance Match Any where
     match (Any x) = P.do
@@ -48,7 +48,7 @@ data Counting (c :: Type) (response :: Type) =
     Order (CommittableChunkStream c response)
   | (response ~ Natural) => AmountCommitted
 
-counting :: forall c action. Chunk c =>
+counting :: forall c action. Block c =>
     Vendor (CommittableChunkStream c) (Counting c) action
 counting = go 0
   where

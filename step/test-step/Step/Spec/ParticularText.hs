@@ -10,7 +10,7 @@ import Chunk.Gen (genChunks)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
-import qualified Chunk as Chunk
+import qualified Block.Class as Chunk
 import qualified Chunk.Text.Core as T
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range

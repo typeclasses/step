@@ -11,7 +11,7 @@ import Step.Package.InMemory (parseMaybe)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
-import qualified Chunk
+import qualified Block.Class as Chunk
 import qualified Data.Text as Text
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range

@@ -1,4 +1,4 @@
-module Chunk where
+module Block.Class where
 
 import Essentials
 
@@ -13,7 +13,7 @@ import qualified Data.Semigroup as Semigroup
 
 type family One (c :: Type) :: Type
 
-class Semigroup c => Chunk c
+class Semigroup c => Block c
   where
     leftView :: c -> Pop c
 
@@ -34,7 +34,7 @@ class Semigroup c => Chunk c
 
 type family Nullable (c :: Type) :: Type
 
-class (Chunk c, Monoid (Nullable c)) => Trivializable c
+class (Block c, Monoid (Nullable c)) => Trivializable c
   where
     refine :: Nullable c -> Maybe c
 
@@ -59,12 +59,12 @@ data Span c =
       { spannedPart :: c
       , spanRemainder :: c
       }
-  deriving (Eq, Ord, Show, Functor)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Split c =
     SplitInsufficient
   | Split c c
-  deriving (Eq, Ord, Show, Functor)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Drop c =
     DropAll
@@ -74,7 +74,7 @@ data Drop c =
   | DropPart
       { dropRemainder :: c
       }
-  deriving (Eq, Ord, Show, Functor)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Take c =
     TakeAll
@@ -84,44 +84,44 @@ data Take c =
   | TakePart
       { takePart :: c
       }
-  deriving (Eq, Ord, Show, Functor)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data While c =
     WhileNone
   | WhilePrefix c
   | WhileAll
-  deriving (Eq, Ord, Show, Functor)
+  deriving stock (Eq, Ord, Show, Functor)
 
-concatMaybe :: Chunk c => [c] -> Maybe c
+concatMaybe :: Block c => [c] -> Maybe c
 concatMaybe = fmap concat . nonEmpty
 
 concatTrivialize :: Trivializable c => [c] -> Nullable c
 concatTrivialize = maybe Monoid.mempty generalize . concatMaybe
 
-head :: Chunk c => c -> One c
+head :: Block c => c -> One c
 head = popItem . leftView
 
--- | An equivalence on characters, expressed as an equivalence on chunks.
+-- | An equivalence on characters, expressed as an equivalence on blocks.
 --
--- It must be the case that chunks /a/ and /b/ are equivalent iff the length
+-- It must be the case that blocks /a/ and /b/ are equivalent iff the length
 -- of /a/ and /b/ is /l/ and /a[i] ~ b[i]/ for all /i = [1 .. l]/ according
 -- to the character equivalence.
 --
-newtype ChunkCharacterEquivalence c =
-    ChunkCharacterEquivalence{ chunksEquivalent :: c -> c -> Bool }
+newtype BlockCharacterEquivalence c =
+    BlockCharacterEquivalence{ blocksEquivalent :: c -> c -> Bool }
 
-stripEitherPrefix :: Chunk c => ChunkCharacterEquivalence c -> c -> c -> StripEitherPrefix c
+stripEitherPrefix :: Block c => BlockCharacterEquivalence c -> c -> c -> StripEitherPrefix c
 stripEitherPrefix eq a b = case compare (length a) (length b) of
-    EQ -> if chunksEquivalent eq a b
+    EQ -> if blocksEquivalent eq a b
             then StripEitherPrefixAll
             else StripEitherPrefixFail
     LT -> case split (length a) b of
-        Split a' b' -> if chunksEquivalent eq a a'
+        Split a' b' -> if blocksEquivalent eq a a'
             then IsPrefixOf{ commonPart = a', extraPart = b' }
             else StripEitherPrefixFail
         SplitInsufficient{} -> error "stripEitherPrefix"
     GT -> case split (length b) a of
-        Split b' a' -> if chunksEquivalent eq b b'
+        Split b' a' -> if blocksEquivalent eq b b'
             then IsPrefixedBy{ commonPart = b', extraPart = a' }
             else StripEitherPrefixFail
         SplitInsufficient{} -> error "stripEitherPrefix"

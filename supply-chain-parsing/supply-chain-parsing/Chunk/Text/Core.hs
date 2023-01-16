@@ -2,7 +2,7 @@ module Chunk.Text.Core (Text1 (..), assume) where
 
 import Essentials
 
-import Chunk
+import Block.Class
 import Chunk.ListLike.Core (NonEmptyListLike)
 import qualified Chunk.ListLike.Core as LL
 
@@ -27,7 +27,7 @@ type instance One Text1 = Char
 
 type instance Nullable Text1 = Text
 
-instance Chunk Text1
+instance Block Text1
   where
     -- Takes advantage of Text's faster concat function
     concat = Text1 . LL.assume . Text.concat . fmap generalize . Foldable.toList

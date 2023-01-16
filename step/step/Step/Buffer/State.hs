@@ -1,6 +1,6 @@
 module Step.Buffer.State where
 
-import Chunk
+import Block.Class
 import Step.Interface
 import Step.Buffer.Double
 import Step.Buffer.Buffer
@@ -14,7 +14,7 @@ import Next.Interface (TerminableStream, Next)
 import qualified SupplyChain
 import qualified Next as Stream
 
-pureStepper :: forall s up action c. Chunk c => MonadState s action =>
+pureStepper :: forall s up action c. Block c => MonadState s action =>
     Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
 pureStepper buffer =
     (Stream.empty :: Vendor up (Next c) action)
@@ -29,7 +29,7 @@ pureStepper buffer =
     then, consists of anything that is in the buffer, followed by anything
     that is yet to be obtained from the unbuffered stream.
 -}
-bufferedStepper :: forall s up action c. Chunk c => MonadState s action =>
+bufferedStepper :: forall s up action c. Block c => MonadState s action =>
     TerminableStream c up =>
     Lens' s (Buffer c) -> Vendor up (CommittableChunkStream c) action
 bufferedStepper buffer = Vendor \request -> do
