@@ -6,9 +6,9 @@ import Next.Interface (Next (..), Step (..), TerminableStream (..))
 data Mode = Read | Write
 
 data Cursor (mode :: Mode) block product =
-    ( product ~ Step block                ) => NextBlock
-  | ( product ~ ()                        ) => Reset
-  | ( product ~ Advancement, mode ~ 'Read ) => Commit Positive
+    ( product ~ Step block                 ) => NextBlock
+  | ( product ~ ()                         ) => Reset
+  | ( product ~ Advancement, mode ~ 'Write ) => Commit Positive
 
 type CursorRead block product = Cursor 'Read block product
 
