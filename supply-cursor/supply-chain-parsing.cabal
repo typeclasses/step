@@ -23,6 +23,7 @@ library
       , ListLike
       , quaalude ^>= 0.0
       , supply-chain
+      , supply-next ^>= 0.0.1
       , text
 
     exposed-modules:
