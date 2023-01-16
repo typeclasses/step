@@ -10,9 +10,11 @@ data Cursor (mode :: Mode) block product =
   | ( product ~ ()                         ) => Reset
   | ( product ~ Advancement, mode ~ 'Write ) => Commit Positive
 
-type CursorRead block product = Cursor 'Read block product
+type CursorRead block product =
+    Cursor 'Read block product
 
-type CursorWrite block product = forall mode. Cursor mode block product
+type CursorWrite block product =
+    forall mode. Cursor mode block product
 
 data Advancement =
     AdvanceSuccess
