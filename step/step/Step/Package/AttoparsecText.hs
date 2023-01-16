@@ -17,7 +17,7 @@ import Step.Action.Types
 
 import Data.Char (Char)
 import Data.Text (Text)
-import Chunk.Text (Text1)
+import Block.Text (Text1)
 import Text.Show (show)
 
 import qualified Step.Action as A
@@ -25,7 +25,7 @@ import qualified Step.Package.General as A
 import qualified Step.Do as A
 import qualified Data.Char as Char
 import qualified Data.Text as Text
-import qualified Chunk.Text as Text1
+import qualified Block.Text as Text1
 import qualified Block.Class as Chunk
 
 newtype Trace = Trace [Text] deriving newtype (Eq, Ord, Show)

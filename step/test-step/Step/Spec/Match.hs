@@ -6,7 +6,7 @@ import Step.Action
 import Step.Package.FixedLength
 import Step.Package.Match
 
-import Chunk.Text (Text1)
+import Block.Text (Text1)
 import Chunk.Gen (genChunks)
 import Step.Package.InMemory (parseMaybe)
 import Test.Tasty (TestTree)

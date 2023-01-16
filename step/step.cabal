@@ -36,6 +36,7 @@ common base
     build-depends:
       , base
       , block-class
+      , block-text
       , containers
       , hedgehog ^>= 1.1
       , integer-types

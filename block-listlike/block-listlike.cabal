@@ -1,6 +1,6 @@
 cabal-version: 3.0
 
-name: block-class
+name: block-listlike
 version: 0.0.0.0
 
 license: Apache-2.0
@@ -28,14 +28,14 @@ common base
 
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
+      , block-class ^>= 0.0
       , integer-types ^>= 0.0
+      , ListLike ^>= 4.7.8
       , quaalude ^>= 0.0
 
 library
     import: base
-    hs-source-dirs: block-class
+    hs-source-dirs: block-listlike
     exposed-modules:
-        Block.Class
-        Block.Class.Block
-        Block.Class.ItemEquivalence
-        Block.Class.Trivializable
+        Block.ListLike
+        Block.ListLike.Type

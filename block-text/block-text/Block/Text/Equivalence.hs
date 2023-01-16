@@ -1,8 +1,12 @@
-module Chunk.Text (Text1, asciiCI) where
+module Block.Text.Equivalence
+  (
+    asciiCI,
+  )
+  where
 
 import Essentials
 import Block.Class
-import Chunk.Text.Core
+import Block.Text.Type
 import Data.Bool
 import Data.Char
 

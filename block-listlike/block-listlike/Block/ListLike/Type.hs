@@ -1,6 +1,11 @@
 {-# language UndecidableInstances #-}
 
-module Chunk.ListLike.Core (NonEmptyListLike (..), assume) where
+module Block.ListLike.Type
+  (
+    NonEmptyListLike (..),
+    assume,
+  )
+  where
 
 import Essentials
 
@@ -23,20 +28,17 @@ import qualified Data.ListLike as LL
 import qualified Integer.Positive as Positive
 import qualified Integer
 
-data NonEmptyListLike c =
-  NonEmptyListLike
+data NonEmptyListLike c = NonEmptyListLike
     { generalize :: !c
     , length :: !Positive
     }
 
-instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c)
-  where
+instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c) where
     fromString x =
         fromMaybe (error "NonEmptyListLike fromString: empty") $
             refine (fromString x)
 
-instance Semigroup c => Semigroup (NonEmptyListLike c)
-  where
+instance Semigroup c => Semigroup (NonEmptyListLike c) where
     NonEmptyListLike c1 l1 <> NonEmptyListLike c2 l2 =
         NonEmptyListLike (c1 <> c2) (l1 + l2)
 
@@ -45,8 +47,7 @@ assume c = NonEmptyListLike c $ Integer.yolo $ LL.length c
 
 type instance Nullable (NonEmptyListLike c) = c
 
-instance (Monoid c, ListLike c (Item c)) => Trivializable (NonEmptyListLike c)
-  where
+instance (Monoid c, ListLike c (Item c)) => Trivializable (NonEmptyListLike c) where
     refine c = Positive.fromInt (LL.length c) <&> \l -> NonEmptyListLike c l
     generalize = generalize
 
@@ -61,8 +62,7 @@ instance Show c => Show (NonEmptyListLike c) where
 
 type instance Block.Item (NonEmptyListLike c) = Item c
 
-instance (ListLike c (Item c)) => Block (NonEmptyListLike c)
-  where
+instance (ListLike c (Item c)) => Block (NonEmptyListLike c) where
 
     length = length
 

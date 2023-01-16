@@ -4,7 +4,7 @@ import Essentials
 import Hedgehog
 import Step.Package.FixedLength
 
-import Chunk.Text (Text1)
+import Block.Text (Text1)
 import Chunk.Gen (genChunks)
 import Numeric.Natural (Natural)
 import Step.Package.InMemory (parseMaybe)

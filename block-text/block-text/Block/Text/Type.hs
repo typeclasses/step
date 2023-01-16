@@ -1,34 +1,39 @@
-module Chunk.Text.Core (Text1 (..), assume) where
+module Block.Text.Type
+  (
+    Text1 (..),
+    assume,
+  )
+  where
 
 import Essentials
 import Block.Class
 
-import Chunk.ListLike.Core (NonEmptyListLike)
+import Block.ListLike (NonEmptyListLike)
 import Data.Char (Char)
 import Data.Text (Text)
 import Data.Coerce (coerce)
 
-import qualified Chunk.ListLike.Core as LL
+import qualified Block.ListLike as LL
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Block.Class as Block
 
 newtype Text1 = Text1 (NonEmptyListLike Text)
-  deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 instance Semigroup Text1 where
-  Text1 a <> Text1 b = Text1 (a <> b)
+    Text1 a <> Text1 b = Text1 (a <> b)
 
 instance Trivializable Text1 where
-  refine = fmap Text1 . refine
-  generalize (Text1 x) = generalize x
+    refine = fmap Text1 . refine
+    generalize (Text1 x) = generalize x
 
 type instance Block.Item Text1 = Char
 
 type instance Nullable Text1 = Text
 
-instance Block Text1
-  where
+instance Block Text1 where
+
     -- Takes advantage of Text's faster concat function
     concat = Text1 . LL.assume . Text.concat . fmap generalize . Foldable.toList
 

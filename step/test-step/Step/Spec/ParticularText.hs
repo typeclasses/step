@@ -5,13 +5,13 @@ import Step.Package.ParticularText
 import Hedgehog
 
 import Step.Package.InMemory (parseMaybe)
-import Chunk.Text (Text1)
+import Block.Text (Text1)
 import Chunk.Gen (genChunks)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 
 import qualified Block.Class as Chunk
-import qualified Chunk.Text.Core as T
+import qualified Block.Text as T
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 

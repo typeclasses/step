@@ -6,7 +6,7 @@ import Step.Package.Characters
 import Hedgehog
 
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
-import Chunk.Text (Text1)
+import Block.Text (Text1)
 import Chunk.Gen (genChunks)
 import Data.Char (Char)
 import Test.Tasty (TestTree)
