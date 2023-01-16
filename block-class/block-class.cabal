@@ -36,3 +36,6 @@ library
     hs-source-dirs: block-class
     exposed-modules:
         Block.Class
+        Block.Class.Block
+        Block.Class.ItemEquivalence
+        Block.Class.Trivializable
