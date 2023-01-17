@@ -48,3 +48,7 @@ reportedBuffer report b = go (DoubleBuffer b b)
             Item x -> report com *> handleCommit s{ commitBuffer = com, viewBuffer = viewBuffer s :|> x } n
               where
                 com = Seq.singleton x
+
+privateBuffer :: forall block up action. Block block => TerminableStream block up =>
+    FeedPlus up action 'Write block
+privateBuffer = reportedBuffer (\_ -> pure ()) Empty
