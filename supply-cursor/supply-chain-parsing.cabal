@@ -10,6 +10,7 @@ library
 
     default-extensions:
         DataKinds
+        FunctionalDependencies
         NoImplicitPrelude
         PatternSynonyms
         TypeFamilies
