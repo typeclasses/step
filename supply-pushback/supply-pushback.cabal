@@ -32,5 +32,12 @@ library
 
     exposed-modules:
         Pushback
+
         Pushback.Interface
         Pushback.Interface.Type
+
+        Pushback.Stack
+        Pushback.Stack.Type
+        Pushback.Stack.Examples
+
+        Pushback.Container
