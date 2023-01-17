@@ -9,23 +9,24 @@ library
     hs-source-dirs: supply-cursor
 
     default-extensions:
+        BlockArguments
         DataKinds
         FunctionalDependencies
+        LambdaCase
         NoImplicitPrelude
         PatternSynonyms
         TypeFamilies
 
     build-depends:
-      , base
+      , base ^>= 4.16 || ^>= 4.17
       , block-class
-      , containers
+      , containers ^>= 0.6.5
       , hedgehog
-      , integer-types
-      , ListLike
+      , integer-types ^>= 0.0
       , quaalude ^>= 0.0
-      , supply-chain
+      , supply-chain ^>= 0.0
       , supply-next ^>= 0.0.1
-      , text
+      , text ^>= 1.2.4 || ^>= 2.0
 
     exposed-modules:
         Cursor.Interface
@@ -33,6 +34,7 @@ library
         Cursor.Interface.Class
 
         Cursor.Feed.Type
+        Cursor.Feed.Examples
 
         Cursor.Transcoder.Type
 

@@ -1,12 +1,14 @@
 module Cursor.Interface.Type where
 
 import Integer (Positive)
-import Next.Interface (Next (..), Step (..), TerminableStream (..))
+import Next.Interface (Step (..), TerminableStream (..))
+
+import qualified Next
 
 data Mode = Read | Write
 
 data Cursor (mode :: Mode) block product =
-    ( product ~ Step block                 ) => NextBlock
+    ( product ~ Step block                 ) => Next
   | ( product ~ ()                         ) => Reset
   | ( product ~ Advancement, mode ~ 'Write ) => Commit Positive
 
@@ -21,4 +23,4 @@ data Advancement =
   | YouCanNotAdvance{ shortfall :: Positive }
 
 instance TerminableStream block (Cursor mode block) where
-    liftNext Next = NextBlock
+    liftNext Next.Next = Next
