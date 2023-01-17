@@ -3,8 +3,8 @@ packages:
   , block-listlike
   , block-gen
   , block-text
-  , supply-chain-interfaces
   , supply-cursor
+  , supply-pushback
 
 with-compiler: ghc-9.2.4
 

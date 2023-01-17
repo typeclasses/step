@@ -1,0 +1,36 @@
+cabal-version: 3.0
+
+name: supply-pushback
+version: 0.0.0.0
+
+library
+    default-language: GHC2021
+    ghc-options: -Wall
+    hs-source-dirs: supply-pushback
+
+    default-extensions:
+        BlockArguments
+        DataKinds
+        FunctionalDependencies
+        LambdaCase
+        NoImplicitPrelude
+        PatternSynonyms
+        TypeFamilies
+
+    build-depends:
+      , base ^>= 4.16 || ^>= 4.17
+      , block-class ^>= 0.0
+      , containers ^>= 0.6.5
+      , hedgehog ^>= 1.2
+      , integer-types ^>= 0.0
+      , mtl ^>= 2.3.1
+      , optics ^>= 0.4.2
+      , quaalude ^>= 0.0
+      , supply-chain ^>= 0.0
+      , supply-next ^>= 0.0.1
+      , text ^>= 1.2.4 || ^>= 2.0
+
+    exposed-modules:
+        Pushback
+        Pushback.Interface
+        Pushback.Interface.Type
