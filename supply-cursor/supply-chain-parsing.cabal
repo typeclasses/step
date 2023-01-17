@@ -19,10 +19,12 @@ library
 
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
-      , block-class
+      , block-class ^>= 0.0
       , containers ^>= 0.6.5
-      , hedgehog
+      , hedgehog ^>= 1.2
       , integer-types ^>= 0.0
+      , mtl ^>= 2.3.1
+      , optics ^>= 0.4.2
       , quaalude ^>= 0.0
       , supply-chain ^>= 0.0
       , supply-next ^>= 0.0.1
