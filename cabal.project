@@ -5,7 +5,6 @@ packages:
   , block-text
   , supply-chain-interfaces
   , supply-cursor
-  , step
 
 with-compiler: ghc-9.2.4
 
