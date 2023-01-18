@@ -41,3 +41,4 @@ library
         Block.Text
         Block.Text.Type
         Block.Text.Equivalence
+        Block.Text.Unsafe

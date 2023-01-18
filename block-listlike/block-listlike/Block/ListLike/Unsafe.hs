@@ -1,4 +1,8 @@
-module Block.ListLike.Unsafe where
+module Block.ListLike.Unsafe
+  (
+    assume,
+  )
+  where
 
 import Essentials
 

@@ -1,4 +1,8 @@
-module Block.ListLike.Type where
+module Block.ListLike.Type
+  (
+    NonEmptyListLike (..),
+  )
+  where
 
 import Integer (Positive)
 

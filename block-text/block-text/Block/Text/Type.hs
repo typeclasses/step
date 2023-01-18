@@ -1,7 +1,6 @@
 module Block.Text.Type
   (
-    Text1 (..),
-    assume,
+    {- * Type -} Text1 (..),
   )
   where
 
@@ -45,6 +44,3 @@ instance Block Text1 where
     drop n = fmap coerce . drop @(NonEmptyListLike Text) n . coerce
     while p = fmap coerce . while @(NonEmptyListLike Text) p . coerce
     length = length @(NonEmptyListLike Text) . coerce
-
-assume :: Text -> Text1
-assume = Text1 . LL.assume
