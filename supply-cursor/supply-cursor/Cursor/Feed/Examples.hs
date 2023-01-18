@@ -49,8 +49,7 @@ unviewed    = Optics.lens (\(DoubleBuffer _ y) -> y) \(DoubleBuffer x _) y -> Do
 
 When this cursor receives a 'Reset' request, any input that has been read from
 upstream but not committed is pushed back up to the source. -}
-pushback :: forall up block action mode.
-    Block block => PushbackStream block up =>
+pushback :: forall up block action mode. PushbackStream block up =>
     FeedPlus up action mode block
 pushback = start :: FeedPlus up action mode block
   where
@@ -140,6 +139,5 @@ need to use the upstream again. It can also be useful when the upstream is a
 `Cursor` that you don't need to commit to, because once you're done using the
 private buffer, the upstream cursor can be reset to restore the blocks. -}
 
-privateBuffer :: Block block => TerminableStream block up =>
-    FeedPlus up action mode block
+privateBuffer :: TerminableStream block up => FeedPlus up action mode block
 privateBuffer = Pushback.Buffer.private >-> pushback

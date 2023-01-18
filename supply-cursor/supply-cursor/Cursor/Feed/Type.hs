@@ -1,11 +1,15 @@
 module Cursor.Feed.Type where
 
-import Cursor.Interface
 import Essentials
-import SupplyChain
+
+import Cursor.Interface (Cursor, Mode)
+import SupplyChain (Vendor)
+import Block.Class (Block)
 
 type Feed action (mode :: Mode) block =
-    Vendor (Const Void) (Cursor mode block) action
+    Block block =>
+        Vendor (Const Void) (Cursor mode block) action
 
 type FeedPlus up action (mode :: Mode) block =
-    Vendor up (Cursor mode block) action
+    Block block =>
+        Vendor up (Cursor mode block) action
