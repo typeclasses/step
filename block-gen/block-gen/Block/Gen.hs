@@ -1,3 +1,4 @@
+{-| This can be useful for generating parser inputs for testing. -}
 module Block.Gen (genBlocks, genBlocks') where
 
 import Block.Class
@@ -12,21 +13,20 @@ import qualified Data.ListLike as LL
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-{-| Break up a text into a list of texts
-
-    This can be useful for generating parser inputs for testing -}
-genBlocks :: Trivializable c => Nullable c -> Gen [c]
+{-| Break up a possibly-empty value into a list of blocks -}
+genBlocks :: Trivializable block => Nullable block -> Gen [block]
 genBlocks x = genBlocksSeq x <&> LL.toList
 
-genBlocksSeq :: Trivializable c => Nullable c -> Gen (Seq c)
+genBlocksSeq :: Trivializable block => Nullable block -> Gen (Seq block)
 genBlocksSeq x = case refine x of
     Nothing -> pure LL.empty
     Just y -> genBlocksSeq' y
 
-genBlocks' :: Block c => c -> Gen [c]
+{-| Break up a block into a list of blocks -}
+genBlocks' :: Block block => block -> Gen [block]
 genBlocks' x = genBlocksSeq' x <&> LL.toList
 
-genBlocksSeq' :: Block c => c -> Gen (Seq c)
+genBlocksSeq' :: Block block => block -> Gen (Seq block)
 genBlocksSeq' x = Gen.recursive Gen.choice [pure (x :<| Empty)] [z x]
 
 z :: Block c => c -> Gen (Seq c)
