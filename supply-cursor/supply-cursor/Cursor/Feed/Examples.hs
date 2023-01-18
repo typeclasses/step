@@ -19,10 +19,16 @@ import Integer (Positive)
 import Next (TerminableStream, Step (..))
 import Optics (Lens', use, assign)
 import SupplyChain (Job, Vendor (Vendor), order, Referral (Referral), perform, (>->))
+import Pushback.Interface (PushbackStream)
 
 import qualified SupplyChain.Vendor as Vendor
 import qualified Data.Sequence as Seq
 import qualified Next
+
+pushback ::
+    Block block => MonadState state action => PushbackStream block up =>
+    Lens' state (Seq block) -> FeedPlus up action 'Write block
+pushback = _
 
 {-| In-memory cursor feed that obtains its input from state -}
 produceFromState :: forall state up action block.
