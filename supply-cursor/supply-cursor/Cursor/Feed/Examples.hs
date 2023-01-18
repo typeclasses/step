@@ -28,6 +28,8 @@ import qualified Pushback.Stack
 import qualified Pushback.StackContainer as StackContainer
 import qualified SupplyChain.Job as Job
 
+-- todo: add one that doesn't expose the buffer and can't be re-used; we'll use it as privateDoubleBuffer in match
+
 {-| No input
 
 'Next' always returns 'End', 'Commit' always returns 'YouCanNotAdvance',

@@ -43,5 +43,6 @@ library
         Cursor.Transcoder.Type
 
         Cursor.Reader.Type
+        Cursor.Reader.Match
 
         Cursor.ResetReader.Type
