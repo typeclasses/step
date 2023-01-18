@@ -1,6 +1,7 @@
 module Block.Text.Equivalence
   (
-    asciiCI,
+    {- * Character equivalence -}
+    asciiCaseInsensitive,
   )
   where
 
@@ -13,8 +14,8 @@ import Data.Char
 import qualified Data.List as List
 import qualified Data.Text as Text
 
-asciiCI :: BlockCharacterEquivalence Text1
-asciiCI =
+asciiCaseInsensitive :: BlockCharacterEquivalence Text1
+asciiCaseInsensitive =
     BlockCharacterEquivalence $ \a b ->
       ( length a == length b ) &&
       ( Text.zip (generalize a) (generalize b)
