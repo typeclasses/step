@@ -65,7 +65,7 @@ pushback = start :: FeedPlus up action mode block
             (xm, s') <- State.runStateT (maybeAlt nextFromBuffer nextFromUpstream) s
             pure $ Referral (maybe End Item xm) (go s')
         Commit n -> do
-            (r, s') <- State.runStateT (commitAlt commitFromBuffer commitFromUpstream n) s
+            (r, s') <- State.runStateT (commitAlternative commitFromBuffer commitFromUpstream n) s
             pure $ Referral r (go s')
 
 nextFromBuffer :: StateT (DoubleBuffer block) (Job up action) (Maybe block)
