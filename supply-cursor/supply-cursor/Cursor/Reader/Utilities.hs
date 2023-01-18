@@ -9,15 +9,14 @@ import Essentials
 
 import Cursor.Counting.Examples (counting)
 import Cursor.Counting.Type (Counting (Order, AmountCommitted))
-import Cursor.Interface.Type (Mode (..))
+import Cursor.Interface (Mode (..), reset)
 import Cursor.Reader.Type (ReaderPlus, Reader)
 import Cursor.Reader.Examples (takeNatural)
 import Data.Sequence (Seq)
 import Integer (Natural)
-import SupplyChain ((>->), (>-))
+import SupplyChain ((>->), (>-), order)
 
 import qualified Cursor.Feed.Examples as Feed
-import qualified SupplyChain
 import qualified SupplyChain.Vendor as Vendor
 
 withBlocks :: Reader action 'Write block product
@@ -29,7 +28,10 @@ withBlocks x = do
 
 withLength :: Reader action 'Write block product
     -> ReaderPlus up action 'Write block (Natural, product)
-withLength x = Feed.privateBuffer >-> counting >- do
-    product <- Vendor.map Order >- x
-    length <- SupplyChain.order AmountCommitted
-    pure (length, product)
+withLength x =
+    (Feed.privateBuffer >-> counting >- y) <* order reset
+  where
+    y = do
+        product <- Vendor.map Order >- x
+        length <- SupplyChain.order AmountCommitted
+        pure (length, product)

@@ -13,7 +13,7 @@ import Block.Class (Take (..))
 import Data.Sequence (Seq (..))
 import SupplyChain (order)
 import Integer (Positive, Natural)
-import Cursor.Interface (next, commit)
+import Cursor.Interface (next, commit, reset)
 
 import qualified Data.Sequence as Seq
 import qualified Block.Class as Block
@@ -21,7 +21,7 @@ import qualified Integer
 
 takePositive :: forall up action block. Positive
     -> ReaderPlus up action 'Write block (Advancement, Seq block)
-takePositive = go
+takePositive = \n -> go n <* order reset
   where
     go :: Positive -> ReaderPlus up action 'Write block (Advancement, Seq block)
     go n = order next >>= \case
