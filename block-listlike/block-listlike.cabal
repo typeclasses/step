@@ -39,3 +39,4 @@ library
     exposed-modules:
         Block.ListLike
         Block.ListLike.Type
+        Block.ListLike.Unsafe

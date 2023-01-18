@@ -2,12 +2,13 @@
 
 module Block.ListLike.Type
   (
-    NonEmptyListLike (..),
-    assume,
+    {- * Type -} NonEmptyListLike (..),
   )
   where
 
 import Essentials
+
+import {-# source #-} Block.ListLike.Unsafe
 
 import Block.Class hiding (length, generalize, Item)
 import qualified Block.Class as Chunk
@@ -41,9 +42,6 @@ instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c) wher
 instance Semigroup c => Semigroup (NonEmptyListLike c) where
     NonEmptyListLike c1 l1 <> NonEmptyListLike c2 l2 =
         NonEmptyListLike (c1 <> c2) (l1 + l2)
-
-assume :: ListLike c (Item c) => c -> NonEmptyListLike c
-assume c = NonEmptyListLike c $ Integer.yolo $ LL.length c
 
 type instance Nullable (NonEmptyListLike c) = c
 

@@ -13,7 +13,7 @@ import Data.Char (Char)
 import Data.Text (Text)
 import Data.Coerce (coerce)
 
-import qualified Block.ListLike as LL
+import qualified Block.ListLike.Unsafe as LL
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Block.Class as Block
