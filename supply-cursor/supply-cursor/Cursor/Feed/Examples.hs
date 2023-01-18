@@ -1,6 +1,7 @@
 module Cursor.Feed.Examples
   (
-    {- * Feed examples -} pushback, substateBuffer, substate, empty,
+    {- * Feed examples -}
+    pushback, substateBuffer, privateBuffer, substate, empty,
   )
   where
 
@@ -15,7 +16,7 @@ import Control.Monad.State (StateT)
 import Control.Monad.Trans (lift)
 import Data.Sequence (Seq (..))
 import Integer (Positive)
-import Next (TerminableStream, Step (..))
+import Next (TerminableStream)
 import Optics (Lens', assign, use, modifying, view)
 import Pushback.Interface (PushbackStream, push)
 import SupplyChain (Job, Vendor (Vendor), Referral (Referral), (>->))
@@ -27,8 +28,6 @@ import qualified Pushback.Buffer
 import qualified Pushback.Stack
 import qualified Pushback.StackContainer as StackContainer
 import qualified SupplyChain.Job as Job
-
--- todo: add one that doesn't expose the buffer and can't be re-used; we'll use it as privateDoubleBuffer in match
 
 {-| No input
 
@@ -102,17 +101,10 @@ commitFromUpstream n = lift (Job.order next) >>= \case
                 pure AdvanceSuccess
             DropInsufficient{ dropShortfall = n' } -> commitFromUpstream n'
 
-type Magma a = a -> a -> a
-
-maybeAlt :: Monad m => Magma (m (Maybe a))
+maybeAlt :: Monad m => m (Maybe a) -> m (Maybe a) -> m (Maybe a)
 maybeAlt a b = a >>= \case
     Just x -> pure (Just x)
     Nothing -> b
-
-commitAlt :: Monad m => Magma (Positive -> m Advancement)
-commitAlt a b n = a n >>= \case
-    AdvanceSuccess -> pure AdvanceSuccess
-    YouCanNotAdvance{ shortfall = n' } -> b n'
 
 {-| In-memory cursor feed that operates solely on state -}
 substate :: forall state up action block mode.
@@ -139,3 +131,15 @@ substateBuffer :: forall state up action block mode.
 substateBuffer containerLens = buffer >-> pushback
   where
     buffer = Pushback.Buffer.substate containerLens StackContainer.sequence
+
+{-| Turns a block producer into a cursor feed that does not afford any way
+    to retrieve remainders
+
+This kind of feed may be useful where the upstream is 'Next' if you will never
+need to use the upstream again. It can also be useful when the upstream is a
+`Cursor` that you don't need to commit to, because once you're done using the
+private buffer, the upstream cursor can be reset to restore the blocks. -}
+
+privateBuffer :: Block block => TerminableStream block up =>
+    FeedPlus up action mode block
+privateBuffer = Pushback.Buffer.private >-> pushback

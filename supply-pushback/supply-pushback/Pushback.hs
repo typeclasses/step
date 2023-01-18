@@ -5,7 +5,7 @@ module Pushback
     {- * Stack -} {- $stack -} Stack, StackPlus,
             substateStack,
     {- * Buffer -} {- $buffer -} Buffer, BufferPlus,
-            substateBuffer,
+            substateBuffer, privateBuffer,
     {- * Stack container -} {- $stackContainer -}
             StackContainer (..), list, sequence,
     {- * Stack effect -} {- $stackEffect -}
@@ -76,3 +76,8 @@ substateStack :: MonadState state action =>
         --   (see "Pushback.StackContainer.Examples")
     -> StackPlus up action item
 substateStack = Stack.substate
+
+{-| Buffers pushed-back items using internal state that is
+    not accessible from without -}
+privateBuffer :: forall up action item. BufferPlus up action item
+privateBuffer = Buffer.private

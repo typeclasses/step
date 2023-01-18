@@ -1,4 +1,10 @@
-module Cursor.Interface.Type where
+module Cursor.Interface.Type
+  (
+    {- * The interface -} Cursor (..),
+    {- * Supporting types -} Mode (..), Advancement (..), Step (..),
+    {- * Aliases -} CursorRead, CursorWrite,
+  )
+  where
 
 import Integer (Positive)
 import Next.Interface (Step (..), TerminableStream (..))

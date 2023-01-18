@@ -36,6 +36,7 @@ library
         Cursor.Interface
         Cursor.Interface.Type
         Cursor.Interface.Class
+        Cursor.Interface.Utilities
 
         Cursor.Feed.Type
         Cursor.Feed.Examples
@@ -43,6 +44,11 @@ library
         Cursor.Transcoder.Type
 
         Cursor.Reader.Type
-        Cursor.Reader.Match
+        Cursor.Reader.Examples
+        Cursor.Reader.Utilities
 
         Cursor.ResetReader.Type
+
+        Cursor.Counting
+        Cursor.Counting.Type
+        Cursor.Counting.Examples

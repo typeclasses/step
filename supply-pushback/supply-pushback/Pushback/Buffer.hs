@@ -1,7 +1,7 @@
 module Pushback.Buffer
   (
     {- * Types -} Buffer, BufferPlus,
-    {- * Examples -} state, substate, effect,
+    {- * Examples -} state, substate, effect, private,
   )
   where
 

@@ -1,6 +1,6 @@
 module Pushback.Buffer.Examples
   (
-    {- * Examples -} state, substate, effect,
+    {- * Examples -} state, substate, effect, private,
   )
   where
 
@@ -11,6 +11,7 @@ import Pushback.Interface.Type
 
 import Control.Monad.State (MonadState)
 import Pushback.StackContainer (StackContainer)
+import SupplyChain (Vendor (Vendor), Referral (Referral))
 
 import qualified Next
 import qualified SupplyChain.Job as Job
@@ -56,3 +57,15 @@ substate :: MonadState state action =>
 substate containerLens container =
     effect $ StackEffect.state $
         StackContainer.zoom containerLens container
+
+{-| Buffers pushed-back items using internal state that is
+    not accessible from without -}
+private :: forall up action item. BufferPlus up action item
+private = go []
+  where
+    go :: [item] -> BufferPlus up action item
+    go b = Vendor \case
+        Next -> case b of
+            [] -> Job.order Next.next <&> \r -> Referral r (go b)
+            (x : xs) -> pure $ Referral (Item x) (go xs)
+        Push x -> pure $ Referral () (go (x : b))
