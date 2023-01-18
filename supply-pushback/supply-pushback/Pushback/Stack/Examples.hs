@@ -1,8 +1,6 @@
 module Pushback.Stack.Examples
   (
-    state,
-    substate,
-    effect,
+    {- * Examples -} state, substate, effect,
   )
   where
 

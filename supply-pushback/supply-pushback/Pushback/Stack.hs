@@ -1,7 +1,7 @@
 module Pushback.Stack
   (
     {- * Types -} Stack, StackPlus,
-    {- * Examples -} effect, state, substate,
+    {- * Examples -} state, substate, effect,
   )
   where
 

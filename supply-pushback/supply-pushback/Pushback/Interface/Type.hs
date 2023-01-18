@@ -1,7 +1,6 @@
 module Pushback.Interface.Type
   (
-    Pushback (..),
-    Step (..),
+    {- * Types -} Pushback (..), Step (..),
   )
   where
 

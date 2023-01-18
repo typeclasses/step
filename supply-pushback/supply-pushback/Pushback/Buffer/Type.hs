@@ -2,7 +2,7 @@
     one whose upstream interface is a "TerminableStream" -}
 module Pushback.Buffer.Type
   (
-    Buffer, BufferPlus,
+    {- * Types -} Buffer, BufferPlus,
   )
   where
 

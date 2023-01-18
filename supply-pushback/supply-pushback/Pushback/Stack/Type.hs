@@ -1,6 +1,6 @@
 module Pushback.Stack.Type
   (
-    Stack, StackPlus,
+    {- * Types -} Stack, StackPlus,
   )
   where
 
