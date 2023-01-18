@@ -11,22 +11,22 @@ import Cursor.Interface
 import Block.Class (Block)
 import Block.Class (Drop (..), drop)
 import Control.Monad.State (MonadState)
+import Control.Monad.State (StateT)
+import Control.Monad.Trans (lift)
 import Data.Sequence (Seq (..))
 import Integer (Positive)
 import Next (TerminableStream, Step (..))
 import Optics (Lens', assign, use, modifying, view)
-import SupplyChain (Job, Vendor (Vendor), Referral (Referral), (>->))
 import Pushback.Interface (PushbackStream, push)
-import Control.Monad.State (StateT)
-import Control.Monad.Trans (lift)
+import SupplyChain (Job, Vendor (Vendor), Referral (Referral), (>->))
 
-import qualified SupplyChain.Job as Job
-import qualified Data.Sequence as Seq
-import qualified Pushback.Buffer
 import qualified Control.Monad.State as State
-import qualified Pushback.StackContainer as StackContainer
-import qualified Pushback.Stack
+import qualified Data.Sequence as Seq
 import qualified Optics
+import qualified Pushback.Buffer
+import qualified Pushback.Stack
+import qualified Pushback.StackContainer as StackContainer
+import qualified SupplyChain.Job as Job
 
 {-| No input
 
