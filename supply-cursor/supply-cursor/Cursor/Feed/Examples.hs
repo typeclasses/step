@@ -22,13 +22,18 @@ import SupplyChain (Job, Vendor (Vendor), order, Referral (Referral), perform, (
 import Pushback.Interface (PushbackStream)
 
 import qualified SupplyChain.Vendor as Vendor
+import qualified SupplyChain.Job as Job
 import qualified Data.Sequence as Seq
 import qualified Next
 
 pushback ::
     Block block => MonadState state action => PushbackStream block up =>
     Lens' state (Seq block) -> FeedPlus up action 'Write block
-pushback = _
+pushback o =
+    Vendor \request -> Job.perform (use o) >>= \b ->
+        Vendor.handle (go (DoubleBuffer b b)) request
+  where
+    go _ = _
 
 {-| In-memory cursor feed that obtains its input from state -}
 produceFromState :: forall state up action block.
