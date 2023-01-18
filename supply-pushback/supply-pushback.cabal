@@ -19,7 +19,6 @@ library
 
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
-      , block-class ^>= 0.0
       , containers ^>= 0.6.5
       , hedgehog ^>= 1.2
       , integer-types ^>= 0.0
