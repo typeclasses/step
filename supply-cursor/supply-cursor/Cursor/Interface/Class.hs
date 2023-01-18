@@ -1,16 +1,14 @@
 module Cursor.Interface.Class
   (
-    IsCursor (..),
-    commit, reset, next,
+    {- * Class -} IsCursor (..),
+    {- * Requests -} commit, reset, next,
   )
   where
 
 import Cursor.Interface.Type
 
 import Integer (Positive)
-import Next (Step, TerminableStream)
-
-import qualified Next
+import Next (TerminableStream, next)
 
 class TerminableStream block interface =>
     IsCursor (mode :: Mode) block interface
@@ -26,6 +24,3 @@ commit x = liftCursor (Commit x)
 
 reset :: IsCursor mode block up => up ()
 reset = liftCursor Reset
-
-next :: IsCursor mode block up => up (Step block)
-next = Next.next

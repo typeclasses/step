@@ -1,7 +1,9 @@
 module Pushback.Interface
   (
-    module Pushback.Interface.Type,
+    {- * Types -} Pushback (..), Step (..),
+    {- * Class -} PushbackStream (..), next, push,
   )
   where
 
 import Pushback.Interface.Type
+import Pushback.Interface.Class

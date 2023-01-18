@@ -1,33 +1,50 @@
 module Pushback.Stack.Examples
   (
-    containerState,
+    state,
+    substate,
+    effect,
   )
   where
 
 import Essentials
-import Pushback.Interface
+import Pushback.Interface.Type
 import Pushback.Stack.Type
-import Pushback.Container
+import Pushback.StackEffect.Type
 
-import Next (Step (..))
 import Control.Monad.State (MonadState)
+import Pushback.StackContainer (StackContainer)
 
-import qualified Optics as O
+import qualified Pushback.StackContainer as StackContainer
+import qualified Pushback.StackEffect as StackEffect
 import qualified SupplyChain.Vendor as Vendor
+import qualified Optics as O
 
-containerState :: MonadState state action =>
-    StackContainer container item
-    -> O.Lens' state container
+effect :: Functor action =>
+    StackEffect action item   -- ^ Effectful push/pop operations
     -> StackPlus up action item
-containerState StackContainer{ push, pop } containerLens =
+effect StackEffect{ pop, push } =
     Vendor.action \case
-        Next -> do
-            container <- O.use containerLens
-            case pop container of
-                Nothing -> pure End
-                Just (x, xs) -> do
-                    O.assign' containerLens xs
-                    pure (Item x)
-        Push x -> do
-            container <- O.use containerLens
-            O.assign' containerLens (push x container)
+        Next -> pop <&> \case{ Nothing -> End; Just x -> Item x }
+        Push x -> push x
+
+{-| A stack that is stored entirely in memory, as the
+    state in a 'MonadState' context -}
+state :: MonadState container action =>
+    StackContainer container item
+        -- ^ Push/pop operations for the container
+        --   (see "Pushback.StackContainer.Examples")
+    -> StackPlus up action item
+state container = effect $ StackEffect.state $ container
+
+{-| A stack that is stored entirely in memory, as one part (identified
+    by a 'O.Lens'') of the state in a 'MonadState' context -}
+substate :: MonadState state action =>
+    O.Lens' state container
+        -- ^ Identifies where to store pushed-back items
+        --   within a larger state context
+    -> StackContainer container item
+        -- ^ Push/pop operations for the container
+        --   (see "Pushback.StackContainer.Examples")
+    -> StackPlus up action item
+substate containerLens container = state $
+    StackContainer.zoom containerLens container

@@ -35,9 +35,21 @@ library
 
         Pushback.Interface
         Pushback.Interface.Type
+        Pushback.Interface.Class
 
         Pushback.Stack
         Pushback.Stack.Type
         Pushback.Stack.Examples
 
-        Pushback.Container
+        Pushback.Buffer
+        Pushback.Buffer.Type
+        Pushback.Buffer.Examples
+
+        Pushback.StackContainer
+        Pushback.StackContainer.Type
+        Pushback.StackContainer.Examples
+        Pushback.StackContainer.Utilities
+
+        Pushback.StackEffect
+        Pushback.StackEffect.Type
+        Pushback.StackEffect.Examples
