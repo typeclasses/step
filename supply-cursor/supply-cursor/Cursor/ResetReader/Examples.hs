@@ -1,7 +1,7 @@
 module Cursor.ResetReader.Examples
   (
-    takePositive,
-    takeNatural,
+    {- * Fixed length -} takePositive, takeNatural,
+    {- * Amount remaining -} atEnd,
   )
   where
 
@@ -43,3 +43,6 @@ takeNatural :: forall up action block. Natural
 takeNatural n = Integer.narrow n & \case
     Just p -> takePositive p
     Nothing -> pure (AdvanceSuccess, Seq.empty)
+
+atEnd :: ResetReaderPlus up action mode block Bool
+atEnd = ResetReader $ order next <&> \case{ End -> True; Item _ -> False }
