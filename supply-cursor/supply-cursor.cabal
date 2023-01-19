@@ -45,10 +45,15 @@ library
         Cursor.Transcoder.Type
 
         Cursor.Reader.Type
+        Cursor.Reader.Examples
 
         Cursor.ResetReader.Type
         Cursor.ResetReader.Examples
+        Cursor.ResetReader.Examples.AmountRemaining
+        Cursor.ResetReader.Examples.Take
         Cursor.ResetReader.Utilities
+        Cursor.ResetReader.Utilities.LookAhead
+        Cursor.ResetReader.Utilities.With
 
         Cursor.Counting
         Cursor.Counting.Type
