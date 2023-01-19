@@ -1,4 +1,4 @@
-module Cursor.Reader.Examples
+module Cursor.ResetReader.Examples
   (
     takePositive,
     takeNatural,
@@ -8,20 +8,21 @@ module Cursor.Reader.Examples
 import Essentials
 import Cursor.Interface.Type
 import Cursor.Reader.Type
+import Cursor.ResetReader.Type
 
 import Block.Class (Take (..))
 import Data.Sequence (Seq (..))
 import SupplyChain (order)
 import Integer (Positive, Natural)
-import Cursor.Interface (next, commit, reset)
+import Cursor.Interface (next, commit)
 
 import qualified Data.Sequence as Seq
 import qualified Block.Class as Block
 import qualified Integer
 
 takePositive :: forall up action block. Positive
-    -> ReaderPlus up action 'Write block (Advancement, Seq block)
-takePositive = \n -> go n <* order reset
+    -> ResetReaderPlus up action 'Write block (Advancement, Seq block)
+takePositive = \n -> ResetReader (go n)
   where
     go :: Positive -> ReaderPlus up action 'Write block (Advancement, Seq block)
     go n = order next >>= \case
@@ -37,8 +38,8 @@ takePositive = \n -> go n <* order reset
                 _ <- order (commit (Block.length x))
                 go takeShortfall <&> \(a, xs) -> (a, x :<| xs)
 
-takeNatural:: forall up action block. Natural
-    -> ReaderPlus up action 'Write block (Advancement, Seq block)
+takeNatural :: forall up action block. Natural
+    -> ResetReaderPlus up action 'Write block (Advancement, Seq block)
 takeNatural n = Integer.narrow n & \case
     Just p -> takePositive p
     Nothing -> pure (AdvanceSuccess, Seq.empty)
