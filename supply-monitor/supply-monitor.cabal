@@ -1,0 +1,24 @@
+cabal-version: 3.0
+
+name: supply-monitor
+version: 0.0.0.0
+
+library
+    default-language: GHC2021
+    ghc-options: -Wall
+    default-extensions:
+        BlockArguments
+        LambdaCase
+        NoImplicitPrelude
+    hs-source-dirs: supply-monitor
+    build-depends:
+      , quaalude ^>= 0.0
+      , supply-chain ^>= 0.0
+    exposed-modules:
+        Monitor
+        Monitor.Interface
+        Monitor.Interface.Type
+        Monitor.Recording
+        Monitor.Recording.Type
+        Monitor.Recording.Vendor
+        Monitor.Recording.Utilities

@@ -4,6 +4,7 @@ packages:
   , block-gen
   , block-text
   , supply-cursor
+  , supply-monitor
   , supply-pushback
 
 with-compiler: ghc-9.2.4

@@ -28,6 +28,7 @@ library
       , optics ^>= 0.4.2
       , quaalude ^>= 0.0
       , supply-chain ^>= 0.0
+      , supply-monitor ^>= 0.0
       , supply-next == 0.0.1.*
       , supply-pushback ^>= 0.0
       , text ^>= 1.2.4 || ^>= 2.0
@@ -54,7 +55,3 @@ library
         Cursor.ResetReader.Utilities
         Cursor.ResetReader.Utilities.LookAhead
         Cursor.ResetReader.Utilities.With
-
-        Cursor.Counting
-        Cursor.Counting.Type
-        Cursor.Counting.Examples
