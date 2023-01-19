@@ -1,7 +1,6 @@
 module Cursor.Reader.Utilities
   (
-    {- * Reader utilities -}
-    withBlocks, withLength,
+    {- * Reader utilities -} withBlocks, withLength,
   )
   where
 
@@ -19,6 +18,7 @@ import SupplyChain ((>->), (>-), order)
 import qualified Cursor.Feed.Examples as Feed
 import qualified SupplyChain.Vendor as Vendor
 
+{-| Augments a reader's result with the exact input that was committed over -}
 withBlocks :: Reader action 'Write block product
     -> ReaderPlus up action 'Write block (Seq block, product)
 withBlocks x = do
@@ -26,6 +26,7 @@ withBlocks x = do
     (_, blocks) <- takeNatural length
     pure (blocks, product)
 
+{-| Augments a reader's result with the amount of input that is committed -}
 withLength :: Reader action 'Write block product
     -> ReaderPlus up action 'Write block (Natural, product)
 withLength x =
