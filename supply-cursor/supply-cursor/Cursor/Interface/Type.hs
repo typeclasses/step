@@ -6,6 +6,7 @@ module Cursor.Interface.Type
   )
   where
 
+import Cursor.Advancement.Type (Advancement (..))
 import Integer (Positive)
 import Next.Interface (Step (..), TerminableStream (..))
 
@@ -23,10 +24,6 @@ type CursorRead block product =
 
 type CursorWrite block product =
     forall mode. Cursor mode block product
-
-data Advancement =
-    AdvanceSuccess
-  | YouCanNotAdvance{ shortfall :: Positive }
 
 instance TerminableStream block (Cursor mode block) where
     liftNext Next.Next = Next

@@ -37,7 +37,10 @@ library
         Cursor.Interface
         Cursor.Interface.Type
         Cursor.Interface.Class
-        Cursor.Interface.Utilities
+
+        Cursor.Advancement
+        Cursor.Advancement.Type
+        Cursor.Advancement.Utilities
 
         Cursor.Feed.Type
         Cursor.Feed.Examples

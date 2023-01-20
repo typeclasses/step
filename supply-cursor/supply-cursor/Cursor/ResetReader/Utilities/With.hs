@@ -8,11 +8,12 @@ import Essentials
 import Cursor.ResetReader.Type
 import Cursor.Interface.Type
 
+import Cursor.Advancement (minusShortfall)
 import Cursor.ResetReader.Examples.Take (takeNatural)
 import Data.Sequence (Seq)
 import Integer (Natural)
 import SupplyChain ((>-))
-import Prelude ((+), (-))
+import Prelude ((+))
 
 import qualified Cursor.Feed.Examples as Feed
 import qualified Monitor
@@ -48,8 +49,3 @@ lengthRecording = Monitor.Recording
               runningTotal & (+) (Positive.toNatural n) & minusShortfall advancement
     , Monitor.extract = \SupplyChain.Unit -> pure
     }
-
-minusShortfall :: Advancement -> Natural -> Natural
-minusShortfall = \case
-    AdvanceSuccess -> id
-    YouCanNotAdvance{ shortfall } -> \x -> x - Positive.toNatural shortfall

@@ -22,6 +22,7 @@ import Next (TerminableStream)
 import Optics (assign, use, modifying, view)
 import Pushback.Interface (PushbackStream, push)
 import SupplyChain (Job, Vendor (Vendor), Referral (Referral))
+import Cursor.Advancement (commitAlternative)
 
 import qualified Control.Monad.State as State
 import qualified Data.Sequence as Seq
