@@ -1,28 +1,28 @@
-module Cursor.ResetReader.Examples.AmountRemaining where
+module Cursor.Reader.Examples.AmountRemaining where
 
 import Essentials
 import Cursor.Interface.Type
-import Cursor.ResetReader.Type
-import Cursor.ResetReader.Examples.Take
+import Cursor.Reader.Type
+import Cursor.Reader.Examples.Take
 
-import Cursor.ResetReader.Utilities (lookAhead)
+import Cursor.Reader.Utilities (lookAhead)
 import SupplyChain (order)
 import Integer (Positive, Natural)
 import Cursor.Interface (next)
 
 import qualified Integer
 
-atEnd :: ResetReaderPlus up action mode block Bool
-atEnd = ResetReader $ order next <&> \case{ End -> True; Item _ -> False }
+atEnd :: ReaderPlus up action mode block Bool
+atEnd = Reader $ order next <&> \case{ End -> True; Item _ -> False }
 
 remainsAtLeastNatural :: Natural
-    -> ResetReaderPlus up action mode block Bool
+    -> ReaderPlus up action mode block Bool
 remainsAtLeastNatural n = Integer.narrow n & \case
     Just p -> remainsAtLeastPositive p
     Nothing -> pure True
 
 remainsAtLeastPositive :: Positive
-    -> ResetReaderPlus up action mode block Bool
+    -> ReaderPlus up action mode block Bool
 remainsAtLeastPositive n =
     lookAhead (takePositive n) <&> \(a, _) -> case a of
         AdvanceSuccess -> True

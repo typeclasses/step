@@ -50,11 +50,8 @@ library
 
         Cursor.Reader.Type
         Cursor.Reader.Examples
-
-        Cursor.ResetReader.Type
-        Cursor.ResetReader.Examples
-        Cursor.ResetReader.Examples.AmountRemaining
-        Cursor.ResetReader.Examples.Take
-        Cursor.ResetReader.Utilities
-        Cursor.ResetReader.Utilities.LookAhead
-        Cursor.ResetReader.Utilities.With
+        Cursor.Reader.Examples.AmountRemaining
+        Cursor.Reader.Examples.Take
+        Cursor.Reader.Utilities
+        Cursor.Reader.Utilities.LookAhead
+        Cursor.Reader.Utilities.With

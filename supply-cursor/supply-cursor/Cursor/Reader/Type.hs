@@ -1,19 +1,33 @@
 module Cursor.Reader.Type where
 
-import Block.Class (Block)
-import Cursor.Interface (Cursor, IsCursor)
-import SupplyChain (Job)
+import Essentials
+import SupplyChain
+import Cursor.Interface
+import Block.Class
 
-{-| A job whose upstream interface is 'Cursor'
+import qualified Control.Monad as Monad
 
-A good reader should generally 'Reset' at the end. -}
+{-| A job with a resettable upstream interface, with the additional implication
+    that a resetting sequence is implicitly preceded and followed by a 'reset'
+
+Sequencing operations like '(<*>)' and '(>>=)' insert resets between the operations.
+(The implicit resets and the idempotency of 'reset' are essential to arguing that
+the 'Applicative' and 'Monad' class laws are sufficiently respected.) -}
+newtype ReaderPlus up action mode block product =
+    Reader{ reader ::
+        Block block => IsCursor mode block up =>
+            Job up action product }
+    deriving stock Functor
+
 type Reader action mode block product =
-    Block block =>
-        Job (Cursor mode block) action product
+    ReaderPlus (Cursor mode block) action mode block product
 
-{-| Like 'Reader', but with a polymorphic upstream interface
+instance Applicative (ReaderPlus up action mode block) where
+    pure x = Reader (pure x)
+    (<*>) = Monad.ap
 
-A good reader should generally 'Reset' at the end. -}
-type ReaderPlus up action mode block product =
-    Block block => IsCursor mode block up =>
-        Job up action product
+instance Monad (ReaderPlus up action mode block) where
+    step1 >>= step2 = Reader do
+        x <- reader step1
+        order reset
+        reader (step2 x)

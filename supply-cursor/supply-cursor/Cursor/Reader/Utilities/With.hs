@@ -1,15 +1,15 @@
-module Cursor.ResetReader.Utilities.With
+module Cursor.Reader.Utilities.With
   (
     withBlocks, withLength,
   )
   where
 
 import Essentials
-import Cursor.ResetReader.Type
+import Cursor.Reader.Type
 import Cursor.Interface.Type
 
 import Cursor.Advancement (minusShortfall)
-import Cursor.ResetReader.Examples.Take (takeNatural)
+import Cursor.Reader.Examples.Take (takeNatural)
 import Data.Sequence (Seq)
 import Integer (Natural)
 import SupplyChain ((>-))
@@ -21,19 +21,19 @@ import qualified Integer.Positive as Positive
 import qualified SupplyChain
 
 {-| Augments a reader's result with the exact input that was committed over -}
-withBlocks :: ResetReader action 'Write block product
-    -> ResetReaderPlus up action 'Write block (Seq block, product)
-withBlocks (ResetReader x) = do
-    (length, product) <- ResetReader $
+withBlocks :: Reader action 'Write block product
+    -> ReaderPlus up action 'Write block (Seq block, product)
+withBlocks (Reader x) = do
+    (length, product) <- Reader $
         Feed.privateBuffer >- Monitor.withRecord lengthRecording x
     (_, blocks) <- takeNatural length
     pure (blocks, product)
 
 {-| Augments a reader's result with the amount of input that is committed -}
-withLength :: ResetReader action 'Write block product
-    -> ResetReaderPlus up action 'Write block (Natural, product)
-withLength (ResetReader x) = do
-    (length, product) <- ResetReader $
+withLength :: Reader action 'Write block product
+    -> ReaderPlus up action 'Write block (Natural, product)
+withLength (Reader x) = do
+    (length, product) <- Reader $
         Feed.privateBuffer >- Monitor.withRecord lengthRecording x
     _ <- takeNatural length
     pure (length, product)
