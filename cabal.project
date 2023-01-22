@@ -1,9 +1,9 @@
 packages:
-    block-class
+    block-chain
+  , block-class
   , block-listlike
   , block-gen
   , block-text
-  , supply-cursor
   , supply-monitor
   , supply-pushback
 
