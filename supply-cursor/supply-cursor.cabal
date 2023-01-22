@@ -55,5 +55,3 @@ library
         Cursor.Reader.Utilities
         Cursor.Reader.Utilities.LookAhead
         Cursor.Reader.Utilities.With
-
-        Cursor.Atom.Type
