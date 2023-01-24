@@ -3,11 +3,9 @@ cabal-version: 3.0
 name: block-chain
 version: 0.0.0.0
 
-library
+common base
     default-language: GHC2021
     ghc-options: -Wall
-    hs-source-dirs: block-chain
-
     default-extensions:
         BlockArguments
         DataKinds
@@ -17,7 +15,6 @@ library
         NoImplicitPrelude
         PatternSynonyms
         TypeFamilies
-
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0
@@ -33,6 +30,9 @@ library
       , supply-pushback ^>= 0.0
       , text ^>= 1.2.4 || ^>= 2.0
 
+library
+    import: base
+    hs-source-dirs: block-chain
     exposed-modules:
         Cursor.Interface
         Cursor.Interface.Type
@@ -60,3 +60,17 @@ library
         Cursor.Atom
         Cursor.Atom.Type
         Cursor.Atom.Examples
+
+test-suite test-block-chain
+    import: base
+    type: exitcode-stdio-1.0
+    default-extensions:
+        OverloadedStrings
+    hs-source-dirs: test-block-chain
+    main-is: Main.hs
+    build-depends:
+      , block-chain
+      , block-gen
+      , block-text
+      , hspec
+      , hspec-hedgehog
