@@ -1,6 +1,6 @@
 module Cursor.Reader.Type
   (
-    Reader, ReaderPlus (..), Atom, AtomPlus (..),
+    Reader, ReaderPlus (..),
   )
   where
 
@@ -35,9 +35,3 @@ instance Monad (ReaderPlus up action mode block) where
         x <- reader step1
         order reset
         reader (step2 x)
-
-newtype AtomPlus up action block fallible product =
-    Atom (ReaderPlus up action 'Read block (fallible (ReaderPlus up action 'Write block product)))
-
-type Atom action block fallible product =
-    forall up. AtomPlus up action block fallible product

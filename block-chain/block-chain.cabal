@@ -37,6 +37,7 @@ library
         Cursor.Interface
         Cursor.Interface.Type
         Cursor.Interface.Class
+        Cursor.Interface.Orders
 
         Cursor.Advancement
         Cursor.Advancement.Type
@@ -55,3 +56,7 @@ library
         Cursor.Reader.Utilities
         Cursor.Reader.Utilities.LookAhead
         Cursor.Reader.Utilities.With
+
+        Cursor.Atom
+        Cursor.Atom.Type
+        Cursor.Atom.Examples
