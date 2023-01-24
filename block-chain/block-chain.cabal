@@ -60,6 +60,7 @@ library
         Cursor.Atom
         Cursor.Atom.Type
         Cursor.Atom.Examples
+        Cursor.Atom.Utilities
 
 test-suite test-block-chain
     import: base

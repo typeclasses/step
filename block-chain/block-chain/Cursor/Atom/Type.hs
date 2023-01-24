@@ -11,7 +11,7 @@ import Data.Either (Either (..))
 import Cursor.Reader.Type (ReaderPlus (..))
 
 newtype AtomPlus up action block error product = Atom
-  ( ReaderPlus up action 'Read block
+  ( forall mode. ReaderPlus up action mode block
     ( Either error (ReaderPlus up action 'Write block product)
     )
   )
