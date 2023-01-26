@@ -18,6 +18,7 @@ common base
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0
+      , bytestring ^>= 0.11.4
       , containers ^>= 0.6.5
       , hedgehog ^>= 1.2
       , integer-types ^>= 0.0
@@ -47,7 +48,9 @@ library
         Cursor.Feed.Examples
         Cursor.Feed.Examples.Pushback
 
+        Cursor.Transcoder
         Cursor.Transcoder.Type
+        Cursor.Transcoder.Examples
 
         Cursor.Reader.Type
         Cursor.Reader.Examples
