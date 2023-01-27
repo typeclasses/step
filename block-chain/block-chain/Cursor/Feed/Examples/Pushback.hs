@@ -10,7 +10,7 @@ module Cursor.Feed.Examples.Pushback
 
 import Essentials
 import Cursor.Feed.Type
-import Cursor.Interface
+import Cursor.Interface.Type
 
 import Block.Class (Block)
 import Block.Class (Drop (..), drop)
@@ -24,6 +24,7 @@ import Pushback.Interface (PushbackStream, push)
 import SupplyChain (Job, Vendor (Vendor), Referral (Referral))
 import Cursor.Advancement (commitAlternative)
 
+import qualified Next
 import qualified Control.Monad.State as State
 import qualified Data.Sequence as Seq
 import qualified Optics
@@ -52,28 +53,39 @@ unviewed    = Optics.lens bufferUnviewed    \s a -> s{ bufferUnviewed    = a }
 
 Behaviors:
 
-- 'Next'   - First try 'nextFromBuffer'. If that fails because the 'unviewed'
-             is empty, then try 'nextFromUpstream'.
+- 'Next' - First try 'nextFromBuffer'. If that fails because the 'unviewed'
+  is empty, then try 'nextFromUpstream'.
 - 'Commit' - First try 'commitFromBuffer'. If the 'uncommitted' buffer is
-             insufficient to complete the commit, then try 'commitFromUpstream'.
-- 'Reset'  - Push any 'uncommitted' input back upstream, then empty both buffers. -}
-pushback :: forall up block action mode. PushbackStream block up =>
-    FeedPlus up action mode block
-pushback = start :: FeedPlus up action mode block
-  where
-    start = go (Buffer mempty mempty)
+  insufficient to complete the commit, then try 'commitFromUpstream'.
+- 'Reset' or 'Flush' - Push any 'uncommitted' input back upstream, then empty both buffers. -}
+pushback :: PushbackStream block up => FeedPlus up action mode block
+pushback = pushback' (Buffer mempty mempty)
 
-    go :: Buffer block -> FeedPlus up action mode block
-    go s = Vendor \case
-        Next -> do
-            (xm, s') <- State.runStateT (maybeAlternative nextFromBuffer nextFromUpstream) s
-            pure $ Referral (maybe End Item xm) (go s')
-        Commit n -> do
-            (r, s') <- State.runStateT (commitAlternative commitFromBuffer commitFromUpstream n) s
-            pure $ Referral r (go s')
-        Reset -> do
-            Seq.reverse (view uncommitted s) & traverse_ \b -> Job.order (push b)
-            pure $ Referral () start
+pushback' :: PushbackStream block up =>
+    Buffer block -> FeedPlus up action mode block
+pushback' s = Vendor \case
+    Next -> next s
+    Commit n -> commit s n
+    Reset -> flush s
+    Flush -> flush s
+
+next :: PushbackStream block up => Block block => Buffer block
+    -> Job up action (Referral up (Cursor mode block) action (Step block))
+next s = do
+    (xm, s') <- State.runStateT (maybeAlternative nextFromBuffer nextFromUpstream) s
+    pure $ Referral (maybe End Item xm) (pushback' s')
+
+flush :: PushbackStream block up => Block block => Buffer block
+    -> Job up action (Referral up (Cursor mode block) action ())
+flush s = do
+    Seq.reverse (view uncommitted s) & traverse_ \b -> Job.order (push b)
+    pure $ Referral () pushback
+
+commit :: PushbackStream block up => Block block => Buffer block -> Positive
+    -> Job up action (Referral up (Cursor mode block) action Advancement)
+commit s n = do
+    (r, s') <- State.runStateT (commitAlternative commitFromBuffer commitFromUpstream n) s
+    pure $ Referral r (pushback' s')
 
 {-| Tries to pop the head off of the 'unviewed' buffer -}
 nextFromBuffer :: StateT (Buffer block) (Job up action) (Maybe block)
@@ -86,7 +98,7 @@ nextFromBuffer = use unviewed >>= \case
 If a new block is obtained, it is appended to the 'uncommitted' buffer. -}
 nextFromUpstream :: TerminableStream block up =>
     StateT (Buffer block) (Job up action) (Maybe block)
-nextFromUpstream = lift (Job.order next) >>= \case
+nextFromUpstream = lift (Job.order Next.next) >>= \case
     End -> pure Nothing
     Item x -> modifying uncommitted (:|> x) $> Just x
 
@@ -109,7 +121,7 @@ If a block is obtained from upstream and only partially committed, its
 remainder becomes the new content of the 'uncommitted' buffer. -}
 commitFromUpstream :: Block block => TerminableStream block up =>
     Positive -> StateT (Buffer block) (Job up action) Advancement
-commitFromUpstream n = lift (Job.order next) >>= \case
+commitFromUpstream n = lift (Job.order Next.next) >>= \case
     End -> pure YouCanNotAdvance{ shortfall = n }
     Item x -> do
         modifying unviewed (:|> x)

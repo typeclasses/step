@@ -51,6 +51,7 @@ library
         Cursor.Transcoder
         Cursor.Transcoder.Type
         Cursor.Transcoder.Examples
+        Cursor.Transcoder.Usage
 
         Cursor.Reader.Type
         Cursor.Reader.Examples

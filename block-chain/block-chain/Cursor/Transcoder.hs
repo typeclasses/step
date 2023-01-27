@@ -7,3 +7,4 @@ module Cursor.Transcoder
 
 import Cursor.Transcoder.Type
 import Cursor.Transcoder.Examples
+import Cursor.Transcoder.Usage

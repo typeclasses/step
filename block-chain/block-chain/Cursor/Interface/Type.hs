@@ -15,9 +15,14 @@ import qualified Next
 data Mode = Read | Write
 
 data Cursor (mode :: Mode) block product =
-    ( product ~ Step block                 ) => Next
-  | ( product ~ ()                         ) => Reset
-  | ( product ~ Advancement, mode ~ 'Write ) => Commit Positive
+    (product ~ Step block) => Next
+        -- ^ Fetch the next block, moving the view cursor forward
+  | (product ~ Advancement, mode ~ 'Write ) => Commit Positive
+        -- ^ Move the commit cursor forward
+  | (product ~ ()) => Reset
+        -- ^ Move the view cursor to the commit cursor
+  | (product ~ ()) => Flush
+        -- ^ 'Reset' and also make externally visible any buffered effects
 
 type CursorRead block product =
     Cursor 'Read block product

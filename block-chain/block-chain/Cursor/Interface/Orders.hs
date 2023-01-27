@@ -17,6 +17,9 @@ next = order Cursor.next
 reset :: IsCursor mode block up => Job up action ()
 reset = order Cursor.reset
 
+flush :: IsCursor mode block up => Job up action ()
+flush = order Cursor.flush
+
 commitPositive :: IsCursor 'Write block up => Positive -> Job up action Advancement
 commitPositive n = order (Cursor.commit n)
 

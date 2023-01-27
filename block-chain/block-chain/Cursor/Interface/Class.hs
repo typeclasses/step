@@ -1,7 +1,7 @@
 module Cursor.Interface.Class
   (
     {- * Class -} IsCursor (..),
-    {- * Requests -} commit, reset, next,
+    {- * Requests -} commit, reset, next, flush,
   )
   where
 
@@ -24,3 +24,6 @@ commit x = liftCursor (Commit x)
 
 reset :: IsCursor mode block up => up ()
 reset = liftCursor Reset
+
+flush :: IsCursor mode block up => up ()
+flush = liftCursor Flush

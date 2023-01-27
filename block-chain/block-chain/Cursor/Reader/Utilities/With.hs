@@ -44,6 +44,7 @@ lengthRecording = Monitor.Recording
     { Monitor.initial = 0
     , Monitor.step = \case
           Reset -> \_ -> pure
+          Flush -> \_ -> pure
           Next -> \_ -> pure
           Commit n -> \advancement runningTotal -> pure $
               runningTotal & (+) (Positive.toNatural n) & minusShortfall advancement
