@@ -1,6 +1,6 @@
-module Cursor.Transcoder.Type
+module Cursor.Morph.Type
   (
-    {- * Types -} Transcoder, TranscoderPlus,
+    {- * Types -} Morph, MorphPlus,
   )
   where
 
@@ -8,10 +8,10 @@ import Block.Class (Block)
 import Cursor.Interface (Cursor, Mode, IsCursor)
 import SupplyChain (Vendor)
 
-type Transcoder action (mode :: Mode) block1 block2 =
+type Morph action (mode :: Mode) block1 block2 =
     Block block1 => Block block2 =>
         Vendor (Cursor mode block1) (Cursor mode block2) action
 
-type TranscoderPlus up action (mode :: Mode) block1 block2 =
+type MorphPlus up action (mode :: Mode) block1 block2 =
     Block block1 => Block block2 => IsCursor mode block1 up =>
         Vendor up (Cursor mode block2) action
