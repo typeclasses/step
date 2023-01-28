@@ -48,6 +48,9 @@ library
         Cursor.Feed.Examples
         Cursor.Feed.Examples.Pushback
 
+        Cursor.Decode.Type
+        Cursor.Decode.Examples
+
         Cursor.Morph
         Cursor.Morph.Type
         Cursor.Morph.Examples

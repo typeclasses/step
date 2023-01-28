@@ -1,15 +1,18 @@
 module Cursor.Morph.Examples
   (
-    {- * Transformations -} decodeUtf8,
+    {- * Transformations -} decode,
   )
   where
 
 import Essentials
 import Cursor.Morph.Type
 import Cursor.Interface
+import Cursor.Decode.Type
 
 import Data.Text (Text)
 import Data.ByteString (ByteString)
 
-decodeUtf8 :: MorphPlus up action 'Write ByteString Text
-decodeUtf8 = _
+decode ::
+    Decode a b -- ^ See "Cursor.Decode.Examples"
+    -> MorphPlus up action 'Write a b
+decode = _
