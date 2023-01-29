@@ -7,13 +7,13 @@ module Block.Sequence.Type
 import Essentials
 import Block.Class
 
-import Block.ListLike (NonEmptyListLike)
+import Block.ListLike (LL1)
 import Data.Coerce (coerce)
 import Data.Sequence (Seq)
 
 import qualified Block.Class as Block
 
-newtype Seq1 a = Seq1 (NonEmptyListLike (Seq a))
+newtype Seq1 a = Seq1 (LL1 (Seq a))
     deriving stock (Eq, Ord, Show)
 
 instance Semigroup (Seq1 a) where
@@ -29,12 +29,12 @@ type instance Nullable (Seq1 a) = Seq a
 
 instance Block (Seq1 a) where
 
-    -- All just coercions of NonEmptyListLike methods
-    concat = coerce . concat @(NonEmptyListLike (Seq a)) . coerce
-    leftView = (\(Pop i r) -> Pop i (coerce r)) . leftView @(NonEmptyListLike (Seq a)) . coerce
-    span p = fmap coerce . span @(NonEmptyListLike (Seq a)) p . coerce
-    split n = fmap coerce . split @(NonEmptyListLike (Seq a)) n . coerce
-    take n = fmap coerce . take @(NonEmptyListLike (Seq a)) n . coerce
-    drop n = fmap coerce . drop @(NonEmptyListLike (Seq a)) n . coerce
-    while p = fmap coerce . while @(NonEmptyListLike (Seq a)) p . coerce
-    length = length @(NonEmptyListLike (Seq a)) . coerce
+    -- All just coercions of LL1 methods
+    concat = coerce . concat @(LL1 (Seq a)) . coerce
+    leftView = (\(Pop i r) -> Pop i (coerce r)) . leftView @(LL1 (Seq a)) . coerce
+    span p = fmap coerce . span @(LL1 (Seq a)) p . coerce
+    split n = fmap coerce . split @(LL1 (Seq a)) n . coerce
+    take n = fmap coerce . take @(LL1 (Seq a)) n . coerce
+    drop n = fmap coerce . drop @(LL1 (Seq a)) n . coerce
+    while p = fmap coerce . while @(LL1 (Seq a)) p . coerce
+    length = length @(LL1 (Seq a)) . coerce

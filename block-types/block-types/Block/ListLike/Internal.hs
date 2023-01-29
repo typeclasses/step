@@ -23,38 +23,38 @@ import qualified Data.ListLike as LL
 import qualified Integer.Positive as Positive
 import qualified Integer
 
-data NonEmptyListLike c = NonEmptyListLike
+data LL1 c = LL1
     { generalize :: !c
     , length :: !Positive
     }
 
-instance (IsString c, ListLike c (Item c)) => IsString (NonEmptyListLike c) where
+instance (IsString c, ListLike c (Item c)) => IsString (LL1 c) where
     fromString x =
-        fromMaybe (error "NonEmptyListLike fromString: empty") $
+        fromMaybe (error "LL1 fromString: empty") $
             refine (fromString x)
 
-instance Semigroup c => Semigroup (NonEmptyListLike c) where
-    NonEmptyListLike c1 l1 <> NonEmptyListLike c2 l2 =
-        NonEmptyListLike (c1 <> c2) (l1 + l2)
+instance Semigroup c => Semigroup (LL1 c) where
+    LL1 c1 l1 <> LL1 c2 l2 =
+        LL1 (c1 <> c2) (l1 + l2)
 
-type instance Nullable (NonEmptyListLike c) = c
+type instance Nullable (LL1 c) = c
 
-instance (Monoid c, ListLike c (Item c)) => Trivializable (NonEmptyListLike c) where
-    refine c = Positive.fromInt (LL.length c) <&> \l -> NonEmptyListLike c l
+instance (Monoid c, ListLike c (Item c)) => Trivializable (LL1 c) where
+    refine c = Positive.fromInt (LL.length c) <&> \l -> LL1 c l
     generalize = generalize
 
-instance Eq c => Eq (NonEmptyListLike c) where
+instance Eq c => Eq (LL1 c) where
     (==) = (==) `on` generalize
 
-instance Ord c => Ord (NonEmptyListLike c) where
+instance Ord c => Ord (LL1 c) where
     compare = compare `on` generalize
 
-instance Show c => Show (NonEmptyListLike c) where
+instance Show c => Show (LL1 c) where
     showsPrec p = showsPrec p . generalize
 
-type instance Block.Item (NonEmptyListLike c) = Item c
+type instance Block.Item (LL1 c) = Item c
 
-instance (ListLike c (Item c)) => Block (NonEmptyListLike c) where
+instance (ListLike c (Item c)) => Block (LL1 c) where
 
     length = length
 
@@ -105,9 +105,9 @@ instance (ListLike c (Item c)) => Block (NonEmptyListLike c) where
             { popItem = x
             , popRemainder =
                 case Positive.subtract (length a) Positive.one of
-                    Plus n -> Just (NonEmptyListLike b n )
+                    Plus n -> Just (LL1 b n )
                     _ -> Nothing
             }
 
-assume :: ListLike c (Item c) => c -> NonEmptyListLike c
-assume c = NonEmptyListLike c $ Integer.yolo $ LL.length c
+assume :: ListLike c (Item c) => c -> LL1 c
+assume c = LL1 c $ Integer.yolo $ LL.length c

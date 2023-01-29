@@ -1,6 +1,6 @@
 module Block.ListLike.Type
   (
-    {- * Type -} NonEmptyListLike,
+    {- * Type -} LL1,
   )
   where
 
