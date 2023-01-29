@@ -1,6 +1,6 @@
 cabal-version: 3.0
 
-name: block-text
+name: block-types
 version: 0.0.0.0
 
 license: Apache-2.0
@@ -25,19 +25,38 @@ common base
         PatternSynonyms
         TypeFamilies
         ViewPatterns
+        BlockArguments
+        DataKinds
+        DerivingStrategies
+        FunctionalDependencies
+        ImpredicativeTypes
+        LambdaCase
+        NoImplicitPrelude
+        NoMonomorphismRestriction
+        PatternSynonyms
+        TypeFamilies
+        ViewPatterns
 
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0
-      , block-listlike ^>= 0.0
+      , integer-types ^>= 0.0
+      , ListLike ^>= 4.7.8
+      , quaalude ^>= 0.0
+      , base ^>= 4.16 || ^>= 4.17
+      , block-class ^>= 0.0
       , integer-types ^>= 0.0
       , quaalude ^>= 0.0
       , text ^>= 1.2.4 || ^>= 2.0
 
 library
     import: base
-    hs-source-dirs: block-text
+    hs-source-dirs: block-types
     exposed-modules:
+        Block.ListLike
+        Block.ListLike.Type
+        Block.ListLike.Unsafe
+
         Block.Text
         Block.Text.Type
         Block.Text.Equivalence

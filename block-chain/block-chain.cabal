@@ -79,6 +79,6 @@ test-suite test-block-chain
     build-depends:
       , block-chain
       , block-gen
-      , block-text
+      , block-types
       , hspec
       , hspec-hedgehog
