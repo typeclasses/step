@@ -64,3 +64,6 @@ library
         Block.Text.Type
         Block.Text.Equivalence
         Block.Text.Unsafe
+
+    other-modules:
+        Block.ListLike.Internal
