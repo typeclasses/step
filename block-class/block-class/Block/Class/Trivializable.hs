@@ -11,5 +11,8 @@ class (Block c, Monoid (Nullable c)) => Trivializable c where
 
     generalize :: c -> Nullable c
 
+    {-| Defined only where 'refine' produces 'Just' -}
+    assume :: Nullable c -> c
+
 concatTrivialize :: Trivializable c => [c] -> Nullable c
 concatTrivialize = concatMaybe >>> maybe mempty generalize

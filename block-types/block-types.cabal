@@ -56,14 +56,12 @@ library
     exposed-modules:
         Block.ListLike
         Block.ListLike.Type
-        Block.ListLike.Unsafe
 
         Block.Sequence.Type
 
         Block.Text
         Block.Text.Type
         Block.Text.Equivalence
-        Block.Text.Unsafe
 
     other-modules:
         Block.ListLike.Internal

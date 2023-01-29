@@ -22,6 +22,7 @@ instance Semigroup (Seq1 a) where
 instance Trivializable (Seq1 a) where
     refine = fmap Seq1 . refine
     generalize (Seq1 x) = generalize x
+    assume = Seq1 . assume
 
 type instance Block.Item (Seq1 a) = a
 

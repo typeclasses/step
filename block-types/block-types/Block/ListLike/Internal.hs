@@ -42,6 +42,7 @@ type instance Nullable (LL1 c) = c
 instance (Monoid c, ListLike c (Item c)) => Trivializable (LL1 c) where
     refine c = Positive.fromInt (LL.length c) <&> \l -> LL1 c l
     generalize = generalize
+    assume c = LL1 c $ Integer.yolo $ LL.length c
 
 instance Eq c => Eq (LL1 c) where
     (==) = (==) `on` generalize
@@ -108,6 +109,3 @@ instance (ListLike c (Item c)) => Block (LL1 c) where
                     Plus n -> Just (LL1 b n )
                     _ -> Nothing
             }
-
-assume :: ListLike c (Item c) => c -> LL1 c
-assume c = LL1 c $ Integer.yolo $ LL.length c

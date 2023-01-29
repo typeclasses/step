@@ -12,7 +12,6 @@ import Data.Char (Char)
 import Data.Text (Text)
 import Data.Coerce (coerce)
 
-import qualified Block.ListLike.Unsafe as LL
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Block.Class as Block
@@ -26,6 +25,7 @@ instance Semigroup Text1 where
 instance Trivializable Text1 where
     refine = fmap Text1 . refine
     generalize (Text1 x) = generalize x
+    assume = Text1 . assume
 
 type instance Block.Item Text1 = Char
 
@@ -34,7 +34,7 @@ type instance Nullable Text1 = Text
 instance Block Text1 where
 
     -- Takes advantage of Text's faster concat function
-    concat = Text1 . LL.assume . Text.concat . fmap generalize . Foldable.toList
+    concat = Text1 . assume . Text.concat . fmap generalize . Foldable.toList
 
     -- The rest are just coercions of LL1 methods
     leftView = (\(Pop i r) -> Pop i (coerce r)) . leftView @(LL1 Text) . coerce
