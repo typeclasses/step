@@ -57,6 +57,7 @@ library
         Block.ListLike
         Block.ListLike.Type
 
+        Block.Sequence
         Block.Sequence.Type
 
         Block.Text
