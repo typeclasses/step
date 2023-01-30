@@ -18,6 +18,7 @@ common base
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0
+      , block-types ^>= 0.0
       , bytestring ^>= 0.11.4
       , containers ^>= 0.6.5
       , hedgehog ^>= 1.2
@@ -79,6 +80,5 @@ test-suite test-block-chain
     build-depends:
       , block-chain
       , block-gen
-      , block-types
       , hspec
       , hspec-hedgehog
