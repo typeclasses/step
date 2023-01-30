@@ -1,6 +1,6 @@
 module Block.Sequence.Type
   (
-    {- * Type -} Seq1 (..),
+    {- * Type -} Seq1 (Seq1, (:<|), (:|>)),
   )
   where
 
@@ -12,6 +12,7 @@ import Data.Coerce (coerce)
 import Data.Sequence (Seq)
 
 import qualified Block.Class as Block
+import qualified Data.Sequence as Seq
 
 newtype Seq1 a = Seq1 (LL1 (Seq a))
     deriving stock (Eq, Ord, Show)
@@ -39,3 +40,15 @@ instance Block (Seq1 a) where
     drop n = fmap coerce . drop @(LL1 (Seq a)) n . coerce
     while p = fmap coerce . while @(LL1 (Seq a)) p . coerce
     length = length @(LL1 (Seq a)) . coerce
+
+pattern (:<|) :: a -> Seq a -> Seq1 a
+pattern x :<| xs <- (generalize -> (x Seq.:<| xs))
+  where x :<| xs = assume (x Seq.:<| xs)
+
+pattern (:|>) :: Seq a -> a -> Seq1 a
+pattern xs :|> x <- (generalize -> (xs Seq.:|> x))
+  where xs :|> x = assume (xs Seq.:|> x)
+
+{-# complete (:<|) #-}
+
+{-# complete (:|>) #-}
