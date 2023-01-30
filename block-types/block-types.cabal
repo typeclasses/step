@@ -61,6 +61,9 @@ library
         Block.Sequence
         Block.Sequence.Type
 
+        Block.BlockSequence
+        Block.BlockSequence.Type
+
         Block.ByteString
         Block.ByteString.Type
 
