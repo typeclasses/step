@@ -20,6 +20,8 @@ class Semigroup c => Block c where
 
     span :: Predicate (Item c) -> c -> Span c
 
+    divide :: (Item c -> Maybe x) -> c -> Division x c
+
     split :: Positive -> c -> Split c
 
     take :: Positive -> c -> Take c
@@ -32,6 +34,10 @@ class Semigroup c => Block c where
 
     concat :: NonEmpty c -> c
     concat = Semigroup.sconcat
+
+data Division x c =
+  NoDivision | Division (Maybe c) x (Maybe c)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Pop c =
   Pop
