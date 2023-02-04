@@ -22,7 +22,12 @@ newtype BlockBlock xss = BlockBlock{ blockBlock :: xss }
 
 type instance Item (BlockBlock xss) = Item (Item xss)
 
-instance (Block xss, Block xs, Item xss ~ xs, Item xs ~ x) => Block (BlockBlock xss) where
+leftView' :: (Block xss, Block xs, Item xss ~ xs, Item xs ~ x) =>
+    xss -> (x, Maybe xs, Maybe xss)
+leftView' (Block.leftView -> Pop (Block.leftView -> Pop x xsMaybe) xssMaybe) =
+    (x, xsMaybe, xssMaybe)
+
+instance (Block xss, Block xs, Item xss ~ xs) => Block (BlockBlock xss) where
 
     length :: BlockBlock xss -> Positive
     length = blockBlock >>> Block.length
@@ -31,21 +36,10 @@ instance (Block xss, Block xs, Item xss ~ xs, Item xs ~ x) => Block (BlockBlock 
     concat (x :| xs) = Foldable.foldl' (<>) x xs
 
     leftView :: BlockBlock xss -> Pop (BlockBlock xss)
-    leftView
-      BlockBlock
-        { blockBlock = Block.leftView ->
-            Pop
-              { popItem = Block.leftView ->
-                  Pop{ popItem = x, popRemainder = xsMaybe }
-              , popRemainder = xssMaybe
-              }
-        } =
-        Pop
-          { popItem = x
-          , popRemainder = BlockBlock <$> case xsMaybe of
-              Nothing -> xssMaybe
-              Just xs' -> Just $ Block.leftReview $ Pop xs' xssMaybe
-          }
+    leftView (BlockBlock (leftView' -> (x, xsMaybe, xssMaybe))) =
+        Pop x $ BlockBlock <$> case xsMaybe of
+            Nothing -> xssMaybe
+            Just xs' -> Just $ Block.leftReview $ Pop xs' xssMaybe
 
     -- span p = fmap coerce . span @(LL1 (Seq a)) p . coerce
 
