@@ -37,7 +37,9 @@ instance Block Text1 where
     concat = Text1 . assume . Text.concat . fmap generalize . Foldable.toList
 
     -- The rest are just coercions of LL1 methods
+    singleton = coerce . singleton @(LL1 Text)
     leftView = (\(Pop i r) -> Pop i (coerce r)) . leftView @(LL1 Text) . coerce
+    leftReview = coerce . leftReview @(LL1 Text) . (\(Pop i r) -> Pop i (coerce r))
     span p = fmap coerce . span @(LL1 Text) p . coerce
     split n = fmap coerce . split @(LL1 Text) n . coerce
     take n = fmap coerce . take @(LL1 Text) n . coerce

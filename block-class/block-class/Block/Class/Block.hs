@@ -12,7 +12,11 @@ type family Item (c :: Type) :: Type
 
 class Semigroup c => Block c where
 
+    singleton :: Item c -> c
+
     leftView :: c -> Pop c
+
+    leftReview :: Pop c -> c
 
     span :: Predicate (Item c) -> c -> Span c
 

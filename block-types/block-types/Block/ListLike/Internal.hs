@@ -59,6 +59,8 @@ instance (ListLike c (Item c)) => Block (LL1 c) where
 
     length = length
 
+    singleton x = LL1 (LL.singleton x) 1
+
     span = \f whole -> tupleSpan (LL.span (getPredicate f) (generalize whole))
       where
         tupleSpan (a, b) =
@@ -109,3 +111,7 @@ instance (ListLike c (Item c)) => Block (LL1 c) where
                     Plus n -> Just (LL1 b n )
                     _ -> Nothing
             }
+
+    leftReview (Pop x xs) = case xs of
+        Nothing -> singleton x
+        Just xs' -> LL1 (LL.cons x (generalize xs')) (length xs' + 1)

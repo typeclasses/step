@@ -32,8 +32,10 @@ type instance Nullable (Seq1 a) = Seq a
 instance Block (Seq1 a) where
 
     -- All just coercions of LL1 methods
+    singleton = coerce . singleton @(LL1 (Seq a))
     concat = coerce . concat @(LL1 (Seq a)) . coerce
     leftView = (\(Pop i r) -> Pop i (coerce r)) . leftView @(LL1 (Seq a)) . coerce
+    leftReview = coerce . leftReview @(LL1 (Seq a)) . (\(Pop i r) -> Pop i (coerce r))
     span p = fmap coerce . span @(LL1 (Seq a)) p . coerce
     split n = fmap coerce . split @(LL1 (Seq a)) n . coerce
     take n = fmap coerce . take @(LL1 (Seq a)) n . coerce

@@ -37,7 +37,9 @@ instance Block ByteString1 where
     concat = ByteString1 . assume . ByteString.concat . fmap generalize . Foldable.toList
 
     -- The rest are just coercions of LL1 methods
+    singleton = coerce . singleton @(LL1 ByteString)
     leftView = (\(Pop i r) -> Pop i (coerce r)) . leftView @(LL1 ByteString) . coerce
+    leftReview = coerce . leftReview @(LL1 ByteString) . (\(Pop i r) -> Pop i (coerce r))
     span p = fmap coerce . span @(LL1 ByteString) p . coerce
     split n = fmap coerce . split @(LL1 ByteString) n . coerce
     take n = fmap coerce . take @(LL1 ByteString) n . coerce
