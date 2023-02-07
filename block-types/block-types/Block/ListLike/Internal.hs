@@ -20,6 +20,7 @@ import Prelude (error, (+))
 import Text.Show (Show (showsPrec))
 
 import qualified Data.ListLike as LL
+import qualified Data.Maybe as Maybe
 import qualified Integer.Positive as Positive
 import qualified Integer
 
@@ -61,14 +62,24 @@ instance (ListLike c (Item c)) => Block (LL1 c) where
 
     singleton x = LL1 (LL.singleton x) 1
 
-    span = \f whole -> tupleSpan (LL.span (getPredicate f) (generalize whole))
+    span s = \f whole -> tupleSpan (span' (getPredicate f) (generalize whole))
       where
+        span' = case s of Left -> LL.span; Right -> LL.span
         tupleSpan (a, b) =
             if LL.null b then SpanAll else
             if LL.null a then SpanNone else
             SpanPart (assume a) (assume b)
 
-    drop = \n whole -> case Positive.subtract (length whole) n of
+    divide Left = \f whole ->
+        let
+            (a, b) = LL.span (Maybe.isNothing . f) (generalize whole)
+        in
+            case refine b :: Maybe (LL1 c) of
+                Nothing -> NoDivision
+                Just (pop Left -> Pop x b') ->
+                    Division (refine a) (Maybe.fromJust (f x)) b'
+
+    drop Left = \n whole -> case Positive.subtract (length whole) n of
         Zero ->
             DropAll
         Plus _ ->
@@ -79,7 +90,7 @@ instance (ListLike c (Item c)) => Block (LL1 c) where
         Minus dropShortfall ->
             DropInsufficient{ dropShortfall }
 
-    take = \n whole -> case Positive.subtract (length whole) n of
+    take Left = \n whole -> case Positive.subtract (length whole) n of
         Zero ->
             TakeAll
         Plus{} ->
@@ -87,20 +98,20 @@ instance (ListLike c (Item c)) => Block (LL1 c) where
         Minus takeShortfall ->
             TakeInsufficient{ takeShortfall }
 
-    while = \f x -> case refine (LL.takeWhile (getPredicate f) (generalize x)) of
+    while Left = \f x -> case refine (LL.takeWhile (getPredicate f) (generalize x)) of
         Nothing -> WhileNone
         Just y ->
             if length y == length x
             then WhileAll
             else WhilePrefix y
 
-    split = \n whole -> case Positive.subtract (length whole) n of
+    split Left = \n whole -> case Positive.subtract (length whole) n of
         Plus _ -> Split (assume a) (assume b)
           where
             (a, b) = LL.splitAt (Integer.yolo n) (generalize whole)
         _ -> SplitInsufficient
 
-    leftView a = a
+    pop Left a = a
         & generalize
         & LL.uncons
         & fromMaybe (error "ListLike leftViewIso")
@@ -112,6 +123,6 @@ instance (ListLike c (Item c)) => Block (LL1 c) where
                     _ -> Nothing
             }
 
-    leftReview (Pop x xs) = case xs of
+    push Left (Pop x xs) = case xs of
         Nothing -> singleton x
         Just xs' -> LL1 (LL.cons x (generalize xs')) (length xs' + 1)

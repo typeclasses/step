@@ -37,5 +37,26 @@ library
     exposed-modules:
         Block.Class
         Block.Class.Block
-        Block.Class.ItemEquivalence
         Block.Class.Trivializable
+
+        Block.Item
+
+        Block.ItemEquivalence.Type
+
+        Block.BiPrefix.Types
+        Block.BiPrefix.Utilities
+
+        Block.End
+
+        Block.Singleton
+        Block.Singleton.Class
+        Block.Singleton.Types
+        Block.Singleton.Utilities
+
+        Block.Positional
+        Block.Positional.Class
+        Block.Positional.Types
+
+        Block.Search
+        Block.Search.Class
+        Block.Search.Types

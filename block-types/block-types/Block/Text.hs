@@ -1,6 +1,6 @@
 module Block.Text
   (
-    {- * Type -} Text1 (..),
+    {- * Type -} Text1,
     {- * Character equivalence -} asciiCaseInsensitive,
   )
   where

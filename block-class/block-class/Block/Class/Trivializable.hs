@@ -3,6 +3,8 @@ module Block.Class.Trivializable where
 import Essentials
 import Block.Class.Block
 
+import qualified Data.Foldable as Foldable
+
 type family Nullable (c :: Type) :: Type
 
 class (Block c, Monoid (Nullable c)) => Trivializable c where
@@ -14,5 +16,5 @@ class (Block c, Monoid (Nullable c)) => Trivializable c where
     {-| Defined only where 'refine' produces 'Just' -}
     assume :: Nullable c -> c
 
-concatTrivialize :: Trivializable c => [c] -> Nullable c
-concatTrivialize = concatMaybe >>> maybe mempty generalize
+fold :: Trivializable c => [c] -> Nullable c
+fold = fmap generalize >>> Foldable.fold

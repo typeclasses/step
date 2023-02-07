@@ -43,7 +43,6 @@ common base
       , bytestring ^>= 0.11.4
       , containers ^>= 0.6.5
       , integer-types ^>= 0.0
-      , ListLike ^>= 4.7.8
       , quaalude ^>= 0.0
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0
@@ -55,21 +54,21 @@ library
     import: base
     hs-source-dirs: block-types
     exposed-modules:
-        Block.ListLike
-        Block.ListLike.Type
-
         Block.Sequence
         Block.Sequence.Type
+        Block.Sequence.Internal
 
         Block.BlockBlock
         Block.BlockBlock.Type
 
         Block.ByteString
         Block.ByteString.Type
+        Block.ByteString.Internal
 
         Block.Text
         Block.Text.Type
         Block.Text.Equivalence
+        Block.Text.Internal
 
     other-modules:
         Block.ListLike.Internal

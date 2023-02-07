@@ -1,6 +1,6 @@
 module Block.ByteString
   (
-    {- * Type -} ByteString1 (..),
+    {- * Type -} ByteString1,
   )
   where
 
