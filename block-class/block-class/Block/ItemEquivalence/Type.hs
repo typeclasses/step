@@ -1,10 +1,6 @@
 module Block.ItemEquivalence.Type where
 
 import Essentials
-import Block.Class.Block
-
-import Data.Ord (compare, Ordering (..))
-import Prelude (error)
 
 {-| An equivalence on characters, expressed as an equivalence on blocks
 
@@ -15,4 +11,4 @@ to the character equivalence.
 The point here is that we want to work with efficiently packed string types
 like @Text@ but still be able to reason about them as if they were @[Char]@. -}
 newtype ItemEquivalence c =
-    ItemEquivalence{ blocksEquivalent :: c -> c -> Bool }
+    ItemEquivalence{ blocksEquivalent :: (c, c) -> Bool }

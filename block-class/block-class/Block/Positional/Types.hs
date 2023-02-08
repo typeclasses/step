@@ -20,7 +20,7 @@ newtype Suffix xs = Suffix xs
 
 data Split xs =
     SplitInsufficient Shortfall
-  | Split (Prefix xs) (Suffix xs)
+  | Split (Prefix xs, Suffix xs)
   deriving stock (Eq, Ord, Show, Functor)
 
 data Drop xs =

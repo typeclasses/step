@@ -1,12 +1,14 @@
 module Block.BiPrefix.Utilities where
 
-import Block.Positional
-    (Suffix(..), Prefix(..), Split(..), Amount (..), Positional (..))
+import Essentials
+
+import Data.Function (on)
+import Block.Positional (Prefix (..), Split (..), Amount (..), Positional (..))
 import Block.ItemEquivalence.Type (ItemEquivalence, blocksEquivalent)
 import Data.Ord (compare, Ordering (..))
 import Prelude (error)
 import Block.End (End (..))
-import Block.BiPrefix.Types (BiPrefix (..))
+import Block.BiPrefix.Types (BiPrefix (..), Which (..))
 
 {-| Given a pair of blocks, determine whether either is a prefix
     of the other, according to an item equivalence -}
@@ -14,20 +16,22 @@ biPrefix :: Positional xs =>
     ItemEquivalence xs
     -> (xs, xs)
     -> BiPrefix xs
-biPrefix eq (a, b) = case compare (length a) (length b) of
-
-    EQ -> if blocksEquivalent eq a b
-            then Same
-            else NoPrefixRelation
-
-    LT -> case split (Amount Front (length a)) b of
-        Split (Prefix a') (Suffix b') -> if blocksEquivalent eq a a'
-            then IsPrefixOf{ commonPart = a', extraPart = b' }
+biPrefix (blocksEquivalent -> same) pair = case whichIsShorter pair of
+    Nothing -> if same pair then Same else NoPrefixRelation
+    Just theShorter -> case split (Amount Front (length short)) long of
+        Split division@(Prefix prefix, _) ->
+            if same (prefix, short)
+            then IsPrefix theShorter division
             else NoPrefixRelation
         SplitInsufficient{} -> error "biPrefix"
+      where
+        (short, long) = case theShorter of First -> pair; Second -> swap pair
 
-    GT -> case split (Amount Front (length b)) a of
-        Split (Prefix b') (Suffix a') -> if blocksEquivalent eq b b'
-            then IsPrefixedBy{ commonPart = b', extraPart = a' }
-            else NoPrefixRelation
-        SplitInsufficient{} -> error "biPrefix"
+swap :: (a, b) -> (b, a)
+swap (a, b) = (b, a)
+
+whichIsShorter :: Positional xs => (xs, xs) -> Maybe Which
+whichIsShorter (a, b) = case (compare `on` length) a b of
+    EQ -> Nothing
+    LT -> Just First
+    GT -> Just Second

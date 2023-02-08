@@ -1,7 +1,10 @@
 module Block.BiPrefix.Types where
 
+import Block.Positional.Types
+
+data Which = First | Second
+
 data BiPrefix xs =
     Same
   | NoPrefixRelation
-  | IsPrefixOf   { commonPart :: xs, extraPart :: xs }
-  | IsPrefixedBy { commonPart :: xs, extraPart :: xs }
+  | IsPrefix Which (Prefix xs, Suffix xs)
