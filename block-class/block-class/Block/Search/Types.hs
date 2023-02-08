@@ -11,9 +11,3 @@ data Span xs =
   | SpanNone
   | Span (xs, xs)
   deriving stock (Eq, Ord, Show, Functor)
-
-data While xs =
-    WhileNone
-  | WhilePrefix xs
-  | WhileAll
-  deriving stock (Eq, Ord, Show, Functor)
