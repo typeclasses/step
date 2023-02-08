@@ -2,21 +2,18 @@ module Block.Search.Types where
 
 import Essentials
 
-data Division x c =
-    NoDivision | Division (Maybe c) x (Maybe c)
+data Division found xs =
+    NoDivision | Division (Maybe xs, found, Maybe xs)
     deriving stock (Eq, Ord, Show, Functor)
 
-data Span c =
+data Span xs =
     SpanAll
   | SpanNone
-  | SpanPart
-      { spannedPart :: c
-      , spanRemainder :: c
-      }
+  | Span (xs, xs)
   deriving stock (Eq, Ord, Show, Functor)
 
-data While c =
+data While xs =
     WhileNone
-  | WhilePrefix c
+  | WhilePrefix xs
   | WhileAll
   deriving stock (Eq, Ord, Show, Functor)
