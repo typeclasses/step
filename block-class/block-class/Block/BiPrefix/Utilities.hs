@@ -1,8 +1,7 @@
 module Block.BiPrefix.Utilities where
 
-import Block.Class.Block
 import Block.Positional
-
+    (Suffix(..), Prefix(..), Split(..), Amount (..), Positional (..))
 import Block.ItemEquivalence.Type (ItemEquivalence, blocksEquivalent)
 import Data.Ord (compare, Ordering (..))
 import Prelude (error)
@@ -11,7 +10,7 @@ import Block.BiPrefix.Types (BiPrefix (..))
 
 {-| Given a pair of blocks, determine whether either is a prefix
     of the other, according to an item equivalence -}
-biPrefix :: Block xs =>
+biPrefix :: Positional xs =>
     ItemEquivalence xs
     -> (xs, xs)
     -> BiPrefix xs
