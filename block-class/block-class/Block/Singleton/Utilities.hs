@@ -15,4 +15,4 @@ unpop s (Pop x xm) = case xm of
 
 head :: (Singleton xs, Item xs ~ x) =>
     xs -> x
-head = popItem . pop Front
+head = item . pop Front

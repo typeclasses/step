@@ -5,6 +5,6 @@ import Essentials
 import Block.Item (Item)
 
 data Pop xs = Pop
-    { popItem :: Item xs
-    , popRemainder :: Maybe xs
+    { item :: Item xs
+    , remainder :: Maybe xs
     }

@@ -2,12 +2,12 @@ module Block.Search.Types where
 
 import Essentials
 
-data Division found xs =
-    NoDivision | Division (Maybe xs, found, Maybe xs)
-    deriving stock (Eq, Ord, Show, Functor)
+data Pivot p xs =
+    Pivot (Maybe xs) p (Maybe xs)
+  deriving stock (Eq, Ord, Show, Functor)
 
 data Span xs =
     SpanAll
   | SpanNone
-  | Span (xs, xs)
+  | Span xs xs
   deriving stock (Eq, Ord, Show, Functor)

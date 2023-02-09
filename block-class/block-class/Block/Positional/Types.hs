@@ -12,25 +12,19 @@ data Amount = Amount End Positive
 newtype Shortfall = Shortfall Positive
     deriving stock (Eq, Ord, Show)
 
-newtype Prefix xs = Prefix xs
-  deriving stock (Eq, Ord, Show, Functor)
-
-newtype Suffix xs = Suffix xs
-  deriving stock (Eq, Ord, Show, Functor)
-
 data Split xs =
     SplitInsufficient Shortfall
-  | Split (Prefix xs, Suffix xs)
+  | Split xs xs
   deriving stock (Eq, Ord, Show, Functor)
 
 data Drop xs =
     DropAll
   | DropInsufficient Shortfall
-  | DropPart (Suffix xs)
+  | DropPart xs
   deriving stock (Eq, Ord, Show, Functor)
 
 data Take xs =
     TakeAll
   | TakeInsufficient Shortfall
-  | TakePart (Prefix xs)
+  | TakePart xs
   deriving stock (Eq, Ord, Show, Functor)
