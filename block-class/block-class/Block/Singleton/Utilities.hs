@@ -16,3 +16,7 @@ unpop s (Pop x xm) = case xm of
 head :: (Singleton xs, Item xs ~ x) =>
     xs -> x
 head = item . pop Front
+
+pushMaybes :: (Singleton xs, Item xs ~ x) =>
+    End -> Maybe x -> Maybe xs -> Maybe xs
+pushMaybes s = maybe id (\x -> fmap (push s x))

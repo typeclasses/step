@@ -60,3 +60,4 @@ library
         Block.Search
         Block.Search.Class
         Block.Search.Types
+        Block.Search.Utilities
