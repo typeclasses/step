@@ -30,7 +30,7 @@ common base
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0
       , containers
-      , integer-types ^>= 0.0
+      , integer-types ^>= 0.1
       , ListLike
       , quaalude ^>= 0.0
       , hedgehog
