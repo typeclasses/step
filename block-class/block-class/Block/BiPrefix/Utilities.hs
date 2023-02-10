@@ -3,7 +3,7 @@ module Block.BiPrefix.Utilities where
 import Essentials
 
 import Data.Function (on)
-import Block.Positional (Split (..), Amount (..), Positional (..))
+import Block.Positional (Split (..), SplitResult (..), Positional (..))
 import Block.ItemEquivalence.Type (ItemEquivalence, blocksEquivalent)
 import Data.Ord (compare, Ordering (..))
 import Prelude (error)
@@ -18,12 +18,12 @@ biPrefix :: Positional xs =>
     -> BiPrefix xs
 biPrefix (blocksEquivalent -> same) pair = case whichIsShorter pair of
     Nothing -> if same pair then Same else NoPrefixRelation
-    Just theShorter -> case split (Amount Front (length short)) long of
-        Split prefix suffix ->
+    Just theShorter -> case split (Split Front (length short)) long of
+        SplitResult prefix suffix ->
             if same (prefix, short)
             then IsPrefix theShorter prefix suffix
             else NoPrefixRelation
-        SplitInsufficient{} -> error "biPrefix"
+        SplitFailure{} -> error "biPrefix"
       where
         (short, long) = case theShorter of First -> pair; Second -> swap pair
 
