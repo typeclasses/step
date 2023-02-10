@@ -1,7 +1,7 @@
 module Block.Class.Trivializable where
 
 import Essentials
-import Block.Class.Block
+import Block.Block.Class
 
 import qualified Data.Foldable as Foldable
 

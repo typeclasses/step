@@ -4,7 +4,7 @@ module Block.Classes
   )
   where
 
-import Block.Class.Block
+import Block.Block.Class
 import Block.Class.Trivializable
 import Block.Singleton.Class
 import Block.Positional.Class

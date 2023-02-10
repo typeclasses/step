@@ -37,7 +37,7 @@ library
     exposed-modules:
         Block.Classes
 
-        Block.Class.Block
+        Block.Block.Class
         Block.Class.Trivializable
 
         Block.Item

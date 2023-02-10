@@ -1,4 +1,4 @@
-module Block.Class.Block where
+module Block.Block.Class where
 
 import Block.Positional.Class (Positional)
 import Block.Search.Class (Search)
