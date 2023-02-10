@@ -3,8 +3,10 @@ module Block.Singleton.Class where
 import Essentials
 
 import Block.Item (Item)
-import Block.Singleton.Types (Pop)
-import Block.End (End)
+import Block.Singleton.Types (Pop (..))
+import Block.End (End (..))
+
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty, reverse)
 
 class (Semigroup xs) => Singleton xs where
 
@@ -19,3 +21,17 @@ class (Semigroup xs) => Singleton xs where
     {-| Add one item onto the front/back of a block -}
     push :: (Item xs ~ x) =>
         End -> x -> xs -> xs
+
+instance Singleton (NonEmpty x) where
+
+    singleton = (:| [])
+
+    pop Front (x :| xs) = Pop x (nonEmpty xs)
+
+    pop Back xs =
+        let p = pop Front (reverse xs)
+        in p{ remainder = reverse <$> remainder p }
+
+    push Front x (y :| ys) = x :| y : ys
+
+    push Back x xs = reverse (push Front x (reverse xs))
