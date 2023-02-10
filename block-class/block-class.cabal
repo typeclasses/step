@@ -43,7 +43,9 @@ library
 
         Block.Item
 
+        Block.ItemEquivalence
         Block.ItemEquivalence.Type
+        Block.ItemEquivalence.Examples
 
         Block.BiPrefix.Types
         Block.BiPrefix.Utilities
