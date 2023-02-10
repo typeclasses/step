@@ -1,4 +1,8 @@
-module Block.Positional.Class where
+module Block.Positional.Class
+  (
+    Positional (..),
+  )
+  where
 
 import Essentials
 

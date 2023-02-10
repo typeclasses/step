@@ -1,4 +1,8 @@
-module Block.Positional.Types where
+module Block.Positional.Types
+  (
+    Amount (..), Shortfall (..), Split (..), Drop (..), Take (..),
+  )
+  where
 
 import Essentials
 
