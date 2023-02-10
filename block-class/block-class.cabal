@@ -60,6 +60,7 @@ library
         Block.Positional
         Block.Positional.Class
         Block.Positional.Types
+        Block.Positional.Utilities
 
         Block.Search
         Block.Search.Class
