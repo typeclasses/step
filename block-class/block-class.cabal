@@ -35,7 +35,8 @@ library
     import: base
     hs-source-dirs: block-class
     exposed-modules:
-        Block.Class
+        Block.Classes
+
         Block.Class.Block
         Block.Class.Trivializable
 
