@@ -1,7 +1,7 @@
 module Block.Positional
   (
-    module Block.Positional.Class,
-    module Block.Positional.Types,
+    {- * Class -} Positional (..),
+    {- * Types -} Amount (..), Shortfall (..), Split (..), Drop (..), Take (..),
   )
   where
 
