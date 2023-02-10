@@ -38,7 +38,8 @@ library
         Block.Classes
 
         Block.Block.Class
-        Block.Class.Trivializable
+
+        Block.Trivializable.Class
 
         Block.Item
 

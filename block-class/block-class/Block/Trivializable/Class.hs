@@ -1,4 +1,4 @@
-module Block.Class.Trivializable where
+module Block.Trivializable.Class where
 
 import Essentials
 import Block.Block.Class
