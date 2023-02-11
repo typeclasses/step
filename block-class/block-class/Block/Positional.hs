@@ -1,7 +1,7 @@
 module Block.Positional
   (
     {- * Class -} Positional (..),
-    {- * Types -} Amount (..), Shortfall (..), Split (..), Truncate (..), Truncation (..),
+    {- * Types -} Amount (..), Shortfall (..), Split (..), Subblock (..),
   )
   where
 
@@ -21,15 +21,15 @@ class (Singleton xs) => Positional xs where
 
     split :: Amount -> xs -> Split xs
 
-    truncate :: Truncate -> xs -> Truncation xs
+    take :: Amount -> xs -> Subblock xs
+
+    drop :: Amount -> xs -> Subblock xs
 
 instance Positional (NonEmpty xs) where
 
     length = Positive.length
 
 data Amount = Amount End Positive
-
-data Truncate = Drop End Positive | Take End Positive
 
 {-| (Shortfall /n/) indicates that an operation which failed
     would require a block operand to have /n/ more items. -}
@@ -41,8 +41,8 @@ data Split xs =
   | Split xs xs
   deriving stock (Eq, Ord, Show, Functor)
 
-data Truncation xs =
-    TruncateNoEffect
-  | TruncateInsufficient Shortfall
-  | TruncateResult xs
+data Subblock xs =
+    SubblockAll
+  | SubblockInsufficient Shortfall
+  | SubblockPart xs
   deriving stock (Eq, Ord, Show, Functor)
