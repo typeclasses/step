@@ -40,15 +40,15 @@ instance Positional (NonEmpty xs) where
     length = Positive.length
 
     split :: Split -> NonEmpty xs -> Either Shortfall (NonEmpty xs, NonEmpty xs)
-    split (Split Front n) xs =
-      let (a, b) = NonEmpty.splitAt (Integer.yolo n) xs
-      in case (nonEmpty a, nonEmpty b) of
-          (Nothing, _) -> error "First part of NonEmpty.splitAt \
-                          \should be non-empty, given a positive index"
-          (_, Nothing) -> Either.Left (Shortfall (n + 1 - length xs))
-          (Just a', Just b') -> Either.Right (a', b')
-
-    split s xs = flipSplit xs s >>= \s' -> split s' xs
+    split = \case
+        Split Front n -> \xs ->
+            let (a, b) = NonEmpty.splitAt (Integer.yolo n) xs
+            in case (nonEmpty a, nonEmpty b) of
+                (Nothing, _) -> error "First part of NonEmpty.splitAt \
+                                \should be non-empty, given a positive index"
+                (_, Nothing) -> Either.Left (Shortfall (n + 1 - length xs))
+                (Just a', Just b') -> Either.Right (a', b')
+        s -> \xs -> flipSplit xs s >>= \s' -> split s' xs
 
 data Split = Split End Positive
 
