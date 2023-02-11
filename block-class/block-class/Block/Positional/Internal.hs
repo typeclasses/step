@@ -29,23 +29,25 @@ class (Singleton xs) => Positional xs where
 
 instance Positional (NonEmpty xs) where
 
-    length :: NonEmpty xs -> Positive
+    length :: NonEmpty x -> Positive
     length = Positive.length
 
-    split :: End -> Positive -> NonEmpty xs -> Split (NonEmpty xs)
+    split :: End -> Positive -> NonEmpty x -> Split (NonEmpty x)
     split = \case
         Front -> neSplitFront
         Back -> \n xs -> case flipSplitAmount xs n of
             Either.Left s -> SplitInsufficient s
             Either.Right n' -> neSplitFront n' xs
 
-    take :: End -> Positive -> NonEmpty xs -> Take (NonEmpty xs)
-    take = _
+    take :: End -> Positive -> NonEmpty x -> Take (NonEmpty x)
+    take = \case
+        Front -> neTakeFront
+        Back -> _
 
-    drop :: End -> Positive -> NonEmpty xs -> Drop (NonEmpty xs)
+    drop :: End -> Positive -> NonEmpty x -> Drop (NonEmpty x)
     drop = _
 
-neSplitFront :: Positive -> NonEmpty xs -> Split (NonEmpty xs)
+neSplitFront :: Positive -> NonEmpty x -> Split (NonEmpty x)
 neSplitFront n xs =
     let (a, b) = NonEmpty.splitAt (Integer.yolo n) xs
     in case (nonEmpty a, nonEmpty b) of
@@ -53,6 +55,9 @@ neSplitFront n xs =
                         \should be non-empty, given a positive index"
         (_, Nothing) -> SplitInsufficient (Shortfall (n + 1 - length xs))
         (Just a', Just b') -> Split a' b'
+
+neTakeFront :: Positive -> NonEmpty xs -> Take (NonEmpty x)
+neTakeFront = _
 
 {-| (Shortfall /n/) indicates that an operation which failed
     would require a block operand to have /n/ more items. -}
