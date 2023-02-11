@@ -60,12 +60,8 @@ library
         Block.Positional
         Block.Positional.Class
         Block.Positional.Types
-        Block.Positional.Utilities
 
         Block.Search
         Block.Search.Class
         Block.Search.Types
         Block.Search.Utilities
-
-    other-modules:
-        Block.Positional.Internal
