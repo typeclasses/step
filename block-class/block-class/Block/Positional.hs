@@ -1,7 +1,7 @@
 module Block.Positional
   (
     {- * Class -} Positional (..),
-    {- * Types -} Amount (..), Shortfall (..), Split (..), Drop (..), Take (..),
+    {- * Types -} Shortfall (..), Split (..), Drop (..), Take (..),
     {- * Utilities -} flipSplitAmount,
   )
   where
@@ -25,17 +25,15 @@ class (Singleton xs) => Positional xs where
 
     length :: xs -> Positive
 
-    split :: Amount -> xs -> Split xs
+    split :: (End, Positive) -> xs -> Split xs
 
-    take :: Amount -> xs -> Take xs
+    take :: (End, Positive) -> xs -> Take xs
 
-    drop :: Amount -> xs -> Drop xs
+    drop :: (End, Positive) -> xs -> Drop xs
 
 instance Positional (NonEmpty xs) where
 
     length = Positive.length
-
-data Amount = Amount End Positive
 
 {-| (Shortfall /n/) indicates that an operation which failed
     would require a block operand to have /n/ more items. -}
@@ -63,8 +61,8 @@ data Take xs =
     when used with 'split' but is expressed in the opposite direction
 
 This operation fails if the split would fail. -}
-flipSplitAmount :: Positional xs => xs -> Amount -> Either Shortfall Amount
-flipSplitAmount xs (Amount e n) = case Positive.subtract (length xs) n of
+flipSplitAmount :: Positional xs => xs -> (End, Positive) -> Either Shortfall (End, Positive)
+flipSplitAmount xs (e, n) = case Positive.subtract (length xs) n of
     Signed.Zero    -> Either.Left  $ Shortfall 1
     Signed.Minus s -> Either.Left  $ Shortfall (s + 1)
-    Signed.Plus r  -> Either.Right $ Amount (End.opposite e) r
+    Signed.Plus r  -> Either.Right $ (End.opposite e, r)
