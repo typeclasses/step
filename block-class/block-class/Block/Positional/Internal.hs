@@ -33,25 +33,26 @@ instance Positional (NonEmpty xs) where
     length = Positive.length
 
     split :: End -> Positive -> NonEmpty xs -> Split (NonEmpty xs)
-    split = \e n xs -> case e of
-        Front -> splitFront n xs
-        Back -> case flipSplitAmount xs n of
+    split = \case
+        Front -> neSplitFront
+        Back -> \n xs -> case flipSplitAmount xs n of
             Either.Left s -> SplitInsufficient s
-            Either.Right n' -> splitFront n' xs
-      where
-        splitFront n xs =
-            let (a, b) = NonEmpty.splitAt (Integer.yolo n) xs
-            in case (nonEmpty a, nonEmpty b) of
-                (Nothing, _) -> error "First part of NonEmpty.splitAt \
-                                \should be non-empty, given a positive index"
-                (_, Nothing) -> SplitInsufficient (Shortfall (n + 1 - length xs))
-                (Just a', Just b') -> Split a' b'
+            Either.Right n' -> neSplitFront n' xs
 
     take :: End -> Positive -> NonEmpty xs -> Take (NonEmpty xs)
     take = _
 
     drop :: End -> Positive -> NonEmpty xs -> Drop (NonEmpty xs)
     drop = _
+
+neSplitFront :: Positive -> NonEmpty xs -> Split (NonEmpty xs)
+neSplitFront n xs =
+    let (a, b) = NonEmpty.splitAt (Integer.yolo n) xs
+    in case (nonEmpty a, nonEmpty b) of
+        (Nothing, _) -> error "First part of NonEmpty.splitAt \
+                        \should be non-empty, given a positive index"
+        (_, Nothing) -> SplitInsufficient (Shortfall (n + 1 - length xs))
+        (Just a', Just b') -> Split a' b'
 
 {-| (Shortfall /n/) indicates that an operation which failed
     would require a block operand to have /n/ more items. -}
