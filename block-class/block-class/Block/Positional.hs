@@ -32,6 +32,7 @@ class (Singleton xs) => Positional xs where
 
 instance Positional (NonEmpty xs) where
 
+    length :: NonEmpty xs -> Positive
     length = Positive.length
 
 {-| (Shortfall /n/) indicates that an operation which failed
