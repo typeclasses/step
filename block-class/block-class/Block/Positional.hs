@@ -1,7 +1,7 @@
 module Block.Positional
   (
     {- * Class -} Positional (..),
-    {- * Types -} Amount (..), Shortfall (..), Split (..), Subblock (..),
+    {- * Types -} Amount (..), Shortfall (..), Split (..), Drop (..), Take (..),
   )
   where
 
@@ -21,9 +21,9 @@ class (Singleton xs) => Positional xs where
 
     split :: Amount -> xs -> Split xs
 
-    take :: Amount -> xs -> Subblock xs
+    take :: Amount -> xs -> Take xs
 
-    drop :: Amount -> xs -> Subblock xs
+    drop :: Amount -> xs -> Drop xs
 
 instance Positional (NonEmpty xs) where
 
@@ -41,8 +41,14 @@ data Split xs =
   | Split xs xs
   deriving stock (Eq, Ord, Show, Functor)
 
-data Subblock xs =
-    SubblockAll
-  | SubblockInsufficient Shortfall
-  | SubblockPart xs
+data Drop xs =
+    DropAll
+  | DropInsufficient Shortfall
+  | DropPart xs
+  deriving stock (Eq, Ord, Show, Functor)
+
+data Take xs =
+    TakeAll
+  | TakeInsufficient Shortfall
+  | TakePart xs
   deriving stock (Eq, Ord, Show, Functor)
