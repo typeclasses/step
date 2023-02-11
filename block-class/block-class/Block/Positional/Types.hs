@@ -1,6 +1,6 @@
 module Block.Positional.Types
   (
-    Split (..), Shortfall (..),
+    Split (..), SplitResult (..), Shortfall (..),
     Truncate (..), TruncateResult (..),
   )
   where

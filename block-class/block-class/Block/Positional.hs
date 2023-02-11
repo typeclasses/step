@@ -1,7 +1,7 @@
 module Block.Positional
   (
     {- * Class -} Positional (..),
-    {- * Types -} Split (..), Shortfall (..),
+    {- * Types -} Split (..), SplitResult (..), Shortfall (..),
         Truncate (..), TruncateResult (..),
     {- * Utilities -} flipSplit, flipTruncate,
   )
@@ -12,10 +12,10 @@ import Essentials
 import Block.Singleton.Class
 
 import Integer (Positive)
-import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
-import Block.End (End (..))
+import Data.List.NonEmpty (NonEmpty (..))
+import Block.End (End)
 import Data.Either (Either)
-import Prelude ((+), (-), error)
+import Prelude ((+))
 import Block.TakeOrDrop (TakeOrDrop)
 
 import qualified Data.Either as Either
@@ -23,32 +23,18 @@ import qualified Integer.Positive as Positive
 import qualified Integer.Signed as Signed
 import qualified Block.End as End
 import qualified Block.TakeOrDrop as TakeOrDrop
-import qualified Data.List.NonEmpty as NonEmpty
-import qualified Integer
 
 class (Singleton xs) => Positional xs where
 
     length :: xs -> Positive
 
-    split :: Split -> xs -> Either Shortfall (xs, xs)
+    split :: Split -> xs -> SplitResult xs
 
     truncate :: Truncate -> xs -> TruncateResult xs
 
 instance Positional (NonEmpty xs) where
 
-    length :: NonEmpty xs -> Positive
     length = Positive.length
-
-    split :: Split -> NonEmpty xs -> Either Shortfall (NonEmpty xs, NonEmpty xs)
-    split (Split Front n) xs =
-      let (a, b) = NonEmpty.splitAt (Integer.yolo n) xs
-      in case (nonEmpty a, nonEmpty b) of
-          (Nothing, _) -> error "First part of NonEmpty.splitAt \
-                          \should be non-empty, given a positive index"
-          (_, Nothing) -> Either.Left (Shortfall (n + 1 - length xs))
-          (Just a', Just b') -> Either.Right (a', b')
-
-    split s xs = flipSplit xs s >>= \s' -> split s' xs
 
 data Split = Split End Positive
 
@@ -58,6 +44,11 @@ data Truncate = Truncate TakeOrDrop End Positive
     would require a block operand to have /n/ more items. -}
 newtype Shortfall = Shortfall Positive
     deriving stock (Eq, Ord, Show)
+
+data SplitResult xs =
+    SplitFailure Shortfall
+  | SplitResult xs xs
+  deriving stock (Eq, Ord, Show, Functor)
 
 data TruncateResult xs =
     TruncateHasNoEffect
@@ -69,12 +60,12 @@ data TruncateResult xs =
     'Split' but is expressed in the opposite direction -}
 flipSplit :: Positional xs => xs -> Split -> Either Shortfall Split
 flipSplit xs (Split e n) = case Positive.subtract (length xs) n of
-    Signed.Minus s -> Either.Left  $ Shortfall (s + 1)
-    Signed.Zero    -> Either.Left  $ Shortfall 1
-    Signed.Plus r  -> Either.Right $ Split (End.opposite e) r
+    Signed.Minus s -> Either.Left (Shortfall (s + 1))
+    Signed.Zero -> Either.Left (Shortfall 1)
+    Signed.Plus r -> Either.Right (Split (End.opposite e) r)
 
 flipTruncate :: Positional xs => xs -> Truncate -> Either Shortfall Truncate
 flipTruncate xs (Truncate tod e n) = case Positive.subtract (length xs) n of
-    Signed.Minus s -> Either.Left  $ Shortfall s
-    Signed.Zero    -> Either.Right $ Truncate (TakeOrDrop.opposite tod) (End.opposite e) 0
-    Signed.Plus r  -> Either.Right $ Truncate (TakeOrDrop.opposite tod) (End.opposite e) r
+    Signed.Minus s -> Either.Left (Shortfall s)
+    Signed.Zero -> Either.Right (Truncate (TakeOrDrop.opposite tod) (End.opposite e) 0)
+    Signed.Plus r -> Either.Right (Truncate (TakeOrDrop.opposite tod) (End.opposite e) r)
