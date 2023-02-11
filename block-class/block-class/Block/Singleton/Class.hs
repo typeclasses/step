@@ -24,14 +24,17 @@ class (Semigroup xs) => Singleton xs where
 
 instance Singleton (NonEmpty x) where
 
+    singleton :: x -> NonEmpty x
     singleton = (:| [])
 
-    pop Front (x :| xs) = Pop x (nonEmpty xs)
+    pop :: End -> NonEmpty x -> Pop (NonEmpty x)
+    pop = \case
+        Front -> \(x :| xs) -> Pop x (nonEmpty xs)
+        Back -> \xs ->
+            let p = pop Front (reverse xs)
+            in p{ remainder = reverse <$> remainder p }
 
-    pop Back xs =
-        let p = pop Front (reverse xs)
-        in p{ remainder = reverse <$> remainder p }
-
-    push Front x (y :| ys) = x :| y : ys
-
-    push Back x xs = reverse (push Front x (reverse xs))
+    push :: End -> x -> NonEmpty x -> NonEmpty x
+    push = \case
+        Front -> \x (y :| ys) -> x :| y : ys
+        Back -> \x xs -> reverse (push Front x (reverse xs))
