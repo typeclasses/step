@@ -3,7 +3,7 @@ module Block.BiPrefix.Utilities where
 import Essentials
 
 import Data.Function (on)
-import Block.Positional (Span (..), Positional (..), span)
+import Block.Positional (Take (..), Positional (..), take)
 import Block.ItemEquivalence.Type (ItemEquivalence, blocksEquivalent)
 import Data.Ord (compare, Ordering (..))
 import Block.End (End (..))
@@ -17,8 +17,8 @@ biPrefix :: Positional xs =>
     -> BiPrefix xs
 biPrefix (blocksEquivalent -> same) pair = case whichIsShorter pair of
     Nothing -> if same pair then Same else NoPrefixRelation
-    Just theShorter -> case span Front (length short) long of
-        Span prefix (Just suffix) | same (prefix, short) ->
+    Just theShorter -> case take Front (length short) long of
+        Take prefix (Just suffix) | same (prefix, short) ->
             IsPrefix theShorter prefix suffix
         _ -> NoPrefixRelation
       where

@@ -1,6 +1,6 @@
 module Block.Positional.Types
   (
-    Shortfall (..), Span (..),
+    Shortfall (..), Take (..),
   )
   where
 
@@ -13,7 +13,7 @@ import Integer (Positive)
 newtype Shortfall = Shortfall Positive
     deriving stock (Eq, Ord, Show)
 
-data Span xs =
-    SpanInsufficient Shortfall
-  | Span{ spannedPart :: xs, remainder :: Maybe xs }
+data Take xs =
+    TakeInsufficient Shortfall
+  | Take{ taken :: xs, remainder :: Maybe xs }
   deriving stock (Eq, Ord, Show, Functor)

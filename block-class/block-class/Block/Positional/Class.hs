@@ -21,19 +21,19 @@ class (Singleton xs) => Positional xs where
 
     length :: xs -> Positive
 
-    span :: End -> Positive -> xs -> Span xs
+    take :: End -> Positive -> xs -> Take xs
 
 instance Positional (NonEmpty xs) where
 
     length :: NonEmpty x -> Positive
     length = Positive.length
 
-    span :: End -> Positive -> NonEmpty x -> Span (NonEmpty x)
-    span Front 1 xs@(_ :| []) = Span xs Nothing
-    span Front n (_ :| []) = SpanInsufficient (Shortfall (n - 1))
-    span Front n (x :| y : z) = span Front (n - 1) (y :| z) & \case
-        Span a b -> Span (x :| NonEmpty.toList a) b
+    take :: End -> Positive -> NonEmpty x -> Take (NonEmpty x)
+    take Front 1 xs@(_ :| []) = Take xs Nothing
+    take Front n (_ :| []) = TakeInsufficient (Shortfall (n - 1))
+    take Front n (x :| y : z) = take Front (n - 1) (y :| z) & \case
+        Take a b -> Take (x :| NonEmpty.toList a) b
         s -> s
-    span Back n xs = span Front n (NonEmpty.reverse xs) & \case
-        Span a b -> Span (NonEmpty.reverse a) (NonEmpty.reverse <$> b)
+    take Back n xs = take Front n (NonEmpty.reverse xs) & \case
+        Take a b -> Take (NonEmpty.reverse a) (NonEmpty.reverse <$> b)
         s -> s

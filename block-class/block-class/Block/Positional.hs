@@ -1,7 +1,7 @@
 module Block.Positional
   (
     {- * Class -} Positional (..),
-    {- * Types -} Shortfall (..), Span (..),
+    {- * Types -} Shortfall (..), Take (..),
   )
   where
 
