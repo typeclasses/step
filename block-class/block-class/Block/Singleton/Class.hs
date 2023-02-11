@@ -28,11 +28,13 @@ instance Singleton (NonEmpty x) where
     singleton = (:| [])
 
     pop :: End -> NonEmpty x -> Pop (NonEmpty x)
-    pop Front (x :| xs) = Pop x (nonEmpty xs)
-    pop Back xs =
-        let p = pop Front (reverse xs)
-        in p{ remainder = reverse <$> remainder p }
+    pop = \case
+        Front -> \(x :| xs) -> Pop x (nonEmpty xs)
+        Back -> \xs ->
+            let p = pop Front (reverse xs)
+            in p{ remainder = reverse <$> remainder p }
 
     push :: End -> x -> NonEmpty x -> NonEmpty x
-    push Front x (y :| ys) = x :| y : ys
-    push Back x xs = reverse (push Front x (reverse xs))
+    push = \case
+        Front -> \x (y :| ys) -> x :| y : ys
+        Back -> \x xs -> reverse (push Front x (reverse xs))
