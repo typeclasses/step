@@ -4,4 +4,4 @@ module Block.Positional.Class
   )
   where
 
-import Block.Positional
+import Block.Positional.Internal

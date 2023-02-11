@@ -4,4 +4,4 @@ module Block.Positional.Utilities
   )
   where
 
-import Block.Positional
+import Block.Positional.Internal

@@ -4,4 +4,4 @@ module Block.Positional.Types
   )
   where
 
-import Block.Positional
+import Block.Positional.Internal
