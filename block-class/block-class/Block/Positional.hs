@@ -39,15 +39,15 @@ instance Positional (NonEmpty xs) where
     length = Positive.length
 
     split :: End -> Positive -> NonEmpty xs -> Split (NonEmpty xs)
-    split = \case
-        Front -> \n xs ->
+    split e n xs = case e of
+        Front ->
             let (a, b) = NonEmpty.splitAt (Integer.yolo n) xs
             in case (nonEmpty a, nonEmpty b) of
                 (Nothing, _) -> error "First part of NonEmpty.splitAt \
                                 \should be non-empty, given a positive index"
                 (_, Nothing) -> SplitInsufficient (Shortfall (n + 1 - length xs))
                 (Just a', Just b') -> Split a' b'
-        Back -> \n xs -> case flipSplitAmount xs n of
+        Back -> case flipSplitAmount xs n of
             Either.Left s -> SplitInsufficient s
             Either.Right n' -> split Front n' xs
 
