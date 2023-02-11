@@ -1,1 +1,7 @@
-module Block.Positional.Utilities where
+module Block.Positional.Utilities
+  (
+    flipSplitAmount,
+  )
+  where
+
+import Block.Positional
