@@ -35,6 +35,8 @@ library
     import: base
     hs-source-dirs: block-class
     exposed-modules:
+        Block.Class
+
         Block.Class.Classes
 
         Block.Class.Block.Class
