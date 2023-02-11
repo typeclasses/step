@@ -1,7 +1,1 @@
-module Block.Positional.Utilities
-  (
-    flipSplit,
-  )
-  where
-
-import  Block.Positional
+module Block.Positional.Utilities where
