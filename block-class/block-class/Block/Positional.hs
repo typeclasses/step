@@ -1,7 +1,7 @@
 module Block.Positional
   (
     {- * Class -} Positional (..),
-    {- * Types -} Amount (..), Shortfall (..), Split (..), Truncate (..), TruncateResult (..),
+    {- * Types -} Amount (..), Shortfall (..), Split (..), Truncate (..), Truncation (..),
   )
   where
 
@@ -21,7 +21,7 @@ class (Singleton xs) => Positional xs where
 
     split :: Amount -> xs -> Split xs
 
-    truncate :: Truncate -> xs -> TruncateResult xs
+    truncate :: Truncate -> xs -> Truncation xs
 
 instance Positional (NonEmpty xs) where
 
@@ -41,8 +41,8 @@ data Split xs =
   | Split xs xs
   deriving stock (Eq, Ord, Show, Functor)
 
-data TruncateResult xs =
-    TruncateHasNoEffect
-  | TruncateFailure Shortfall
+data Truncation xs =
+    TruncateNoEffect
+  | TruncateInsufficient Shortfall
   | TruncateResult xs
   deriving stock (Eq, Ord, Show, Functor)
