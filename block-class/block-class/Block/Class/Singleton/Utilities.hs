@@ -1,11 +1,11 @@
-module Block.Singleton.Utilities where
+module Block.Class.Singleton.Utilities where
 
 import Essentials
 
-import Block.Item (Item)
-import Block.Singleton.Class (Singleton (..))
-import Block.Singleton.Types (Pop (..))
-import Block.End (End (..))
+import Block.Class.Item (Item)
+import Block.Class.Singleton.Class (Singleton (..))
+import Block.Class.Singleton.Types (Pop (..))
+import Block.Class.End (End (..))
 
 unpop :: (Singleton xs, Item xs ~ x) =>
     End -> Pop xs -> xs

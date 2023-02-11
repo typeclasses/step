@@ -2,7 +2,7 @@ module Step.Package.Match (match) where
 
 import Essentials
 import Step.Action.Core
-import Block.Class
+import Block.Class.Class
 import Step.Interface
 import Step.LeftRight
 

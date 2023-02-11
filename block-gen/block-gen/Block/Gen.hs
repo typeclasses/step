@@ -1,7 +1,7 @@
 {-| This can be useful for generating parser inputs for testing. -}
-module Block.Gen (genBlocks, genBlocks') where
+module Block.Class.Gen (genBlocks, genBlocks') where
 
-import Block.Class
+import Block.Class.Class
 import Essentials
 
 import Data.Sequence (Seq (..))

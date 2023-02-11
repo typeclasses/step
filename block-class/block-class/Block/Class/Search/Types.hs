@@ -1,4 +1,4 @@
-module Block.Search.Types where
+module Block.Class.Search.Types where
 
 import Essentials
 

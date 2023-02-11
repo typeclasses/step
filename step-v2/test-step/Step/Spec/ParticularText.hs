@@ -5,8 +5,8 @@ import Step.Package.ParticularText
 import Hedgehog
 
 import Step.Package.InMemory (parseMaybe)
-import Block.Text (Text1)
-import Block.Gen (genBlocks)
+import Block.Class.Text (Text1)
+import Block.Class.Gen (genBlocks)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)
 

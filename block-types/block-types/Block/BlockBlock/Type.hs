@@ -1,6 +1,6 @@
 {-# language UndecidableInstances #-}
 
-module Block.BlockBlock.Type
+module Block.Class.BlockBlock.Type
   (
     BlockBlock (..),
   )
@@ -8,8 +8,8 @@ module Block.BlockBlock.Type
 
 import Essentials
 
-import Block.Sequence.Type (Seq1 (..))
-import Block.Class.Block (Block, Item, Pop (..), Division (..))
+import Block.Class.Sequence.Type (Seq1 (..))
+import Block.Class.Class.Block (Block, Item, Pop (..), Division (..))
 import Integer (Positive)
 import Prelude ((+), (-))
 import Data.List.NonEmpty (NonEmpty ((:|)))

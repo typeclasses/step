@@ -1,4 +1,4 @@
-module Block.End where
+module Block.Class.End where
 
 data End = Front | Back
 

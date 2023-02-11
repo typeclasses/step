@@ -6,8 +6,8 @@ import Step.Package.Characters
 import Hedgehog
 
 import Step.Package.InMemory (parseMaybe, parseSureQuery, parseQueryMaybe)
-import Block.Text (Text1)
-import Block.Gen (genBlocks)
+import Block.Class.Text (Text1)
+import Block.Class.Gen (genBlocks)
 import Data.Char (Char)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)

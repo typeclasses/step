@@ -1,10 +1,10 @@
-module Block.Search.Class where
+module Block.Class.Search.Class where
 
 import Essentials
 
-import Block.Search.Types (Span (..), Pivot (..))
-import Block.End (End (..))
-import Block.Item (Item)
+import Block.Class.Search.Types (Span (..), Pivot (..))
+import Block.Class.End (End (..))
+import Block.Class.Item (Item)
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 
 import qualified Integer.Positive as Positive

@@ -12,8 +12,8 @@ import Essentials
 import Cursor.Feed.Type
 import Cursor.Interface.Type
 
-import Block.Class (Block)
-import Block.Class (Drop (..), drop)
+import Block.Class.Class (Block)
+import Block.Class.Class (Drop (..), drop)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans (lift)
 import Data.Sequence (Seq (..))

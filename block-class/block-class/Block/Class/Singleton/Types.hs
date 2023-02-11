@@ -1,8 +1,8 @@
-module Block.Singleton.Types where
+module Block.Class.Singleton.Types where
 
 import Essentials
 
-import Block.Item (Item)
+import Block.Class.Item (Item)
 
 data Pop xs = Pop
     { item :: Item xs

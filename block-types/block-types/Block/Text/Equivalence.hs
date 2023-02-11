@@ -1,4 +1,4 @@
-module Block.Text.Equivalence
+module Block.Class.Text.Equivalence
   (
     {- * Character equivalence -}
     asciiCaseInsensitive,
@@ -6,8 +6,8 @@ module Block.Text.Equivalence
   where
 
 import Essentials
-import Block.Class
-import Block.Text.Type
+import Block.Class.Class
+import Block.Class.Text.Type
 import Data.Bool
 import Data.Char
 

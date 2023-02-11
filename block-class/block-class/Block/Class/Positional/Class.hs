@@ -1,4 +1,4 @@
-module Block.Positional.Class
+module Block.Class.Positional.Class
   (
     Positional (..),
   )
@@ -6,11 +6,11 @@ module Block.Positional.Class
 
 import Essentials
 
-import Block.Singleton.Class (Singleton)
-import Block.Positional.Types (Shortfall (..), Take (..))
+import Block.Class.Singleton.Class (Singleton)
+import Block.Class.Positional.Types (Shortfall (..), Take (..))
 import Integer (Positive)
 import Data.List.NonEmpty (NonEmpty (..))
-import Block.End (End (..))
+import Block.Class.End (End (..))
 import Prelude ((-))
 
 import qualified Integer.Positive as Positive

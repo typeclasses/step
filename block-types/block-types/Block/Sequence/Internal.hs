@@ -1,13 +1,13 @@
-module Block.Sequence.Internal,
+module Block.Class.Sequence.Internal,
   (
     {- * Type -} Seq1 (Seq1, (:<|), (:|>)),
   )
   where
 
 import Essentials
-import Block.Class
+import Block.Class.Class
 
-import Block.ListLike (LL1)
+import Block.Class.ListLike (LL1)
 import Data.Coerce (coerce)
 import Data.Sequence (Seq)
 

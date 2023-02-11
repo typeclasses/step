@@ -1,7 +1,7 @@
-module Block.BlockBlock
+module Block.Class.BlockBlock
   (
     BlockBlock (..),
   )
   where
 
-import Block.BlockBlock.Type
+import Block.Class.BlockBlock.Type

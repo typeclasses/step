@@ -1,11 +1,11 @@
-module Block.ByteString.Internal
+module Block.Class.ByteString.Internal
   (
     {- * Type -} ByteString1 (..),
   )
   where
 
 import Essentials
-import Block.Class
+import Block.Class.Class
 
 import Data.ByteString (ByteString)
 import Data.Coerce (coerce)

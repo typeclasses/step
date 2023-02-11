@@ -17,7 +17,7 @@ import Step.Action.Types
 
 import Data.Char (Char)
 import Data.Text (Text)
-import Block.Text (Text1)
+import Block.Class.Text (Text1)
 import Text.Show (show)
 
 import qualified Step.Action as A

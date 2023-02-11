@@ -1,7 +1,7 @@
-module Block.ByteString.Type
+module Block.Class.ByteString.Type
   (
     {- * Type -} ByteString1,
   )
   where
 
-import Block.ByteString.Internal
+import Block.Class.ByteString.Internal

@@ -1,7 +1,7 @@
-module Block.ListLike.Type
+module Block.Class.ListLike.Type
   (
     {- * Type -} LL1,
   )
   where
 
-import Block.ListLike.Internal
+import Block.Class.ListLike.Internal

@@ -1,13 +1,13 @@
-module Block.Text.Internal
+module Block.Class.Text.Internal
   (
     {- * Type -} Text1 (..),
   )
   where
 
 import Essentials
-import Block.Class
+import Block.Class.Class
 
-import Block.ListLike (LL1)
+import Block.Class.ListLike (LL1)
 import Data.Char (Char)
 import Data.Text (Text)
 import Data.Coerce (coerce)

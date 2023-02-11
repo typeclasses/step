@@ -4,7 +4,7 @@ import Essentials
 
 import Cursor.Interface (Cursor, Mode)
 import SupplyChain (Vendor)
-import Block.Class (Block)
+import Block.Class.Class (Block)
 
 type Feed action (mode :: Mode) block =
     Block block =>

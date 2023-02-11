@@ -1,4 +1,4 @@
-module Block.Item where
+module Block.Class.Item where
 
 import Essentials
 

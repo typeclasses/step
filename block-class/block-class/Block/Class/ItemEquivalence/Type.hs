@@ -1,4 +1,4 @@
-module Block.ItemEquivalence.Type where
+module Block.Class.ItemEquivalence.Type where
 
 import Essentials
 

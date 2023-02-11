@@ -15,7 +15,7 @@ module Step.Package.InMemory
 
 import Essentials
 import Step.Action
-import Block.Class
+import Block.Class.Class
 import Step.Interface
 import Step.Buffer.State
 import Step.Buffer.Buffer

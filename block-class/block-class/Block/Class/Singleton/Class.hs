@@ -1,10 +1,10 @@
-module Block.Singleton.Class where
+module Block.Class.Singleton.Class where
 
 import Essentials
 
-import Block.Item (Item)
-import Block.Singleton.Types (Pop (..))
-import Block.End (End (..))
+import Block.Class.Item (Item)
+import Block.Class.Singleton.Types (Pop (..))
+import Block.Class.End (End (..))
 
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty, reverse)
 

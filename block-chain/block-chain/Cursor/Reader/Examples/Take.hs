@@ -6,7 +6,7 @@ import Cursor.Reader.Type
 
 import Data.Sequence (Seq (..))
 import Integer (Positive, Natural)
-import Block.Class (Take (..))
+import Block.Class.Class (Take (..))
 import SupplyChain (order)
 import Cursor.Interface (next, commit)
 

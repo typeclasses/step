@@ -7,7 +7,7 @@ module Cursor.Reader.Type
 import Essentials
 import SupplyChain
 import Cursor.Interface
-import Block.Class
+import Block.Class.Class
 
 import qualified Control.Monad as Monad
 

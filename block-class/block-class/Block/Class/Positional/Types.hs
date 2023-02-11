@@ -1,4 +1,4 @@
-module Block.Positional.Types
+module Block.Class.Positional.Types
   (
     Shortfall (..), Take (..),
   )

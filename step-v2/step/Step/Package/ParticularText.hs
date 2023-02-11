@@ -7,7 +7,7 @@ module Step.Package.ParticularText
 
 import Essentials
 import Step.Action.Core
-import Block.Class
+import Block.Class.Class
 import Step.Interface
 import Step.Package.FixedLength
 import Step.Package.Failure

@@ -1,11 +1,11 @@
 import Essentials
 
-import Block.Gen (genBlocks)
+import Block.Class.Gen (genBlocks)
 import Data.Text (Text)
 import Test.Hspec (describe, it, shouldBe, hspec)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (forAll)
-import Block.Text (Text1)
+import Block.Class.Text (Text1)
 
 main = hspec do
 

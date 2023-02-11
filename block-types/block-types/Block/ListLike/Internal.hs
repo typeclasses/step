@@ -1,10 +1,10 @@
 {-# language UndecidableInstances #-}
 
-module Block.ListLike.Internal where
+module Block.Class.ListLike.Internal where
 
 import Essentials
 
-import Block.Class hiding (length, generalize, Item)
+import Block.Class.Class hiding (length, generalize, Item)
 import qualified Block.Class as Chunk
 import qualified Block.Class as Block
 

@@ -4,7 +4,7 @@ module Cursor.Morph.Type
   )
   where
 
-import Block.Class (Block)
+import Block.Class.Class (Block)
 import Cursor.Interface (Cursor, Mode, IsCursor)
 import SupplyChain (Vendor)
 

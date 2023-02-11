@@ -1,13 +1,13 @@
-module Block.BiPrefix.Utilities where
+module Block.Class.BiPrefix.Utilities where
 
 import Essentials
 
 import Data.Function (on)
-import Block.Positional (Take (..), Positional (..), take)
-import Block.ItemEquivalence.Type (ItemEquivalence, blocksEquivalent)
+import Block.Class.Positional (Take (..), Positional (..), take)
+import Block.Class.ItemEquivalence.Type (ItemEquivalence, blocksEquivalent)
 import Data.Ord (compare, Ordering (..))
-import Block.End (End (..))
-import Block.BiPrefix.Types (BiPrefix (..), Which (..))
+import Block.Class.End (End (..))
+import Block.Class.BiPrefix.Types (BiPrefix (..), Which (..))
 
 {-| Given a pair of blocks, determine whether either is a prefix
     of the other, according to an item equivalence -}

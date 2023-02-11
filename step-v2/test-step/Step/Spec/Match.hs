@@ -6,8 +6,8 @@ import Step.Action
 import Step.Package.FixedLength
 import Step.Package.Match
 
-import Block.Text (Text1)
-import Block.Gen (genBlocks)
+import Block.Class.Text (Text1)
+import Block.Class.Gen (genBlocks)
 import Step.Package.InMemory (parseMaybe)
 import Test.Tasty (TestTree)
 import Test.Tasty.Hedgehog (fromGroup)

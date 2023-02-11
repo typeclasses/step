@@ -2,7 +2,7 @@ module Cursor.Decode.Type where
 
 import Essentials
 
-import Block.BlockSequence (BlockSequence)
+import Block.Class.BlockSequence (BlockSequence)
 
 newtype Decode block1 block2 =
     Decode (BlockSequence block1 -> DecodeResult block1 block2)

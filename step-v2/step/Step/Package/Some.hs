@@ -1,7 +1,7 @@
 module Step.Package.Some where
 
 import Step.Action.Core
-import Block.Class
+import Block.Class.Class
 import Step.Package.FixedLength
 import Step.Interface
 import Essentials

@@ -35,33 +35,33 @@ library
     import: base
     hs-source-dirs: block-class
     exposed-modules:
-        Block.Classes
+        Block.Class.Classes
 
-        Block.Block.Class
+        Block.Class.Block.Class
 
-        Block.Trivializable.Class
+        Block.Class.Trivializable.Class
 
-        Block.Item
+        Block.Class.Item
 
-        Block.ItemEquivalence
-        Block.ItemEquivalence.Type
-        Block.ItemEquivalence.Examples
+        Block.Class.ItemEquivalence
+        Block.Class.ItemEquivalence.Type
+        Block.Class.ItemEquivalence.Examples
 
-        Block.BiPrefix.Types
-        Block.BiPrefix.Utilities
+        Block.Class.BiPrefix.Types
+        Block.Class.BiPrefix.Utilities
 
-        Block.End
+        Block.Class.End
 
-        Block.Singleton
-        Block.Singleton.Class
-        Block.Singleton.Types
-        Block.Singleton.Utilities
+        Block.Class.Singleton
+        Block.Class.Singleton.Class
+        Block.Class.Singleton.Types
+        Block.Class.Singleton.Utilities
 
-        Block.Positional
-        Block.Positional.Class
-        Block.Positional.Types
+        Block.Class.Positional
+        Block.Class.Positional.Class
+        Block.Class.Positional.Types
 
-        Block.Search
-        Block.Search.Class
-        Block.Search.Types
-        Block.Search.Utilities
+        Block.Class.Search
+        Block.Class.Search.Class
+        Block.Class.Search.Types
+        Block.Class.Search.Utilities

@@ -10,7 +10,7 @@ import Cursor.Feed.Type
 import Cursor.Interface
 
 
-import Block.Class (Block)
+import Block.Class.Class (Block)
 import Control.Monad.State (MonadState)
 import Data.Sequence (Seq (..))
 import Next (TerminableStream)

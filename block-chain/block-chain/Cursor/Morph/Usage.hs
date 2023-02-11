@@ -5,7 +5,7 @@ import Cursor.Reader.Type
 import Cursor.Morph.Type
 
 import SupplyChain ((>-))
-import Block.Class (Block)
+import Block.Class.Class (Block)
 
 import qualified Cursor.Interface.Orders as Order
 

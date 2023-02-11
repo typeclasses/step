@@ -1,4 +1,4 @@
-module Block.BiPrefix.Types where
+module Block.Class.BiPrefix.Types where
 
 data Which = First | Second
 
