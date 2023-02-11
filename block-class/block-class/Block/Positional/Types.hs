@@ -1,6 +1,6 @@
 module Block.Positional.Types
   (
-    Shortfall (..), Split (..), Drop (..), Take (..),
+    Shortfall (..), Span (..),
   )
   where
 

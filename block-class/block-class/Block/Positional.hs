@@ -1,8 +1,7 @@
 module Block.Positional
   (
     {- * Class -} Positional (..),
-    {- * Types -} Shortfall (..), Split (..), Drop (..), Take (..),
-    {- * Utilities -} flipSplitAmount,
+    {- * Types -} Shortfall (..), Span (..),
   )
   where
 
