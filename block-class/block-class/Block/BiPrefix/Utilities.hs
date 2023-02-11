@@ -18,7 +18,7 @@ biPrefix :: Positional xs =>
 biPrefix (blocksEquivalent -> same) pair = case whichIsShorter pair of
     Nothing -> if same pair then Same else NoPrefixRelation
     Just theShorter -> case take Front (length short) long of
-        Take prefix (Just suffix) | same (prefix, short) ->
+        TakePart prefix suffix | same (prefix, short) ->
             IsPrefix theShorter prefix suffix
         _ -> NoPrefixRelation
       where

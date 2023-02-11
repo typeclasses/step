@@ -15,5 +15,6 @@ newtype Shortfall = Shortfall Positive
 
 data Take xs =
     TakeInsufficient Shortfall
-  | Take{ taken :: xs, remainder :: Maybe xs }
+  | TakeAll
+  | TakePart{ taken :: xs, remainder :: xs }
   deriving stock (Eq, Ord, Show, Functor)
