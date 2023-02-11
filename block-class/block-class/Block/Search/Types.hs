@@ -9,5 +9,5 @@ data Pivot p xs =
 data Span xs =
     SpanAll
   | SpanNone
-  | Span xs xs
+  | SpanPart{ spanned :: xs, remainder :: xs }
   deriving stock (Eq, Ord, Show, Functor)

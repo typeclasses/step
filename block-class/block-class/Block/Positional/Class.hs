@@ -6,9 +6,8 @@ module Block.Positional.Class
 
 import Essentials
 
-import Block.Singleton.Class
-import Block.Positional.Types
-
+import Block.Singleton.Class (Singleton)
+import Block.Positional.Types (Shortfall (..), Take (..))
 import Integer (Positive)
 import Data.List.NonEmpty (NonEmpty (..))
 import Block.End (End (..))

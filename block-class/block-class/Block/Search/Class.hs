@@ -2,16 +2,20 @@ module Block.Search.Class where
 
 import Essentials
 
-import Block.Search.Types
-import Block.End
-import Block.Item
+import Block.Search.Types (Span (..), Pivot (..))
+import Block.End (End (..))
+import Block.Item (Item)
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
+
+import qualified Integer.Positive as Positive
+import qualified Data.List.NonEmpty as NonEmpty
 
 class Search xs where
 
     {-|
     @span Front isUpper "ABCdefGHI" = Span "ABC" "defGHI"@
 
-    @span Back isUpper "ABCdefGHI" = Span "ABCdef" "GHI"@
+    @span Back isUpper "ABCdefGHI" = Span "GHI" "ABCdef"@
 
     @span Back isLetter "ABCdefGHI" = SpanAll@
 
@@ -29,3 +33,17 @@ class Search xs where
     @find _ (\_ -> Nothing) _ = Nothing@
     -}
     find :: End -> (Item xs -> Maybe p) -> xs -> Maybe (Pivot p xs)
+
+instance Search (NonEmpty xs) where
+
+    span = \case
+        Front -> \f xs -> let (a, b) = NonEmpty.span f xs in
+            case (nonEmpty a, nonEmpty b) of
+                (Nothing, _) -> SpanNone
+                (_, Nothing) -> SpanAll
+                (Just a', Just b') -> SpanPart a' b'
+        Back -> \f xs -> span Front f (NonEmpty.reverse xs) &
+            \case
+                SpanNone -> SpanNone
+                SpanAll -> SpanAll
+                SpanPart a b -> SpanPart (NonEmpty.reverse a) (NonEmpty.reverse b)
