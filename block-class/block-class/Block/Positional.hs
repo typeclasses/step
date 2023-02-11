@@ -35,6 +35,15 @@ instance Positional (NonEmpty xs) where
     length :: NonEmpty xs -> Positive
     length = Positive.length
 
+    split :: End -> Positive -> NonEmpty xs -> Split (NonEmpty xs)
+    split = _
+
+    take :: End -> Positive -> NonEmpty xs -> Take (NonEmpty xs)
+    take = _
+
+    drop :: End -> Positive -> NonEmpty xs -> Drop (NonEmpty xs)
+    drop = _
+
 {-| (Shortfall /n/) indicates that an operation which failed
     would require a block operand to have /n/ more items. -}
 newtype Shortfall = Shortfall Positive
