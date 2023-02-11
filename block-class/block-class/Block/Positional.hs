@@ -14,22 +14,21 @@ import Integer (Positive)
 import Data.List.NonEmpty (NonEmpty (..))
 import Block.End (End)
 import Data.Either (Either)
-import Prelude ((+))
 
-import qualified Block.End as End
 import qualified Integer.Positive as Positive
 import qualified Data.Either as Either
 import qualified Integer.Signed as Signed
+import qualified Integer.Natural as Natural
 
 class (Singleton xs) => Positional xs where
 
     length :: xs -> Positive
 
-    split :: (End, Positive) -> xs -> Split xs
+    split :: End -> Positive -> xs -> Split xs
 
-    take :: (End, Positive) -> xs -> Take xs
+    take :: End -> Positive -> xs -> Take xs
 
-    drop :: (End, Positive) -> xs -> Drop xs
+    drop :: End -> Positive -> xs -> Drop xs
 
 instance Positional (NonEmpty xs) where
 
@@ -61,8 +60,7 @@ data Take xs =
     when used with 'split' but is expressed in the opposite direction
 
 This operation fails if the split would fail. -}
-flipSplitAmount :: Positional xs => xs -> (End, Positive) -> Either Shortfall (End, Positive)
-flipSplitAmount xs (e, n) = case Positive.subtract (length xs) n of
-    Signed.Zero    -> Either.Left  $ Shortfall 1
-    Signed.Minus s -> Either.Left  $ Shortfall (s + 1)
-    Signed.Plus r  -> Either.Right $ (End.opposite e, r)
+flipSplitAmount :: Positional xs => xs -> Positive -> Either Shortfall Positive
+flipSplitAmount xs n = case Positive.subtract (length xs) n of
+    Signed.Plus r -> Either.Right r
+    Signed.NotPlus s -> Either.Left $ Shortfall $ Natural.addOne s
