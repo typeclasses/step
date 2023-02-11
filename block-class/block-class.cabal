@@ -66,5 +66,3 @@ library
         Block.Search.Class
         Block.Search.Types
         Block.Search.Utilities
-
-        Block.TakeOrDrop

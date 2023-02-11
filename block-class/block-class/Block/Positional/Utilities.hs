@@ -1,6 +1,6 @@
 module Block.Positional.Utilities
   (
-    flipSplit, flipTruncate,
+    flipSplit,
   )
   where
 
