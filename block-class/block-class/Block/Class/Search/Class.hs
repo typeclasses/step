@@ -7,7 +7,6 @@ import Block.Class.End (End (..))
 import Block.Class.Item (Item)
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 
-import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
 
 class Search xs where
@@ -29,3 +28,18 @@ instance Search (NonEmpty xs) where
                 SpanNone -> SpanNone
                 SpanAll -> SpanAll
                 SpanPart a b -> SpanPart (NonEmpty.reverse a) (NonEmpty.reverse b)
+
+    find = \case
+        Front -> \f ->
+          let
+            go (x :| zs) = case f x of
+              Just y -> Just (Pivot Nothing y (nonEmpty zs))
+              Nothing -> case nonEmpty zs of
+                  Nothing -> Nothing
+                  Just zs' -> go zs' <&> \(Pivot a s b) ->
+                      Pivot (Just (x :| maybe [] NonEmpty.toList a)) s b
+          in
+            go
+        Back -> \f xs ->
+            find Front f (NonEmpty.reverse xs)
+            & fmap (fmap NonEmpty.reverse)

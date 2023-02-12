@@ -36,8 +36,9 @@ main = hspec do
         describe "find" do
             describe "pivot in the middle" do
                 let str = ne "abc1def2ghi"
-                it "1" $ find Front (\x -> readMaybe [x]) str `shouldBe` Just (Pivot (nonEmpty "abc") (1 :: Int) (nonEmpty "def2ghi"))
-                it "2" $ find Back  (\x -> readMaybe [x]) str `shouldBe` Just (Pivot (nonEmpty "abc1def") (2 :: Int) (nonEmpty "ghi"))
+                let digit x = readMaybe [x] :: Maybe Int
+                it "1" $ find Front digit str `shouldBe` Just (Pivot (nonEmpty "abc") (1 :: Int) (nonEmpty "def2ghi"))
+                it "2" $ find Back  digit str `shouldBe` Just (Pivot (nonEmpty "ghi") (2 :: Int) (nonEmpty "abc1def"))
             it "pivot on the end" $
                 find Front (\x -> Just x <* guard (isLetter x)) (ne "abc") `shouldBe` Just (Pivot Nothing 'a' (nonEmpty "bc"))
             it "no pivot" $ hedgehog do
