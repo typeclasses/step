@@ -15,13 +15,19 @@ module Block.Class
         Pivot (Pivot), Span (SpanAll, SpanNone, SpanPart),
 
     {- * Trivializable -} Trivializable (..),
+
+    {- * Item equivalence -} ItemEquivalence (..), equality,
+
+    {- * Bi-prefix -} biPrefix, BiPrefix (..), WhichOfTwo (..),
   )
   where
 
+import Block.Class.BiPrefix
 import Block.Class.Block
-import Block.Class.Singleton
-import Block.Class.Positional
-import Block.Class.Search
-import Block.Class.Trivializable
 import Block.Class.End
 import Block.Class.Item
+import Block.Class.ItemEquivalence
+import Block.Class.Positional
+import Block.Class.Search
+import Block.Class.Singleton
+import Block.Class.Trivializable
