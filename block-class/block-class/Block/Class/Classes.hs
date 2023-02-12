@@ -1,6 +1,6 @@
 module Block.Class.Classes
   (
-    Singleton, Positional, Search, Block, Trivializable,
+    Block, Singleton, Positional, Search, Trivializable,
   )
   where
 

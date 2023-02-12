@@ -39,8 +39,10 @@ library
 
         Block.Class.Classes
 
+        Block.Class.Block
         Block.Class.Block.Class
 
+        Block.Class.Trivializable
         Block.Class.Trivializable.Class
 
         Block.Class.Item
@@ -69,3 +71,16 @@ library
         Block.Class.Search.Utilities
 
         Block.Class.NonEmptyIso
+
+test-suite test-block-class
+    import: base
+    type: exitcode-stdio-1.0
+    default-extensions:
+        OverloadedStrings
+    hs-source-dirs: test-block-class
+    main-is: Main.hs
+    build-depends:
+      , block-class
+      , hedgehog
+      , hspec
+      , hspec-hedgehog
