@@ -67,3 +67,5 @@ library
         Block.Class.Search.Class
         Block.Class.Search.Types
         Block.Class.Search.Utilities
+
+        Block.Class.NonEmptyIso
