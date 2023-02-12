@@ -45,8 +45,8 @@ main = hspec do
             find end (\_ -> Nothing) str === (Nothing :: Maybe (Pivot () (NonEmpty Char)))
 
     describe "biPrefix" do
-        it "First" $ biPrefix equality (ne "ab", ne "abcde") `shouldBe` IsPrefix First (ne "ab") (ne "abcde")
-        it "Second" $ biPrefix equality (ne "abcde", ne "ab") `shouldBe` IsPrefix Second (ne "ab") (ne "abcde")
+        it "First" $ biPrefix equality (ne "ab", ne "abcde") `shouldBe` IsPrefix First (ne "ab") (ne "cde")
+        it "Second" $ biPrefix equality (ne "abcde", ne "ab") `shouldBe` IsPrefix Second (ne "ab") (ne "cde")
         it "Same" $ biPrefix equality (ne "abcd", ne "abcd") `shouldBe` Same
         describe "NoPrefixRelation" do
             it "1" $ biPrefix equality (ne "abc", ne "xabc") `shouldBe` NoPrefixRelation
