@@ -16,7 +16,8 @@ class (Semigroup xs) => Singleton xs where
 
     {-| Cut a block into two parts: The extreme item from the front/back,
         and maybe a remainder -}
-    pop :: End -> xs -> Pop xs
+    pop :: (Item xs ~ x) =>
+        End -> xs -> Pop x xs
 
     {-| Add one item onto the front/back of a block -}
     push :: (Item xs ~ x) =>
@@ -27,7 +28,7 @@ instance Singleton (NonEmpty x) where
     singleton :: x -> NonEmpty x
     singleton = (:| [])
 
-    pop :: End -> NonEmpty x -> Pop (NonEmpty x)
+    pop :: End -> NonEmpty x -> Pop x (NonEmpty x)
     pop = \case
         Front -> \(x :| xs) -> Pop x (nonEmpty xs)
         Back -> \xs ->

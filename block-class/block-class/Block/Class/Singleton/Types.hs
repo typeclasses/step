@@ -4,7 +4,11 @@ import Essentials
 
 import Block.Class.Item (Item)
 
-data Pop xs = Pop
-    { item :: Item xs
+data Pop x xs = (Item xs ~ x) => Pop
+    { item :: x
     , remainder :: Maybe xs
     }
+
+deriving stock instance (Eq x, Eq xs) => Eq (Pop x xs)
+deriving stock instance (Ord x, Ord xs) => Ord (Pop x xs)
+deriving stock instance (Show x, Show xs) => Show (Pop x xs)
