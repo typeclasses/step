@@ -1,33 +1,38 @@
 module Block.Class
   (
-    {- * Block -} Block,
+    {- * End = Front | Back -} End (Front, Back),
 
-    {- * Item -} Item,
+    {- * Dealing with single items -}
+        singleton, pop, push, unpop, head, pushMaybes,
 
-    {- * End -} End (Front, Back),
+    {- * Operations involving numeric positions -} length, take,
+        Take (TakeAll, TakePart, TakeInsufficient), Shortfall (Shortfall),
 
-    {- * Singleton -} Singleton (..),
-
-    {- * Positional -} Positional (..),
-        Shortfall (Shortfall), Take (TakeAll, TakePart, TakeInsufficient),
-
-    {- * Search -} Search (..),
+    {- * Searching for items matching a predicate -} span, find,
         Pivot (Pivot), Span (SpanAll, SpanNone, SpanPart),
 
-    {- * Trivializable -} Trivializable (..),
+    {- * Prefix detection -}
+        biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
+        WhichOfTwo (First, Second), ItemEquivalence, equality,
 
-    {- * Item equivalence -} ItemEquivalence (..), equality,
+    {- * Nullability -} refine, generalize, assume,
 
-    {- * Bi-prefix -} biPrefix, BiPrefix (..), WhichOfTwo (..),
+    {- * Classes and families -}
+        Block, Singleton, Item, Positional, Search, Trivializable, Nullable,
   )
   where
 
-import Block.Class.BiPrefix
-import Block.Class.Block
-import Block.Class.End
-import Block.Class.Item
-import Block.Class.ItemEquivalence
-import Block.Class.Positional
-import Block.Class.Search
-import Block.Class.Singleton
-import Block.Class.Trivializable
+import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
+import Block.Class.BiPrefix.Utilities ( biPrefix )
+import Block.Class.Block.Class (Block)
+import Block.Class.End (End (..))
+import Block.Class.Item (Item)
+import Block.Class.ItemEquivalence.Examples (equality)
+import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
+import Block.Class.Positional.Class (Positional (..))
+import Block.Class.Positional.Types (Take(..), Shortfall (..))
+import Block.Class.Search.Class (Search (..))
+import Block.Class.Search.Types (Span (..), Pivot (..))
+import Block.Class.Singleton.Class (Singleton (..))
+import Block.Class.Singleton.Utilities (head, pushMaybes, unpop)
+import Block.Class.Trivializable.Class (Trivializable (..), Nullable)

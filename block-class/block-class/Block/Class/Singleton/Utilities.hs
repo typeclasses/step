@@ -7,6 +7,7 @@ import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Types (Pop (..))
 import Block.Class.End (End (..))
 
+{-| The inverse of 'pop' -}
 unpop :: (Singleton xs, Item xs ~ x) =>
     End -> Pop xs -> xs
 unpop s (Pop x xm) = case xm of
