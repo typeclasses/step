@@ -1,4 +1,4 @@
-module Block.Class.Classes
+module Block.Class.ClassNames
   (
     Block, Singleton, Positional, Search, Trivializable,
   )
