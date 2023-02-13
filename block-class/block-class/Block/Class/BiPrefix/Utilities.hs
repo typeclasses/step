@@ -10,10 +10,22 @@ import Block.Class.End (End (..))
 import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
 
 {-| Given a pair of blocks, determine whether either is a prefix
-    of the other, according to an item equivalence -}
+    of the other, according to an item equivalence
+
+If the first block is a prefix of the second, the result is
+@('IsPrefix' 'First' a b)@. If the second block is a prefix of
+the first, the result is @('IsPrefix' 'Second' a b)@. The fields
+@(a)@ and @(b)@ constitute a partition of the larger block, where
+@(a)@ is the portion equivalent to the shorter block and @(b)@
+is the remainder.
+
+If both blocks are identical (the first is a prefix of the second
+and vice versa), the result is 'Same'. If neither block is a prefix
+of the other, the result is 'NoPrefixRelation'. -}
 biPrefix :: Positional xs =>
-    ItemEquivalence xs
-    -> (xs, xs)
+    ItemEquivalence xs -- ^ How to determine equivalence of two
+        -- sub-blocks (such as 'Block.Class.equality')
+    -> (xs, xs) -- ^ Two blocks to compare
     -> BiPrefix xs
 biPrefix (blocksEquivalent -> same) pair =
     case whichIsShorter pair of
