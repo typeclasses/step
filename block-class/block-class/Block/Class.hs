@@ -1,7 +1,16 @@
+{-| A /block/ is a non-empty sequence. The 'Item' type family specifies the
+type of the items in the sequence. Some examples of blocks may be found in the
+<https://hackage.haskell.org/package/block-types block-types> package; for
+example, the @Text1@ type defined there is a non-empty @Text@ value whose
+@Item@ type is @Char@.
+
+The @block-class@ package, aiming to be minimal in its dependencies, provides
+instances for only one type: 'NonEmpty'. The @Item@ type of @(NonEmpty x)@ is
+@(x)@. The NonEmpty instances are intended primarily for demonstration purposes.
+Some of the NonEmpty operations are asymptotically poor, particularly those
+that deal with the list from its back end. -}
 module Block.Class
   (
-    {- * Introduction -} {- $intro -}
-
     {- * Dealing with single items -} {- $singleton -}
         singleton, pop, push, unpop, head,
 
@@ -47,19 +56,6 @@ import Block.Class.Singleton.Utilities (head, unpop)
 import Block.Class.Trivializable.Class (Trivializable (..), Nullable)
 
 import Data.List.NonEmpty (NonEmpty (..))
-
-{- $intro
-
-A /block/ is a non-empty sequence. The 'Item' type family specifies the type
-of the items in the sequence. Some examples of blocks may be found in the
-<https://hackage.haskell.org/package/block-types block-types> package; for
-example, its @Text1@ type is a non-empty text value whose Item type is @Char@.
-
-The @block-class@ package, aiming to be minimal in its dependencies, provides
-instances for only one type: 'NonEmpty'. The 'Item' type of @NonEmpty x@ is @x@.
-The NonEmpty instances are intended primarily for demonstration purposes.
-Some of the NonEmpty operations are asymptotically poor, particularly those
-that deal with the list from its back side. -}
 
 {- $singleton
 
