@@ -43,8 +43,10 @@ library
         Block.Class.Block
         Block.Class.Block.Class
 
-        Block.Class.Trivializable
-        Block.Class.Trivializable.Class
+        Block.Class.Refined
+        Block.Class.Refined.Class
+        Block.Class.Refined.Family
+        Block.Class.Refined.Utilities
 
         Block.Class.ItemEquivalence
         Block.Class.ItemEquivalence.Type

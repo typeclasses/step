@@ -1,6 +1,6 @@
 module Block.Class.ClassNames
   (
-    Block, Singleton, Positional, Search, Trivializable,
+    Block, Singleton, Positional, Search, Refined,
   )
   where
 
