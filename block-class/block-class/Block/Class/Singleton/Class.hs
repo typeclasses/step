@@ -12,16 +12,22 @@ class (Semigroup xs) => Singleton xs where
 
     {-| A block with a single item -}
     singleton :: (Item xs ~ x) =>
-        x -> xs
+        x -- ^ An item
+        -> xs -- ^ A block consisting of exactly one item
 
-    {-| Cut a block into two parts: The extreme item from the front/back,
+    {-| Cut a block into two parts: The item from the front/back,
         and maybe a remainder -}
     pop :: (Item xs ~ x) =>
-        End -> xs -> Pop x xs
+        End -- ^ 'Front' or 'Back'
+        -> xs -- ^ The block
+        -> Pop x xs -- ^ Division of the block into item and remainder
 
     {-| Add one item onto the front/back of a block -}
     push :: (Item xs ~ x) =>
-        End -> x -> xs -> xs
+        End -- ^ 'Front' or 'Back'
+        -> x -- ^ An item
+        -> xs -- ^ A block
+        -> xs -- ^ A new block with the item appended to it
 
 instance Singleton (NonEmpty x) where
 

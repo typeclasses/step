@@ -1,20 +1,19 @@
 module Block.Class.Positional.Types
   (
-    Shortfall (..), Take (..),
+    Take (..),
   )
   where
 
 import Essentials
 
-import Integer (Positive)
+import Block.Class.Shortfall
 
-{-| (Shortfall /n/) indicates that an operation which failed
-    would require a block operand to have /n/ more items. -}
-newtype Shortfall = Shortfall Positive
-    deriving stock (Eq, Ord, Show)
-
+{-| The result of 'Block.Class.take' -}
 data Take xs =
-    TakeInsufficient Shortfall
+    TakePart{ taken :: xs, remainder :: xs }
+      -- ^ The requested range covers part of the block
   | TakeAll
-  | TakePart{ taken :: xs, remainder :: xs }
+      -- ^ The requested range covers the entire block
+  | TakeInsufficient Shortfall
+      -- ^ The requested range exceeds the size of the block
   deriving stock (Eq, Ord, Show, Functor)

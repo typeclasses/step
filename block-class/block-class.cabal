@@ -46,8 +46,6 @@ library
         Block.Class.Trivializable
         Block.Class.Trivializable.Class
 
-        Block.Class.Item
-
         Block.Class.ItemEquivalence
         Block.Class.ItemEquivalence.Type
         Block.Class.ItemEquivalence.Examples
@@ -55,8 +53,6 @@ library
         Block.Class.BiPrefix
         Block.Class.BiPrefix.Types
         Block.Class.BiPrefix.Utilities
-
-        Block.Class.End
 
         Block.Class.Singleton
         Block.Class.Singleton.Class
@@ -72,7 +68,10 @@ library
         Block.Class.Search.Types
         Block.Class.Search.Utilities
 
+        Block.Class.End
+        Block.Class.Item
         Block.Class.NonEmptyIso
+        Block.Class.Shortfall
 
 test-suite test-block-class
     import: base

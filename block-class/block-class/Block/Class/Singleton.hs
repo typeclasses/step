@@ -2,7 +2,7 @@ module Block.Class.Singleton
   (
     {- * Class -} Singleton (..),
     {- * Types -} Pop (..),
-    {- * Utilities -} unpop, head, pushMaybes,
+    {- * Utilities -} unpop, head,
   )
   where
 

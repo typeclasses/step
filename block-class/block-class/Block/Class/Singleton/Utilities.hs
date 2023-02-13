@@ -9,15 +9,15 @@ import Block.Class.End (End (..))
 
 {-| The inverse of 'pop' -}
 unpop :: Singleton xs =>
-    End -> Pop x xs -> xs
+    End -- ^ 'Front' or 'Back'
+    -> Pop x xs -- ^ Division of a block into item and remainder
+    -> xs -- ^ Item and remainder concatenated back together
 unpop s (Pop x xm) = case xm of
     Nothing -> singleton x
     Just xs -> push s x xs
 
+{-| The item at the 'Front' of a block -}
 head :: (Singleton xs, Item xs ~ x) =>
-    xs -> x
+    xs -- ^ A block
+    -> x -- ^ The block's first item
 head = item . pop Front
-
-pushMaybes :: (Singleton xs, Item xs ~ x) =>
-    End -> Maybe x -> Maybe xs -> Maybe xs
-pushMaybes s = maybe id (\x -> fmap (push s x))

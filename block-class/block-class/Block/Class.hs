@@ -1,12 +1,12 @@
 module Block.Class
   (
-    {- * End = Front | Back -} End (Front, Back),
+    {- * Introduction -} {- $intro -}
 
-    {- * Dealing with single items -}
-        singleton, pop, push, unpop, head, pushMaybes,
+    {- * Dealing with single items -} {- $singleton -}
+        singleton, pop, push, unpop, head,
 
     {- * Operations involving numeric positions -} length, take,
-        Take (TakeAll, TakePart, TakeInsufficient), Shortfall (Shortfall),
+        Take (TakeAll, TakePart, TakeInsufficient),
 
     {- * Searching for items matching a predicate -} span, find,
         Pivot (Pivot), Span (SpanAll, SpanNone, SpanPart),
@@ -17,8 +17,15 @@ module Block.Class
 
     {- * Nullability -} refine, generalize, assume,
 
-    {- * Classes and families -}
-        Block, Singleton, Item, Positional, Search, Trivializable, Nullable,
+    {- * End = Front | Back -} End (Front, Back),
+
+    {- * Shortfall -} Shortfall (Shortfall),
+
+    {- * Families -} Item, Nullable,
+
+    {- * Classes -} Block, Singleton, Positional, Search, Trivializable,
+
+    {- * NonEmpty -} {- $nonEmpty -} NonEmpty ((:|)),
   )
   where
 
@@ -30,9 +37,33 @@ import Block.Class.Item (Item)
 import Block.Class.ItemEquivalence.Examples (equality)
 import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
 import Block.Class.Positional.Class (Positional (..))
-import Block.Class.Positional.Types (Take(..), Shortfall (..))
+import Block.Class.Positional.Types (Take(..))
 import Block.Class.Search.Class (Search (..))
 import Block.Class.Search.Types (Span (..), Pivot (..))
+import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
-import Block.Class.Singleton.Utilities (head, pushMaybes, unpop)
+import Block.Class.Singleton.Utilities (head, unpop)
 import Block.Class.Trivializable.Class (Trivializable (..), Nullable)
+
+import Data.List.NonEmpty (NonEmpty (..))
+
+{- $intro
+
+A /block/ is a non-empty sequence. The 'Item' type family specifies the type
+of the items in the sequence. Some examples of blocks may be found in the
+<https://hackage.haskell.org/package/block-types block-types> package; for
+example, its @Text1@ type is a non-empty text value whose Item type is @Char@.
+
+The @block-class@ package, aiming to be minimal in its dependencies, provides
+instances for only one type: 'NonEmpty'. The 'Item' type of @NonEmpty x@ is @x@.
+The NonEmpty instances are intended primarily for demonstration purposes.
+Some of the NonEmpty operations are asymptotically poor, particularly those
+that deal with the list from its back side. -}
+
+{- $singleton
+
+See "Block.Class.Singleton". -}
+
+{- $nonEmpty
+
+See "Data.List.NonEmpty". -}
