@@ -20,7 +20,8 @@ is the same as
     && ('Data.Foldable.all' eq ('Data.NonEmpty.zip' ('Block.Class.toNonEmpty' a) ('Block.Class.toNonEmpty' b)))
 @
 
-The point here is that we want to work with efficiently packed string types
-like @Text@ but still be able to reason about them as if they were @[Char]@. -}
+The point here is that we want to work with efficiently packed string
+types like @(Text1)@ but still be able to reason about them as if they
+were @(NonEmpty Char])@. -}
 newtype ItemEquivalence xs =
     ItemEquivalence{ itemsEquivalent :: (xs, xs) -> Bool }
