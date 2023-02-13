@@ -4,8 +4,4 @@ module Block.Class.ClassNames
   )
   where
 
-import Block.Class.Block.Class
-import Block.Class.Trivializable.Class
-import Block.Class.Singleton.Class
-import Block.Class.Positional.Class
-import Block.Class.Search.Class
+import Block.Class.Classes
