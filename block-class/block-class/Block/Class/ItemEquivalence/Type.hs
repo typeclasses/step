@@ -2,13 +2,15 @@ module Block.Class.ItemEquivalence.Type where
 
 import Essentials
 
-{-| An equivalence on characters, expressed as an equivalence on blocks
+{-| An equivalence on @('Block.Class.Item' xs)@, expressed as an equivalence
+on @xs@ that must satisfy the following condition:
 
-It must be the case that blocks /a/ and /b/ are equivalent iff the length
-of /a/ and /b/ is /l/ and /a[i] ~ b[i]/ for all /i = [1 .. l]/ according
-to the character equivalence.
+There must exist a predicate @(eq :: (Item xs, Item xs) -> Bool)@
+such that @(blocksEquivalent (a, b))@ is the same as
+@('Block.Class.length' a == 'Block.Class.length' b)@ @&&@
+@('Data.Foldable.all' eq ('Data.NonEmpty.zip' ('Block.Class.toNonEmpty' a) ('Block.Class.toNonEmpty' b)))@.
 
 The point here is that we want to work with efficiently packed string types
 like @Text@ but still be able to reason about them as if they were @[Char]@. -}
-newtype ItemEquivalence c =
-    ItemEquivalence{ blocksEquivalent :: (c, c) -> Bool }
+newtype ItemEquivalence xs =
+    ItemEquivalence{ itemsEquivalent :: (xs, xs) -> Bool }

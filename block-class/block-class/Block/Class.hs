@@ -23,7 +23,7 @@ module Block.Class
 
     {- * Prefix detection -}
         biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
-        WhichOfTwo (First, Second), ItemEquivalence, equality,
+        WhichOfTwo (First, Second), ItemEquivalence (..), equality,
 
     {- * Nullability -} refine, generalize, assume,
 
