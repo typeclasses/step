@@ -6,7 +6,7 @@ import Block.Class
 import Control.Monad (guard)
 import Data.Char (isUpper, isLetter, isDigit, Char)
 import Data.Int (Int)
-import Data.List.NonEmpty (nonEmpty)
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 import Hedgehog (forAll, (===), Gen)
 import Prelude (error)
 import System.IO (IO)

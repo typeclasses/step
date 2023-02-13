@@ -14,31 +14,33 @@ module Block.Class
     {- * Dealing with single items -} {- $singleton -}
         singleton, pop, push, unpop, head,
 
-    {- * Operations involving numeric positions -} length, take,
-        Take (TakeAll, TakePart, TakeInsufficient),
+    {- * Operations involving numeric positions -} {- $positional -}
+        length, take, Take (TakeAll, TakePart, TakeInsufficient),
 
-    {- * Searching for items matching a predicate -}
+    {- * Searching for items matching a predicate -} {- $search -}
         span, Span (SpanAll, SpanNone, SpanPart),
         find, Pivot (Pivot),
 
-    {- * Prefix detection -}
+    {- * Prefix detection -} {- $biPrefix -}
         biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
-        WhichOfTwo (First, Second), ItemEquivalence (..), equality,
+        WhichOfTwo (First, Second),
 
-    {- * Nullability -} refine, generalize, assume,
+    {- * Item equivalence -} {- $itemEquivalence -}
+        ItemEquivalence (..), equality,
 
-    {- * Isomorphism with NonEmpty -} toNonEmpty, fromNonEmpty,
+    {- * Nullability -} {- $trivializable -} refine, generalize, assume,
 
-    {- * End = Front | Back -} End (Front, Back),
+    {- * Isomorphism with NonEmpty -} {- $nonEmptyIso -}
+        toNonEmpty, fromNonEmpty,
 
-    {- * Shortfall -} Shortfall (Shortfall),
+    {- * End = Front | Back -} {- $end -} End (Front, Back),
+
+    {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
     {- * Families -} Item, Nullable,
 
     {- * Classes -} Block, Singleton, Positional, Search,
         Trivializable, NonEmptyIso,
-
-    {- * NonEmpty -} {- $nonEmpty -} NonEmpty ((:|)),
   )
   where
 
@@ -59,12 +61,38 @@ import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Utilities (head, unpop)
 import Block.Class.Trivializable.Class (Trivializable (..), Nullable)
 
-import Data.List.NonEmpty (NonEmpty (..))
-
 {- $singleton
 
 See "Block.Class.Singleton". -}
 
-{- $nonEmpty
+{- $positional
 
-See "Data.List.NonEmpty". -}
+See "Block.Class.Positional". -}
+
+{- $search
+
+See "Block.Class.Search". -}
+
+{- $biPrefix
+
+See "Block.Class.BiPrefix". -}
+
+{- $itemEquivalence
+
+See "Block.Class.ItemEquivalence". -}
+
+{- $trivializable
+
+See "Block.Class.Trivializable" -}
+
+{- $nonEmptyIso
+
+See "Block.Class.NonEmptyIso". -}
+
+{- $end
+
+See "Block.Class.End". -}
+
+{- $shortfall
+
+See "Block.Class.Shortfall". -}
