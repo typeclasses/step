@@ -26,7 +26,24 @@ class Search xs where
         -> xs -- ^ A block
         -> Span xs
 
-    find :: End -> (Item xs -> Maybe p) -> xs -> Maybe (Pivot p xs)
+    {-| Search a block for the first item for which the given function
+        returns @Just@
+
+    If a match is found, the result is @(Just ('Pivot' a found b))@,
+    which represents a division of the block into three parts. Part
+    @(a :: Maybe xs)@ consists of the items that the search examined
+    before finding a match. The @found@ value is the result obtained from
+    the matching item. Part @(b :: Maybe xs)@ consists of the items that
+    the search did not examine.
+
+    If no match is found, the result is @Nothing@. -}
+    find :: End  -- ^ Which end to start searching from: 'Front' or 'Back'
+        -> (Item xs -> Maybe found)
+            -- ^ Specification of what kind of item this search is looking
+            --   for; when this function returns @Just@, an item is found
+            --   and the search is over.
+        -> xs -- ^ A block
+        -> Maybe (Pivot found xs)
 
 instance Search (NonEmpty xs) where
 
