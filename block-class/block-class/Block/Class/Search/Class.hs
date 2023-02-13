@@ -11,7 +11,20 @@ import qualified Data.List.NonEmpty as NonEmpty
 
 class Search xs where
 
-    span :: End -> (Item xs -> Bool) -> xs -> Span xs
+    {-| Separate a block into two parts by specifying a predicate
+        for all the items in the first part
+
+    Where possible, the result is @('SpanPart' spanned remainder)@,
+    where @spanned@ is the longest contiguous series starting from the
+    designated 'End' of items that match the predicate and @remainder@
+    is everything else. If not even the first item matches, the result
+    is 'SpanNone'. If all the items match, the result is 'SpanAll'. -}
+    span ::
+        End -- ^ Which end to start searching from: 'Front' or 'Back'
+        -> (Item xs -> Bool)
+            -- ^ Keep taking as long as items match this predicate
+        -> xs -- ^ A block
+        -> Span xs
 
     find :: End -> (Item xs -> Maybe p) -> xs -> Maybe (Pivot p xs)
 

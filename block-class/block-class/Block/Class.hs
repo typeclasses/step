@@ -8,8 +8,9 @@ module Block.Class
     {- * Operations involving numeric positions -} length, take,
         Take (TakeAll, TakePart, TakeInsufficient),
 
-    {- * Searching for items matching a predicate -} span, find,
-        Pivot (Pivot), Span (SpanAll, SpanNone, SpanPart),
+    {- * Searching for items matching a predicate -}
+        span, Span (SpanAll, SpanNone, SpanPart),
+        find, Pivot (Pivot),
 
     {- * Prefix detection -}
         biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
