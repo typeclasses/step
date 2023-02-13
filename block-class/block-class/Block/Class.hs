@@ -27,13 +27,16 @@ module Block.Class
 
     {- * Nullability -} refine, generalize, assume,
 
+    {- * Isomorphism with NonEmpty -} toNonEmpty, fromNonEmpty,
+
     {- * End = Front | Back -} End (Front, Back),
 
     {- * Shortfall -} Shortfall (Shortfall),
 
     {- * Families -} Item, Nullable,
 
-    {- * Classes -} Block, Singleton, Positional, Search, Trivializable,
+    {- * Classes -} Block, Singleton, Positional, Search,
+        Trivializable, NonEmptyIso,
 
     {- * NonEmpty -} {- $nonEmpty -} NonEmpty ((:|)),
   )
@@ -46,6 +49,7 @@ import Block.Class.End (End (..))
 import Block.Class.Item (Item)
 import Block.Class.ItemEquivalence.Examples (equality)
 import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
+import Block.Class.NonEmptyIso (NonEmptyIso (..))
 import Block.Class.Positional.Class (Positional (..))
 import Block.Class.Positional.Types (Take(..))
 import Block.Class.Search.Class (Search (..))
