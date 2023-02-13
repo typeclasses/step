@@ -3,16 +3,16 @@ module Main (main) where
 import Essentials
 import Block.Class
 
-import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
-import Test.Hspec (hspec, describe, it, shouldBe, Spec)
-import Test.Hspec.Hedgehog (hedgehog)
-import System.IO (IO)
-import Data.Char (isUpper, isLetter, isDigit, Char)
-import Text.Read (readMaybe)
 import Control.Monad (guard)
+import Data.Char (isUpper, isLetter, isDigit, Char)
 import Data.Int (Int)
+import Data.List.NonEmpty (nonEmpty)
 import Hedgehog (forAll, (===), Gen)
 import Prelude (error)
+import System.IO (IO)
+import Test.Hspec (hspec, describe, it, shouldBe, Spec)
+import Test.Hspec.Hedgehog (hedgehog)
+import Text.Read (readMaybe)
 
 import qualified Hedgehog.Gen as Gen
 
