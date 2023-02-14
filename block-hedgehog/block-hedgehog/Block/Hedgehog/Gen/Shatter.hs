@@ -1,5 +1,5 @@
 {-| This can be useful for generating parser inputs for testing. -}
-module Block.Hedgehog.Shatter (shatterNullable, shatterBlock) where
+module Block.Hedgehog.Gen.Shatter (shatterNullable, shatterBlock) where
 
 import Block.Class
 import Essentials
