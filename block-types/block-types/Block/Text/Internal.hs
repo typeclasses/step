@@ -10,6 +10,7 @@ import Block.Class
 import Data.Char (Char)
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Prelude (error)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
@@ -38,6 +39,13 @@ instance Singleton Text1 where
 
     push Front x (Text1 xs) = assume (Text.cons x xs)
     push Back x (Text1 xs) = assume (Text.snoc xs x)
+
+    pop Front (Text1 xs) = case Text.uncons xs of
+        Just (x, xs') -> Block.Pop x (refine xs')
+        Nothing -> error "Text1 pop: the impossible happened"
+    pop Back (Text1 xs) = case Text.unsnoc xs of
+        Just (xs', x) -> Block.Pop x (refine xs')
+        Nothing -> error "Text1 pop: the impossible happened"
 
 instance Positional Text1 where
 
