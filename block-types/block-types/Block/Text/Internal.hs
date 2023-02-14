@@ -10,11 +10,16 @@ import Block.Class
 import Data.Char (Char)
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Ord (compare, Ordering (..))
 import Prelude (error)
+import Data.Int (Int)
+import Integer (Signed (..))
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Block.Class as Block
+import qualified Integer.Positive as Positive
+import qualified Integer
 
 newtype Text1 = Text1 Text
     deriving stock (Eq, Ord, Show)
@@ -37,17 +42,30 @@ instance Singleton Text1 where
 
     singleton = Text.singleton >>> assume
 
-    push Front x (Text1 xs) = assume (Text.cons x xs)
-    push Back x (Text1 xs) = assume (Text.snoc xs x)
+    push Front x xs = assume (Text.cons x (generalize xs))
+    push Back x xs = assume (Text.snoc (generalize xs) x)
 
-    pop Front (Text1 xs) = case Text.uncons xs of
+    pop Front xs = case Text.uncons (generalize xs) of
         Just (x, xs') -> Block.Pop x (refine xs')
         Nothing -> error "Text1 pop: the impossible happened"
-    pop Back (Text1 xs) = case Text.unsnoc xs of
+    pop Back xs = case Text.unsnoc (generalize xs) of
         Just (xs', x) -> Block.Pop x (refine xs')
         Nothing -> error "Text1 pop: the impossible happened"
 
 instance Positional Text1 where
+
+    length = generalize >>> Text.length >>> Integer.yolo
+
+    take end n x = case Integer.subtract (length x) n of
+        Zero -> TakeAll
+        Minus s -> TakeInsufficient (Shortfall s)
+        Plus n' -> case end of
+            Front ->
+                let (a, b) = Text.splitAt (Integer.yolo n) (generalize x)
+                in TakePart (assume a) (assume b)
+            Back ->
+                let (b, a) = Text.splitAt (Integer.yolo n') (generalize x)
+                in TakePart (assume a) (assume b)
 
 instance Search Text1 where
 
