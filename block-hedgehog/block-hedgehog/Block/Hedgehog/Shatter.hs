@@ -1,5 +1,5 @@
 {-| This can be useful for generating parser inputs for testing. -}
-module Block.Hedgehog.Gen (genBlocks, genBlocks') where
+module Block.Hedgehog.Shatter (shatterNullable, shatterBlock) where
 
 import Block.Class
 import Essentials
@@ -16,26 +16,26 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 {-| Break up a possibly-empty value into a list of blocks -}
-genBlocks :: Refined block => Nullable block -> Gen [block]
-genBlocks x = genBlocksSeq x <&> LL.toList
+shatterNullable :: Refined block => Nullable block -> Gen [block]
+shatterNullable x = shatterNullableSeq x <&> LL.toList
 
-genBlocksSeq :: Refined block => Nullable block -> Gen (Seq block)
-genBlocksSeq x = case refine x of
+shatterNullableSeq :: Refined block => Nullable block -> Gen (Seq block)
+shatterNullableSeq x = case refine x of
     Nothing -> pure LL.empty
-    Just y -> genBlocksSeq' y
+    Just y -> shatterBlockSeq y
 
 {-| Break up a block into a list of blocks -}
-genBlocks' :: Block block => block -> Gen [block]
-genBlocks' x = genBlocksSeq' x <&> LL.toList
+shatterBlock :: Block block => block -> Gen [block]
+shatterBlock x = shatterBlockSeq x <&> LL.toList
 
-genBlocksSeq' :: Block block => block -> Gen (Seq block)
-genBlocksSeq' x =
+shatterBlockSeq :: Block block => block -> Gen (Seq block)
+shatterBlockSeq x =
     Gen.recursive Gen.choice [ stopSplitting ] [ keepSplitting ]
   where
     stopSplitting = pure (x :<| Empty)
     keepSplitting = split x >>= \case
         Nothing -> pure (x :<| Empty)
-        Just (a, b) -> (<>) <$> genBlocksSeq' a <*> genBlocksSeq' b
+        Just (a, b) -> (<>) <$> shatterBlockSeq a <*> shatterBlockSeq b
 
 split :: Block xs => xs -> Gen (Maybe (xs, xs))
 split x = case Positive.fromNatural (Positive.subtractOne (length x)) of
