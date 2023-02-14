@@ -5,7 +5,7 @@ module Block.Class.ByteString.Internal
   where
 
 import Essentials
-import Block.Class.Class
+import Block.Class
 
 import Data.ByteString (ByteString)
 import Data.Coerce (coerce)
