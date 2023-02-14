@@ -14,10 +14,10 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 {-| Break up a possibly-empty value into a list of blocks -}
-genBlocks :: Trivializable block => Nullable block -> Gen [block]
+genBlocks :: Refined block => Nullable block -> Gen [block]
 genBlocks x = genBlocksSeq x <&> LL.toList
 
-genBlocksSeq :: Trivializable block => Nullable block -> Gen (Seq block)
+genBlocksSeq :: Refined block => Nullable block -> Gen (Seq block)
 genBlocksSeq x = case refine x of
     Nothing -> pure LL.empty
     Just y -> genBlocksSeq' y
@@ -35,6 +35,6 @@ z x = case Positive.fromNatural (Positive.subtractOne (length x)) of
     Just len -> do
       Just i <- Gen.integral (Range.constant 1 (Positive.toNatural len))
                   <&> Positive.fromNatural
-      case split i x of
-          SplitInsufficient -> error "genBlocks: SplitInsufficient"
-          Split a b -> pure (<>) <*> genBlocksSeq' a <*> genBlocksSeq' b
+      case take Front i x of
+          TakePart a b -> pure (<>) <*> genBlocksSeq' a <*> genBlocksSeq' b
+          _ -> error "genBlocks: 'take' out of bounds"
