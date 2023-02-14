@@ -6,8 +6,10 @@ import Essentials
 
 import Data.Sequence (Seq (..))
 import Hedgehog (Gen)
+import Integer (Positive, Natural)
 import Prelude (error)
 
+import qualified Integer
 import qualified Integer.Positive as Positive
 import qualified Data.ListLike as LL
 import qualified Hedgehog.Gen as Gen
@@ -27,14 +29,24 @@ genBlocks' :: Block block => block -> Gen [block]
 genBlocks' x = genBlocksSeq' x <&> LL.toList
 
 genBlocksSeq' :: Block block => block -> Gen (Seq block)
-genBlocksSeq' x = Gen.recursive Gen.choice [pure (x :<| Empty)] [z x]
+genBlocksSeq' x =
+    Gen.recursive Gen.choice [ stopSplitting ] [ keepSplitting ]
+  where
+    stopSplitting = pure (x :<| Empty)
+    keepSplitting = split x >>= \case
+        Nothing -> pure (x :<| Empty)
+        Just (a, b) -> (<>) <$> genBlocksSeq' a <*> genBlocksSeq' b
 
-z :: Block c => c -> Gen (Seq c)
-z x = case Positive.fromNatural (Positive.subtractOne (length x)) of
-    Nothing -> pure (x :<| Empty)
+split :: Block xs => xs -> Gen (Maybe (xs, xs))
+split x = case Positive.fromNatural (Positive.subtractOne (length x)) of
+    Nothing -> pure Nothing
     Just len -> do
-      Just i <- Gen.integral (Range.constant 1 (Positive.toNatural len))
-                  <&> Positive.fromNatural
+      i <- positive len
       case take Front i x of
-          TakePart a b -> pure (<>) <*> genBlocksSeq' a <*> genBlocksSeq' b
-          _ -> error "genBlocks: 'take' out of bounds"
+          TakePart a b -> pure (Just (a, b))
+          _ -> error "Block.Hedgehog.Gen.split: 'take' out of bounds"
+
+positive :: Positive -> Gen Positive
+positive max = do
+    i :: Natural <- Gen.integral (Range.constant 1 (Positive.toNatural max))
+    pure (Integer.yolo i)
