@@ -1,7 +1,7 @@
 packages:
     block-chain
   , block-class
-  , block-gen
+  , block-hedgehog
   , block-types
   , supply-monitor
   , supply-pushback

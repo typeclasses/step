@@ -1,7 +1,7 @@
 {-| This can be useful for generating parser inputs for testing. -}
-module Block.Class.Gen (genBlocks, genBlocks') where
+module Block.Hedgehog.Gen (genBlocks, genBlocks') where
 
-import Block.Class.Class
+import Block.Class
 import Essentials
 
 import Data.Sequence (Seq (..))

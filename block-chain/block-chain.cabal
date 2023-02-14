@@ -79,6 +79,6 @@ test-suite test-block-chain
     main-is: Main.hs
     build-depends:
       , block-chain
-      , block-gen
+      , block-hedgehog
       , hspec
       , hspec-hedgehog
