@@ -42,3 +42,4 @@ library
     hs-source-dirs: block-hedgehog
     exposed-modules:
         Block.Hedgehog.Gen.Shatter
+        Block.Hedgehog.Spec.Singleton

@@ -17,7 +17,7 @@ possibly-empty type. For example, @(Nullable Text1)@ is @(Text)@. -}
 module Block.Class
   (
     {- * Dealing with single items -} {- $singleton -}
-        singleton, pop, push, unpop, head,
+        singleton, pop, Pop (Pop), push, unpop, head,
 
     {- * Folding -} {- $fold -} fold,
 
@@ -67,6 +67,7 @@ import Block.Class.Search.Types (Span (..), Pivot (..))
 import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Utilities (head, unpop)
+import Block.Class.Singleton.Types (Pop (..))
 import Block.Class.Refined (Refined (..), Nullable, fold)
 
 {- $singleton
