@@ -45,7 +45,6 @@ library
 
         Block.Class.Refined
         Block.Class.Refined.Class
-        Block.Class.Refined.Family
         Block.Class.Refined.Utilities
 
         Block.Class.ItemEquivalence
@@ -71,7 +70,6 @@ library
         Block.Class.Search.Utilities
 
         Block.Class.End
-        Block.Class.Item
         Block.Class.NonEmptyIso
         Block.Class.Shortfall
 

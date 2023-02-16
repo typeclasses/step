@@ -22,7 +22,7 @@ is the remainder.
 If both blocks are identical (the first is a prefix of the second
 and vice versa), the result is 'Same'. If neither block is a prefix
 of the other, the result is 'NoPrefixRelation'. -}
-biPrefix :: Positional xs =>
+biPrefix :: Positional x xs =>
     ItemEquivalence xs -- ^ How to determine equivalence of two
         -- sub-blocks (such as 'Block.Class.equality')
     -> (xs, xs) -- ^ Two blocks to compare
@@ -43,7 +43,7 @@ biPrefix (itemsEquivalent -> same) pair =
     swap :: (a, b) -> (b, a)
     swap (a, b) = (b, a)
 
-    whichIsShorter :: Positional xs => (xs, xs) -> Maybe WhichOfTwo
+    whichIsShorter :: Positional x xs => (xs, xs) -> Maybe WhichOfTwo
     whichIsShorter (a, b) = case (compare `on` length) a b of
         EQ -> Nothing
         LT -> Just First

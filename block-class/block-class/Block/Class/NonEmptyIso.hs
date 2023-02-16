@@ -1,13 +1,11 @@
 module Block.Class.NonEmptyIso where
 
-import Block.Class.Item
-
 import Data.List.NonEmpty (NonEmpty)
 
-class NonEmptyIso xs where
-    toNonEmpty :: xs -> NonEmpty (Item xs)
-    fromNonEmpty :: NonEmpty (Item xs) -> xs
+class NonEmptyIso x xs | xs -> x where
+    toNonEmpty :: xs -> NonEmpty x
+    fromNonEmpty :: NonEmpty x -> xs
 
-instance NonEmptyIso (NonEmpty xs) where
+instance NonEmptyIso x (NonEmpty x) where
     toNonEmpty x = x
     fromNonEmpty x = x

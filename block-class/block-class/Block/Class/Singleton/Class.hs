@@ -2,34 +2,33 @@ module Block.Class.Singleton.Class where
 
 import Essentials
 
-import Block.Class.Item (Item)
 import Block.Class.Singleton.Types (Pop (..))
 import Block.Class.End (End (..))
 
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty, reverse)
 
-class (Semigroup xs) => Singleton xs where
+class (Semigroup xs) => Singleton x xs | xs -> x where
 
     {-| A block with a single item -}
-    singleton :: (Item xs ~ x) =>
+    singleton ::
         x -- ^ An item
         -> xs -- ^ A block consisting of exactly one item
 
     {-| Cut a block into two parts: The item from the front/back,
         and maybe a remainder -}
-    pop :: (Item xs ~ x) =>
+    pop ::
         End -- ^ 'Front' or 'Back'
         -> xs -- ^ The block
         -> Pop x xs -- ^ Division of the block into item and remainder
 
     {-| Add one item onto the front/back of a block -}
-    push :: (Item xs ~ x) =>
+    push ::
         End -- ^ 'Front' or 'Back'
         -> x -- ^ An item
         -> xs -- ^ A block
         -> xs -- ^ A new block with the item appended to it
 
-instance Singleton (NonEmpty x) where
+instance Singleton x (NonEmpty x) where
 
     singleton :: x -> NonEmpty x
     singleton = (:| [])

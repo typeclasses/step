@@ -1,9 +1,8 @@
 module Block.Class.Refined
   (
-    Refined (..), Nullable, fold,
+    Refined (..), fold,
   )
   where
 
 import Block.Class.Refined.Class
-import Block.Class.Refined.Family
 import Block.Class.Refined.Utilities

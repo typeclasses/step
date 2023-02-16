@@ -45,8 +45,6 @@ module Block.Class
 
     {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
-    {- * Families -} Item, Nullable,
-
     {- * Classes -} Block, Singleton, Positional, Search,
         Refined, NonEmptyIso,
   )
@@ -56,7 +54,6 @@ import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
 import Block.Class.BiPrefix.Utilities ( biPrefix )
 import Block.Class.Block.Class (Block)
 import Block.Class.End (End (..))
-import Block.Class.Item (Item)
 import Block.Class.ItemEquivalence.Examples (equality)
 import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
 import Block.Class.NonEmptyIso (NonEmptyIso (..))
@@ -68,7 +65,8 @@ import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Utilities (head, unpop)
 import Block.Class.Singleton.Types (Pop (..))
-import Block.Class.Refined (Refined (..), Nullable, fold)
+import Block.Class.Refined.Class (Refined (..))
+import Block.Class.Refined.Utilities (fold)
 
 {- $singleton
 

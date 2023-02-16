@@ -4,12 +4,11 @@ import Essentials
 
 import Block.Class.Search.Types (Span (..), Pivot (..))
 import Block.Class.End (End (..))
-import Block.Class.Item (Item)
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 
 import qualified Data.List.NonEmpty as NonEmpty
 
-class Search xs where
+class Search x xs | xs -> x where
 
     {-| Separate a block into two parts by specifying a predicate
         for all the items in the first part
@@ -21,7 +20,7 @@ class Search xs where
     is 'SpanNone'. If all the items match, the result is 'SpanAll'. -}
     span ::
         End -- ^ Which end to start searching from: 'Front' or 'Back'
-        -> (Item xs -> Bool)
+        -> (x -> Bool)
             -- ^ Keep taking as long as items match this predicate
         -> xs -- ^ A block
         -> Span xs
@@ -38,14 +37,14 @@ class Search xs where
 
     If no match is found, the result is @Nothing@. -}
     find :: End  -- ^ Which end to start searching from: 'Front' or 'Back'
-        -> (Item xs -> Maybe found)
+        -> (x -> Maybe found)
             -- ^ Specification of what kind of item this search is looking
             --   for; when this function returns @Just@, an item is found
             --   and the search is over.
         -> xs -- ^ A block
         -> Maybe (Pivot found xs)
 
-instance Search (NonEmpty xs) where
+instance Search x (NonEmpty x) where
 
     span = \case
         Front -> \f xs -> let (a, b) = NonEmpty.span f xs in

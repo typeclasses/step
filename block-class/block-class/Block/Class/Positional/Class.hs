@@ -17,7 +17,7 @@ import Prelude ((-))
 import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
 
-class (Singleton xs) => Positional xs where
+class (Singleton x xs) => Positional x xs | xs -> x where
 
     {-| The number of items in the block -}
     length :: xs -> Positive
@@ -39,7 +39,7 @@ class (Singleton xs) => Positional xs where
         -> xs -- ^ A block
         -> Take xs
 
-instance Positional (NonEmpty xs) where
+instance Positional x (NonEmpty x) where
 
     length :: NonEmpty x -> Positive
     length = Positive.length
