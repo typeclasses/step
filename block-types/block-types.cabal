@@ -25,17 +25,6 @@ common base
         PatternSynonyms
         TypeFamilies
         ViewPatterns
-        BlockArguments
-        DataKinds
-        DerivingStrategies
-        FunctionalDependencies
-        ImpredicativeTypes
-        LambdaCase
-        NoImplicitPrelude
-        NoMonomorphismRestriction
-        PatternSynonyms
-        TypeFamilies
-        ViewPatterns
 
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
