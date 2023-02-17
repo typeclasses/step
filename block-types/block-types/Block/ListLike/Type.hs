@@ -31,7 +31,8 @@ newtype LL1 x xs = LL1 xs
     deriving newtype (Eq, Ord, Show, Semigroup)
 
 instance (IsString xs, ListLike xs x) => IsString (LL1 x xs) where
-    fromString = fromString >>> refine >>> fromMaybe (error "LL1 fromString: empty")
+    fromString = fromString >>> refine >>>
+        fromMaybe (error "LL1 fromString: empty")
 
 instance (ListLike xs x) => Refined x xs (LL1 x xs) where
 
@@ -77,6 +78,12 @@ instance (ListLike xs x, Semigroup xs) => Singleton x (LL1 x xs) where
     pop end = generalize >>> uncons' end >>> tuplePop
 
 instance Search x (LL1 x xs) where
+
+    span :: End -> (x -> Bool) -> LL1 x xs -> Span (LL1 x xs)
+    span = _
+
+    find :: End -> (x -> Maybe found) -> LL1 x xs -> Maybe (Pivot found (LL1 x xs))
+    find = _
 
 instance (ListLike xs x) => Block x (LL1 x xs) where
 
