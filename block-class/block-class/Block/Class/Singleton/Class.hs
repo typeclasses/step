@@ -7,7 +7,7 @@ import Block.Class.End (End (..))
 
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty, reverse)
 
-class (Semigroup xs) => Singleton x xs | xs -> x where
+class Singleton x xs | xs -> x where
 
     {-| A block with a single item -}
     singleton ::

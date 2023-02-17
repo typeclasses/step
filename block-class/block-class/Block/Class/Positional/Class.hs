@@ -9,7 +9,6 @@ import Essentials
 import Block.Class.End (End (..))
 import Block.Class.Positional.Types (Take (..))
 import Block.Class.Shortfall (Shortfall (..))
-import Block.Class.Singleton.Class (Singleton)
 import Data.List.NonEmpty (NonEmpty (..))
 import Integer (Positive, Natural)
 import Prelude ((-))
@@ -20,7 +19,7 @@ import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Integer.Natural as Natural
 
-class (Singleton x xs) => Positional x xs | xs -> x where
+class Positional x xs | xs -> x where
 
     {-| The number of items in the block -}
     length :: xs -> Positive

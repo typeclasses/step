@@ -45,14 +45,12 @@ module Block.Class
 
     {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
-    {- * Classes -} Block, Singleton, Positional, Search,
-        Refined, NonEmptyIso,
+    {- * Classes -} Singleton, Positional, Search, Refined, NonEmptyIso,
   )
   where
 
 import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
 import Block.Class.BiPrefix.Utilities ( biPrefix )
-import Block.Class.Block.Class (Block)
 import Block.Class.End (End (..))
 import Block.Class.ItemEquivalence.Examples (equality)
 import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))

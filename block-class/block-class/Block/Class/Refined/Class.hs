@@ -2,12 +2,11 @@ module Block.Class.Refined.Class where
 
 import Essentials
 
-import Block.Class.Block.Class (Block)
 import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
 import Data.Foldable (toList)
 import Prelude (error)
 
-class (Block x xs, Monoid nul) => Refined x nul xs | xs -> nul x where
+class Refined x nul xs | xs -> nul x where
 
     refine :: nul -> Maybe xs
 

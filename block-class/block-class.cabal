@@ -40,9 +40,6 @@ library
         Block.Class.Classes
         Block.Class.ClassNames
 
-        Block.Class.Block
-        Block.Class.Block.Class
-
         Block.Class.Refined
         Block.Class.Refined.Class
         Block.Class.Refined.Utilities
