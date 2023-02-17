@@ -19,7 +19,7 @@ module Block.Class
     {- * Dealing with single items -} {- $singleton -}
         singleton, pop, Pop (Pop), push, unpop, head,
 
-    {- * Folding -} {- $fold -} fold,
+    {- * Concatenation -} {- $concat -} concat,
 
     {- * Operations involving numeric positions -} {- $positional -}
         length, take, Take (TakeAll, TakePart, TakeInsufficient),
@@ -66,15 +66,15 @@ import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Utilities (head, unpop)
 import Block.Class.Singleton.Types (Pop (..))
 import Block.Class.Refined.Class (Refined (..))
-import Block.Class.Refined.Utilities (fold)
+import Block.Class.Refined.Utilities (concat)
 
 {- $singleton
 
 See "Block.Class.Singleton". -}
 
-{- $fold
+{- $concat
 
-To fold a non-empty list of blocks, use 'Data.Semigroup.sconcat'. -}
+To concatenate a non-empty list of blocks, use 'Data.Semigroup.sconcat'. -}
 
 {- $positional
 

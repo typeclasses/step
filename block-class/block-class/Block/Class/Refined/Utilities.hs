@@ -6,5 +6,5 @@ import Block.Class.Refined.Class (Refined, generalize)
 
 import qualified Data.Foldable as Foldable
 
-fold :: Refined x nul xs => [xs] -> nul
-fold = fmap generalize >>> Foldable.fold
+concat :: Refined x nul xs => [xs] -> nul
+concat = fmap generalize >>> Foldable.fold

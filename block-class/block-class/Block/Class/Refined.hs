@@ -1,6 +1,6 @@
 module Block.Class.Refined
   (
-    Refined (..), fold,
+    Refined (..), concat,
   )
   where
 
