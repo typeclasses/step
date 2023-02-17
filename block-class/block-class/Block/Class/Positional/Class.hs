@@ -11,11 +11,14 @@ import Block.Class.Positional.Types (Take (..))
 import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton)
 import Data.List.NonEmpty (NonEmpty (..))
-import Integer (Positive)
+import Integer (Positive, Natural)
 import Prelude ((-))
+import Data.Int (Int)
 
+import qualified Data.List as List
 import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Integer.Natural as Natural
 
 class (Singleton x xs) => Positional x xs | xs -> x where
 
@@ -39,6 +42,8 @@ class (Singleton x xs) => Positional x xs | xs -> x where
         -> xs -- ^ A block
         -> Take xs
 
+    at :: End -> Natural -> xs -> Maybe x
+
 instance Positional x (NonEmpty x) where
 
     length :: NonEmpty x -> Positive
@@ -56,3 +61,13 @@ instance Positional x (NonEmpty x) where
         TakeAll -> TakeAll
         TakePart a b -> TakePart (NonEmpty.reverse a) (NonEmpty.reverse b)
         t@TakeInsufficient{} -> t
+
+    at :: End -> Natural -> NonEmpty x -> Maybe x
+    at = \end i (NonEmpty.toList -> xs) -> do
+        i' <- Natural.toInt i
+        xs & ix case end of { Front -> i'; Back -> List.length xs - i' }
+      where
+        ix :: Int -> [x] -> Maybe x
+        ix _ [] = Nothing
+        ix 0 (x : _) = Just x
+        ix i (_ : xs) = ix (i - 1) xs
