@@ -16,7 +16,7 @@ common base
     default-extensions:
         BlockArguments
         DataKinds
-        DerivingStrategies
+        DerivingVia
         FunctionalDependencies
         ImpredicativeTypes
         LambdaCase
@@ -32,6 +32,7 @@ common base
       , bytestring ^>= 0.11.4
       , containers ^>= 0.6.5
       , integer-types ^>= 0.1
+      , ListLike
       , quaalude ^>= 0.0
       , text ^>= 1.2.4 || ^>= 2.0
 
@@ -39,21 +40,19 @@ library
     import: base
     hs-source-dirs: block-types
     exposed-modules:
-        Block.Sequence
-        Block.Sequence.Type
-        Block.Sequence.Internal
 
         Block.BlockBlock
         Block.BlockBlock.Type
 
         Block.ByteString
         Block.ByteString.Type
-        Block.ByteString.Internal
+
+        Block.ListLike
+        Block.ListLike.Type
+
+        Block.Sequence
+        Block.Sequence.Type
 
         Block.Text
         Block.Text.Type
         Block.Text.Equivalence
-        Block.Text.Internal
-
-    other-modules:
-        Block.ListLike.Internal
