@@ -32,7 +32,6 @@ common base
       , bytestring ^>= 0.11.4
       , containers ^>= 0.6.5
       , integer-types ^>= 0.1
-      , ListLike
       , quaalude ^>= 0.0
       , text ^>= 1.2.4 || ^>= 2.0
 
@@ -47,8 +46,9 @@ library
         Block.ByteString
         Block.ByteString.Type
 
-        Block.ListLike
-        Block.ListLike.Type
+        Block.Null
+        Block.Null.Class
+        Block.Null.Type
 
         Block.Sequence
         Block.Sequence.Type

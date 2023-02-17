@@ -1,6 +1,6 @@
-module Block.ListLike.Type
+module Block.Null.Type
   (
-    {- * Type -} LL1,
+    {- * Type -} NotNull,
   )
   where
 
@@ -9,7 +9,6 @@ import Block.Class
 
 import Data.Function (on)
 import Data.Functor.Contravariant (Predicate (..))
-import Data.ListLike (ListLike)
 import Data.Maybe (fromMaybe)
 import Data.Ord (Ord (compare))
 import Data.String (IsString (..))
@@ -19,77 +18,84 @@ import Prelude (error, (+))
 import Text.Show (Show (showsPrec))
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Int (Int)
+import Block.Null.Class (Null)
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe
-import qualified Data.ListLike as LL
 import qualified Data.Maybe as Maybe
 import qualified Integer.Positive as Positive
 import qualified Integer
+import qualified Block.Null.Class as Null
 
-newtype LL1 x xs = LL1 xs
+newtype NotNull x xs = NotNull xs
     deriving newtype (Eq, Ord, Show, Semigroup)
 
-instance (IsString xs, ListLike xs x) => IsString (LL1 x xs) where
+instance (IsString xs, Null x xs) => IsString (NotNull x xs) where
     fromString = fromString >>> refine >>>
-        fromMaybe (error "LL1 fromString: empty")
+        fromMaybe (error "NotNull fromString: empty")
 
-instance (ListLike xs x) => Refined x xs (LL1 x xs) where
+instance (Null x xs) => Refined x xs (NotNull x xs) where
 
-    refine :: xs -> Maybe (LL1 x xs)
-    refine x = if LL.null x then Nothing else Just (LL1 x)
+    refine :: xs -> Maybe (NotNull x xs)
+    refine = Null.notNullMaybe >>> fmap NotNull
 
-    generalize :: LL1 x xs -> xs
-    generalize (LL1 x) = x
+    generalize :: NotNull x xs -> xs
+    generalize (NotNull x) = x
 
-    assume :: xs -> LL1 x xs
-    assume = LL1
+    assume :: xs -> NotNull x xs
+    assume = NotNull
 
-instance (ListLike xs x) => NonEmptyIso x (LL1 x xs) where
+instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
 
-    toNonEmpty :: LL1 x xs -> NonEmpty x
-    toNonEmpty = generalize >>> LL.toList >>> nonEmpty >>> Maybe.fromJust
+    toNonEmpty :: NotNull x xs -> NonEmpty x
+    toNonEmpty = generalize >>> Null.toNonEmpty >>> Maybe.fromJust
 
-    fromNonEmpty :: ListLike xs x => NonEmpty x -> LL1 x xs
-    fromNonEmpty = NonEmpty.toList >>> LL.fromList >>> assume
+    fromNonEmpty :: Null x xs => NonEmpty x -> NotNull x xs
+    fromNonEmpty = Null.fromNonEmpty >>> assume
 
-instance (ListLike xs x, Semigroup xs) => Positional x (LL1 x xs) where
+instance (Null x xs) => Positional x (NotNull x xs) where
 
-    length :: LL1 x xs -> Positive
-    length = generalize >>> LL.length >>> intPositive
+    length :: NotNull x xs -> Positive
+    length = generalize >>> Null.length >>> Positive.fromNatural >>> Maybe.fromJust
 
-    take :: End -> Positive -> LL1 x xs -> Take (LL1 x xs)
+    take :: End -> Positive -> NotNull x xs -> Take (NotNull x xs)
     take end n x = case Integer.subtract (length x) n of
         Zero -> TakeAll
         Minus s -> TakeInsufficient (Shortfall s)
         Plus n' -> x & generalize
-            & splitAtPositive case end of { Front -> n; Back -> n' }
+            & Null.splitAt (Positive.toNatural case end of { Front -> n; Back -> n' })
             & swapIfBack end & tupleTakePart
 
-instance (ListLike xs x, Semigroup xs) => Singleton x (LL1 x xs) where
+instance (Null x xs) => Singleton x (NotNull x xs) where
 
-    singleton :: x -> LL1 x xs
-    singleton = LL.singleton >>> assume
+    singleton :: x -> NotNull x xs
+    singleton = Null.singleton >>> assume
 
-    push :: End -> x -> LL1 x xs -> LL1 x xs
-    push end x = generalize >>> cons' end x >>> assume
+    push :: End -> x -> NotNull x xs -> NotNull x xs
+    push end x = generalize >>> Null.push end x >>> assume
 
-    pop :: End -> LL1 x xs -> Pop x (LL1 x xs)
-    pop end = generalize >>> uncons' end >>> tuplePop
+    pop :: End -> NotNull x xs -> Pop x (NotNull x xs)
+    pop end = generalize >>> Null.pop end >>> Maybe.fromJust
+        >>> (\(a, b) -> Pop a (refine b))
 
-instance Search x (LL1 x xs) where
+instance (Null x xs) => Search x (NotNull x xs) where
 
-    span :: End -> (x -> Bool) -> LL1 x xs -> Span (LL1 x xs)
-    span = _
+    span :: End -> (x -> Bool) -> NotNull x xs -> Span (NotNull x xs)
+    span end p = generalize >>> Null.span end p
+        >>> (\(a, b) -> (refine a, refine b))
+        >>> \case
+            (Nothing, _) -> SpanNone
+            (Just _, Nothing) -> SpanAll
+            (Just x, Just y) -> SpanPart x y
 
-    find :: End -> (x -> Maybe found) -> LL1 x xs -> Maybe (Pivot found (LL1 x xs))
+    find :: End -> (x -> Maybe found) -> NotNull x xs -> Maybe (Pivot found (NotNull x xs))
     find = _
 
-instance (ListLike xs x) => Block x (LL1 x xs) where
+instance (Null x xs) => Block x (NotNull x xs) where
 
     -- length = length
 
-    -- singleton x = LL1 (LL.singleton x) 1
+    -- singleton x = NotNull (LL.singleton x) 1
 
     -- span s = \f whole -> tupleSpan (span' (getPredicate f) (generalize whole))
     --   where
@@ -103,7 +109,7 @@ instance (ListLike xs x) => Block x (LL1 x xs) where
     --     let
     --         (a, b) = LL.span (Maybe.isNothing . f) (generalize whole)
     --     in
-    --         case refine b :: Maybe (LL1 c) of
+    --         case refine b :: Maybe (NotNull c) of
     --             Nothing -> NoDivision
     --             Just (pop Left -> Pop x b') ->
     --                 Division (refine a) (Maybe.fromJust (f x)) b'
@@ -148,13 +154,13 @@ instance (ListLike xs x) => Block x (LL1 x xs) where
     --         { popItem = x
     --         , popRemainder =
     --             case Positive.subtract (length a) Positive.one of
-    --                 Plus n -> Just (LL1 b n )
+    --                 Plus n -> Just (NotNull b n )
     --                 _ -> Nothing
     --         }
 
     -- push Left (Pop x xs) = case xs of
     --     Nothing -> singleton x
-    --     Just xs' -> LL1 (LL.cons x (generalize xs')) (length xs' + 1)
+    --     Just xs' -> NotNull (LL.cons x (generalize xs')) (length xs' + 1)
 
 swap :: (a, b) -> (b, a)
 swap (a, b) = (b, a)
@@ -162,30 +168,27 @@ swap (a, b) = (b, a)
 swapIfBack :: End -> (a, a) -> (a, a)
 swapIfBack = \case Front -> id; Back -> swap
 
-tupleTakePart :: ListLike xs x =>
+tupleTakePart :: Null x xs =>
     (xs, xs) -- ^ Assumption: Both are be non-empty
-    -> Take (LL1 x xs)
+    -> Take (NotNull x xs)
 tupleTakePart (a, b) = TakePart (assume a) (assume b)
 
 positiveInt :: Positive -- ^ Assumption: Is convertible to Int
     -> Int
 positiveInt = Positive.toInt >>> Maybe.fromJust
 
-splitAtPositive :: ListLike xs x =>
-    Positive -- ^ Assumption: Is convertible to Int
-    -> xs -> (xs, xs)
-splitAtPositive n = LL.splitAt (positiveInt n)
+-- splitAtPositive :: Null x xs =>
+--     Positive -- ^ Assumption: Is convertible to Int
+--     -> xs -> (xs, xs)
+-- splitAtPositive n = Null.splitAt (positiveInt n)
 
-cons' :: ListLike xs x => End -> x -> xs -> xs
-cons' end x xs = case end of Front -> LL.cons x xs; Back -> LL.snoc xs x
+-- cons' :: Null x xs => End -> x -> xs -> xs
+-- cons' end x xs = case end of Front -> LL.cons x xs; Back -> LL.snoc xs x
 
-uncons' :: ListLike xs x => End -> xs -> (x, xs)
-uncons' end xs = case end of
-    Front -> (LL.head xs, LL.tail xs)
-    Back  -> (LL.last xs, LL.init xs)
-
-tuplePop :: Refined x nul xs => (x, nul) -> Pop x xs
-tuplePop (a, b) = Pop a (refine b)
+-- uncons' :: Null x xs => End -> xs -> (x, xs)
+-- uncons' end xs = case end of
+--     Front -> (LL.head xs, LL.tail xs)
+--     Back  -> (LL.last xs, LL.init xs)
 
 intPositive :: Int -> Positive
 intPositive = Positive.fromInt >>> Maybe.fromJust
