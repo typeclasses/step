@@ -51,7 +51,7 @@ instance Null a (Seq a) where
 
 instance Null Char Text where
     toList Front = Text.unpack
-    toList Back = fix \r -> Text.unsnoc >>> maybe [] (\(xs, x) -> x : r xs)
+    toList Back = Text.foldr (:) []
     fromList Front = Text.pack
     fromList Back = Text.pack >>> Text.reverse
     null = Text.null
@@ -79,7 +79,7 @@ instance Null Char Text where
 
 instance Null Word8 ByteString where
     toList Front = ByteString.unpack
-    toList Back = fix \r -> ByteString.unsnoc >>> maybe [] (\(xs, x) -> x : r xs)
+    toList Back = ByteString.foldr (:) []
     fromList Front = ByteString.pack
     fromList Back = ByteString.pack >>> ByteString.reverse
     null = ByteString.null
