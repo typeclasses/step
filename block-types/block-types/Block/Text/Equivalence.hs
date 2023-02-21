@@ -1,4 +1,4 @@
-module Block.Class.Text.Equivalence
+module Block.Text.Equivalence
   (
     {- * Character equivalence -}
     asciiCaseInsensitive,

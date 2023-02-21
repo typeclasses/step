@@ -1,7 +1,7 @@
-module Block.Class.Sequence
+module Block.Sequence
   (
-    Seq1 (..),
+    Seq1,
   )
   where
 
-import Block.Class.Sequence.Type
+import Block.Sequence.Type

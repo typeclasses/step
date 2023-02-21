@@ -42,7 +42,7 @@ instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
     toNonEmpty :: End -> NotNull x xs -> NonEmpty x
     toNonEmpty end = generalize >>> Null.toNonEmpty end >>> Maybe.fromJust
 
-    fromNonEmpty :: Null x xs => End -> NonEmpty x -> NotNull x xs
+    fromNonEmpty :: End -> NonEmpty x -> NotNull x xs
     fromNonEmpty end = Null.fromNonEmpty end >>> assume
 
 instance (Null x xs) => Positional x (NotNull x xs) where

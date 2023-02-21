@@ -5,5 +5,5 @@ module Block.Class.Text
   )
   where
 
-import Block.Class.Text.Type
-import Block.Class.Text.Equivalence
+import Block.Text.Type
+import Block.Text.Equivalence
