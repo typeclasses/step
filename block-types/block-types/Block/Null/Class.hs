@@ -6,24 +6,27 @@ module Block.Null.Class
 
 import Essentials
 
-import Data.List.NonEmpty (NonEmpty)
-import Integer (Natural)
 import Block.Class (End (..))
-import Data.Function (flip, fix)
-import Data.Word (Word8)
+import Control.Applicative ((<|>))
 import Data.ByteString (ByteString)
 import Data.Char (Char)
-import Data.Text (Text)
-import Prelude ((+))
+import Data.Function (flip)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Sequence (Seq)
+import Data.Text (Text)
+import Data.Word (Word8)
+import Integer (Natural)
+import Prelude ((+))
 
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.ByteString as ByteString
+import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
-import qualified Integer.Natural as Natural
-import qualified Data.ByteString as ByteString
-import qualified Data.Text as Text
 import qualified Data.Sequence as Seq
+import qualified Data.Text as Text
+import qualified Integer.Natural as Natural
 
 class (Monoid xs) => Null x xs | xs -> x where
     toList :: End -> xs -> [x]
@@ -47,7 +50,27 @@ notNullMaybe :: Null x xs => xs -> Maybe xs
 notNullMaybe xs = if null xs then Nothing else Just xs
 
 instance Null a (Seq a) where
-    toList end = _
+    toList Front = Foldable.toList
+    toList Back = Foldable.foldr (:) []
+    fromList Front = Seq.fromList
+    fromList Back = Seq.unfoldl (List.uncons >>> fmap \(xs, x) -> (x, xs))
+    null = Seq.null
+    length = Seq.length >>> Natural.fromInt >>> Maybe.fromJust
+    singleton = Seq.singleton
+    pop _ Seq.Empty = Nothing
+    pop Front (x Seq.:<| xs) = Just (x, xs)
+    pop Back (xs Seq.:|> x) = Just (x, xs)
+    push Front x xs = x Seq.:<| xs
+    push Back x xs = xs Seq.:|> x
+    span Front = Seq.spanl
+    span Back = Seq.spanr
+    splitAt n = Seq.splitAt (Natural.toInt n & Maybe.fromJust)
+    find Front f xs =
+        Seq.foldlWithIndex (\xm i a -> xm <|> fmap (\x -> (i, x)) (f a)) Nothing xs
+        <&> \(i, x) -> ( Seq.take i xs, x, Seq.drop (i + 1) xs )
+    find Back f xs =
+        Seq.foldrWithIndex (\i a xm -> xm <|> fmap (\x -> (i, x)) (f a)) Nothing xs
+        <&> \(i, x) -> ( Seq.drop (i + 1) xs, x, Seq.take i xs )
 
 instance Null Char Text where
     toList Front = Text.unpack
