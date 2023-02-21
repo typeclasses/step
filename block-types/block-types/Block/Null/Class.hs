@@ -15,6 +15,7 @@ import Data.ByteString (ByteString)
 import Data.Char (Char)
 import Data.Text (Text)
 import Prelude ((+))
+import Data.Sequence (Seq)
 
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List.NonEmpty as NonEmpty
@@ -22,6 +23,7 @@ import qualified Data.Maybe as Maybe
 import qualified Integer.Natural as Natural
 import qualified Data.ByteString as ByteString
 import qualified Data.Text as Text
+import qualified Data.Sequence as Seq
 
 class (Monoid xs) => Null x xs | xs -> x where
     toList :: End -> xs -> [x]
@@ -44,11 +46,14 @@ fromNonEmpty end = NonEmpty.toList >>> fromList end
 notNullMaybe :: Null x xs => xs -> Maybe xs
 notNullMaybe xs = if null xs then Nothing else Just xs
 
+instance Null a (Seq a) where
+    toList end = _
+
 instance Null Char Text where
     toList Front = Text.unpack
-    toList Back = Text.reverse >>> Text.unpack
+    toList Back = Text.reverse >>> Text.unpack -- todo: reverse is O(n)
     fromList Front = Text.pack
-    fromList Back = Text.pack >>> Text.reverse
+    fromList Back = Text.pack >>> Text.reverse -- todo: reverse is O(n)
     null = Text.null
     length = Text.length >>> Natural.fromInt >>> Maybe.fromJust
     singleton = Text.singleton
@@ -74,9 +79,9 @@ instance Null Char Text where
 
 instance Null Word8 ByteString where
     toList Front = ByteString.unpack
-    toList Back = ByteString.reverse >>> ByteString.unpack
+    toList Back = ByteString.reverse >>> ByteString.unpack -- todo: reverse is O(n)
     fromList Front = ByteString.pack
-    fromList Back = ByteString.pack >>> ByteString.reverse
+    fromList Back = ByteString.pack >>> ByteString.reverse -- todo: reverse is O(n)
     null = ByteString.null
     length = ByteString.length >>> Natural.fromInt >>> Maybe.fromJust
     singleton = ByteString.singleton
