@@ -9,7 +9,7 @@ import Essentials
 import Data.List.NonEmpty (NonEmpty)
 import Integer (Natural)
 import Block.Class (End (..))
-import Data.Function (flip)
+import Data.Function (flip, fix)
 import Data.Word (Word8)
 import Data.ByteString (ByteString)
 import Data.Char (Char)
@@ -51,9 +51,9 @@ instance Null a (Seq a) where
 
 instance Null Char Text where
     toList Front = Text.unpack
-    toList Back = Text.reverse >>> Text.unpack -- todo: reverse is O(n)
+    toList Back = fix \r -> Text.unsnoc >>> maybe [] (\(xs, x) -> x : r xs)
     fromList Front = Text.pack
-    fromList Back = Text.pack >>> Text.reverse -- todo: reverse is O(n)
+    fromList Back = Text.pack >>> Text.reverse
     null = Text.null
     length = Text.length >>> Natural.fromInt >>> Maybe.fromJust
     singleton = Text.singleton
@@ -79,9 +79,9 @@ instance Null Char Text where
 
 instance Null Word8 ByteString where
     toList Front = ByteString.unpack
-    toList Back = ByteString.reverse >>> ByteString.unpack -- todo: reverse is O(n)
+    toList Back = fix \r -> ByteString.unsnoc >>> maybe [] (\(xs, x) -> x : r xs)
     fromList Front = ByteString.pack
-    fromList Back = ByteString.pack >>> ByteString.reverse -- todo: reverse is O(n)
+    fromList Back = ByteString.pack >>> ByteString.reverse
     null = ByteString.null
     length = ByteString.length >>> Natural.fromInt >>> Maybe.fromJust
     singleton = ByteString.singleton
