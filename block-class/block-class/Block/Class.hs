@@ -22,7 +22,7 @@ module Block.Class
     {- * Concatenation -} {- $concat -} concat,
 
     {- * Operations involving numeric positions -} {- $positional -}
-        length, at, take, Take (TakeAll, TakePart, TakeInsufficient),
+        length, take, Take (TakeAll, TakePart, TakeInsufficient),
 
     {- * Searching for items matching a predicate -} {- $search -}
         span, Span (SpanAll, SpanNone, SpanPart),
