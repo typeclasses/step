@@ -18,7 +18,7 @@ spec :: forall xs.
     (Show xs, Eq xs) =>
     (Concat xs) =>
     Gen xs -> Spec
-spec genXs = describe "Positional" do
+spec genXs = describe "Concat" do
 
     it "(++) is associative" $ hedgehog do
         a <- forAll genXs
