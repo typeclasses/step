@@ -1,6 +1,6 @@
 module Block.BlockBlock.Type
   (
-    BlockBlock (..),
+    BlockBlock (BlockBlock),
   )
   where
 

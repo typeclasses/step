@@ -58,3 +58,17 @@ library
         Block.Text
         Block.Text.Type
         Block.Text.Equivalence
+
+test-suite test-block-types
+    import: base
+    type: exitcode-stdio-1.0
+    default-extensions:
+        OverloadedStrings
+    hs-source-dirs: test-block-types
+    main-is: Main.hs
+    build-depends:
+      , block-hedgehog ^>= 0.0.0
+      , block-types
+      , hedgehog
+      , hspec
+      , hspec-hedgehog
