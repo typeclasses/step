@@ -3,7 +3,7 @@ module Block.Class.Index
     {- * Class -} Index (..),
     {- * Superclasses -} Positional (..), Singleton (..), Concat (..),
     {- * Types -} End (..), Pop (Pop), Take (TakeAll, TakePart, TakeInsufficient), Shortfall (..),
-    {- * Utilities -} unpop, head, pushMaybe, prepend,
+    {- * Utilities -} unpop, head, pushMaybe, append,
   )
   where
 

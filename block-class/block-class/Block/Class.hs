@@ -16,7 +16,7 @@ possibility of representing an empty sequence. Such types are called
 possibly-empty type. For example, @(Nullable Text1)@ is @(Text)@. -}
 module Block.Class
   (
-    {- * Concatenation -} (++), concat, concatRefined, prepend,
+    {- * Concatenation -} (++), concat, concatRefined, append,
 
     {- * Dealing with single items -} {- $singleton -}
         singleton, pop, Pop (Pop), push, unpop, head, pushMaybe,
@@ -58,7 +58,7 @@ module Block.Class
 import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
 import Block.Class.BiPrefix.Utilities ( biPrefix )
 import Block.Class.Concat.Class (Concat (..))
-import Block.Class.Concat.Utilities (prepend)
+import Block.Class.Concat.Utilities (append)
 import Block.Class.End (End (..))
 import Block.Class.Index.Class (Index (..))
 import Block.Class.ItemEquivalence.Examples (equality)

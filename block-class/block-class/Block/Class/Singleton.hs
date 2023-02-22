@@ -3,7 +3,7 @@ module Block.Class.Singleton
     {- * Class -} Singleton (..),
     {- * Superclasses -} Concat (..),
     {- * Types -} Pop (..), End (..),
-    {- * Utilities -} unpop, head, pushMaybe, prepend,
+    {- * Utilities -} unpop, head, pushMaybe, append,
   )
   where
 

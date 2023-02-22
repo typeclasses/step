@@ -38,10 +38,10 @@ spec genXs = describe "Positional" do
 
         take e (l + n) xs === TakeInsufficient (Shortfall n)
 
-    it "take end (length a) (prepend end a b) = TakePart a b" $ hedgehog do
+    it "take end (length a) (append end a b) = TakePart a b" $ hedgehog do
 
         a <- forAll genXs
         b <- forAll genXs
         end <- forAll Gen.end
 
-        take end (length a) (prepend end a b) === TakePart a b
+        take end (length a) (append end a b) === TakePart a b

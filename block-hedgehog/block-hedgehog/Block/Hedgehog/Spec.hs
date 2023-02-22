@@ -7,6 +7,7 @@ import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===), annotateShow)
 
+import qualified Block.Hedgehog.Spec.Concat as Concat
 import qualified Block.Hedgehog.Spec.Index as Index
 import qualified Block.Hedgehog.Spec.Singleton as Singleton
 import qualified Block.Hedgehog.Spec.Positional as Positional
@@ -23,6 +24,7 @@ spec :: forall x xs.
     ) =>
     Gen x -> Gen xs -> Spec
 spec genX genXs = describe "Block" do
+    Concat.spec genXs
     Singleton.spec genX genXs
     Positional.spec genXs
     NonEmptyIso.spec genX genXs

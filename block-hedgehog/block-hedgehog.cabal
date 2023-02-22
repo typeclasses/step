@@ -22,6 +22,7 @@ common base
         LambdaCase
         NoImplicitPrelude
         NoMonomorphismRestriction
+        OverloadedLists
         PatternSynonyms
         TypeFamilies
         ViewPatterns
@@ -46,6 +47,7 @@ library
         Block.Hedgehog.Gen.Positive
 
         Block.Hedgehog.Spec
+        Block.Hedgehog.Spec.Concat
         Block.Hedgehog.Spec.Index
         Block.Hedgehog.Spec.NonEmptyIso
         Block.Hedgehog.Spec.Positional
