@@ -1,5 +1,3 @@
-{-# language StrictData #-}
-
 module Block.BlockBlock.Type
   (
     BlockBlock (..),
@@ -22,22 +20,28 @@ import qualified Data.Maybe as Maybe
 import qualified Fold.Nonempty as Fold
 import qualified Integer.Positive as Positive
 
-data BlockBlock x xs xss = BlockBlock{ bbXss :: xss, bbLength :: Positive }
+data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
     deriving stock (Eq, Ord, Show)
 
-bb :: forall x xs xss. (NonEmptyIso xs xss, Positional x xs) => xss -> BlockBlock x xs xss
-bb xss = BlockBlock xss (Fold.run Fold.sum (length <$> (toNonEmpty Front xss :: NonEmpty xs)))
+pattern BlockBlock :: forall x xs xss. (NonEmptyIso xs xss, Positional x xs) =>
+    xss -> BlockBlock x xs xss
+pattern BlockBlock xss <- BlockBlockUnsafe xss _
+  where
+    BlockBlock xss = BlockBlockUnsafe xss
+      (Fold.run Fold.sum (length <$> (toNonEmpty Front xss :: NonEmpty xs)))
 
 instance (Semigroup xss) => Semigroup (BlockBlock x xs xss) where
-    BlockBlock xss1 len1 <> BlockBlock xss2 len2 = BlockBlock (xss1 <> xss2) (len1 + len2)
+    BlockBlockUnsafe xss1 len1 <> BlockBlockUnsafe xss2 len2 =
+        BlockBlockUnsafe (xss1 <> xss2) (len1 + len2)
 
-instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional x xs) => NonEmptyIso x (BlockBlock x xs xss) where
+instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional x xs) =>
+        NonEmptyIso x (BlockBlock x xs xss) where
 
     toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
     toNonEmpty end = bbXss >>> toNonEmpty end >>> fmap (toNonEmpty end) >>> sconcat
 
     fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
-    fromNonEmpty end = fromNonEmpty end >>> singleton >>> bb
+    fromNonEmpty end = fromNonEmpty end >>> singleton >>> BlockBlock
 
 instance Positional x (BlockBlock x xs xss) where
 
@@ -45,10 +49,13 @@ instance Positional x (BlockBlock x xs xss) where
     length = bbLength
 
     take :: End -> Positive -> BlockBlock x xs xss -> Take (BlockBlock x xs xss)
-    take end n (BlockBlock xss len) = case Positive.subtract len n of
+    take end n (BlockBlockUnsafe xss len) = case Positive.subtract len n of
         Minus s -> TakeInsufficient (Shortfall s)
         Zero -> TakeAll
-        Plus remainderLength -> TakePart (BlockBlock taken n) (BlockBlock remainder remainderLength)
+        Plus remainderLength ->
+            TakePart
+                (BlockBlockUnsafe taken n)
+                (BlockBlockUnsafe remainder remainderLength)
           where
             (taken, remainder) = undefined -- todo
 
