@@ -8,6 +8,7 @@ import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===))
 
 import qualified Hedgehog.Gen as Gen
+import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall nul xs.
     (Show xs, Eq xs) =>

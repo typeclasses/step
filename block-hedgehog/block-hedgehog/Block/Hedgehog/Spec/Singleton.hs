@@ -8,6 +8,7 @@ import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===))
 
 import qualified Hedgehog.Gen as Gen
+import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall x xs.
     (Show x, Eq x) =>
@@ -19,13 +20,13 @@ spec genX genXs = describe "Singleton" do
     it "pop end . unpop end = id" $ hedgehog do
         x <- forAll genX
         xs <- forAll (Gen.maybe genXs)
-        end <- forAll Gen.enumBounded
+        end <- forAll Gen.end
         let p = Pop x xs
         (pop end . unpop end) p === p
 
     it "pop end (singleton x) = Pop x Nothing" $ hedgehog do
         x <- forAll genX
-        end <- forAll Gen.enumBounded
+        end <- forAll Gen.end
         let xs :: xs = singleton x
         let p = pop end xs
         p === Pop x Nothing

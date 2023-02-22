@@ -7,6 +7,7 @@ import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===), annotateShow)
 
+import qualified Block.Hedgehog.Spec.Index as Index
 import qualified Block.Hedgehog.Spec.Singleton as Singleton
 import qualified Block.Hedgehog.Spec.Positional as Positional
 import qualified Block.Hedgehog.Spec.NonEmptyIso as NonEmptyIso
@@ -18,8 +19,7 @@ spec :: forall x xs.
     (Show x, Eq x) =>
     (Show xs, Eq xs) =>
     (
-      Semigroup xs, Singleton x xs, Positional xs,
-      NonEmptyIso x xs, Search x xs
+      Semigroup xs, NonEmptyIso x xs, Search x xs, Index x xs
     ) =>
     Gen x -> Gen xs -> Spec
 spec genX genXs = describe "Block" do
@@ -27,6 +27,7 @@ spec genX genXs = describe "Block" do
     Positional.spec genXs
     NonEmptyIso.spec genX genXs
     Search.spec genX genXs
+    Index.spec genX genXs
 
     it "length . toNonEmpty e = length" $ hedgehog do
         xs <- forAll genXs
@@ -58,7 +59,7 @@ refinedSpec :: forall x nul xs.
     (Show nul, Eq nul) =>
     (Show xs, Eq xs) =>
     (
-      Semigroup xs, Monoid nul, Singleton x xs, Positional xs,
+      Semigroup xs, Monoid nul, Index x xs,
       NonEmptyIso x xs, Search x xs, Refined nul xs
     ) =>
     Gen x -> Gen nul -> Gen xs -> Spec

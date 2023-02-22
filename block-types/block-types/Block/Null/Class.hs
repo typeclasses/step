@@ -124,7 +124,7 @@ instance Null a (Seq a) where
 instance Null Char Text where
 
     at :: End -> Positive -> Text -> Maybe Char
-    at end n xs = if n' >= len then Nothing else Just (Text.index xs i)
+    at end n xs = if n' > len then Nothing else Just (Text.index xs i)
       where
         n' = Positive.toInt n & Maybe.fromJust
         len = Text.length xs

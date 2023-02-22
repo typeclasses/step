@@ -41,10 +41,12 @@ library
     import: base
     hs-source-dirs: block-hedgehog
     exposed-modules:
+        Block.Hedgehog.Gen.End
         Block.Hedgehog.Gen.Shatter
         Block.Hedgehog.Gen.Positive
 
         Block.Hedgehog.Spec
+        Block.Hedgehog.Spec.Index
         Block.Hedgehog.Spec.NonEmptyIso
         Block.Hedgehog.Spec.Positional
         Block.Hedgehog.Spec.Refined
