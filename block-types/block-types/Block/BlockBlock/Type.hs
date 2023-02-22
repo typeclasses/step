@@ -13,6 +13,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (sconcat)
 import Data.Ord (Ordering (..))
 import Integer.Signed (Signed (..))
+import Control.Applicative (liftA2)
 
 import qualified Data.Foldable as Foldable
 import qualified Block.Class as Block
@@ -43,7 +44,7 @@ instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional x x
     fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
     fromNonEmpty end = fromNonEmpty end >>> singleton >>> BlockBlock
 
-instance Positional x (BlockBlock x xs xss) where
+instance (Search xs xss, Singleton xs xss, Positional x xs) => Positional x (BlockBlock x xs xss) where
 
     length :: BlockBlock x xs xss -> Positive
     length = bbLength
@@ -54,10 +55,19 @@ instance Positional x (BlockBlock x xs xss) where
         Zero -> TakeAll
         Plus remainderLength ->
             TakePart
-                (BlockBlockUnsafe taken n)
-                (BlockBlockUnsafe remainder remainderLength)
+                (BlockBlockUnsafe (Maybe.fromJust taken) n)
+                (BlockBlockUnsafe (Maybe.fromJust remainder) remainderLength)
           where
-            (taken, remainder) = undefined -- todo
+            (taken, remainder) = evalState n (find end f xss) & Maybe.fromJust
+                & \(Pivot xs1 (x1, x2) xs2) ->
+                    (liftA2 (push Back) x1 xs1, liftA2 (push Front) x2 xs2)
+              where
+                f xs = do
+                    rem <- get
+                    case take Front rem xs of
+                        TakeInsufficient (Shortfall s)  ->  put s $> Nothing
+                        TakeAll                         ->  pure $ Just (Nothing, Nothing)
+                        TakePart a b                    ->  pure $ Just (Just a, Just b)
 
 -- leftView' :: (Block xss, Block xs, Item xss ~ xs, Item xs ~ x) =>
 --     xss -> (x, Maybe xs, Maybe xss)

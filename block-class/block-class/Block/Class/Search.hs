@@ -2,7 +2,7 @@ module Block.Class.Search
   (
     {- * Class -} Search (..),
     {- * Types -} Pivot (..), Span (..),
-    {- * Utilities -} pivotItemJoin,
+    {- * Utilities -}
   )
   where
 
