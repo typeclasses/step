@@ -15,5 +15,5 @@ newtype Text1 = Text1 (NotNull Char Text)
   deriving newtype
     (
       Eq, Ord, Show, Semigroup, Singleton Char, Positional,
-      Search Char, NonEmptyIso Char, Refined Text, Index Char
+      Search Char, NonEmptyIso Char, Refined Text, Index Char, Concat
     )

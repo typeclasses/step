@@ -13,6 +13,7 @@ import Integer (Positive, Signed (..))
 import Prelude (error)
 import Data.List.NonEmpty (NonEmpty)
 import Block.Null.Class (Null)
+import qualified Data.Foldable as Foldable
 
 import qualified Data.Maybe as Maybe
 import qualified Integer.Positive as Positive
@@ -36,6 +37,14 @@ instance (Null x xs) => Refined xs (NotNull x xs) where
 
     assume :: xs -> NotNull x xs
     assume = NotNull
+
+instance (Null x xs) => Concat (NotNull x xs) where
+
+    (++) :: NotNull x xs -> NotNull x xs -> NotNull x xs
+    NotNull a ++ NotNull b = NotNull $ (Null.++) a b
+
+    concat :: End -> NonEmpty (NotNull x xs) -> NotNull x xs
+    concat end = Foldable.toList >>> fmap generalize >>> Null.concat end >>> assume
 
 instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
 

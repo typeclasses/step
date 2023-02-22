@@ -7,6 +7,7 @@ module Block.Null.Class
 import Essentials
 
 import Block.Class (End (..))
+import Control.Monad.Trans.Class (lift)
 import Data.ByteString (ByteString)
 import Data.Char (Char)
 import Data.Function (flip)
@@ -16,7 +17,6 @@ import Data.Text (Text)
 import Data.Word (Word8)
 import Integer (Natural, Positive)
 import Prelude ((+), (-))
-import Control.Monad.Trans.Class (lift)
 
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.ByteString as ByteString
@@ -24,12 +24,14 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
+import qualified Data.Monoid as Monoid
+import qualified Data.Semigroup as Semigroup
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Integer.Natural as Natural
 import qualified Integer.Positive as Positive
 
-class (Monoid xs) => Null x xs | xs -> x where
+class Null x xs | xs -> x where
     toList :: End -> xs -> [x]
     fromList :: End -> [x] -> xs
     null :: xs -> Bool
@@ -41,6 +43,8 @@ class (Monoid xs) => Null x xs | xs -> x where
     span :: Monad m => End -> (x -> m Bool) -> xs -> m (xs, xs)
     find :: Monad m => End -> (x -> m (Maybe found)) -> xs -> m (Maybe (xs, found, xs))
     at :: End -> Positive -> xs -> Maybe x
+    (++) :: xs -> xs -> xs
+    concat :: End -> [xs] -> xs
 
 toNonEmpty :: Null x xs => End -> xs -> Maybe (NonEmpty x)
 toNonEmpty end = toList end >>> NonEmpty.nonEmpty
@@ -52,6 +56,13 @@ notNullMaybe :: Null x xs => xs -> Maybe xs
 notNullMaybe xs = if null xs then Nothing else Just xs
 
 instance Null a (Seq a) where
+
+    (++) :: Seq a -> Seq a -> Seq a
+    (++) = (Semigroup.<>)
+
+    concat :: End -> [Seq a] -> Seq a
+    concat Front = Monoid.mconcat
+    concat Back = Foldable.foldl' (flip (<>)) mempty
 
     at :: End -> Positive -> Seq a -> Maybe a
     at end n xs = (Seq.!?) xs i
@@ -123,6 +134,13 @@ instance Null a (Seq a) where
 
 instance Null Char Text where
 
+    (++) :: Text -> Text -> Text
+    (++) = (Semigroup.<>)
+
+    concat :: End -> [Text] -> Text
+    concat Front = Monoid.mconcat
+    concat Back = List.reverse >>> Monoid.mconcat
+
     at :: End -> Positive -> Text -> Maybe Char
     at end n xs = if n' > len then Nothing else Just (Text.index xs i)
       where
@@ -183,6 +201,13 @@ instance Null Char Text where
             Just y -> State.put (Just y) $> False
 
 instance Null Word8 ByteString where
+
+    (++) :: ByteString -> ByteString -> ByteString
+    (++) = (Semigroup.<>)
+
+    concat :: End -> [ByteString] -> ByteString
+    concat Front = Monoid.mconcat
+    concat Back = List.reverse >>> Monoid.mconcat
 
     at :: End -> Positive -> ByteString -> Maybe Word8
     at end n xs = ByteString.indexMaybe xs i

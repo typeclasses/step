@@ -16,10 +16,10 @@ possibility of representing an empty sequence. Such types are called
 possibly-empty type. For example, @(Nullable Text1)@ is @(Text)@. -}
 module Block.Class
   (
+    {- * Concatenation -} (++), concat, concatRefined, prepend,
+
     {- * Dealing with single items -} {- $singleton -}
         singleton, pop, Pop (Pop), push, unpop, head, pushMaybe,
-
-    {- * Concatenation -} {- $concat -} concat,
 
     {- * Operations involving numeric positions -} {- $positional -}
         length, take, Take (TakeAll, TakePart, TakeInsufficient),
@@ -47,7 +47,8 @@ module Block.Class
 
     {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
-    {- * Classes -} Singleton, Positional, Search, Refined, NonEmptyIso, Index,
+    {- * Classes -} Singleton, Positional, Search, Refined,
+            NonEmptyIso, Index, Concat,
 
     {- * State -} State (..),
             runState, evalState, execState, stateless, get, put, modify,
@@ -56,15 +57,17 @@ module Block.Class
 
 import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
 import Block.Class.BiPrefix.Utilities ( biPrefix )
+import Block.Class.Concat.Class (Concat (..))
+import Block.Class.Concat.Utilities (prepend)
 import Block.Class.End (End (..))
 import Block.Class.Index.Class (Index (..))
 import Block.Class.ItemEquivalence.Examples (equality)
 import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
-import Block.Class.NonEmptyIso (NonEmptyIso (..))
+import Block.Class.NonEmptyIso.Class (NonEmptyIso (..))
 import Block.Class.Positional.Class (Positional (..))
 import Block.Class.Positional.Types (Take(..))
 import Block.Class.Refined.Class (Refined (..))
-import Block.Class.Refined.Utilities (concat)
+import Block.Class.Refined.Utilities (concatRefined)
 import Block.Class.Search.Class (Search (..))
 import Block.Class.Search.Types (Span (..), Pivot (..))
 import Block.Class.Shortfall (Shortfall (..))

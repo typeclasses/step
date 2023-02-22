@@ -3,15 +3,12 @@ module Block.Class.Index.Class where
 import Essentials
 
 import Block.Class.End (End (..))
-import Block.Class.Positional.Types (Take (..))
-import Block.Class.Shortfall (Shortfall (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import Integer (Positive)
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Positional.Class (Positional (..))
 import Prelude ((-))
 
-import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
 
 class (Singleton x xs, Positional xs) => Index x xs where

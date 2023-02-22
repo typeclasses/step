@@ -82,6 +82,10 @@ library
         Block.Class.Index
         Block.Class.Index.Class
 
+        Block.Class.Concat
+        Block.Class.Concat.Class
+        Block.Class.Concat.Utilities
+
 test-suite test-block-class
     import: base
     type: exitcode-stdio-1.0

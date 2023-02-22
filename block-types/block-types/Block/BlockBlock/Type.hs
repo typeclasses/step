@@ -17,6 +17,7 @@ import Control.Applicative (liftA2)
 import qualified Data.Maybe as Maybe
 import qualified Fold.Nonempty as Fold
 import qualified Integer.Positive as Positive
+import qualified Data.Foldable as Foldable
 
 data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
     deriving stock (Eq, Ord, Show)
@@ -30,9 +31,14 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
 
 {-# complete BlockBlock #-}
 
-instance (Semigroup xss) => Semigroup (BlockBlock x xs xss) where
-    BlockBlockUnsafe xss1 len1 <> BlockBlockUnsafe xss2 len2 =
-        BlockBlockUnsafe (xss1 <> xss2) (len1 + len2)
+instance (Concat xss) => Concat (BlockBlock x xs xss) where
+
+    (++) :: BlockBlock x xs xss -> BlockBlock x xs xss -> BlockBlock x xs xss
+    BlockBlockUnsafe xss1 len1 ++ BlockBlockUnsafe xss2 len2 =
+        BlockBlockUnsafe (xss1 ++ xss2) (len1 + len2)
+
+    concat :: End -> NonEmpty (BlockBlock x xs xss) -> BlockBlock x xs xss
+    concat end bbs = BlockBlockUnsafe (concat end (bbs <&> bbXss)) (Foldable.sum (bbs <&> bbLength))
 
 instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) =>
         NonEmptyIso x (BlockBlock x xs xss) where

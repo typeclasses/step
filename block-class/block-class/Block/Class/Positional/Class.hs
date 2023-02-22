@@ -9,6 +9,7 @@ import Essentials
 import Block.Class.End (End (..))
 import Block.Class.Positional.Types (Take (..))
 import Block.Class.Shortfall (Shortfall (..))
+import Block.Class.Concat.Class (Concat (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import Integer (Positive)
 import Prelude ((-))
@@ -16,7 +17,7 @@ import Prelude ((-))
 import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
 
-class Positional xs where
+class Concat xs => Positional xs where
 
     {-| The number of items in the block -}
     length :: xs -> Positive

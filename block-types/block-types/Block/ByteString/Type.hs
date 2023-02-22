@@ -16,5 +16,5 @@ newtype ByteString1 = ByteString1 (NotNull Word8 ByteString)
     (
       Eq, Ord, Show, Semigroup, Singleton Word8, Positional,
       Search Word8, NonEmptyIso Word8, Refined ByteString,
-      Index Word8
+      Index Word8, Concat
     )
