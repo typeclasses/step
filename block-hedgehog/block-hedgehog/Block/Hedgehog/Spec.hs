@@ -1,4 +1,4 @@
-module Block.Hedgehog.Spec (spec, refinedSpec) where
+module Block.Hedgehog.Spec (spec, refinedSpec, PredicateGenerators (..)) where
 
 import Essentials
 import Block.Class
@@ -6,6 +6,7 @@ import Block.Class
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===), annotateShow)
+import Block.Hedgehog.Spec.Search (PredicateGenerators (..))
 
 import qualified Block.Hedgehog.Spec.Concat as Concat
 import qualified Block.Hedgehog.Spec.Index as Index
@@ -22,13 +23,13 @@ spec :: forall x xs.
     (
       Semigroup xs, NonEmptyIso x xs, Search x xs, Index x xs
     ) =>
-    Gen x -> Gen xs -> Spec
-spec genX genXs = describe "Block" do
+    Gen x -> Gen xs -> PredicateGenerators x xs -> Spec
+spec genX genXs genP = describe "Block" do
     Concat.spec genXs
     Singleton.spec genX genXs
     Positional.spec genXs
     NonEmptyIso.spec genX genXs
-    Search.spec genX genXs
+    Search.spec genX genXs genP
     Index.spec genX genXs
 
     it "length . toNonEmpty e = length" $ hedgehog do
@@ -64,7 +65,7 @@ refinedSpec :: forall x nul xs.
       Semigroup xs, Monoid nul, Index x xs,
       NonEmptyIso x xs, Search x xs, Refined nul xs
     ) =>
-    Gen x -> Gen nul -> Gen xs -> Spec
-refinedSpec genX genNul genXs = do
-    spec genX genXs
+    Gen x -> Gen nul -> Gen xs -> PredicateGenerators x xs -> Spec
+refinedSpec genX genNul genXs genP = do
+    spec genX genXs genP
     Refined.spec genNul genXs
