@@ -20,3 +20,9 @@ head :: (Singleton x xs) =>
     xs -- ^ A block
     -> x -- ^ The block's first item
 head = item . pop Front
+
+pushMaybe :: Singleton x xs => End -> Maybe x -> Maybe xs -> Maybe xs
+pushMaybe end (Just x) (Just xs)  =  Just (push end x xs)
+pushMaybe _   Nothing  (Just xs)  =  Just xs
+pushMaybe _   (Just x) Nothing    =  Just (singleton x)
+pushMaybe _   Nothing  Nothing    =  Nothing

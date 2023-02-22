@@ -78,32 +78,29 @@ instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional x xs, Singl
         bb & bbXss
         & find end
             (\xs -> span end f xs <&> \case
-                SpanAll -> Nothing
-                SpanNone -> Just (Nothing, xs)
-                SpanPart a b -> Just (Just a, b)
+                SpanAll       ->  Nothing
+                SpanNone      ->  Just (Nothing, xs)
+                SpanPart a b  ->  Just (Just a, b)
             )
         <&> \case
             Nothing -> SpanAll
-            Just (Pivot a (fmap singleton -> a', singleton -> b') b) ->
-                case maybeThese a a' of
+            Just (Pivot a (a', b') b) ->
+                case pushMaybe Back a' a of
                     Nothing -> SpanNone
                     Just a'' -> SpanPart
-                        (BlockBlock (concatThese a''))
-                        (BlockBlock (concatMaybe b' b))
+                        (BlockBlock a'')
+                        (BlockBlock (maybe (singleton b') (push Front b') b))
 
-data These a b = This a | That b | These a b
-
-maybeThese :: Maybe a -> Maybe b -> Maybe (These a b)
-maybeThese Nothing Nothing = Nothing
-maybeThese (Just a) Nothing = Just (This a)
-maybeThese Nothing (Just b) = Just (That b)
-maybeThese (Just a) (Just b) = Just (These a b)
-
-concatThese :: Semigroup a => These a a -> a
-concatThese = \case This x -> x; That x -> x; These x y -> x <> y
-
-concatMaybe :: Semigroup a => a -> Maybe a -> a
-concatMaybe a = \case Nothing -> a; Just b -> a <> b
+    find :: End -> (x -> State s (Maybe found)) -> BlockBlock x xs xss
+        -> State s (Maybe (Pivot found (BlockBlock x xs xss)))
+    find end f bb =
+        bb & bbXss
+        & find end (find end f)
+        <&> fmap \(Pivot a (Pivot a' x b') b) ->
+                Pivot
+                    (BlockBlock <$> pushMaybe Back a' a)
+                    x
+                    (BlockBlock <$> pushMaybe Front b' b)
 
 -- leftView' :: (Block xss, Block xs, Item xss ~ xs, Item xs ~ x) =>
 --     xss -> (x, Maybe xs, Maybe xss)
