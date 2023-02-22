@@ -15,11 +15,20 @@ unpop s (Pop x xm) = case xm of
     Nothing -> singleton x
     Just xs -> push s x xs
 
+terminal :: (Singleton x xs) => End -> xs -> x
+terminal e = item . pop e
+
 {-| The item at the 'Front' of a block -}
-head :: (Singleton x xs) =>
+first :: (Singleton x xs) =>
     xs -- ^ A block
     -> x -- ^ The block's first item
-head = item . pop Front
+first = terminal Front
+
+{-| The item at the 'Back' of a block -}
+last :: (Singleton x xs) =>
+    xs -- ^ A block
+    -> x -- ^ The block's first item
+last = terminal Back
 
 pushMaybe :: Singleton x xs => End -> Maybe x -> Maybe xs -> Maybe xs
 pushMaybe end (Just x) (Just xs)  =  Just (push end x xs)

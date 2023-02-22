@@ -19,7 +19,8 @@ module Block.Class
     {- * Concatenation -} (++), concat, concatRefined, append,
 
     {- * Dealing with single items -} {- $singleton -}
-        singleton, pop, Pop (Pop), push, unpop, head, pushMaybe,
+        singleton,  first, last, terminal,
+        pop, Pop (Pop), push, unpop, pushMaybe,
 
     {- * Operations involving numeric positions -} {- $positional -}
         length, take, Take (TakeAll, TakePart, TakeInsufficient),
@@ -73,7 +74,7 @@ import Block.Class.Search.Types (Span (..), Pivot (..))
 import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Types (Pop (..))
-import Block.Class.Singleton.Utilities (head, unpop, pushMaybe)
+import Block.Class.Singleton.Utilities (first, last, terminal, unpop, pushMaybe)
 import Block.Class.State.Types (State (..))
 import Block.Class.State.Utilities (runState, evalState, execState, stateless, get, put, modify)
 

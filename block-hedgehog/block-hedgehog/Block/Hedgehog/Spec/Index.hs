@@ -5,11 +5,10 @@ import Essentials
 
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
-import Hedgehog (Gen, forAll, (===), annotateShow)
+import Hedgehog (Gen, forAll, (===))
+import Prelude ((+))
 
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import qualified Block.Class.Singleton.Types as Pop (Pop (..))
+import qualified Block.Class.End as End
 import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall x xs.
@@ -19,8 +18,36 @@ spec :: forall x xs.
     Gen x -> Gen xs -> Spec
 spec genX genXs = describe "Index" do
 
-    it "at end 1 = Just . Pop.item . pop end" $ hedgehog do
+    it "at end 1 . singleton = Just" $ hedgehog do
+        x <- forAll genX
+        end <- forAll Gen.end
+        (at end 1 . singleton @x @xs) x === Just x
+
+    it "at end 1 = Just . terminal end" $ hedgehog do
         xs <- forAll genXs
         end <- forAll Gen.end
 
-        at end 1 xs === (Just . Pop.item . pop end) xs
+        at end 1 xs === (Just . terminal end) xs
+
+    it "at end (length xs) xs = Just (terminal (opposite end) xs)" $ hedgehog do
+        xs <- forAll genXs
+        end <- forAll Gen.end
+
+        at end (length xs) xs === Just (terminal (End.opposite end) xs)
+
+    it "at end (length xs + 1) xs = Nothing" $ hedgehog do
+        xs <- forAll genXs
+        end <- forAll Gen.end
+
+        at end (length xs + 1) xs === Nothing
+
+    it "at/terminal/++" $ hedgehog do
+        a <- forAll genXs
+        b <- forAll genXs
+
+        let ab = a ++ b
+
+        at Front (length a)     ab === Just (last a)
+        at Back  (length b + 1) ab === Just (last a)
+        at Front (length a + 1) ab === Just (first b)
+        at Back  (length b)     ab === Just (first b)
