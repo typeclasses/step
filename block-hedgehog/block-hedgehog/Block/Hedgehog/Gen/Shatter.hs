@@ -11,6 +11,7 @@ import Data.Sequence (Seq (..))
 import Hedgehog (Gen)
 import Integer (Positive, Natural)
 import Prelude (error)
+import Block.Hedgehog.Gen.Positive (positive)
 
 import qualified Data.ListLike as LL
 import qualified Hedgehog.Gen as Gen
@@ -39,7 +40,3 @@ split xs = xs & length & Positive.subtractOne & Positive.fromNatural
   where
     requireTakePart = \case { TakePart a b -> (a, b);
       _ -> error "Block.Hedgehog.Gen.split: 'take' out of bounds" }
-
-positive :: Positive -> Gen Positive
-positive max = Gen.integral (Range.constant 1 (Positive.toNatural max))
-    <&> (Integer.yolo :: Natural -> Positive)

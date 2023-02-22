@@ -21,6 +21,8 @@ class Positional x xs | xs -> x where
     {-| The number of items in the block -}
     length :: xs -> Positive
 
+    at :: End -> Positive -> xs -> Maybe x
+
     {-| Separate a block into two parts by specifying the length
         of the first part
 
@@ -42,6 +44,15 @@ instance Positional x (NonEmpty x) where
 
     length :: NonEmpty x -> Positive
     length = Positive.length
+
+    at :: End -> Positive -> NonEmpty x -> Maybe x
+    at Front 1 = \(x :| _) -> Just x
+    at Front n = \(_ :| xs) -> go (n - 1) xs
+      where
+        go _ [] = Nothing
+        go 1 (x : _) = Just x
+        go i (_ : xs) = go i xs
+    at Back n = NonEmpty.reverse >>> at Front n
 
     take :: End -> Positive -> NonEmpty x -> Take (NonEmpty x)
     take Front 1 (_ :| []) = TakeAll

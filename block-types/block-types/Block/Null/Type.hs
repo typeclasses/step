@@ -50,6 +50,9 @@ instance (Null x xs) => Positional x (NotNull x xs) where
     length :: NotNull x xs -> Positive
     length = generalize >>> Null.length >>> Positive.fromNatural >>> Maybe.fromJust
 
+    at :: End -> Positive -> NotNull x xs -> Maybe x
+    at end n (NotNull xs) = Null.at end n xs
+
     take :: End -> Positive -> NotNull x xs -> Take (NotNull x xs)
     take end n x = case Integer.subtract (length x) n of
         Zero -> TakeAll

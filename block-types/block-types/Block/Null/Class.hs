@@ -14,7 +14,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Sequence (Seq)
 import Data.Text (Text)
 import Data.Word (Word8)
-import Integer (Natural)
+import Integer (Natural, Positive)
 import Prelude ((+), (-))
 import Control.Monad.Trans.Class (lift)
 
@@ -27,6 +27,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Integer.Natural as Natural
+import qualified Integer.Positive as Positive
 
 class (Monoid xs) => Null x xs | xs -> x where
     toList :: End -> xs -> [x]
@@ -39,6 +40,7 @@ class (Monoid xs) => Null x xs | xs -> x where
     splitAt :: Natural -> xs -> (xs, xs)
     span :: Monad m => End -> (x -> m Bool) -> xs -> m (xs, xs)
     find :: Monad m => End -> (x -> m (Maybe found)) -> xs -> m (Maybe (xs, found, xs))
+    at :: End -> Positive -> xs -> Maybe x
 
 toNonEmpty :: Null x xs => End -> xs -> Maybe (NonEmpty x)
 toNonEmpty end = toList end >>> NonEmpty.nonEmpty
@@ -51,9 +53,15 @@ notNullMaybe xs = if null xs then Nothing else Just xs
 
 instance Null a (Seq a) where
 
+    at :: End -> Positive -> Seq a -> Maybe a
+    at end n xs = (Seq.!?) xs i
+      where
+        n' = Positive.toInt n & Maybe.fromJust
+        i = case end of Front -> n' - 1; Back -> Seq.length xs - n'
+
     toList :: End -> Seq a -> [a]
     toList Front = Foldable.toList
-    toList Back = Foldable.foldr (:) []
+    toList Back = Foldable.foldl (flip (:)) []
 
     fromList :: End -> [a] -> Seq a
     fromList Front = Seq.fromList
@@ -115,6 +123,13 @@ instance Null a (Seq a) where
 
 instance Null Char Text where
 
+    at :: End -> Positive -> Text -> Maybe Char
+    at end n xs = if n' >= len then Nothing else Just (Text.index xs i)
+      where
+        n' = Positive.toInt n & Maybe.fromJust
+        len = Text.length xs
+        i = case end of Front -> n' - 1; Back -> len - n'
+
     toList :: End -> Text -> [Char]
     toList Front = Text.unpack
     toList Back = go
@@ -168,6 +183,13 @@ instance Null Char Text where
             Just y -> State.put (Just y) $> False
 
 instance Null Word8 ByteString where
+
+    at :: End -> Positive -> ByteString -> Maybe Word8
+    at end n xs = ByteString.indexMaybe xs i
+      where
+        n' = Positive.toInt n & Maybe.fromJust
+        len = ByteString.length xs
+        i = case end of Front -> n' - 1; Back -> len - n'
 
     toList :: End -> ByteString -> [Word8]
     toList Front = ByteString.unpack

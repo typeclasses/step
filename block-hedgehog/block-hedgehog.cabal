@@ -42,6 +42,11 @@ library
     hs-source-dirs: block-hedgehog
     exposed-modules:
         Block.Hedgehog.Gen.Shatter
+        Block.Hedgehog.Gen.Positive
 
         Block.Hedgehog.Spec
+        Block.Hedgehog.Spec.NonEmptyIso
+        Block.Hedgehog.Spec.Positional
+        Block.Hedgehog.Spec.Refined
+        Block.Hedgehog.Spec.Search
         Block.Hedgehog.Spec.Singleton

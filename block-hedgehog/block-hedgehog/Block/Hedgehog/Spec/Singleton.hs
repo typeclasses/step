@@ -1,6 +1,6 @@
 module Block.Hedgehog.Spec.Singleton (spec) where
 
-import Block.Class
+import Block.Class.Singleton
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -12,7 +12,7 @@ import qualified Hedgehog.Gen as Gen
 spec :: forall x xs.
     (Show x, Eq x) =>
     (Show xs, Eq xs) =>
-    (Semigroup xs, Singleton x xs) =>
+    (Singleton x xs) =>
     Gen x -> Gen xs -> Spec
 spec genX genXs = describe "Singleton" do
 
@@ -29,19 +29,3 @@ spec genX genXs = describe "Singleton" do
         let xs :: xs = singleton x
         let p = pop end xs
         p === Pop x Nothing
-
-    it "pop Front (singleton a <> singleton b) \
-       \= Pop a (Just (singleton b))" $ hedgehog do
-        a <- forAll genX
-        b <- forAll genX
-        let xs :: xs = singleton a <> singleton b
-        let p = pop Front xs
-        p === Pop a (Just (singleton b))
-
-    it "pop Back (singleton a <> singleton b) \
-       \= Pop b (Just (singleton a))" $ hedgehog do
-        a <- forAll genX
-        b <- forAll genX
-        let xs :: xs = singleton a <> singleton b
-        let p = pop Back xs
-        p === Pop b (Just (singleton a))

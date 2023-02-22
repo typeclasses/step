@@ -7,7 +7,7 @@ module Block.BlockBlock.Type
 import Essentials
 import Block.Class
 
-import Integer (Positive)
+import Integer (Positive, Natural)
 import Prelude ((+), (-))
 import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup (sconcat)
@@ -27,6 +27,8 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
   where
     BlockBlock xss = BlockBlockUnsafe xss
       (Fold.run Fold.sum (length <$> (toNonEmpty Front xss :: NonEmpty xs)))
+
+{-# complete BlockBlock #-}
 
 instance (Semigroup xss) => Semigroup (BlockBlock x xs xss) where
     BlockBlockUnsafe xss1 len1 <> BlockBlockUnsafe xss2 len2 =
@@ -58,10 +60,21 @@ instance (Singleton x xs, Singleton xs xss) => Singleton x (BlockBlock x xs xss)
     push end x (BlockBlockUnsafe xss n) =
         BlockBlockUnsafe (push end (singleton x) xss) (n + 1)
 
-instance (Search xs xss, Singleton xs xss, Positional x xs) => Positional x (BlockBlock x xs xss) where
+instance (Search xs xss, Singleton xs xss, Positional x xs, NonEmptyIso xs xss) =>
+        Positional x (BlockBlock x xs xss) where
 
     length :: BlockBlock x xs xss -> Positive
     length = bbLength
+
+    at :: End -> Positive -> BlockBlock x xs xss -> Maybe x
+    at end = \n (BlockBlock xss) -> go n xss
+      where
+        go :: Positive -> xss -> Maybe x
+        go n xss = case Positive.subtract (length xs) n of
+            Minus n' -> xss' & maybe Nothing (go n')
+            NotMinus _ -> at end n xs
+          where
+            Pop xs xss' = pop end xss
 
     take :: End -> Positive -> BlockBlock x xs xss -> Take (BlockBlock x xs xss)
     take end n (BlockBlockUnsafe xss len) = case Positive.subtract len n of

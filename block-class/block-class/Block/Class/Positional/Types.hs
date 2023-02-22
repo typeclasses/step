@@ -1,6 +1,7 @@
 module Block.Class.Positional.Types
   (
     Take (..),
+    Shortfall (..),
   )
   where
 
