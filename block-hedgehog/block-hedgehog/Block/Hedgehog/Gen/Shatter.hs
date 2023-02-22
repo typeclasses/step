@@ -1,5 +1,5 @@
 {-| This can be useful for generating parser inputs for testing. -}
-module Block.Hedgehog.Gen.Shatter (shatterNullable, shatterBlock) where
+module Block.Hedgehog.Gen.Shatter (shatterBlock, shatterNullable) where
 
 import Block.Class
 import Essentials
@@ -15,6 +15,10 @@ import qualified Data.ListLike as LL
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
+{-| Break up a block into a list of blocks -}
+shatterBlock :: Block block => block -> Gen [block]
+shatterBlock x = shatterBlockSeq x <&> LL.toList
+
 {-| Break up a possibly-empty value into a list of blocks -}
 shatterNullable :: Refined block => Nullable block -> Gen [block]
 shatterNullable x = shatterNullableSeq x <&> LL.toList
@@ -23,10 +27,6 @@ shatterNullableSeq :: Refined block => Nullable block -> Gen (Seq block)
 shatterNullableSeq x = case refine x of
     Nothing -> pure LL.empty
     Just y -> shatterBlockSeq y
-
-{-| Break up a block into a list of blocks -}
-shatterBlock :: Block block => block -> Gen [block]
-shatterBlock x = shatterBlockSeq x <&> LL.toList
 
 shatterBlockSeq :: Block block => block -> Gen (Seq block)
 shatterBlockSeq x =

@@ -1,6 +1,6 @@
 module Block.Sequence
   (
-    Seq1,
+    {- * Type -} Seq1,
   )
   where
 
