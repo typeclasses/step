@@ -5,6 +5,8 @@ import Essentials
 import Block.Class.Search.Types (Span (..), Pivot (..))
 import Block.Class.End (End (..))
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
+import Data.Function (fix)
+import Block.Class.State (State (..))
 
 import qualified Data.List.NonEmpty as NonEmpty
 
@@ -20,10 +22,10 @@ class Search x xs | xs -> x where
     is 'SpanNone'. If all the items match, the result is 'SpanAll'. -}
     span ::
         End -- ^ Which end to start searching from: 'Front' or 'Back'
-        -> (x -> Bool)
+        -> (x -> State s Bool)
             -- ^ Keep taking as long as items match this predicate
         -> xs -- ^ A block
-        -> Span xs
+        -> State s (Span xs)
 
     {-| Search a block for the first item for which the given function
         returns @Just@
@@ -36,39 +38,43 @@ class Search x xs | xs -> x where
     the search did not examine.
 
     If no match is found, the result is @Nothing@. -}
-    find :: End  -- ^ Which end to start searching from: 'Front' or 'Back'
-        -> (x -> Maybe found)
+    find ::
+        End  -- ^ Which end to start searching from: 'Front' or 'Back'
+        -> (x -> State s (Maybe found))
             -- ^ Specification of what kind of item this search is looking
             --   for; when this function returns @Just@, an item is found
             --   and the search is over.
         -> xs -- ^ A block
-        -> Maybe (Pivot found xs)
+        -> State s (Maybe (Pivot found xs))
 
 instance Search x (NonEmpty x) where
 
-    span = \case
-        Front -> \f xs -> let (a, b) = NonEmpty.span f xs in
-            case (nonEmpty a, nonEmpty b) of
-                (Nothing, _) -> SpanNone
-                (_, Nothing) -> SpanAll
-                (Just a', Just b') -> SpanPart a' b'
-        Back -> \f xs -> span Front f (NonEmpty.reverse xs) &
-            \case
-                SpanNone -> SpanNone
-                SpanAll -> SpanAll
-                SpanPart a b -> SpanPart (NonEmpty.reverse a) (NonEmpty.reverse b)
+    span ::
+        End -> (x -> State s Bool) -> NonEmpty x -> State s (Span (NonEmpty x))
 
-    find = \case
-        Front -> \f ->
-          let
-            go (x :| zs) = case f x of
-              Just y -> Just (Pivot Nothing y (nonEmpty zs))
-              Nothing -> case nonEmpty zs of
-                  Nothing -> Nothing
-                  Just zs' -> go zs' <&> \(Pivot a s b) ->
-                      Pivot (Just (x :| maybe [] NonEmpty.toList a)) s b
-          in
-            go
-        Back -> \f xs ->
-            find Front f (NonEmpty.reverse xs)
-            & fmap (fmap NonEmpty.reverse)
+    span Front f = fix \r (x :| xs) -> f x >>= \case
+        False -> pure SpanNone
+        True -> case xs of
+            [] -> pure SpanAll
+            y : ys -> r (y :| ys) <&> \case
+                SpanAll        ->  SpanAll
+                SpanNone       ->  SpanPart (x :| []) (y :| ys)
+                SpanPart as b  ->  SpanPart (x :| NonEmpty.toList as) b
+
+    span Back f = \xs -> span Front f (NonEmpty.reverse xs) <&> \case
+        SpanNone      ->  SpanNone
+        SpanAll       ->  SpanAll
+        SpanPart a b  ->  SpanPart (NonEmpty.reverse a) (NonEmpty.reverse b)
+
+    find :: End -> (x -> State s (Maybe found)) -> NonEmpty x
+        -> State s (Maybe (Pivot found (NonEmpty x)))
+
+    find Front f = fix \r (x :| xs) -> f x >>= \case
+        Just found -> pure $ Just $ Pivot Nothing found (nonEmpty xs)
+        Nothing -> case xs of
+            [] -> pure Nothing
+            y : ys -> r (y :| ys) <&> fmap \(Pivot asm found bs) ->
+                Pivot (Just (x :| maybe [] NonEmpty.toList asm)) found bs
+
+    find Back f = \xs ->
+        find Front f (NonEmpty.reverse xs) <&> fmap (fmap NonEmpty.reverse)

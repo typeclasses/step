@@ -1,4 +1,4 @@
-module Block.Class.Text
+module Block.Text
   (
     {- * Type -} Text1,
     {- * Character equivalence -} asciiCaseInsensitive,

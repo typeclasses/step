@@ -7,7 +7,6 @@ module Block.Null.Class
 import Essentials
 
 import Block.Class (End (..))
-import Control.Applicative ((<|>))
 import Data.ByteString (ByteString)
 import Data.Char (Char)
 import Data.Function (flip)
@@ -16,7 +15,8 @@ import Data.Sequence (Seq)
 import Data.Text (Text)
 import Data.Word (Word8)
 import Integer (Natural)
-import Prelude ((+))
+import Prelude ((+), (-))
+import Control.Monad.Trans.Class (lift)
 
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.ByteString as ByteString
@@ -36,9 +36,9 @@ class (Monoid xs) => Null x xs | xs -> x where
     singleton :: x -> xs
     pop :: End -> xs -> Maybe (x, xs)
     push :: End -> x -> xs -> xs
-    span :: End -> (x -> Bool) -> xs -> (xs, xs)
     splitAt :: Natural -> xs -> (xs, xs)
-    find :: End -> (x -> Maybe found) -> xs -> Maybe (xs, found, xs)
+    span :: Monad m => End -> (x -> m Bool) -> xs -> m (xs, xs)
+    find :: Monad m => End -> (x -> m (Maybe found)) -> xs -> m (Maybe (xs, found, xs))
 
 toNonEmpty :: Null x xs => End -> xs -> Maybe (NonEmpty x)
 toNonEmpty end = toList end >>> NonEmpty.nonEmpty
@@ -50,79 +50,175 @@ notNullMaybe :: Null x xs => xs -> Maybe xs
 notNullMaybe xs = if null xs then Nothing else Just xs
 
 instance Null a (Seq a) where
+
+    toList :: End -> Seq a -> [a]
     toList Front = Foldable.toList
     toList Back = Foldable.foldr (:) []
+
+    fromList :: End -> [a] -> Seq a
     fromList Front = Seq.fromList
     fromList Back = Seq.unfoldl (List.uncons >>> fmap \(xs, x) -> (x, xs))
+
+    null :: Seq a -> Bool
     null = Seq.null
+
+    length :: Seq a -> Natural
     length = Seq.length >>> Natural.fromInt >>> Maybe.fromJust
+
+    singleton :: a -> Seq a
     singleton = Seq.singleton
+
+    pop :: End -> Seq a -> Maybe (a, Seq a)
     pop _ Seq.Empty = Nothing
     pop Front (x Seq.:<| xs) = Just (x, xs)
     pop Back (xs Seq.:|> x) = Just (x, xs)
+
+    push :: End -> a -> Seq a -> Seq a
     push Front x xs = x Seq.:<| xs
     push Back x xs = xs Seq.:|> x
-    span Front = Seq.spanl
-    span Back = Seq.spanr
+
+    span :: Monad m => End -> (a -> m Bool) -> Seq a -> m (Seq a, Seq a)
+    span Front f = go Seq.empty
+      where
+        go !seen xs = case Seq.viewl xs of
+            Seq.EmptyL -> pure (seen, Seq.empty)
+            (Seq.:<) y ys -> f y >>= \case
+                False -> pure (seen, xs)
+                True -> go ((Seq.:|>) seen y) ys
+    span Back f = go Seq.empty
+      where
+        go !seen xs = case Seq.viewr xs of
+            Seq.EmptyR -> pure (seen, Seq.empty)
+            (Seq.:>) ys y -> f y >>= \case
+                False -> pure (seen, xs)
+                True -> go ((Seq.:<|) y seen) ys
+
+    splitAt :: Natural -> Seq a -> (Seq a, Seq a)
     splitAt n = Seq.splitAt (Natural.toInt n & Maybe.fromJust)
-    find Front f xs =
-        Seq.foldlWithIndex (\xm i a -> xm <|> fmap (\x -> (i, x)) (f a)) Nothing xs
-        <&> \(i, x) -> ( Seq.take i xs, x, Seq.drop (i + 1) xs )
-    find Back f xs =
-        Seq.foldrWithIndex (\i a xm -> xm <|> fmap (\x -> (i, x)) (f a)) Nothing xs
-        <&> \(i, x) -> ( Seq.drop (i + 1) xs, x, Seq.take i xs )
+
+    find :: Monad m => End -> (a -> m (Maybe found)) -> Seq a -> m (Maybe (Seq a, found, Seq a))
+    find Front f = go Seq.empty
+      where
+        go !seen xs = case Seq.viewl xs of
+          Seq.EmptyL -> pure Nothing
+          (Seq.:<) y ys -> f y >>= \case
+              Just found -> pure (Just (seen, found, ys))
+              Nothing -> go ((Seq.:|>) seen y) ys
+
+    find Back f = go Seq.empty
+      where
+        go !seen xs = case Seq.viewr xs of
+            Seq.EmptyR -> pure Nothing
+            (Seq.:>) ys y -> f y >>= \case
+                Just found -> pure (Just (seen, found, ys))
+                Nothing -> go ((Seq.:<|) y seen) ys
 
 instance Null Char Text where
+
+    toList :: End -> Text -> [Char]
     toList Front = Text.unpack
-    toList Back = Text.foldr (:) []
+    toList Back = go
+      where
+        go = maybe [] (\(xs, x) -> x : go xs) . Text.unsnoc
+
+    fromList :: End -> [Char] -> Text
     fromList Front = Text.pack
     fromList Back = Text.pack >>> Text.reverse
+
+    null :: Text -> Bool
     null = Text.null
+
+    length :: Text -> Natural
     length = Text.length >>> Natural.fromInt >>> Maybe.fromJust
+
+    singleton :: Char -> Text
     singleton = Text.singleton
+
+    splitAt :: Natural -> Text -> (Text, Text)
     splitAt n = Text.splitAt (Natural.toInt n & Maybe.fromJust)
+
+    pop :: End -> Text -> Maybe (Char, Text)
     pop Front = Text.uncons
-    pop Back = Text.unsnoc >>> fmap swap
+    pop Back = Text.unsnoc >>> fmap \(a, b) -> (b, a)
+
+    push :: End -> Char -> Text -> Text
     push Front = Text.cons
     push Back = flip Text.snoc
-    span Front p = Text.span p
-    span Back p = Text.spanEndM (Identity . p) >>> runIdentity
-    find Front f =
-        (Text.spanM (\x -> case f x of
+
+    span :: Monad m => End -> (Char -> m Bool) -> Text -> m (Text, Text)
+    span Front = Text.spanM
+    span Back = Text.spanEndM
+
+    find :: Monad m => End -> (Char -> m (Maybe found)) -> Text -> m (Maybe (Text, found, Text))
+    find Front f xs =
+        State.runStateT (Text.spanM s xs) Nothing
+            <&> \((a, b), foundMaybe) ->
+                (foundMaybe <&> \found -> (a, found, Text.tail b))
+      where
+        s x = lift (f x) >>= \case
             Nothing -> pure True
-            Just y -> State.put (Just y) $> False))
-        >>> flip State.runState Nothing
-        >>> (\((a, b), foundMaybe) -> foundMaybe <&> \found -> (a, found, Text.tail b))
-    find Back f =
-        (Text.spanEndM \x -> case f x of
+            Just y -> State.put (Just y) $> False
+    find Back f xs =
+        State.runStateT (Text.spanEndM s xs) Nothing
+            <&> \((a, b), foundMaybe) ->
+                (foundMaybe <&> \found -> (b, found, Text.init a))
+      where
+        s x = lift (f x) >>= \case
             Nothing -> pure True
-            Just y -> State.put (Just y) $> False)
-        >>> flip State.runState Nothing
-        >>> \((a, b), foundMaybe) -> foundMaybe <&> \found -> (b, found, Text.init a)
+            Just y -> State.put (Just y) $> False
 
 instance Null Word8 ByteString where
+
+    toList :: End -> ByteString -> [Word8]
     toList Front = ByteString.unpack
-    toList Back = ByteString.foldr (:) []
+    toList Back = go
+      where
+        go = maybe [] (\(xs, x) -> x : go xs) . ByteString.unsnoc
+
+    fromList :: End -> [Word8] -> ByteString
     fromList Front = ByteString.pack
     fromList Back = ByteString.pack >>> ByteString.reverse
+
+    null :: ByteString -> Bool
     null = ByteString.null
+
+    length :: ByteString -> Natural
     length = ByteString.length >>> Natural.fromInt >>> Maybe.fromJust
+
+    singleton :: Word8 -> ByteString
     singleton = ByteString.singleton
+
+    splitAt :: Natural -> ByteString -> (ByteString, ByteString)
     splitAt n = ByteString.splitAt (Natural.toInt n & Maybe.fromJust)
+
+    pop :: End -> ByteString -> Maybe (Word8, ByteString)
     pop Front = ByteString.uncons
-    pop Back = ByteString.unsnoc >>> fmap swap
+    pop Back = ByteString.unsnoc >>> fmap \(a, b) -> (b, a)
+
+    push :: End -> Word8 -> ByteString -> ByteString
     push Front = ByteString.cons
     push Back = flip ByteString.snoc
-    span Front p = ByteString.span p
-    span Back p = ByteString.spanEnd p >>> swap
-    find Front f xs = ByteString.findIndex (f >>> Maybe.isJust) xs <&> \i ->
-        ( ByteString.take i xs
-        , Maybe.fromJust (f (ByteString.index xs i))
-        , ByteString.drop (i + 1) xs )
-    find Back f xs = ByteString.findIndexEnd (f >>> Maybe.isJust) xs <&> \i ->
-        ( ByteString.drop (i + 1) xs
-        , Maybe.fromJust (f (ByteString.index xs i))
-        , ByteString.take i xs )
 
-swap :: (b, a) -> (a, b)
-swap (a, b) = (b, a)
+    span :: Monad m => End -> (Word8 -> m Bool) -> ByteString -> m (ByteString, ByteString)
+    span end f xs =
+        go 0 (toList end xs) <&> \i ->
+        ByteString.splitAt (case end of Front -> i; Back -> ByteString.length xs - i) xs
+      where
+        go !i ys = case ys of
+            [] -> pure i
+            z : zs -> f z >>= \case
+                False -> pure i
+                True -> go (i + 1) zs
+
+    find :: Monad m => End -> (Word8 -> m (Maybe found)) -> ByteString -> m (Maybe (ByteString, found, ByteString))
+    find end f xs =
+        go 0 (toList end xs) <&> \(i, xm) ->
+        xm <&> \x ->
+          let a = ByteString.take i xs; b = ByteString.drop (i + 1) xs
+          in case end of { Front -> (a, x, b); Back -> (b, x, a) }
+      where
+        go !i ys = case ys of
+            [] -> pure (i, Nothing)
+            z : zs -> f z >>= \case
+                Nothing -> go (i + 1) zs
+                Just found -> pure (i, Just found)

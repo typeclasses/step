@@ -46,6 +46,9 @@ module Block.Class
     {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
     {- * Classes -} Singleton, Positional, Search, Refined, NonEmptyIso,
+
+    {- * State -} State (..),
+            runState, evalState, execState, stateless, get, put, modify,
   )
   where
 
@@ -63,6 +66,8 @@ import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Utilities (head, unpop)
 import Block.Class.Singleton.Types (Pop (..))
+import Block.Class.State.Types (State (..))
+import Block.Class.State.Utilities (runState, evalState, execState, stateless, get, put, modify)
 import Block.Class.Refined.Class (Refined (..))
 import Block.Class.Refined.Utilities (concat)
 

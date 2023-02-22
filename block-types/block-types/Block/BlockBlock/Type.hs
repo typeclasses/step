@@ -1,4 +1,4 @@
-{-# language UndecidableInstances #-}
+{-# language StrictData #-}
 
 module Block.BlockBlock.Type
   (
@@ -12,22 +12,45 @@ import Block.Class
 import Integer (Positive)
 import Prelude ((+), (-))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Semigroup (sconcat)
+import Data.Ord (Ordering (..))
+import Integer.Signed (Signed (..))
 
 import qualified Data.Foldable as Foldable
 import qualified Block.Class as Block
+import qualified Data.Maybe as Maybe
+import qualified Fold.Nonempty as Fold
+import qualified Integer.Positive as Positive
 
-newtype BlockBlock x xs xss = BlockBlock{ blockBlock :: xss }
-    deriving newtype (Eq, Ord, Show, Semigroup)
+data BlockBlock x xs xss = BlockBlock{ bbXss :: xss, bbLength :: Positive }
+    deriving stock (Eq, Ord, Show)
 
-instance (NonEmptyIso x xs) => NonEmptyIso x (BlockBlock x xs xss) where
+bb :: forall x xs xss. (NonEmptyIso xs xss, Positional x xs) => xss -> BlockBlock x xs xss
+bb xss = BlockBlock xss (Fold.run Fold.sum (length <$> (toNonEmpty Front xss :: NonEmpty xs)))
 
-    -- toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
-    -- toNonEmpty end = blockBlock >>> toNonEmpty end >>> Maybe.fromJust
+instance (Semigroup xss) => Semigroup (BlockBlock x xs xss) where
+    BlockBlock xss1 len1 <> BlockBlock xss2 len2 = BlockBlock (xss1 <> xss2) (len1 + len2)
 
-    -- fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
-    -- fromNonEmpty end = Null.fromNonEmpty end >>> BlockBlock
+instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional x xs) => NonEmptyIso x (BlockBlock x xs xss) where
 
+    toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
+    toNonEmpty end = bbXss >>> toNonEmpty end >>> fmap (toNonEmpty end) >>> sconcat
 
+    fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
+    fromNonEmpty end = fromNonEmpty end >>> singleton >>> bb
+
+instance Positional x (BlockBlock x xs xss) where
+
+    length :: BlockBlock x xs xss -> Positive
+    length = bbLength
+
+    take :: End -> Positive -> BlockBlock x xs xss -> Take (BlockBlock x xs xss)
+    take end n (BlockBlock xss len) = case Positive.subtract len n of
+        Minus s -> TakeInsufficient (Shortfall s)
+        Zero -> TakeAll
+        Plus remainderLength -> TakePart (BlockBlock taken n) (BlockBlock remainder remainderLength)
+          where
+            (taken, remainder) = undefined -- todo
 
 -- leftView' :: (Block xss, Block xs, Item xss ~ xs, Item xs ~ x) =>
 --     xss -> (x, Maybe xs, Maybe xss)
