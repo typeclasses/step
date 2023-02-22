@@ -21,6 +21,12 @@ class Positional x xs | xs -> x where
     {-| The number of items in the block -}
     length :: xs -> Positive
 
+    {-| Get the item at a particular position
+
+    Returns 'Nothing' if the position is greater than 'length'.
+
+    The first item's position is 1. (Please take note, because
+    this is unconventional.) -}
     at :: End -> Positive -> xs -> Maybe x
 
     {-| Separate a block into two parts by specifying the length
