@@ -1,5 +1,8 @@
-{-| This can be useful for generating parser inputs for testing. -}
-module Block.Hedgehog.Gen.Shatter (shatterBlock, shatterNullable) where
+{-| This can be useful for generating parser inputs for testing.
+
+A larger size parameter results in splitting up the block into
+smaller and more numerous parts. -}
+module Block.Hedgehog.Gen.Shatter (shatter1, shatter0) where
 
 import Block.Class
 import Essentials
@@ -9,44 +12,34 @@ import Hedgehog (Gen)
 import Integer (Positive, Natural)
 import Prelude (error)
 
-import qualified Integer
-import qualified Integer.Positive as Positive
 import qualified Data.ListLike as LL
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import qualified Integer
+import qualified Integer.Positive as Positive
 
 {-| Break up a block into a list of blocks -}
-shatterBlock :: Block block => block -> Gen [block]
-shatterBlock x = shatterBlockSeq x <&> LL.toList
+shatter1 :: Positional x xs => xs -> Gen [xs]
+shatter1 x = shatterSeq1 x <&> LL.toList
 
 {-| Break up a possibly-empty value into a list of blocks -}
-shatterNullable :: Refined block => Nullable block -> Gen [block]
-shatterNullable x = shatterNullableSeq x <&> LL.toList
+shatter0 :: (Positional x xs, Refined x nul xs) => nul -> Gen [xs]
+shatter0 = refine >>> maybe (pure []) (shatterSeq1 >>> fmap LL.toList)
 
-shatterNullableSeq :: Refined block => Nullable block -> Gen (Seq block)
-shatterNullableSeq x = case refine x of
-    Nothing -> pure LL.empty
-    Just y -> shatterBlockSeq y
-
-shatterBlockSeq :: Block block => block -> Gen (Seq block)
-shatterBlockSeq x =
-    Gen.recursive Gen.choice [ stopSplitting ] [ keepSplitting ]
+shatterSeq1 :: Positional x xs => xs -> Gen (Seq xs)
+shatterSeq1 x = Gen.recursive Gen.choice [ stopSplitting ] [ keepSplitting ]
   where
     stopSplitting = pure (x :<| Empty)
-    keepSplitting = split x >>= \case
-        Nothing -> pure (x :<| Empty)
-        Just (a, b) -> (<>) <$> shatterBlockSeq a <*> shatterBlockSeq b
+    keepSplitting = split x & maybe stopSplitting \g ->
+        g >>= \(a, b) -> (<>) <$> shatterSeq1 a <*> shatterSeq1 b
 
-split :: Block xs => xs -> Gen (Maybe (xs, xs))
-split x = case Positive.fromNatural (Positive.subtractOne (length x)) of
-    Nothing -> pure Nothing
-    Just len -> do
-      i <- positive len
-      case take Front i x of
-          TakePart a b -> pure (Just (a, b))
-          _ -> error "Block.Hedgehog.Gen.split: 'take' out of bounds"
+split :: Positional x xs => xs -> Maybe (Gen (xs, xs))
+split xs = xs & length & Positive.subtractOne & Positive.fromNatural
+    <&> \len -> positive len <&> \i -> xs & take Front i & requireTakePart
+  where
+    requireTakePart = \case { TakePart a b -> (a, b);
+      _ -> error "Block.Hedgehog.Gen.split: 'take' out of bounds" }
 
 positive :: Positive -> Gen Positive
-positive max = do
-    i :: Natural <- Gen.integral (Range.constant 1 (Positive.toNatural max))
-    pure (Integer.yolo i)
+positive max = Gen.integral (Range.constant 1 (Positive.toNatural max))
+    <&> (Integer.yolo :: Natural -> Positive)
