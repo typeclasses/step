@@ -9,7 +9,6 @@ import Hedgehog (Gen, forAll, (===), annotateShow)
 import Block.Hedgehog.Gen.Positive (positive)
 import Prelude ((+))
 
-import qualified Hedgehog.Gen as Gen
 import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall xs.

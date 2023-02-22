@@ -7,12 +7,26 @@ import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===))
 
-import qualified Hedgehog.Gen as Gen
-import qualified Block.Hedgehog.Gen.End as Gen
-
 spec :: forall nul xs.
     (Show xs, Eq xs) =>
+    (Show nul, Eq nul) =>
     (Refined nul xs) =>
     Gen nul -> Gen xs -> Spec
 spec genNul genXs = describe "Refined" do
-    pure ()
+
+    it "refine . generalize = Just" $ hedgehog do
+        xs <- forAll genXs
+
+        (refine . generalize) xs === Just xs
+
+    it "if (refine a = Just b) then (generalize b = a)" $ hedgehog do
+        a <- forAll genNul
+
+        refine a & traverse_ \(b :: xs) ->
+            generalize b === a
+
+    it "if (refine a = Just b) then (assume a = b)" $ hedgehog do
+        a <- forAll genNul
+
+        refine a & traverse_ \(b :: xs) ->
+            assume a === b

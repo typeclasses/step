@@ -35,16 +35,13 @@ instance (Null x xs) => Refined xs (NotNull x xs) where
     generalize :: NotNull x xs -> xs
     generalize (NotNull x) = x
 
-    assume :: xs -> NotNull x xs
-    assume = NotNull
-
 instance (Null x xs) => Concat (NotNull x xs) where
 
     (++) :: NotNull x xs -> NotNull x xs -> NotNull x xs
     NotNull a ++ NotNull b = NotNull $ (Null.++) a b
 
     concat :: End -> NonEmpty (NotNull x xs) -> NotNull x xs
-    concat end = Foldable.toList >>> fmap generalize >>> Null.concat end >>> assume
+    concat end = Foldable.toList >>> fmap generalize >>> Null.concat end >>> NotNull
 
 instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
 
@@ -52,7 +49,7 @@ instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
     toNonEmpty end = generalize >>> Null.toNonEmpty end >>> Maybe.fromJust
 
     fromNonEmpty :: End -> NonEmpty x -> NotNull x xs
-    fromNonEmpty end = Null.fromNonEmpty end >>> assume
+    fromNonEmpty end = Null.fromNonEmpty end >>> NotNull
 
 instance (Null x xs) => Positional (NotNull x xs) where
 
@@ -66,7 +63,7 @@ instance (Null x xs) => Positional (NotNull x xs) where
         Plus n' -> x & generalize
             & Null.splitAt (Positive.toNatural case end of { Front -> n; Back -> n' })
             & case end of { Front -> id; Back -> \(a, b) -> (b, a) }
-            & \(a, b) -> TakePart (assume a) (assume b)
+            & \(a, b) -> TakePart (NotNull a) (NotNull b)
 
 instance (Null x xs) => Index x (NotNull x xs) where
 
@@ -76,10 +73,10 @@ instance (Null x xs) => Index x (NotNull x xs) where
 instance (Null x xs) => Singleton x (NotNull x xs) where
 
     singleton :: x -> NotNull x xs
-    singleton = Null.singleton >>> assume
+    singleton = Null.singleton >>> NotNull
 
     push :: End -> x -> NotNull x xs -> NotNull x xs
-    push end x = generalize >>> Null.push end x >>> assume
+    push end x = generalize >>> Null.push end x >>> NotNull
 
     pop :: End -> NotNull x xs -> Pop x (NotNull x xs)
     pop end = generalize >>> Null.pop end >>> Maybe.fromJust

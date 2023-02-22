@@ -3,16 +3,13 @@ module Block.Hedgehog.Spec.Concat (spec) where
 import Block.Class.Concat
 import Essentials
 
+import Hedgehog (Gen, forAll, (===))
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
-import Hedgehog (Gen, forAll, (===), annotateShow)
-import Block.Hedgehog.Gen.Positive (positive)
-import Prelude ((+))
 
-import qualified Data.Foldable as Foldable
+import qualified Block.Hedgehog.Gen.End as Gen
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall xs.
     (Show xs, Eq xs) =>
