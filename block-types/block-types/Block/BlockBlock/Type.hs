@@ -44,6 +44,23 @@ instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional x x
     fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
     fromNonEmpty end = fromNonEmpty end >>> singleton >>> BlockBlock
 
+instance (Singleton x xs, Singleton xs xss) => Singleton x (BlockBlock x xs xss) where
+
+    singleton :: x -> BlockBlock x xs xss
+    singleton x = BlockBlockUnsafe (singleton (singleton x)) 1
+
+    pop :: End -> BlockBlock x xs xss -> Pop x (BlockBlock x xs xss)
+    pop end (BlockBlockUnsafe xss n) = Pop x remainder
+      where
+        Pop xs xssMaybe = pop end xss
+        Pop x  xsMaybe  = pop end xs
+        remainder = pushMaybe end xsMaybe xssMaybe
+            <&> \xss' -> BlockBlockUnsafe xss' (n - 1)
+
+    push :: End -> x -> BlockBlock x xs xss -> BlockBlock x xs xss
+    push end x (BlockBlockUnsafe xss n) =
+        BlockBlockUnsafe (push end (singleton x) xss) (n + 1)
+
 instance (Search xs xss, Singleton xs xss, Positional x xs) => Positional x (BlockBlock x xs xss) where
 
     length :: BlockBlock x xs xss -> Positive
