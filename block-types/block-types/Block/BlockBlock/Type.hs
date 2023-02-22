@@ -69,6 +69,42 @@ instance (Search xs xss, Singleton xs xss, Positional x xs) => Positional x (Blo
                         TakeAll                         ->  pure $ Just (Nothing, Nothing)
                         TakePart a b                    ->  pure $ Just (Just a, Just b)
 
+instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional x xs, Singleton xs xss,
+        Semigroup xss) => Search x (BlockBlock x xs xss) where
+
+    span :: End -> (x -> State s Bool) -> BlockBlock x xs xss
+        -> State s (Span (BlockBlock x xs xss))
+    span end f bb =
+        bb & bbXss
+        & find end
+            (\xs -> span end f xs <&> \case
+                SpanAll -> Nothing
+                SpanNone -> Just (Nothing, xs)
+                SpanPart a b -> Just (Just a, b)
+            )
+        <&> \case
+            Nothing -> SpanAll
+            Just (Pivot a (fmap singleton -> a', singleton -> b') b) ->
+                case maybeThese a a' of
+                    Nothing -> SpanNone
+                    Just a'' -> SpanPart
+                        (BlockBlock (concatThese a''))
+                        (BlockBlock (concatMaybe b' b))
+
+data These a b = This a | That b | These a b
+
+maybeThese :: Maybe a -> Maybe b -> Maybe (These a b)
+maybeThese Nothing Nothing = Nothing
+maybeThese (Just a) Nothing = Just (This a)
+maybeThese Nothing (Just b) = Just (That b)
+maybeThese (Just a) (Just b) = Just (These a b)
+
+concatThese :: Semigroup a => These a a -> a
+concatThese = \case This x -> x; That x -> x; These x y -> x <> y
+
+concatMaybe :: Semigroup a => a -> Maybe a -> a
+concatMaybe a = \case Nothing -> a; Just b -> a <> b
+
 -- leftView' :: (Block xss, Block xs, Item xss ~ xs, Item xs ~ x) =>
 --     xss -> (x, Maybe xs, Maybe xss)
 -- leftView' (Block.leftView -> Pop (Block.leftView -> Pop x xsMaybe) xssMaybe) =
