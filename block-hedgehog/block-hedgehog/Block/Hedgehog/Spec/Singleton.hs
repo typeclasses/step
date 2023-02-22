@@ -21,12 +21,23 @@ spec genX genXs = describe "Singleton" do
         x <- forAll genX
         xs <- forAll (Gen.maybe genXs)
         end <- forAll Gen.end
+
         let p = Pop x xs
+
         (pop end . unpop end) p === p
 
     it "pop end (singleton x) = Pop x Nothing" $ hedgehog do
         x <- forAll genX
         end <- forAll Gen.end
+
         let xs :: xs = singleton x
         let p = pop end xs
+
         p === Pop x Nothing
+
+    it "pop end (push end x xs) = Pop x (Just xs)" $ hedgehog do
+        x <- forAll genX
+        xs <- forAll genXs
+        end <- forAll Gen.end
+
+        pop end (push end x xs) === Pop x (Just xs)
