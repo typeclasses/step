@@ -18,13 +18,13 @@ spec :: forall x xs.
     (Show x, Eq x) =>
     (Show xs, Eq xs) =>
     (
-      Semigroup xs, Singleton x xs, Positional x xs,
+      Semigroup xs, Singleton x xs, Positional xs,
       NonEmptyIso x xs, Search x xs
     ) =>
     Gen x -> Gen xs -> Spec
 spec genX genXs = describe "Block" do
     Singleton.spec genX genXs
-    Positional.spec genX genXs
+    Positional.spec genXs
     NonEmptyIso.spec genX genXs
     Search.spec genX genXs
 
@@ -58,10 +58,10 @@ refinedSpec :: forall x nul xs.
     (Show nul, Eq nul) =>
     (Show xs, Eq xs) =>
     (
-      Semigroup xs, Monoid nul, Singleton x xs, Positional x xs,
-      NonEmptyIso x xs, Search x xs, Refined x nul xs
+      Semigroup xs, Monoid nul, Singleton x xs, Positional xs,
+      NonEmptyIso x xs, Search x xs, Refined nul xs
     ) =>
     Gen x -> Gen nul -> Gen xs -> Spec
-refinedSpec x nul xs = do
-    spec x xs
-    Refined.spec x nul xs
+refinedSpec genX genNul genXs = do
+    spec genX genXs
+    Refined.spec genNul genXs

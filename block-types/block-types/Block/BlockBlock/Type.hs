@@ -7,7 +7,7 @@ module Block.BlockBlock.Type
 import Essentials
 import Block.Class
 
-import Integer (Positive, Natural)
+import Integer (Positive)
 import Prelude ((+), (-))
 import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup (sconcat)
@@ -21,7 +21,7 @@ import qualified Integer.Positive as Positive
 data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
     deriving stock (Eq, Ord, Show)
 
-pattern BlockBlock :: forall x xs xss. (NonEmptyIso xs xss, Positional x xs) =>
+pattern BlockBlock :: forall x xs xss. (NonEmptyIso xs xss, Positional xs) =>
     xss -> BlockBlock x xs xss
 pattern BlockBlock xss <- BlockBlockUnsafe xss _
   where
@@ -34,7 +34,7 @@ instance (Semigroup xss) => Semigroup (BlockBlock x xs xss) where
     BlockBlockUnsafe xss1 len1 <> BlockBlockUnsafe xss2 len2 =
         BlockBlockUnsafe (xss1 <> xss2) (len1 + len2)
 
-instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional x xs) =>
+instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) =>
         NonEmptyIso x (BlockBlock x xs xss) where
 
     toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
@@ -60,21 +60,11 @@ instance (Singleton x xs, Singleton xs xss) => Singleton x (BlockBlock x xs xss)
     push end x (BlockBlockUnsafe xss n) =
         BlockBlockUnsafe (push end (singleton x) xss) (n + 1)
 
-instance (Search xs xss, Singleton xs xss, Positional x xs, NonEmptyIso xs xss) =>
-        Positional x (BlockBlock x xs xss) where
+instance (Search xs xss, Singleton xs xss, Positional xs, NonEmptyIso xs xss) =>
+        Positional (BlockBlock x xs xss) where
 
     length :: BlockBlock x xs xss -> Positive
     length = bbLength
-
-    at :: End -> Positive -> BlockBlock x xs xss -> Maybe x
-    at end = \n (BlockBlock xss) -> go n xss
-      where
-        go :: Positive -> xss -> Maybe x
-        go n xss = case Positive.subtract (length xs) n of
-            Minus n' -> xss' & maybe Nothing (go n')
-            NotMinus _ -> at end n xs
-          where
-            Pop xs xss' = pop end xss
 
     take :: End -> Positive -> BlockBlock x xs xss -> Take (BlockBlock x xs xss)
     take end n (BlockBlockUnsafe xss len) = case Positive.subtract len n of
@@ -96,7 +86,20 @@ instance (Search xs xss, Singleton xs xss, Positional x xs, NonEmptyIso xs xss) 
                         TakeAll                         ->  pure $ Just (Nothing, Nothing)
                         TakePart a b                    ->  pure $ Just (Just a, Just b)
 
-instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional x xs, Singleton xs xss,
+instance (Search xs xss, Singleton xs xss, NonEmptyIso xs xss, Index x xs) =>
+        Index x (BlockBlock x xs xss) where
+
+    at :: End -> Positive -> BlockBlock x xs xss -> Maybe x
+    at end = \n (BlockBlock xss) -> go n xss
+      where
+        go :: Positive -> xss -> Maybe x
+        go n xss = case Positive.subtract (length xs) n of
+            Minus n' -> xss' & maybe Nothing (go n')
+            NotMinus _ -> at end n xs
+          where
+            Pop xs xss' = pop end xss
+
+instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional xs, Singleton xs xss,
         Semigroup xss) => Search x (BlockBlock x xs xss) where
 
     span :: End -> (x -> State s Bool) -> BlockBlock x xs xss

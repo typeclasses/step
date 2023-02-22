@@ -79,6 +79,9 @@ library
         Block.Class.State.Types
         Block.Class.State.Utilities
 
+        Block.Class.Index
+        Block.Class.Index.Class
+
 test-suite test-block-class
     import: base
     type: exitcode-stdio-1.0

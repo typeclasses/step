@@ -20,21 +20,21 @@ import qualified Integer
 import qualified Integer.Positive as Positive
 
 {-| Break up a block into a list of blocks -}
-shatter1 :: Positional x xs => xs -> Gen [xs]
+shatter1 :: Positional xs => xs -> Gen [xs]
 shatter1 x = shatterSeq1 x <&> LL.toList
 
 {-| Break up a possibly-empty value into a list of blocks -}
-shatter0 :: (Positional x xs, Refined x nul xs) => nul -> Gen [xs]
+shatter0 :: (Positional xs, Refined nul xs) => nul -> Gen [xs]
 shatter0 = refine >>> maybe (pure []) (shatterSeq1 >>> fmap LL.toList)
 
-shatterSeq1 :: Positional x xs => xs -> Gen (Seq xs)
+shatterSeq1 :: Positional xs => xs -> Gen (Seq xs)
 shatterSeq1 x = Gen.recursive Gen.choice [ stopSplitting ] [ keepSplitting ]
   where
     stopSplitting = pure (x :<| Empty)
     keepSplitting = split x & maybe stopSplitting \g ->
         g >>= \(a, b) -> (<>) <$> shatterSeq1 a <*> shatterSeq1 b
 
-split :: Positional x xs => xs -> Maybe (Gen (xs, xs))
+split :: Positional xs => xs -> Maybe (Gen (xs, xs))
 split xs = xs & length & Positive.subtractOne & Positive.fromNatural
     <&> \len -> positive len <&> \i -> xs & take Front i & requireTakePart
   where

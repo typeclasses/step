@@ -6,7 +6,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
 import Data.Foldable (toList)
 import Prelude (error)
 
-class Refined x nul xs | xs -> nul x where
+class Refined nul xs | xs -> nul where
 
     refine :: nul -> Maybe xs
 
@@ -15,7 +15,7 @@ class Refined x nul xs | xs -> nul x where
     {-| Defined only where 'refine' produces 'Just' -}
     assume :: nul -> xs
 
-instance Refined x [x] (NonEmpty x) where
+instance Refined [x] (NonEmpty x) where
     refine = nonEmpty
     generalize = toList
     assume (x : xs) = x :| xs

@@ -16,18 +16,10 @@ import Prelude ((-))
 import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
 
-class Positional x xs | xs -> x where
+class Positional xs where
 
     {-| The number of items in the block -}
     length :: xs -> Positive
-
-    {-| Get the item at a particular position
-
-    Returns 'Nothing' if the position is greater than 'length'.
-
-    The first item's position is 1. (Please take note, because
-    this is unconventional.) -}
-    at :: End -> Positive -> xs -> Maybe x
 
     {-| Separate a block into two parts by specifying the length
         of the first part
@@ -46,19 +38,10 @@ class Positional x xs | xs -> x where
         -> xs -- ^ A block
         -> Take xs
 
-instance Positional x (NonEmpty x) where
+instance Positional (NonEmpty x) where
 
     length :: NonEmpty x -> Positive
     length = Positive.length
-
-    at :: End -> Positive -> NonEmpty x -> Maybe x
-    at Front 1 = \(x :| _) -> Just x
-    at Front n = \(_ :| xs) -> go (n - 1) xs
-      where
-        go _ [] = Nothing
-        go 1 (x : _) = Just x
-        go i (_ : xs) = go i xs
-    at Back n = NonEmpty.reverse >>> at Front n
 
     take :: End -> Positive -> NonEmpty x -> Take (NonEmpty x)
     take Front 1 (_ :| []) = TakeAll

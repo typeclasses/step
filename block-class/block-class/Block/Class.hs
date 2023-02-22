@@ -22,7 +22,9 @@ module Block.Class
     {- * Concatenation -} {- $concat -} concat,
 
     {- * Operations involving numeric positions -} {- $positional -}
-        length, at, take, Take (TakeAll, TakePart, TakeInsufficient),
+        length, take, Take (TakeAll, TakePart, TakeInsufficient),
+
+    {- * Single item at a numeric position -} {- * index -} at,
 
     {- * Searching for items matching a predicate -} {- $search -}
         span, Span (SpanAll, SpanNone, SpanPart),
@@ -45,7 +47,7 @@ module Block.Class
 
     {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
-    {- * Classes -} Singleton, Positional, Search, Refined, NonEmptyIso,
+    {- * Classes -} Singleton, Positional, Search, Refined, NonEmptyIso, Index,
 
     {- * State -} State (..),
             runState, evalState, execState, stateless, get, put, modify,
@@ -55,21 +57,22 @@ module Block.Class
 import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
 import Block.Class.BiPrefix.Utilities ( biPrefix )
 import Block.Class.End (End (..))
+import Block.Class.Index.Class (Index (..))
 import Block.Class.ItemEquivalence.Examples (equality)
 import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
 import Block.Class.NonEmptyIso (NonEmptyIso (..))
 import Block.Class.Positional.Class (Positional (..))
 import Block.Class.Positional.Types (Take(..))
+import Block.Class.Refined.Class (Refined (..))
+import Block.Class.Refined.Utilities (concat)
 import Block.Class.Search.Class (Search (..))
 import Block.Class.Search.Types (Span (..), Pivot (..))
 import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
-import Block.Class.Singleton.Utilities (head, unpop, pushMaybe)
 import Block.Class.Singleton.Types (Pop (..))
+import Block.Class.Singleton.Utilities (head, unpop, pushMaybe)
 import Block.Class.State.Types (State (..))
 import Block.Class.State.Utilities (runState, evalState, execState, stateless, get, put, modify)
-import Block.Class.Refined.Class (Refined (..))
-import Block.Class.Refined.Utilities (concat)
 
 {- $singleton
 
@@ -110,3 +113,7 @@ See "Block.Class.End". -}
 {- $shortfall
 
 See "Block.Class.Shortfall". -}
+
+{- $index
+
+See "Block.Class.Index". -}

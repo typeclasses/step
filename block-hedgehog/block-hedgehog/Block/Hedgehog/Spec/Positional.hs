@@ -11,12 +11,11 @@ import Prelude ((+))
 
 import qualified Hedgehog.Gen as Gen
 
-spec :: forall x xs.
-    (Show x, Eq x) =>
+spec :: forall xs.
     (Show xs, Eq xs) =>
-    (Positional x xs) =>
-    Gen x -> Gen xs -> Spec
-spec genX genXs = describe "Positional" do
+    (Positional xs) =>
+    Gen xs -> Spec
+spec genXs = describe "Positional" do
 
     it "take e (length xs) xs = TakeAll" $ hedgehog do
         xs <- forAll genXs

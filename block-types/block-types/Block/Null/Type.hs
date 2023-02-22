@@ -26,7 +26,7 @@ instance (IsString xs, Null x xs) => IsString (NotNull x xs) where
     fromString = fromString >>> refine >>>
         fromMaybe (error "NotNull fromString: empty")
 
-instance (Null x xs) => Refined x xs (NotNull x xs) where
+instance (Null x xs) => Refined xs (NotNull x xs) where
 
     refine :: xs -> Maybe (NotNull x xs)
     refine = Null.notNullMaybe >>> fmap NotNull
@@ -45,13 +45,10 @@ instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
     fromNonEmpty :: End -> NonEmpty x -> NotNull x xs
     fromNonEmpty end = Null.fromNonEmpty end >>> assume
 
-instance (Null x xs) => Positional x (NotNull x xs) where
+instance (Null x xs) => Positional (NotNull x xs) where
 
     length :: NotNull x xs -> Positive
     length = generalize >>> Null.length >>> Positive.fromNatural >>> Maybe.fromJust
-
-    at :: End -> Positive -> NotNull x xs -> Maybe x
-    at end n (NotNull xs) = Null.at end n xs
 
     take :: End -> Positive -> NotNull x xs -> Take (NotNull x xs)
     take end n x = case Integer.subtract (length x) n of
@@ -61,6 +58,11 @@ instance (Null x xs) => Positional x (NotNull x xs) where
             & Null.splitAt (Positive.toNatural case end of { Front -> n; Back -> n' })
             & case end of { Front -> id; Back -> \(a, b) -> (b, a) }
             & \(a, b) -> TakePart (assume a) (assume b)
+
+instance (Null x xs) => Index x (NotNull x xs) where
+
+    at :: End -> Positive -> NotNull x xs -> Maybe x
+    at end n (NotNull xs) = Null.at end n xs
 
 instance (Null x xs) => Singleton x (NotNull x xs) where
 
