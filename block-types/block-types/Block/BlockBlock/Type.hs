@@ -121,7 +121,7 @@ instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional xs, Singlet
         <&> \case
             Nothing -> SpanAll
             Just (Pivot a (a', b') b) ->
-                case pushMaybe (End.opposite end) a' a of
+                case pushMaybe Front a' a of
                     Nothing -> SpanNone
                     Just a'' -> SpanPart
                         (BlockBlock a'')

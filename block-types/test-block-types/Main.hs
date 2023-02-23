@@ -10,15 +10,16 @@ import Block.Sequence (Seq1)
 import Block.Text (Text1)
 import Data.ByteString (ByteString)
 import Data.Char (Char)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Sequence (Seq)
 import Data.Text (Text)
 import Data.Word (Word8)
 import Hedgehog (Gen)
-import Data.List.NonEmpty (NonEmpty)
+import Prelude (fromIntegral)
 import System.IO (IO)
 import Test.Hspec (hspec, describe)
-import Prelude (fromIntegral)
 
+import qualified Block.Hedgehog.Gen.Shatter as Gen
 import qualified Block.Hedgehog.Spec as Block
 import qualified Data.ByteString as ByteString
 import qualified Data.Char as Char
@@ -52,8 +53,8 @@ main = hspec do
     describe "BlockBlock" $
         Block.spec @Char @(BlockBlock Char Text1 (Seq1 Text1))
             genChar
-            (genSeq1 genText1 <&> BlockBlock)
-            (genBlockBlockPredicate genTextPredicate)
+            (genBlockBlock @Char @Text1 @(Seq1 Text1) genText1)
+            (genBlockBlockPredicate @Char @Text1 @(Seq1 Text1) genTextPredicate)
 
     describe "NonEmpty" $
         Block.spec @Char @(NonEmpty Char)
@@ -117,11 +118,17 @@ genCharNonEmptyPredicate = PredicateGenerators Char.isUpper genX genXs
     genX = \case False -> Gen.lower; True -> Gen.upper
     genXs t = Gen.nonEmpty (Range.linear 1 10) (genX t)
 
-genBlockBlockPredicate :: Positional xs =>
+genBlockBlock :: forall x xs xss.
+    (Positional xs, NonEmptyIso xs xss) =>
+    Gen xs -> Gen (BlockBlock x xs xss)
+genBlockBlock g = do
+    xs <- g
+    xss <- Gen.shatter1 xs
+    pure $ BlockBlock $ fromNonEmpty Front xss
+
+genBlockBlockPredicate :: forall x xs xss.
+    (Positional xs, NonEmptyIso xs xss) =>
     PredicateGenerators x xs
-    -> PredicateGenerators x (BlockBlock x xs (Seq1 xs))
+    -> PredicateGenerators x (BlockBlock x xs xss)
 genBlockBlockPredicate (PredicateGenerators p genX genXs) =
-    PredicateGenerators p genX genXss
-  where
-    genXss t = Gen.seq (Range.linear 1 10) (genXs t)
-        <&> (assume >>> BlockBlock)
+    PredicateGenerators p genX (\t -> genBlockBlock @x @xs @xss (genXs t))
