@@ -12,6 +12,7 @@ import Prelude ((+))
 import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup (sconcat)
 import Integer.Signed (Signed (..))
+import Data.Function (on)
 
 import qualified Data.Maybe as Maybe
 import qualified Fold.Nonempty as Fold
@@ -29,6 +30,9 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
       (Fold.run Fold.sum (length <$> (toNonEmpty Front xss :: NonEmpty xs)))
 
 {-# complete BlockBlock #-}
+
+instance (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) => ItemEquality (BlockBlock x xs xss) where
+    sameItems = sameItems `on` toNonEmpty Front
 
 instance (Concat xss) => Concat (BlockBlock x xs xss) where
 
@@ -121,7 +125,7 @@ instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional xs, Singlet
         <&> \case
             Nothing -> SpanAll
             Just (Pivot a (a', b') b) ->
-                case pushMaybe Front a' a of
+                case pushMaybe end a' a of -- todo
                     Nothing -> SpanNone
                     Just a'' -> SpanPart
                         (BlockBlock a'')

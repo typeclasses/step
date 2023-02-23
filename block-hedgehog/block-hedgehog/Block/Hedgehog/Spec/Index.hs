@@ -1,6 +1,7 @@
 module Block.Hedgehog.Spec.Index (spec) where
 
 import Block.Class.Index
+import Block.Class.ItemEquality
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -13,10 +14,10 @@ import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall x xs.
     (Show x, Eq x) =>
-    (Show xs, Eq xs) =>
+    (Show xs, ItemEquality xs) =>
     (Index x xs) =>
-    Gen x -> Gen xs -> Spec
-spec genX genXs = describe "Index" do
+    Gen x -> Gen xs -> (xs -> Gen xs) -> Spec
+spec genX genXs variegate = describe "Index" do
 
     it "at end 1 . singleton = Just" $ hedgehog do
         x <- forAll genX
@@ -45,7 +46,7 @@ spec genX genXs = describe "Index" do
         a <- forAll genXs
         b <- forAll genXs
 
-        let ab = a ++ b
+        ab <- forAll $ variegate (a ++ b)
 
         at Front (length a)     ab === Just (last a)
         at Back  (length b + 1) ab === Just (last a)

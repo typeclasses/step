@@ -7,6 +7,7 @@ module Block.Class.ClassNames
     Refined,
     Search,
     Singleton,
+    ItemEquality,
   )
   where
 

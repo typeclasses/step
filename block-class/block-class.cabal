@@ -87,6 +87,10 @@ library
         Block.Class.Concat.Class
         Block.Class.Concat.Utilities
 
+        Block.Class.ItemEquality
+        Block.Class.ItemEquality.Class
+        Block.Class.ItemEquality.Utilities
+
 test-suite test-block-class
     import: base
     type: exitcode-stdio-1.0

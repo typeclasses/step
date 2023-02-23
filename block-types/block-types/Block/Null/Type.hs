@@ -35,6 +35,9 @@ instance (Null x xs) => Refined xs (NotNull x xs) where
     generalize :: NotNull x xs -> xs
     generalize (NotNull x) = x
 
+instance Eq xs => ItemEquality (NotNull x xs) where
+    sameItems = (==)
+
 instance (Null x xs) => Concat (NotNull x xs) where
 
     (++) :: NotNull x xs -> NotNull x xs -> NotNull x xs

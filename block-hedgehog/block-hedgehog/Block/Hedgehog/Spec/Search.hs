@@ -1,11 +1,12 @@
 module Block.Hedgehog.Spec.Search (spec, PredicateGenerators (..)) where
 
 import Block.Class.Search
+import Block.Class.ItemEquality
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
-import Hedgehog (Gen, forAll, (===), annotateShow)
+import Hedgehog (Gen, forAll, diff)
 
 import qualified Data.Maybe as Maybe
 import qualified Hedgehog.Gen as Gen
@@ -20,12 +21,13 @@ data PredicateGenerators x xs =
 
 spec :: forall x xs.
     (Show x, Eq x) =>
-    (Show xs, Eq xs) =>
+    (Show xs, ItemEquality xs) =>
     (Search x xs) =>
     Gen xs
+    -> (xs -> Gen xs)
     -> PredicateGenerators x xs
     -> Spec
-spec genXs (PredicateGenerators p genX' genXs') = describe "Search" do
+spec genXs variegate (PredicateGenerators p genX' genXs') = describe "Search" do
 
     it "findPredicate -> Just" $ hedgehog do
         a :: Maybe xs <- forAll $ Gen.maybe $ genXs' False
@@ -37,15 +39,14 @@ spec genXs (PredicateGenerators p genX' genXs') = describe "Search" do
         let parts = Maybe.fromJust $ NonEmpty.nonEmpty $ Maybe.catMaybes
                         [a, Just (singleton b) :: Maybe xs, c]
 
-        let abc :: xs = concat end parts
-        annotateShow abc
+        abc :: xs <- forAll $ variegate $ concat end parts
 
-        findPredicate end p abc === Just (Pivot a b c)
+        diff (findPredicate end p abc) (foldableEqOn sameItemsPivot) (Just (Pivot a b c))
 
     it "findPredicate -> Nothing" $ hedgehog do
         x <- forAll $ genXs' False
         end <- forAll Gen.end
-        findPredicate end p x === Nothing
+        diff (findPredicate end p x) (foldableEqOn sameItemsPivot) Nothing
 
     it "spanPredicate -> SpanPart" $ hedgehog do
         a :: xs       <- forAll $ genXs' True
@@ -57,17 +58,16 @@ spec genXs (PredicateGenerators p genX' genXs') = describe "Search" do
         let parts = Maybe.fromJust $ NonEmpty.nonEmpty $ Maybe.catMaybes
                         [Just a, Just (singleton b) :: Maybe xs, c]
 
-        let abc :: xs = concat end parts
-        annotateShow abc
+        abc :: xs <- forAll $ variegate $ concat end parts
 
-        spanPredicate end p abc === SpanPart a (unpop end (Pop b c))
+        diff (spanPredicate end p abc) sameItemsSpan (SpanPart a (unpop end (Pop b c)))
 
     it "spanPredicate -> SpanAll" $ hedgehog do
         x <- forAll $ genXs' True
         end <- forAll Gen.end
-        spanPredicate end p x === SpanAll
+        diff (spanPredicate end p x) sameItemsSpan SpanAll
 
     it "spanPredicate -> SpanNone" $ hedgehog do
         x <- forAll $ genXs' False
         end <- forAll Gen.end
-        spanPredicate end p x === SpanNone
+        diff (spanPredicate end p x) sameItemsSpan SpanNone

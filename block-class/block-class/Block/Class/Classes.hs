@@ -7,11 +7,13 @@ module Block.Class.Classes
     Refined (..),
     Search (..),
     Singleton (..),
+    ItemEquality (..),
   )
   where
 
 import Block.Class.Concat.Class
 import Block.Class.Index.Class
+import Block.Class.ItemEquality.Class
 import Block.Class.NonEmptyIso.Class
 import Block.Class.Positional.Class
 import Block.Class.Refined.Class

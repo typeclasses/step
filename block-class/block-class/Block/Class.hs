@@ -19,37 +19,41 @@ module Block.Class
     {- * Concatenation -} (++), concat, concatRefined, append,
 
     {- * Dealing with single items -} {- $singleton -}
-        singleton,  first, last, terminal,
-        pop, Pop (Pop), push, unpop, pushMaybe,
+            singleton,  first, last, terminal,
+            pop, Pop (Pop), push, unpop, pushMaybe,
 
     {- * Operations involving numeric positions -} {- $positional -}
-        length, take, Take (TakeAll, TakePart, TakeInsufficient),
+            length, take, Take (TakeAll, TakePart, TakeInsufficient),
 
     {- * Single item at a numeric position -} {- * index -} at,
 
     {- * Searching for items matching a predicate -} {- $search -}
-        span, spanPredicate, Span (SpanAll, SpanNone, SpanPart),
-        find, findPredicate, Pivot (Pivot),
+            span, spanPredicate, Span (SpanAll, SpanNone, SpanPart),
+            find, findPredicate, Pivot (Pivot),
 
     {- * Prefix detection -} {- $biPrefix -}
-        biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
-        WhichOfTwo (First, Second),
+            biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
+            WhichOfTwo (First, Second),
+
+    {- * Item equality -} {- $itemEquality -}
+            sameItems, sameItemsTake, sameItemsPop, sameItemsPivot,
+            sameItemsSpan, foldableEqOn,
 
     {- * Item equivalence -} {- $itemEquivalence -}
-        ItemEquivalence (..), equality,
+            ItemEquivalence (..), equality,
 
     {- * Nullability -} {- $trivializable -}
-        refine, generalize, assume,
+            refine, generalize, assume,
 
     {- * Isomorphism with NonEmpty -} {- $nonEmptyIso -}
-        toNonEmpty, fromNonEmpty,
+            toNonEmpty, fromNonEmpty,
 
     {- * End = Front | Back -} {- $end -} End (Front, Back),
 
     {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
     {- * Classes -} Singleton, Positional, Search, Refined,
-            NonEmptyIso, Index, Concat,
+            NonEmptyIso, Index, Concat, ItemEquality,
 
     {- * State -} State (..),
             runState, evalState, execState, stateless, get, put, modify,
@@ -62,6 +66,8 @@ import Block.Class.Concat.Class (Concat (..))
 import Block.Class.Concat.Utilities (append)
 import Block.Class.End (End (..))
 import Block.Class.Index.Class (Index (..))
+import Block.Class.ItemEquality.Class (ItemEquality (..))
+import Block.Class.ItemEquality.Utilities (sameItemsTake, sameItemsPop, sameItemsPivot, sameItemsSpan, foldableEqOn)
 import Block.Class.ItemEquivalence.Examples (equality)
 import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
 import Block.Class.NonEmptyIso.Class (NonEmptyIso (..))
@@ -122,3 +128,7 @@ See "Block.Class.Shortfall". -}
 {- $index
 
 See "Block.Class.Index". -}
+
+{- $itemEquality
+
+See "Block.Class.ItemEquality". -}

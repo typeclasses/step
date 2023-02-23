@@ -21,16 +21,17 @@ spec :: forall x xs.
     (Show x, Eq x) =>
     (Show xs, Eq xs) =>
     (
-      NonEmptyIso x xs, Search x xs, Index x xs
+      NonEmptyIso x xs, Search x xs, Index x xs, ItemEquality xs
     ) =>
-    Gen x -> Gen xs -> PredicateGenerators x xs -> Spec
-spec genX genXs genP = do
+    Gen x -> Gen xs -> (xs -> Gen xs)
+    -> PredicateGenerators x xs -> Spec
+spec genX genXs variegate genP  = do
     Concat.spec genXs
-    Singleton.spec genX genXs
-    Positional.spec genXs
-    NonEmptyIso.spec genX genXs
-    Search.spec genXs genP
-    Index.spec genX genXs
+    Singleton.spec genX genXs variegate
+    Positional.spec genXs variegate
+    NonEmptyIso.spec genX genXs variegate
+    Search.spec genXs variegate genP
+    Index.spec genX genXs variegate
 
     it "length . toNonEmpty e = length" $ hedgehog do
         xs <- forAll genXs
@@ -47,9 +48,11 @@ refinedSpec :: forall x nul xs.
     (Show xs, Eq xs) =>
     (
       Semigroup xs, Monoid nul, Index x xs,
-      NonEmptyIso x xs, Search x xs, Refined nul xs
+      NonEmptyIso x xs, Search x xs, Refined nul xs,
+      ItemEquality xs
     ) =>
-    Gen x -> Gen nul -> Gen xs -> PredicateGenerators x xs -> Spec
-refinedSpec genX genNul genXs genP = do
-    spec genX genXs genP
+    Gen x -> Gen nul -> Gen xs -> (xs -> Gen xs)
+    -> PredicateGenerators x xs -> Spec
+refinedSpec genX genNul genXs variegate genP = do
+    spec genX genXs variegate genP
     Refined.spec genNul genXs

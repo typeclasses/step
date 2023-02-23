@@ -34,6 +34,7 @@ main = hspec do
             genByte
             genByteString
             genByteString1
+            pure -- no way to variegate
             genByteStringPredicate
 
     describe "Text1" $
@@ -41,6 +42,7 @@ main = hspec do
             genChar
             genText
             genText1
+            pure -- no way to variegate
             genTextPredicate
 
     describe "Seq1" $
@@ -48,18 +50,21 @@ main = hspec do
             genChar
             (genSeq genChar)
             (genSeq1 genChar)
+            pure -- no way to variegate
             genCharSeqPredicate
 
     describe "BlockBlock" $
         Block.spec @Char @(BlockBlock Char Text1 (Seq1 Text1))
             genChar
             (genBlockBlock @Char @Text1 @(Seq1 Text1) genText1)
+            variegateBlockBlock
             (genBlockBlockPredicate @Char @Text1 @(Seq1 Text1) genTextPredicate)
 
     describe "NonEmpty" $
         Block.spec @Char @(NonEmpty Char)
             genChar
             (genNonEmpty genChar)
+            pure -- no way to variegate
             genCharNonEmptyPredicate
 
 genByte :: Gen Word8
@@ -132,3 +137,11 @@ genBlockBlockPredicate :: forall x xs xss.
     -> PredicateGenerators x (BlockBlock x xs xss)
 genBlockBlockPredicate (PredicateGenerators p genX genXs) =
     PredicateGenerators p genX (\t -> genBlockBlock @x @xs @xss (genXs t))
+
+variegateBlockBlock :: (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) => BlockBlock x xs xss -> Gen (BlockBlock x xs xss)
+variegateBlockBlock bb = do
+    let xs = toNonEmpty end bb & fromNonEmpty end
+    xss <- Gen.shatter1 xs
+    pure $ BlockBlock $ fromNonEmpty end xss
+  where
+    end = Front
