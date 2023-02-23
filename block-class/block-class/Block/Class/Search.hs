@@ -2,8 +2,8 @@ module Block.Class.Search
   (
     {- * Class -} Search (..),
     {- * Superclasses -} Singleton (..), Concat (..),
-    {- * Types -} Pivot (..), Span (..), End (..), State (..),
-    {- * Utilities -} unpop, first, last, terminal, pushMaybe, append, findPredicate,
+    {- * Types -} Pivot (..), Span (..), End (..), State (..), Pop (Pop),
+    {- * Utilities -} unpop, first, last, terminal, pushMaybe, append, findPredicate, spanPredicate,
     {- ** State -} runState, evalState, execState, stateless, get, put, modify,
   )
   where
@@ -15,6 +15,7 @@ import Block.Class.Search.Class
 import Block.Class.Search.Types
 import Block.Class.Search.Utilities
 import Block.Class.Singleton.Class
+import Block.Class.Singleton.Types
 import Block.Class.Singleton.Utilities
 import Block.Class.State.Types
 import Block.Class.State.Utilities

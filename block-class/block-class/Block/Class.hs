@@ -28,7 +28,7 @@ module Block.Class
     {- * Single item at a numeric position -} {- * index -} at,
 
     {- * Searching for items matching a predicate -} {- $search -}
-        span, Span (SpanAll, SpanNone, SpanPart),
+        span, spanPredicate, Span (SpanAll, SpanNone, SpanPart),
         find, findPredicate, Pivot (Pivot),
 
     {- * Prefix detection -} {- $biPrefix -}
@@ -71,7 +71,7 @@ import Block.Class.Refined.Class (Refined (..))
 import Block.Class.Refined.Utilities (concatRefined)
 import Block.Class.Search.Class (Search (..))
 import Block.Class.Search.Types (Span (..), Pivot (..))
-import Block.Class.Search.Utilities (findPredicate)
+import Block.Class.Search.Utilities (findPredicate, spanPredicate)
 import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Types (Pop (..))

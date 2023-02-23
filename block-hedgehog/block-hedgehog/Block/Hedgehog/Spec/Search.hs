@@ -22,14 +22,14 @@ spec :: forall x xs.
     (Show x, Eq x) =>
     (Show xs, Eq xs) =>
     (Search x xs) =>
-    Gen x -> Gen xs
+    Gen xs
     -> PredicateGenerators x xs
     -> Spec
-spec genX genXs (PredicateGenerators p genX' genXs') = describe "Search" do
+spec genXs (PredicateGenerators p genX' genXs') = describe "Search" do
 
     it "findPredicate -> Just" $ hedgehog do
         a :: Maybe xs <- forAll $ Gen.maybe $ genXs' False
-        b :: x        <- forAll $             genX'  True
+        b :: x        <- forAll $ genX' True
         c :: Maybe xs <- forAll $ Gen.maybe $ genXs
 
         end <- forAll Gen.end
@@ -37,7 +37,7 @@ spec genX genXs (PredicateGenerators p genX' genXs') = describe "Search" do
         let parts = Maybe.fromJust $ NonEmpty.nonEmpty $ Maybe.catMaybes
                         [a, Just (singleton b) :: Maybe xs, c]
 
-        let abc = concat end parts
+        let abc :: xs = concat end parts
         annotateShow abc
 
         findPredicate end p abc === Just (Pivot a b c)
@@ -47,6 +47,27 @@ spec genX genXs (PredicateGenerators p genX' genXs') = describe "Search" do
         end <- forAll Gen.end
         findPredicate end p x === Nothing
 
-    -- todo: test 'find' case where nothing is found
+    it "spanPredicate -> SpanPart" $ hedgehog do
+        a :: xs       <- forAll $ genXs' True
+        b :: x        <- forAll $ genX' False
+        c :: Maybe xs <- forAll $ Gen.maybe $ genXs
 
-    -- todo: test 'span'
+        end <- forAll Gen.end
+
+        let parts = Maybe.fromJust $ NonEmpty.nonEmpty $ Maybe.catMaybes
+                        [Just a, Just (singleton b) :: Maybe xs, c]
+
+        let abc :: xs = concat end parts
+        annotateShow abc
+
+        spanPredicate end p abc === SpanPart a (unpop end (Pop b c))
+
+    it "spanPredicate -> SpanAll" $ hedgehog do
+        x <- forAll $ genXs' True
+        end <- forAll Gen.end
+        spanPredicate end p x === SpanAll
+
+    it "spanPredicate -> SpanNone" $ hedgehog do
+        x <- forAll $ genXs' False
+        end <- forAll Gen.end
+        spanPredicate end p x === SpanNone

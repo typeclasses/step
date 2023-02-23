@@ -29,7 +29,7 @@ spec genX genXs genP = do
     Singleton.spec genX genXs
     Positional.spec genXs
     NonEmptyIso.spec genX genXs
-    Search.spec genX genXs genP
+    Search.spec genXs genP
     Index.spec genX genXs
 
     it "length . toNonEmpty e = length" $ hedgehog do

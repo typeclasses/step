@@ -8,3 +8,6 @@ import Block.Class.End
 
 findPredicate :: Search x xs => End -> (x -> Bool) -> xs -> Maybe (Pivot x xs)
 findPredicate end f = stateless . find end (\x -> pure $ if f x then Just x else Nothing)
+
+spanPredicate :: Search x xs => End -> (x -> Bool) -> xs -> Span xs
+spanPredicate end f = stateless . span end (pure . f)
