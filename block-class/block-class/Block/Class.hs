@@ -9,7 +9,7 @@ module Block.Class
     {- * Operations involving numeric positions -} {- $positional -}
             length, take, Take (TakeAll, TakePart, TakeInsufficient),
 
-    {- * Single item at a numeric position -} {- * index -} at,
+    {- * Single item at a numeric position -} {- $index -} at,
 
     {- * Searching for items matching a predicate -} {- $search -}
             span, spanPredicate, Span (SpanAll, SpanNone, SpanPart),

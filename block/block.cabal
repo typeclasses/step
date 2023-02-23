@@ -1,0 +1,23 @@
+cabal-version: 3.0
+
+name: block
+version: 0.0.0.0
+
+license: Apache-2.0
+license-file: license.txt
+
+extra-source-files: *.md
+
+common base
+    default-language: GHC2021
+    default-extensions: NoImplicitPrelude
+    ghc-options: -Wall
+    build-depends:
+      , base ^>= 4.16 || ^>= 4.17
+      , block-class == 0.0.0.*
+      , block-types == 0.0.0.*
+
+library
+    import: base
+    hs-source-dirs: block
+    exposed-modules: Block

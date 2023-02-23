@@ -1,5 +1,6 @@
 packages:
-    block-chain
+    block
+  , block-chain
   , block-class
   , block-hedgehog
   , block-types
