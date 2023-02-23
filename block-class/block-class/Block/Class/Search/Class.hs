@@ -33,7 +33,16 @@ class Singleton x xs => Search x xs | xs -> x where
 
     If a match is found, the result is @(Just ('Pivot' a found b))@,
     which represents a division of the block into three parts. Part
-    @(a :: Maybe xs)@ consists of the items that the search examined
+    @(a :: Maybe xs)@ consists o
+## Testing
+
+A fairly extensive suite of property tests may be found in the [block-hedgehog]
+package; you can use them to test your own instances.
+
+The `block-class` package has a more modest test suite for itself; running the
+tests for `block-hedgehog` provides some supplementary assurance that
+`block-class` is correct.
+f the items that the search examined
     before finding a match. The @found@ value is the result obtained from
     the matching item. Part @(b :: Maybe xs)@ consists of the items that
     the search did not examine.

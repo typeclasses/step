@@ -11,7 +11,7 @@ There must exist a predicate
 
 such that
 
-@'itemsEquivalent' (a, b)@
+@'equivalentItems' (a, b)@
 
 is the same as
 
@@ -24,4 +24,4 @@ The point here is that we want to work with efficiently packed string
 types like @(Text1)@ but still be able to reason about them as if they
 were @(NonEmpty Char])@. -}
 newtype ItemEquivalence xs =
-    ItemEquivalence{ itemsEquivalent :: (xs, xs) -> Bool }
+    ItemEquivalence{ equivalentItems :: (xs, xs) -> Bool }

@@ -4,7 +4,7 @@ import Essentials
 
 import Data.Function (on)
 import Block.Class.Positional (Take (..), Positional (..), take)
-import Block.Class.ItemEquivalence.Type (ItemEquivalence, itemsEquivalent)
+import Block.Class.ItemEquivalence.Type (ItemEquivalence, equivalentItems)
 import Data.Ord (compare, Ordering (..))
 import Block.Class.End (End (..))
 import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
@@ -27,7 +27,7 @@ biPrefix :: Positional xs =>
         -- sub-blocks (such as 'Block.Class.equality')
     -> (xs, xs) -- ^ Two blocks to compare
     -> BiPrefix xs
-biPrefix (itemsEquivalent -> same) pair =
+biPrefix (equivalentItems -> same) pair =
     case whichIsShorter pair of
         Nothing -> if same pair then Same else NoPrefixRelation
         Just theShorter -> case take Front (length short) long of

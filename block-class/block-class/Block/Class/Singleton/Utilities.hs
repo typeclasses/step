@@ -7,7 +7,7 @@ import Block.Class.Singleton.Types (Pop (..))
 import Block.Class.End (End (..))
 
 {-| The inverse of 'pop' -}
-unpop :: Singleton x xs =>
+unpop :: (Singleton x xs) =>
     End -- ^ 'Front' or 'Back'
     -> Pop x xs -- ^ Division of a block into item and remainder
     -> xs -- ^ Item and remainder concatenated back together
@@ -30,7 +30,7 @@ last :: (Singleton x xs) =>
     -> x -- ^ The block's first item
 last = terminal Back
 
-pushMaybe :: Singleton x xs => End -> Maybe x -> Maybe xs -> Maybe xs
+pushMaybe :: (Singleton x xs) => End -> Maybe x -> Maybe xs -> Maybe xs
 pushMaybe end (Just x) (Just xs)  =  Just (push end x xs)
 pushMaybe _   Nothing  (Just xs)  =  Just xs
 pushMaybe _   (Just x) Nothing    =  Just (singleton x)
