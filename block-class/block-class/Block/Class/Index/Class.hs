@@ -7,9 +7,9 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Integer (Positive)
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Positional.Class (Positional (..))
-import Prelude ((-))
 
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Integer.Positive as Positive
 
 class (Singleton x xs, Positional xs) => Index x xs where
 
@@ -24,10 +24,14 @@ class (Singleton x xs, Positional xs) => Index x xs where
 instance Index x (NonEmpty x) where
 
     at :: End -> Positive -> NonEmpty x -> Maybe x
-    at Front 1 = \(x :| _) -> Just x
-    at Front n = \(_ :| xs) -> go (n - 1) xs
+    at Front n = case Positive.fromNatural (Positive.subtractOne n) of
+        Nothing -> \(x :| _) -> Just x
+        Just n' -> \(_ :| xs) -> go n' xs
       where
-        go _ [] = Nothing
-        go 1 (x : _) = Just x
-        go i (_ : xs) = go i xs
+        go i xs = case xs of
+            [] -> Nothing
+            (x : xs') ->
+                case Positive.fromNatural (Positive.subtractOne i) of
+                    Nothing -> Just x
+                    Just i' -> go i' xs'
     at Back n = NonEmpty.reverse >>> at Front n

@@ -41,3 +41,19 @@ spec genX genXs = describe "Singleton" do
         end <- forAll Gen.end
 
         pop end (push end x xs) === Pop x (Just xs)
+
+    it "pop Front (singleton a ++ singleton b) \
+       \= Pop a (Just (singleton b))" $ hedgehog do
+        a <- forAll genX
+        b <- forAll genX
+        let xs :: xs = singleton a ++ singleton b
+        let p = pop Front xs
+        p === Pop a (Just (singleton b))
+
+    it "pop Back (singleton a ++ singleton b) \
+       \= Pop b (Just (singleton a))" $ hedgehog do
+        a <- forAll genX
+        b <- forAll genX
+        let xs :: xs = singleton a ++ singleton b
+        let p = pop Back xs
+        p === Pop b (Just (singleton a))

@@ -24,4 +24,4 @@ spec :: forall x xs.
     -> PredicateGenerators x xs
     -> Spec
 spec genX genXs (PredicateGenerators p genX' genXs') = describe "Search" do
-    pure ()
+    pure () -- todo

@@ -8,16 +8,14 @@ import Essentials
 import Block.Class
 
 import Integer (Positive)
-import Prelude ((+), (-))
+import Prelude ((+))
 import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup (sconcat)
 import Integer.Signed (Signed (..))
-import Control.Applicative (liftA2)
 
 import qualified Data.Maybe as Maybe
 import qualified Fold.Nonempty as Fold
 import qualified Integer.Positive as Positive
-import qualified Data.Foldable as Foldable
 
 data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
     deriving stock (Eq, Ord, Show)
@@ -38,7 +36,7 @@ instance (Concat xss) => Concat (BlockBlock x xs xss) where
         BlockBlockUnsafe (xss1 ++ xss2) (len1 + len2)
 
     concat :: End -> NonEmpty (BlockBlock x xs xss) -> BlockBlock x xs xss
-    concat end bbs = BlockBlockUnsafe (concat end (bbs <&> bbXss)) (Foldable.sum (bbs <&> bbLength))
+    concat end bbs = BlockBlockUnsafe (concat end (bbs <&> bbXss)) (Fold.run Fold.sum (bbs <&> bbLength))
 
 instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) =>
         NonEmptyIso x (BlockBlock x xs xss) where
@@ -60,7 +58,8 @@ instance (Singleton x xs, Singleton xs xss) => Singleton x (BlockBlock x xs xss)
         Pop xs xssMaybe = pop end xss
         Pop x  xsMaybe  = pop end xs
         remainder = pushMaybe end xsMaybe xssMaybe
-            <&> \xss' -> BlockBlockUnsafe xss' (n - 1)
+            <&> \xss' -> BlockBlockUnsafe xss'
+              (n & Positive.subtractOne & Positive.fromNatural & Maybe.fromJust)
 
     push :: End -> x -> BlockBlock x xs xss -> BlockBlock x xs xss
     push end x (BlockBlockUnsafe xss n) =
@@ -83,7 +82,7 @@ instance (Search xs xss, Singleton xs xss, Positional xs, NonEmptyIso xs xss) =>
           where
             (taken, remainder) = evalState n (find end f xss) & Maybe.fromJust
                 & \(Pivot xs1 (x1, x2) xs2) ->
-                    (liftA2 (push Back) x1 xs1, liftA2 (push Front) x2 xs2)
+                    (pushMaybe Back x1 xs1, pushMaybe Front x2 xs2)
               where
                 f xs = do
                     rem <- get
