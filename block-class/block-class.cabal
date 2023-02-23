@@ -100,6 +100,4 @@ test-suite test-block-class
     main-is: Main.hs
     build-depends:
       , block-class
-      , hedgehog
       , hspec
-      , hspec-hedgehog

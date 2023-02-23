@@ -25,6 +25,16 @@ possibility of representing an empty sequence. Such types are called `Refined`.
 For example, the unrefined precursor to `Text1` is `Text`.
 
 
+## Testing
+
+A fairly extensive suite of property tests may be found in the [block-hedgehog]
+package; you can use them to test your own instances.
+
+The `block-class` package has a more modest test suite for itself; running the
+tests for `block-hedgehog` provides some supplementary assurance that
+`block-class` is correct.
+
+
 ## State
 
 The `Search` class operations use a `State` context so that you can gather
@@ -51,3 +61,5 @@ monad transformer, instead of using theirs.
 
 
   [block-types]: https://hackage.haskell.org/package/block-types
+
+  [block-hedgehog]: https://hackage.haskell.org/package/block-hedgehog

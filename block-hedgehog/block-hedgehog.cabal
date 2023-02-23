@@ -53,3 +53,16 @@ library
         Block.Hedgehog.Spec.Refined
         Block.Hedgehog.Spec.Search
         Block.Hedgehog.Spec.Singleton
+
+test-suite test-block-hedgehog
+    import: base
+    type: exitcode-stdio-1.0
+    default-extensions:
+        OverloadedStrings
+    hs-source-dirs: test-block-hedgehog
+    main-is: Main.hs
+    build-depends:
+      , block-hedgehog
+      , hedgehog
+      , hspec
+      , hspec-hedgehog

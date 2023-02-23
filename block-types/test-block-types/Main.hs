@@ -10,7 +10,6 @@ import Block.Sequence (Seq1)
 import Block.Text (Text1)
 import Data.ByteString (ByteString)
 import Data.Char (Char)
-import Data.List.NonEmpty (NonEmpty)
 import Data.Sequence (Seq)
 import Data.Text (Text)
 import Data.Word (Word8)
@@ -60,13 +59,6 @@ main = hspec do
             variegateBlockBlock
             (genBlockBlockPredicate @Char @Text1 @(Seq1 Text1) genTextPredicate)
 
-    describe "NonEmpty" $
-        Block.spec @Char @(NonEmpty Char)
-            genChar
-            (genNonEmpty genChar)
-            pure -- no way to variegate
-            genCharNonEmptyPredicate
-
 genByte :: Gen Word8
 genByte = Gen.choice
     [ Gen.integral (fmap fromIntegral (Range.linear (Char.ord 'a') (Char.ord 'z')))
@@ -94,9 +86,6 @@ genSeq g = Gen.seq (Range.linear 0 10) g
 genSeq1 :: Gen a -> Gen (Seq1 a)
 genSeq1 g = Gen.seq (Range.linear 1 10) g <&> assume
 
-genNonEmpty :: Gen a -> Gen (NonEmpty a)
-genNonEmpty g = Gen.nonEmpty (Range.linear 1 10) g
-
 genByteStringPredicate :: PredicateGenerators Word8 ByteString1
 genByteStringPredicate = PredicateGenerators (< fromIntegral (Char.ord 'a')) genX genXs
   where
@@ -116,12 +105,6 @@ genCharSeqPredicate = PredicateGenerators Char.isUpper genX genXs
   where
     genX = \case False -> Gen.lower; True -> Gen.upper
     genXs t = Gen.seq (Range.linear 1 10) (genX t) <&> assume
-
-genCharNonEmptyPredicate :: PredicateGenerators Char (NonEmpty Char)
-genCharNonEmptyPredicate = PredicateGenerators Char.isUpper genX genXs
-  where
-    genX = \case False -> Gen.lower; True -> Gen.upper
-    genXs t = Gen.nonEmpty (Range.linear 1 10) (genX t)
 
 genBlockBlock :: forall x xs xss.
     (Positional xs, NonEmptyIso xs xss) =>

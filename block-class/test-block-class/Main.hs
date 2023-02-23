@@ -7,14 +7,10 @@ import Control.Monad (guard)
 import Data.Char (isUpper, isLetter, isDigit, Char)
 import Data.Int (Int)
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
-import Hedgehog (forAll, (===), Gen)
 import Prelude (error)
 import System.IO (IO)
 import Test.Hspec (hspec, describe, it, shouldBe, Spec)
-import Test.Hspec.Hedgehog (hedgehog)
 import Text.Read (readMaybe)
-
-import qualified Hedgehog.Gen as Gen
 
 main :: IO ()
 main = hspec do
@@ -34,15 +30,15 @@ spanSpec = describe "span" do
             let result = stateless $ span Back (pure . isUpper) str
             result `shouldBe` SpanPart (ne "GHI") (ne "ABCdef")
 
-    it "SpanAll" $ hedgehog do
-        end <- forAll Gen.enumBounded
-        let result = stateless $ span end (pure . isLetter) str
-        result === SpanAll
+    it "SpanAll" do
+        [Back, Front] & traverse_ \end -> do
+            let result = stateless $ span end (pure . isLetter) str
+            result `shouldBe` SpanAll
 
-    it "SpanNone" $ hedgehog do
-        end <- forAll Gen.enumBounded
-        let result = stateless $ span end (pure . isDigit) str
-        result === SpanNone
+    it "SpanNone" do
+        [Back, Front] & traverse_ \end -> do
+            let result = stateless $ span end (pure . isDigit) str
+            result `shouldBe` SpanNone
 
 findSpec :: Spec
 findSpec = describe "find" do
@@ -62,12 +58,12 @@ findSpec = describe "find" do
         let result = stateless $ find Front p (ne "abc")
         result `shouldBe` Just (Pivot Nothing 'a' (nonEmpty "bc"))
 
-    it "no pivot" $ hedgehog do
-        end <- forAll Gen.enumBounded
-        str <- forAll genText
-        let result :: Maybe (Pivot () (NonEmpty Char))
-            result = stateless $ find end (\_ -> pure Nothing) str
-        result === Nothing
+    it "no pivot" do
+        [Back, Front] & traverse_ \end -> do
+            [ne "a", ne "ab", ne "abc"] & traverse_ \str -> do
+                let result :: Maybe (Pivot () (NonEmpty Char))
+                    result = stateless $ find end (\_ -> pure Nothing) str
+                result `shouldBe` Nothing
 
 biPrefixSpec :: Spec
 biPrefixSpec = describe "biPrefix" do
@@ -80,28 +76,26 @@ biPrefixSpec = describe "biPrefix" do
         biPrefix equality (ne "carpet", ne "car")
         `shouldBe` IsPrefix Second (ne "car") (ne "pet")
 
-    it "First/Second property" $ hedgehog do
-        a <- forAll genText
-        b <- forAll genText
-        biPrefix equality (a, a <> b) === IsPrefix First a b
-        biPrefix equality (a <> b, a) === IsPrefix Second a b
+    it "First/Second property" do
+        [ne "a", ne "ab", ne "abc"] & traverse_ \a -> do
+            [ne "a", ne "ab", ne "abc"] & traverse_ \b -> do
+                biPrefix equality (a, a <> b) `shouldBe` IsPrefix First a b
+                biPrefix equality (a <> b, a) `shouldBe` IsPrefix Second a b
 
-    it "Same" $ hedgehog do
-        x <- forAll genText
-        biPrefix equality (x, x) === Same
+    it "Same" do
+        [ne "a", ne "ab", ne "abc"] & traverse_ \x -> do
+            biPrefix equality (x, x) `shouldBe` Same
 
-    it "NoPrefixRelation" $ hedgehog do
-        (a, b) <- forAll $ Gen.element
-          [ (ne "cat", ne "frog")
-          , (ne "pit", ne "pig")
-          , (ne "fish", ne "fit")
-          ]
-        pair <- forAll $ Gen.element [(a, b), (b, a)]
-        biPrefix equality pair === NoPrefixRelation
+    it "NoPrefixRelation" do
+        let examples =
+              [ (ne "cat", ne "frog")
+              , (ne "pit", ne "pig")
+              , (ne "fish", ne "fit")
+              ]
+        examples & traverse_ \(a, b) ->
+            [(a, b), (b, a)] & traverse_ \pair ->
+              biPrefix equality pair `shouldBe` NoPrefixRelation
 
 ne :: [a] -> NonEmpty a
 ne (x : xs) = x :| xs
 ne [] = error "ne"
-
-genText :: Gen (NonEmpty Char)
-genText = Gen.element [ne "a", ne "ab", ne "abc"]

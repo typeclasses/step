@@ -36,8 +36,8 @@ module Block.Class
 
     {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
 
-    {- * Classes -} Singleton, Positional, Search, Refined,
-            NonEmptyIso, Index, Concat, ItemEquality,
+    {- * Classes -} {- $classes -} Singleton, Positional, Search,
+            Refined, NonEmptyIso, Index, Concat, ItemEquality,
 
     {- * State -} State (..),
             runState, evalState, execState, stateless, get, put, modify,
@@ -116,3 +116,8 @@ See "Block.Class.Index". -}
 {- $itemEquality
 
 See "Block.Class.ItemEquality". -}
+
+{- $classes
+
+See "Block.Class.Classes", "Block.Class.ClassNames"
+-}
