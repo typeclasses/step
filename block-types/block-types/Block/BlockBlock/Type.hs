@@ -15,6 +15,7 @@ import Integer.Signed (Signed (..))
 
 import qualified Data.Maybe as Maybe
 import qualified Fold.Nonempty as Fold
+import qualified Block.Class.End as End
 import qualified Integer.Positive as Positive
 
 data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
@@ -82,13 +83,13 @@ instance (Search xs xss, Singleton xs xss, Positional xs, NonEmptyIso xs xss) =>
           where
             (taken, remainder) = evalState n (find end f xss) & Maybe.fromJust
                 & \(Pivot xs1 (x1, x2) xs2) ->
-                    (pushMaybe Back x1 xs1, pushMaybe Front x2 xs2)
+                    (pushMaybe (End.opposite end) x1 xs1, pushMaybe end x2 xs2)
               where
                 f xs = do
                     rem <- get
-                    case take Front rem xs of
+                    case take end rem xs of
                         TakeInsufficient (Shortfall s)  ->  put s $> Nothing
-                        TakeAll                         ->  pure $ Just (Nothing, Nothing)
+                        TakeAll                         ->  pure $ Just (Just xs, Nothing)
                         TakePart a b                    ->  pure $ Just (Just a, Just b)
 
 instance (Search xs xss, Singleton xs xss, NonEmptyIso xs xss, Index x xs) =>
@@ -120,11 +121,11 @@ instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional xs, Singlet
         <&> \case
             Nothing -> SpanAll
             Just (Pivot a (a', b') b) ->
-                case pushMaybe Back a' a of
+                case pushMaybe (End.opposite end) a' a of
                     Nothing -> SpanNone
                     Just a'' -> SpanPart
                         (BlockBlock a'')
-                        (BlockBlock (maybe (singleton b') (push Front b') b))
+                        (BlockBlock (maybe (singleton b') (push end b') b))
 
     find :: End -> (x -> State s (Maybe found)) -> BlockBlock x xs xss
         -> State s (Maybe (Pivot found (BlockBlock x xs xss)))
@@ -133,6 +134,6 @@ instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional xs, Singlet
         & find end (find end f)
         <&> fmap \(Pivot a (Pivot a' x b') b) ->
                 Pivot
-                    (BlockBlock <$> pushMaybe Back a' a)
+                    (BlockBlock <$> pushMaybe (End.opposite end) a' a)
                     x
-                    (BlockBlock <$> pushMaybe Front b' b)
+                    (BlockBlock <$> pushMaybe end b' b)

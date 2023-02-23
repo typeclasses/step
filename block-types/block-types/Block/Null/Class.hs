@@ -180,7 +180,7 @@ instance Null Char Text where
 
     span :: Monad m => End -> (Char -> m Bool) -> Text -> m (Text, Text)
     span Front = Text.spanM
-    span Back = Text.spanEndM
+    span Back = Text.spanEndM >>> (fmap . fmap) \(a, b) -> (b, a)
 
     find :: Monad m => End -> (Char -> m (Maybe found)) -> Text -> m (Maybe (Text, found, Text))
     find Front f xs =
@@ -250,6 +250,7 @@ instance Null Word8 ByteString where
     span end f xs =
         go 0 (toList end xs) <&> \i ->
         ByteString.splitAt (case end of Front -> i; Back -> ByteString.length xs - i) xs
+        & case end of { Front -> id; Back -> \(a, b) -> (b, a) }
       where
         go !i ys = case ys of
             [] -> pure i
