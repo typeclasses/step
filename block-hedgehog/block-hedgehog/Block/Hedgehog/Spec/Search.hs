@@ -27,7 +27,7 @@ spec :: forall x xs.
     -> Spec
 spec genX genXs (PredicateGenerators p genX' genXs') = describe "Search" do
 
-    it "find" $ hedgehog do
+    it "find Just" $ hedgehog do
         a :: Maybe xs <- forAll $ Gen.maybe $ genXs' False
         b :: x        <- forAll $             genX'  True
         c :: Maybe xs <- forAll $ Gen.maybe $ genXs
@@ -43,6 +43,13 @@ spec genX genXs (PredicateGenerators p genX' genXs') = describe "Search" do
         let result = stateless $ find end (\x -> pure $ if p x then Just x else Nothing) abc
 
         result === Just (Pivot a b c)
+
+    it "find Nothing" $ hedgehog do
+        x <- forAll $ genXs' False
+        end <- forAll Gen.end
+        _
+
+        -- let result = stateless $ find end (\x -> pure $ if p x then Just x else Nothing) abc
 
     -- todo: test 'find' case where nothing is found
 
