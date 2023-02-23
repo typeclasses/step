@@ -29,7 +29,7 @@ module Block.Class
 
     {- * Searching for items matching a predicate -} {- $search -}
         span, Span (SpanAll, SpanNone, SpanPart),
-        find, Pivot (Pivot),
+        find, findPredicate, Pivot (Pivot),
 
     {- * Prefix detection -} {- $biPrefix -}
         biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
@@ -71,6 +71,7 @@ import Block.Class.Refined.Class (Refined (..))
 import Block.Class.Refined.Utilities (concatRefined)
 import Block.Class.Search.Class (Search (..))
 import Block.Class.Search.Types (Span (..), Pivot (..))
+import Block.Class.Search.Utilities (findPredicate)
 import Block.Class.Shortfall (Shortfall (..))
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Types (Pop (..))
