@@ -7,11 +7,11 @@ import Block.Class.End (End (..))
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 import Data.Function (fix)
 import Block.Class.State (State (..))
-import Block.Class.Concat.Class (Concat (..))
+import Block.Class.Singleton.Class (Singleton (..))
 
 import qualified Data.List.NonEmpty as NonEmpty
 
-class Concat xs => Search x xs | xs -> x where
+class Singleton x xs => Search x xs | xs -> x where
 
     {-| Separate a block into two parts by specifying a predicate
         for all the items in the first part

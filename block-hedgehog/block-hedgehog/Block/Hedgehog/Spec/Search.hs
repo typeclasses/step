@@ -5,9 +5,11 @@ import Essentials
 
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
-import Hedgehog (Gen, forAll, (===))
+import Hedgehog (Gen, forAll, (===), annotateShow)
 
+import qualified Data.Maybe as Maybe
 import qualified Hedgehog.Gen as Gen
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Block.Hedgehog.Gen.End as Gen
 
 data PredicateGenerators x xs =
@@ -24,4 +26,24 @@ spec :: forall x xs.
     -> PredicateGenerators x xs
     -> Spec
 spec genX genXs (PredicateGenerators p genX' genXs') = describe "Search" do
-    pure () -- todo
+
+    it "find" $ hedgehog do
+        a :: Maybe xs <- forAll $ Gen.maybe $ genXs' False
+        b :: x        <- forAll $             genX'  True
+        c :: Maybe xs <- forAll $ Gen.maybe $ genXs
+
+        end <- forAll Gen.end
+
+        let parts = Maybe.fromJust $ NonEmpty.nonEmpty $ Maybe.catMaybes
+                        [a, Just (singleton b) :: Maybe xs, c]
+
+        let abc = concat end parts
+        annotateShow abc
+
+        let result = stateless $ find end (\x -> pure $ if p x then Just x else Nothing) abc
+
+        result === Just (Pivot a b c)
+
+    -- todo: test 'find' case where nothing is found
+
+    -- todo: test 'span'

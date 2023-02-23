@@ -260,9 +260,9 @@ instance Null Word8 ByteString where
     find :: Monad m => End -> (Word8 -> m (Maybe found)) -> ByteString -> m (Maybe (ByteString, found, ByteString))
     find end f xs =
         go 0 (toList end xs) <&> \(i, xm) ->
-        xm <&> \x ->
-          let a = ByteString.take i xs; b = ByteString.drop (i + 1) xs
-          in case end of { Front -> (a, x, b); Back -> (b, x, a) }
+        xm <&> \x -> case end of
+            Front -> (ByteString.take i xs, x, ByteString.drop (i + 1) xs)
+            Back -> (ByteString.drop (ByteString.length xs - i) xs, x, ByteString.take (ByteString.length xs - i - 1) xs)
       where
         go !i ys = case ys of
             [] -> pure (i, Nothing)

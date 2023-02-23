@@ -17,6 +17,7 @@ import Hedgehog (Gen)
 import Data.List.NonEmpty (NonEmpty)
 import System.IO (IO)
 import Test.Hspec (hspec, describe)
+import Prelude (fromIntegral)
 
 import qualified Block.Hedgehog.Spec as Block
 import qualified Data.ByteString as ByteString
@@ -61,16 +62,19 @@ main = hspec do
             genCharNonEmptyPredicate
 
 genByte :: Gen Word8
-genByte = Gen.enumBounded
+genByte = Gen.choice
+    [ Gen.integral (fmap fromIntegral (Range.linear (Char.ord 'a') (Char.ord 'z')))
+    , Gen.integral (fmap fromIntegral (Range.linear (Char.ord 'A') (Char.ord 'Z')))
+    ]
 
 genChar :: Gen Char
-genChar = Gen.alphaNum
+genChar = Gen.alpha
 
 genByteString :: Gen ByteString
-genByteString = Gen.bytes (Range.linear 0 10)
+genByteString = Gen.list (Range.linear 0 10) genByte <&> ByteString.pack
 
 genByteString1 :: Gen ByteString1
-genByteString1 = Gen.bytes (Range.linear 1 10) <&> assume
+genByteString1 = Gen.list (Range.linear 1 10) genByte <&> (ByteString.pack >>> assume)
 
 genText :: Gen Text
 genText = Gen.text (Range.linear 0 10) genChar
@@ -88,13 +92,12 @@ genNonEmpty :: Gen a -> Gen (NonEmpty a)
 genNonEmpty g = Gen.nonEmpty (Range.linear 1 10) g
 
 genByteStringPredicate :: PredicateGenerators Word8 ByteString1
-genByteStringPredicate = PredicateGenerators (>= 128) genX genXs
+genByteStringPredicate = PredicateGenerators (< fromIntegral (Char.ord 'a')) genX genXs
   where
-    genX t = Gen.integral case t of
-        False -> Range.linear 0 127
-        True -> Range.linear 255 128
-    genXs t = Gen.list (Range.linear 1 10) (genX t)
-        <&> (ByteString.pack >>> assume)
+    genX t = Gen.integral $ fmap fromIntegral $ case t of
+        True  -> Range.linear (Char.ord 'A') (Char.ord 'Z')
+        False -> Range.linear (Char.ord 'a') (Char.ord 'z')
+    genXs t = Gen.list (Range.linear 1 10) (genX t) <&> (ByteString.pack >>> assume)
 
 genTextPredicate :: PredicateGenerators Char Text1
 genTextPredicate = PredicateGenerators Char.isUpper genX genXs
