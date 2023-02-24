@@ -8,34 +8,23 @@ license-file: license.txt
 
 common base
     default-language: GHC2021
-
-    ghc-options:
-        -Wall
-        -Wmissing-deriving-strategies
+    ghc-options: -Wall -Wmissing-deriving-strategies
 
     default-extensions:
         BlockArguments
-        DataKinds
-        DerivingStrategies
-        FunctionalDependencies
-        ImpredicativeTypes
         LambdaCase
         NoImplicitPrelude
-        NoMonomorphismRestriction
         OverloadedLists
-        PatternSynonyms
-        TypeFamilies
-        ViewPatterns
 
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
-      , block-class ^>= 0.0
-      , containers
-      , hedgehog
-      , hspec
-      , hspec-hedgehog
-      , integer-types ^>= 0.1
-      , quaalude ^>= 0.0
+      , block-class ^>= 0.0.0
+      , containers ^>= 0.6.5
+      , hedgehog ^>= 1.2
+      , hspec ^>= 2.10.9
+      , hspec-hedgehog ^>= 0.0.1
+      , integer-types ^>= 0.1.0
+      , quaalude ^>= 0.0.0
 
 library
     import: base
