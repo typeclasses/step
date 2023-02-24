@@ -9,6 +9,7 @@ import Hedgehog (Gen, forAll, (===), annotateShow)
 import Block.Hedgehog.Spec.Search (PredicateGenerators (..))
 
 import qualified Block.Hedgehog.Spec.Concat as Concat
+import qualified Block.Hedgehog.Spec.Enumerate as Enumerate
 import qualified Block.Hedgehog.Spec.Index as Index
 import qualified Block.Hedgehog.Spec.Singleton as Singleton
 import qualified Block.Hedgehog.Spec.Positional as Positional
@@ -22,6 +23,7 @@ spec :: forall x xs. (Show x, Show xs, NonEmptyIso x xs, Search x xs, Index x xs
 spec genX genXs variegate genP  = do
     Concat.spec genXs
     Singleton.spec genX genXs variegate
+    Enumerate.spec genXs variegate
     Positional.spec genXs variegate
     NonEmptyIso.spec genX genXs variegate
     Search.spec genXs variegate genP

@@ -47,6 +47,7 @@ library
 
         Block.Hedgehog.Spec
         Block.Hedgehog.Spec.Concat
+        Block.Hedgehog.Spec.Enumerate
         Block.Hedgehog.Spec.Index
         Block.Hedgehog.Spec.NonEmptyIso
         Block.Hedgehog.Spec.Positional
