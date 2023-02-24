@@ -7,13 +7,12 @@ module Block.BlockBlock.Type
 import Essentials
 import Block.Class
 
-import Data.Function (on)
-import Data.List.NonEmpty (NonEmpty)
-import Data.Semigroup (sconcat)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.String (IsString (..), String)
 import Integer (Positive)
 import Integer.Signed (Signed (..))
 import Prelude ((+))
+import Data.Bool ((&&))
 
 import qualified Block.Class.End as End
 import qualified Data.Maybe as Maybe
@@ -22,6 +21,9 @@ import qualified Integer.Positive as Positive
 
 data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
     deriving stock (Eq, Ord, Show)
+
+
+---  Pattern  ---
 
 pattern BlockBlock :: forall x xs xss. (NonEmptyIso xs xss, Positional xs) =>
     xss -> BlockBlock x xs xss
@@ -32,14 +34,43 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
 
 {-# complete BlockBlock #-}
 
+
+---  IsString  ---
+
 instance (IsString xs, Singleton xs xss, NonEmptyIso xs xss, Positional xs) =>
         IsString (BlockBlock x xs xss) where
 
     fromString :: String -> BlockBlock x xs xss
     fromString = fromString >>> singleton >>> BlockBlock
 
-instance (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) => ItemEquality (BlockBlock x xs xss) where
-    sameItems = sameItems `on` toNonEmpty Front
+
+---  ItemEquality  ---
+
+instance (Positional xs, ItemEquality xs, Singleton xs xss) =>
+        ItemEquality (BlockBlock x xs xss) where
+
+    sameItems :: BlockBlock x xs xss -> BlockBlock x xs xss -> Bool
+    sameItems = \(BlockBlockUnsafe xss1 len1) (BlockBlockUnsafe xss2 len2) ->
+                    len1 == len2 && go xss1 xss2
+      where
+        end = Front
+        go :: xss -> xss -> Bool
+        go (pop end -> Pop xs1 mXss1) (pop end -> Pop xs2 mXss2) =
+            case biPrefix itemEquality end (xs1, xs2) of
+                NoPrefixRelation -> False
+                BothPrefix -> case (mXss1, mXss2) of
+                    (Nothing, Nothing) -> True
+                    (Just xss1, Just xss2) -> go xss1 xss2
+                    _ -> False
+                IsPrefix First _ remainder -> case mXss1 of
+                    Nothing -> False
+                    Just xss1 -> go xss1 (unpop end (Pop remainder mXss2))
+                IsPrefix Second _ remainder -> case mXss2 of
+                    Nothing -> False
+                    Just xss2 -> go (unpop end (Pop remainder mXss1)) xss2
+
+
+---  Concat  ---
 
 instance (Concat xss) => Concat (BlockBlock x xs xss) where
 
@@ -50,14 +81,43 @@ instance (Concat xss) => Concat (BlockBlock x xs xss) where
     concat :: End -> NonEmpty (BlockBlock x xs xss) -> BlockBlock x xs xss
     concat end bbs = BlockBlockUnsafe (concat end (bbs <&> bbXss)) (Fold.run Fold.sum (bbs <&> bbLength))
 
-instance (NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) =>
-        NonEmptyIso x (BlockBlock x xs xss) where
+
+---  Enumerate  ---
+
+instance (Positional xs, ItemEquality xs, Singleton xs xss, Singleton x xs, Enumerate xs xss, Enumerate x xs) =>
+        Enumerate x (BlockBlock x xs xss) where
+
+    foldItems :: End -> (x -> a) -> (a -> x -> a) -> BlockBlock x xs xss -> a
+    foldItems end initialX stepX = bbXss >>>
+        foldItems end
+            (foldItems end initialX stepX)
+            (\a -> foldItems end (stepX a) stepX)
 
     toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
-    toNonEmpty end = bbXss >>> toNonEmpty end >>> fmap (toNonEmpty end) >>> sconcat
+    toNonEmpty end = bbXss >>>
+        \(pop end -> Pop (pop end -> Pop x xs) xss) -> x :| f xs xss
+      where
+
+        f :: Maybe xs -> Maybe xss -> [x]
+        f Nothing xss = g xss
+        f (Just (pop end -> Pop x xs)) xss = x : f xs xss
+
+        g :: Maybe xss -> [x]
+        g Nothing = []
+        g (Just (pop end -> Pop (pop end -> Pop x xs) xss)) =
+            x : f xs xss
+
+
+---  NonEmptyIso  ---
+
+instance (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs, Singleton x xs) =>
+        NonEmptyIso x (BlockBlock x xs xss) where
 
     fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
     fromNonEmpty end = fromNonEmpty end >>> singleton >>> BlockBlock
+
+
+---  Singleton  ---
 
 instance (Singleton x xs, Singleton xs xss) => Singleton x (BlockBlock x xs xss) where
 
@@ -76,6 +136,9 @@ instance (Singleton x xs, Singleton xs xss) => Singleton x (BlockBlock x xs xss)
     push :: End -> x -> BlockBlock x xs xss -> BlockBlock x xs xss
     push end x (BlockBlockUnsafe xss n) =
         BlockBlockUnsafe (push end (singleton x) xss) (n + 1)
+
+
+---  Positional  ---
 
 instance (Search xs xss, Singleton xs xss, Positional xs, NonEmptyIso xs xss) =>
         Positional (BlockBlock x xs xss) where
@@ -103,6 +166,9 @@ instance (Search xs xss, Singleton xs xss, Positional xs, NonEmptyIso xs xss) =>
                         TakeAll                         ->  pure $ Just (Just xs, Nothing)
                         TakePart a b                    ->  pure $ Just (Just a, Just b)
 
+
+---  Index  ---
+
 instance (Search xs xss, Singleton xs xss, NonEmptyIso xs xss, Index x xs) =>
         Index x (BlockBlock x xs xss) where
 
@@ -115,6 +181,9 @@ instance (Search xs xss, Singleton xs xss, NonEmptyIso xs xss, Index x xs) =>
             NotMinus _ -> at end n xs
           where
             Pop xs xss' = pop end xss
+
+
+---  Search  ---
 
 instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional xs, Singleton xs xss,
         Semigroup xss) => Search x (BlockBlock x xs xss) where

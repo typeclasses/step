@@ -83,6 +83,9 @@ library
         Block.Class.Concat.Class
         Block.Class.Concat.Utilities
 
+        Block.Class.Enumerate
+        Block.Class.Enumerate.Class
+
         Block.Class.ItemEquality
         Block.Class.ItemEquality.Class
         Block.Class.ItemEquality.Utilities

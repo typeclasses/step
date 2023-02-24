@@ -16,7 +16,7 @@ newtype Seq1 a = Seq1 (NotNull a (Seq a))
   deriving newtype
     (
       Eq, Ord, Show, Semigroup, Singleton a, Positional,
-      Search a, NonEmptyIso a, Refined (Seq a), Index a,
+      Search a, Enumerate a, NonEmptyIso a, Refined (Seq a), Index a,
       Concat, ItemEquality
     )
 

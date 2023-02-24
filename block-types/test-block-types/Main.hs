@@ -121,7 +121,7 @@ genBlockBlockPredicate :: forall x xs xss.
 genBlockBlockPredicate (PredicateGenerators p genX genXs) =
     PredicateGenerators p genX (\t -> genBlockBlock @x @xs @xss (genXs t))
 
-variegateBlockBlock :: (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) => BlockBlock x xs xss -> Gen (BlockBlock x xs xss)
+variegateBlockBlock :: (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs, Singleton x xs) => BlockBlock x xs xss -> Gen (BlockBlock x xs xss)
 variegateBlockBlock bb = do
     let xs = toNonEmpty end bb & fromNonEmpty end
     xss <- Gen.shatter1 xs

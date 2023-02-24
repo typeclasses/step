@@ -29,12 +29,13 @@ prefix of the other, the result is 'NoPrefixRelation'. -}
 biPrefix :: Positional xs =>
     ItemEquivalence xs -- ^ How to determine equivalence of two
         -- sub-blocks (such as 'Block.Class.equality')
+    -> End
     -> (xs, xs) -- ^ Two blocks to compare
     -> BiPrefix xs
-biPrefix (equivalentItems -> same) pair =
+biPrefix (equivalentItems -> same) end pair =
     case whichIsShorter pair of
         Nothing -> if same pair then BothPrefix else NoPrefixRelation
-        Just theShorter -> case take Front (length short) long of
+        Just theShorter -> case take end (length short) long of
             TakePart prefix suffix | same (prefix, short) ->
                 IsPrefix theShorter prefix suffix
             _ -> NoPrefixRelation

@@ -24,20 +24,20 @@ module Block
             sameItemsSpan, foldableEqOn,
 
     {- * Item equivalence -}
-            ItemEquivalence (..), equality,
+            ItemEquivalence (..), equality, itemEquality,
 
     {- * Nullability -}
             refine, generalize, assume,
 
     {- * Isomorphism with NonEmpty -}
-            toNonEmpty, fromNonEmpty,
+            toNonEmpty, fromNonEmpty, foldItems,
 
     {- * End = Front | Back -} End (..),
 
     {- * Shortfall -} Shortfall (..),
 
     {- * Classes -} Singleton, Positional, Search,
-            Refined, NonEmptyIso, Index, Concat, ItemEquality,
+            Refined, NonEmptyIso, Index, Concat, ItemEquality, Enumerate,
 
     {- * State -} State (..),
             runState, evalState, execState, stateless, get, put, modify,

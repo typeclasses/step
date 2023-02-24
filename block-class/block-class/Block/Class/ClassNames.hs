@@ -1,13 +1,14 @@
 module Block.Class.ClassNames
   (
     Concat,
+    Enumerate,
     Index,
+    ItemEquality,
     NonEmptyIso,
     Positional,
     Refined,
     Search,
     Singleton,
-    ItemEquality,
   )
   where
 

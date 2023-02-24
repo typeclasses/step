@@ -24,50 +24,31 @@ module Block.Class
             sameItemsSpan, foldableEqOn,
 
     {- * Item equivalence -} {- $itemEquivalence -}
-            ItemEquivalence (..), equality,
+            ItemEquivalence (..), equality, itemEquality,
 
     {- * Nullability -} {- $trivializable -}
             refine, generalize, assume,
 
     {- * Isomorphism with NonEmpty -} {- $nonEmptyIso -}
-            toNonEmpty, fromNonEmpty,
+            toNonEmpty, fromNonEmpty, foldItems,
 
     {- * End = Front | Back -} {- $end -} End (..),
 
     {- * Shortfall -} {- $shortfall -} Shortfall (..),
 
     {- * Classes -} {- $classes -} Singleton, Positional, Search,
-            Refined, NonEmptyIso, Index, Concat, ItemEquality,
+            Refined, NonEmptyIso, Index, Concat, ItemEquality, Enumerate,
 
     {- * State -} State (..),
             runState, evalState, execState, stateless, get, put, modify,
   )
   where
 
-import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
-import Block.Class.BiPrefix.Utilities ( biPrefix )
-import Block.Class.Concat.Class (Concat (..))
-import Block.Class.Concat.Utilities (append)
-import Block.Class.End (End (..))
-import Block.Class.Index.Class (Index (..))
-import Block.Class.ItemEquality.Class (ItemEquality (..))
-import Block.Class.ItemEquality.Utilities (sameItemsTake, sameItemsPop, sameItemsPivot, sameItemsSpan, foldableEqOn)
-import Block.Class.ItemEquivalence.Examples (equality)
-import Block.Class.ItemEquivalence.Type (ItemEquivalence (..))
-import Block.Class.NonEmptyIso.Class (NonEmptyIso (..))
-import Block.Class.Positional.Class (Positional (..))
-import Block.Class.Positional.Types (Take(..))
-import Block.Class.Refined.Class (Refined (..))
-import Block.Class.Refined.Utilities (concatRefined)
-import Block.Class.Search.Class (Search (..))
-import Block.Class.Search.Types (Span (..), Pivot (..))
-import Block.Class.Search.Utilities (findPredicate, spanPredicate)
-import Block.Class.Shortfall (Shortfall (..))
-import Block.Class.Singleton.Class (Singleton (..))
-import Block.Class.Singleton.Types (Pop (..))
-import Block.Class.Singleton.Utilities (first, last, terminal, unpop, pushMaybe)
-import Block.Class.State.Types (State (..))
-import Block.Class.State.Utilities (runState, evalState, execState, stateless, get, put, modify)
+import Block.Class.BiPrefix
+import Block.Class.Index
+import Block.Class.NonEmptyIso
+import Block.Class.Refined
+import Block.Class.Search
 
 {- $singleton
 

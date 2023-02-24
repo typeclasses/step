@@ -1,17 +1,19 @@
 module Block.Class.Classes
   (
     Concat (..),
+    Enumerate (..),
     Index (..),
+    ItemEquality (..),
     NonEmptyIso (..),
     Positional (..),
     Refined (..),
     Search (..),
     Singleton (..),
-    ItemEquality (..),
   )
   where
 
 import Block.Class.Concat.Class
+import Block.Class.Enumerate.Class
 import Block.Class.Index.Class
 import Block.Class.ItemEquality.Class
 import Block.Class.NonEmptyIso.Class

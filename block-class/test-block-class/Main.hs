@@ -17,6 +17,7 @@ main = hspec do
     spanSpec
     findSpec
     biPrefixSpec
+    foldSpec
 
 spanSpec :: Spec
 spanSpec = describe "span" do
@@ -69,22 +70,22 @@ biPrefixSpec :: Spec
 biPrefixSpec = describe "biPrefix" do
 
     it "(car, carpet) -> the first is a prefix" $
-        biPrefix equality (ne "car", ne "carpet")
+        biPrefix equality Front (ne "car", ne "carpet")
         `shouldBe` IsPrefix First (ne "car") (ne "pet")
 
     it "(carpet, car) -> the second is a prefix" $
-        biPrefix equality (ne "carpet", ne "car")
+        biPrefix equality Front (ne "carpet", ne "car")
         `shouldBe` IsPrefix Second (ne "car") (ne "pet")
 
     it "First/Second property" do
         [ne "a", ne "ab", ne "abc"] & traverse_ \a -> do
             [ne "a", ne "ab", ne "abc"] & traverse_ \b -> do
-                biPrefix equality (a, a <> b) `shouldBe` IsPrefix First a b
-                biPrefix equality (a <> b, a) `shouldBe` IsPrefix Second a b
+                biPrefix equality Front (a, a <> b) `shouldBe` IsPrefix First a b
+                biPrefix equality Front (a <> b, a) `shouldBe` IsPrefix Second a b
 
     it "BothPrefix" do
         [ne "a", ne "ab", ne "abc"] & traverse_ \x -> do
-            biPrefix equality (x, x) `shouldBe` BothPrefix
+            biPrefix equality Front (x, x) `shouldBe` BothPrefix
 
     it "NoPrefixRelation" do
         let examples =
@@ -94,7 +95,14 @@ biPrefixSpec = describe "biPrefix" do
               ]
         examples & traverse_ \(a, b) ->
             [(a, b), (b, a)] & traverse_ \pair ->
-              biPrefix equality pair `shouldBe` NoPrefixRelation
+              biPrefix equality Front pair `shouldBe` NoPrefixRelation
+
+foldSpec :: Spec
+foldSpec = describe "foldItems" do
+    it "Front" $
+        foldItems Front (: []) (\s c -> s <> [c]) (ne "abc") `shouldBe` "abc"
+    it "Back" $
+        foldItems Back (: []) (\s c -> s <> [c]) (ne "abc") `shouldBe` "cba"
 
 ne :: [a] -> NonEmpty a
 ne (x : xs) = x :| xs
