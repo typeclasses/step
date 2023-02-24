@@ -14,15 +14,11 @@ common base
 
     default-extensions:
         BlockArguments
-        DataKinds
         DerivingStrategies
         FunctionalDependencies
-        ImpredicativeTypes
         LambdaCase
         NoImplicitPrelude
-        NoMonomorphismRestriction
         PatternSynonyms
-        TypeFamilies
         ViewPatterns
 
     build-depends:
