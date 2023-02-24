@@ -47,12 +47,8 @@ library
         Block.Class.Refined.Utilities
 
         Block.Class.ItemEquivalence
-        Block.Class.ItemEquivalence.Type
+        Block.Class.ItemEquivalence.Types
         Block.Class.ItemEquivalence.Examples
-
-        Block.Class.BiPrefix
-        Block.Class.BiPrefix.Types
-        Block.Class.BiPrefix.Utilities
 
         Block.Class.Singleton
         Block.Class.Singleton.Class
@@ -62,6 +58,7 @@ library
         Block.Class.Positional
         Block.Class.Positional.Class
         Block.Class.Positional.Types
+        Block.Class.Positional.Utilities
 
         Block.Class.Search
         Block.Class.Search.Class

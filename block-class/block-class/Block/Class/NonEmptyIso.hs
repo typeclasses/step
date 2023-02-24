@@ -1,7 +1,8 @@
 module Block.Class.NonEmptyIso
   (
     {- * Class -} NonEmptyIso (..),
-    {- * Re-exported modules -} module Block.Class.Enumerate,
+    {- * Re-exported modules -}
+            module Block.Class.Enumerate,
   )
   where
 

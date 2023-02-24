@@ -1,6 +1,6 @@
 module Block.Class.Positional.Types
   (
-    {- * Types -} Take (..),
+    {- * Types -} Take (..), BiPrefix (..), WhichOfTwo (..),
   )
   where
 
@@ -17,3 +17,14 @@ data Take xs =
   | TakeInsufficient Shortfall
       -- ^ The requested range exceeds the size of the block
   deriving stock (Eq, Ord, Show, Functor)
+
+data WhichOfTwo = First | Second
+    deriving stock (Eq, Ord, Show, Enum, Bounded)
+
+data BiPrefix xs =
+    BothPrefix -- ^ The two blocks are equivalent
+  | NoPrefixRelation -- ^ Neither block is a prefix of the other
+  | IsPrefix
+      -- ^ The ('First' or 'Second') block is a prefix of the other
+      WhichOfTwo xs xs
+    deriving stock (Eq, Ord, Show, Functor)

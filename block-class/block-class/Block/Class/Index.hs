@@ -7,6 +7,8 @@ module Block.Class.Index
   )
   where
 
+import Block.Class.Concat
 import Block.Class.Index.Class
+import Block.Class.ItemEquivalence
 import Block.Class.Positional
 import Block.Class.Singleton

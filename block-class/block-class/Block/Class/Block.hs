@@ -9,7 +9,8 @@ module Block.Class.Block
   where
 
 import Block.Class.Block.Class
-
+import Block.Class.Concat
+import Block.Class.Enumerate
 import Block.Class.Index
 import Block.Class.NonEmptyIso
 import Block.Class.Search

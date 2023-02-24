@@ -44,7 +44,6 @@ module Block.Class
   )
   where
 
-import Block.Class.BiPrefix
 import Block.Class.Refined
 import Block.Class.Block
 

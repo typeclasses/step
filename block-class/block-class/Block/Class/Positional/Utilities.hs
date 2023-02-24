@@ -1,17 +1,17 @@
-module Block.Class.BiPrefix.Utilities
+module Block.Class.Positional.Utilities
   (
-    {- * Utilities -} biPrefix
+    {- * Utilities -} biPrefix,
   )
   where
 
 import Essentials
 
+import Block.Class.Positional.Class (Positional (..))
+import Block.Class.Positional.Types (BiPrefix (..), WhichOfTwo (..), Take (..))
+import Block.Class.ItemEquivalence.Types (ItemEquivalence (equivalentItems))
+import Block.Class.End (End)
+import Data.Ord (Ordering (..), compare)
 import Data.Function (on)
-import Block.Class.Positional (Take (..), Positional (..), take)
-import Block.Class.ItemEquivalence.Type (ItemEquivalence, equivalentItems)
-import Data.Ord (compare, Ordering (..))
-import Block.Class.End (End (..))
-import Block.Class.BiPrefix.Types (BiPrefix (..), WhichOfTwo (..))
 
 {-| Given a pair of blocks, determine whether either is a prefix
     of the other, according to an item equivalence
@@ -28,7 +28,7 @@ and vice versa), the result is 'BothPrefix'. If neither block is a
 prefix of the other, the result is 'NoPrefixRelation'. -}
 biPrefix :: Positional xs =>
     ItemEquivalence xs -- ^ How to determine equivalence of two
-        -- sub-blocks (such as 'Block.Class.equality')
+                       --   sub-blocks (such as 'Block.Class.equality')
     -> End
     -> (xs, xs) -- ^ Two blocks to compare
     -> BiPrefix xs

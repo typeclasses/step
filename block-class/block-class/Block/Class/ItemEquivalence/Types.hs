@@ -1,4 +1,4 @@
-module Block.Class.ItemEquivalence.Type
+module Block.Class.ItemEquivalence.Types
   (
     {- * Type -} ItemEquivalence (..),
   )

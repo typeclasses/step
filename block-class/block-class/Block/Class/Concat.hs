@@ -4,8 +4,8 @@ module Block.Class.Concat
     {- * Types -} End (..),
     {- * Utilities -} append, concatRecursively,
     {- * Re-exported modules -}
-            module Block.Class.ItemEquality,
             module Block.Class.End,
+            module Block.Class.ItemEquality,
   )
   where
 

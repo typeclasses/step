@@ -6,7 +6,7 @@ module Block.Class.ItemEquivalence.Examples
 
 import Essentials
 
-import Block.Class.ItemEquivalence.Type
+import Block.Class.ItemEquivalence.Types
 import Block.Class.ItemEquality.Class
 
 {-| Equivalence based on 'Eq' -}

@@ -9,8 +9,8 @@ import Essentials
 import Block.Class.ItemEquality.Class (ItemEquality)
 import Block.Class.End (End (..))
 import Data.List.NonEmpty (NonEmpty (..))
-import Block.Class.State.Types
-import Block.Class.State.Utilities
+import Block.Class.State.Types (State)
+import Block.Class.State.Utilities (execState)
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Foldable as Foldable

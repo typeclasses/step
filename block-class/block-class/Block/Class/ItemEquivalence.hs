@@ -5,5 +5,5 @@ module Block.Class.ItemEquivalence
   )
   where
 
-import Block.Class.ItemEquivalence.Type
+import Block.Class.ItemEquivalence.Types
 import Block.Class.ItemEquivalence.Examples
