@@ -12,7 +12,7 @@ import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall x xs. (Show xs, Enumerate x xs) =>
     Gen xs -> (xs -> Gen xs) -> Spec
-spec genXs variegate = describe "Index" do
+spec genXs variegate = describe "Enumerate" do
 
     it "sameItems = ((==) `on` toNonEmpty)" $ hedgehog do
         a <- forAll genXs
