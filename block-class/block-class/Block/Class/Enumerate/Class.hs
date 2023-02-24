@@ -20,7 +20,6 @@ class (Eq x, ItemEquality xs) => Enumerate x xs | xs -> x where
     toNonEmpty :: End -> xs -> NonEmpty x
 
     foldItems :: End -> (x -> a) -> (x -> State a ()) -> xs -> a
-    foldItems end initial step = toNonEmpty end >>> foldItems end initial step
 
 instance (Eq x) => Enumerate x (NonEmpty x) where
 

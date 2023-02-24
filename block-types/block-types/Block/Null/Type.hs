@@ -53,6 +53,9 @@ instance (Null x xs) => Enumerate x (NotNull x xs) where
     toNonEmpty :: End -> NotNull x xs -> NonEmpty x
     toNonEmpty end = generalize >>> Null.toNonEmpty end >>> Maybe.fromJust
 
+    foldItems :: End -> (x -> a) -> (x -> State a ()) -> NotNull x xs -> a
+    foldItems end initial step = toNonEmpty end >>> foldItems end initial step
+
 instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
 
     fromNonEmpty :: End -> NonEmpty x -> NotNull x xs
