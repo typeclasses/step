@@ -1,4 +1,8 @@
-module Block.Class.Concat.Utilities where
+module Block.Class.Concat.Utilities
+  (
+    {- * Utilities -} append, concatRecursively,
+  )
+  where
 
 import Block.Class.Concat.Class
 

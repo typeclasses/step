@@ -1,17 +1,12 @@
 module Block.Class.Index
   (
     {- * Class -} Index (..),
-    {- * Superclasses -} Positional (..), Singleton (..), Concat (..),
-    {- * Types -} End (..), Pop (Pop), Take (TakeAll, TakePart, TakeInsufficient), Shortfall (..),
-    {- * Utilities -} unpop, first, last, terminal, pushMaybe, append,
+    {- * Re-exported modules -}
+            module Block.Class.Positional,
+            module Block.Class.Singleton,
   )
   where
 
-import Block.Class.Concat.Class
 import Block.Class.Index.Class
-import Block.Class.Positional.Class
-import Block.Class.Positional.Types
-import Block.Class.Singleton.Class
-import Block.Class.Singleton.Types
-import Block.Class.Singleton.Utilities
-import Block.Class.Concat.Utilities
+import Block.Class.Positional
+import Block.Class.Singleton

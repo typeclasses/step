@@ -1,4 +1,8 @@
-module Block.Class.NonEmptyIso.Class where
+module Block.Class.NonEmptyIso.Class
+  (
+    {- * Class -} NonEmptyIso (..),
+  )
+  where
 
 import Essentials
 

@@ -1,4 +1,8 @@
-module Block.Class.Search.Class where
+module Block.Class.Search.Class
+  (
+    {- * Class -} Search (..),
+  )
+  where
 
 import Essentials
 

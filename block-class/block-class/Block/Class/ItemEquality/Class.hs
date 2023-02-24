@@ -1,4 +1,8 @@
-module Block.Class.ItemEquality.Class where
+module Block.Class.ItemEquality.Class
+  (
+    {- * Class -} ItemEquality (..),
+  )
+  where
 
 import Essentials
 

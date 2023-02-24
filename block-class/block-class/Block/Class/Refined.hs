@@ -1,6 +1,7 @@
 module Block.Class.Refined
   (
-    Refined (..), concatRefined,
+    {- * Class -} Refined (..),
+    {- * Utilities -} concatRefined,
   )
   where
 

@@ -9,17 +9,15 @@ module Block
             pop, Pop (Pop), push, unpop, pushMaybe,
 
     {- * Operations involving numeric positions -}
-            length, take, Take (TakeAll, TakePart, TakeInsufficient),
+            length, take, Take (..),
 
     {- * Single item at a numeric position -} at,
 
     {- * Searching for items matching a predicate -}
-            span, spanPredicate, Span (SpanAll, SpanNone, SpanPart),
-            find, findPredicate, Pivot (Pivot),
+            span, spanPredicate, Span (..),
+            find, findPredicate, Pivot (..),
 
-    {- * Prefix detection -}
-            biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
-            WhichOfTwo (First, Second),
+    {- * Prefix detection -} biPrefix, BiPrefix (..), WhichOfTwo (..),
 
     {- * Item equality -}
             sameItems, sameItemsTake, sameItemsPop, sameItemsPivot,
@@ -34,9 +32,9 @@ module Block
     {- * Isomorphism with NonEmpty -}
             toNonEmpty, fromNonEmpty,
 
-    {- * End = Front | Back -} End (Front, Back),
+    {- * End = Front | Back -} End (..),
 
-    {- * Shortfall -} Shortfall (Shortfall),
+    {- * Shortfall -} Shortfall (..),
 
     {- * Classes -} Singleton, Positional, Search,
             Refined, NonEmptyIso, Index, Concat, ItemEquality,

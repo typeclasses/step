@@ -1,4 +1,10 @@
-module Block.Class.State.Utilities where
+module Block.Class.State.Utilities
+  (
+    {- * Utilities -}
+        stateless, runState, evalState, execState,
+        get, put, modify,
+  )
+  where
 
 import Prelude (($!))
 

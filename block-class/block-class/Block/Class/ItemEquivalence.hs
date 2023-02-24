@@ -1,7 +1,7 @@
 module Block.Class.ItemEquivalence
   (
-    ItemEquivalence (..),
-    equality,
+    {- * Type -} ItemEquivalence (..),
+    {- * Examples -} equality,
   )
   where
 

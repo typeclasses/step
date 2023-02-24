@@ -1,5 +1,6 @@
 module Block.Class.ItemEquality.Utilities
   (
+    {- * Utilities -}
     sameItemsTake, sameItemsPop, sameItemsPivot, sameItemsSpan,
     foldableEqOn,
   )

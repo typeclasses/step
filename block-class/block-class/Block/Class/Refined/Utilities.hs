@@ -1,4 +1,8 @@
-module Block.Class.Refined.Utilities where
+module Block.Class.Refined.Utilities
+  (
+    {- * Utilities -} concatRefined,
+  )
+  where
 
 import Essentials
 

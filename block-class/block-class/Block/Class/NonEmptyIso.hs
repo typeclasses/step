@@ -5,4 +5,3 @@ module Block.Class.NonEmptyIso
   where
 
 import Block.Class.NonEmptyIso.Class
-import Block.Class.NonEmptyIso.Utilities

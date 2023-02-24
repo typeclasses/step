@@ -1,14 +1,13 @@
 module Block.Class.Singleton
   (
     {- * Class -} Singleton (..),
-    {- * Superclasses -} Concat (..),
-    {- * Types -} Pop (..), End (..),
-    {- * Utilities -} unpop, first, last, terminal, pushMaybe, append,
+    {- * Types -} Pop (..),
+    {- * Utilities -} unpop, first, last, terminal, pushMaybe,
+    {- * Re-exported modules -} module Block.Class.Concat,
   )
   where
 
-import Block.Class.Concat.Class
-import Block.Class.Concat.Utilities
+import Block.Class.Concat
 import Block.Class.Singleton.Class
 import Block.Class.Singleton.Types
 import Block.Class.Singleton.Utilities

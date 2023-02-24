@@ -1,4 +1,8 @@
-module Block.Class.Shortfall where
+module Block.Class.Shortfall
+  (
+    {- * Type -} Shortfall (..),
+  )
+  where
 
 import Essentials
 

@@ -82,9 +82,9 @@ biPrefixSpec = describe "biPrefix" do
                 biPrefix equality (a, a <> b) `shouldBe` IsPrefix First a b
                 biPrefix equality (a <> b, a) `shouldBe` IsPrefix Second a b
 
-    it "Same" do
+    it "BothPrefix" do
         [ne "a", ne "ab", ne "abc"] & traverse_ \x -> do
-            biPrefix equality (x, x) `shouldBe` Same
+            biPrefix equality (x, x) `shouldBe` BothPrefix
 
     it "NoPrefixRelation" do
         let examples =

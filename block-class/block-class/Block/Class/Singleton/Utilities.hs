@@ -1,4 +1,8 @@
-module Block.Class.Singleton.Utilities where
+module Block.Class.Singleton.Utilities
+  (
+    {- * Utilities -} unpop, terminal, first, last, pushMaybe,
+  )
+  where
 
 import Essentials
 

@@ -123,7 +123,7 @@ take   :: End -> Positive -> xs -> Take xs
 
 ```haskell
 data Take xs =
-    TakePart{ taken :: xs, remainder :: xs }
+    TakePart{ taken :: xs, takeRemainder :: xs }
   | TakeAll
   | TakeInsufficient Shortfall
 ```
@@ -154,7 +154,7 @@ find          :: End -> (x -> State s (Maybe found))
 
 ```haskell
 data Span xs =
-    SpanPart{ spanned :: xs, remainder :: xs }
+    SpanPart{ spanned :: xs, spanRemainder :: xs }
   | SpanNone
   | SpanAll
 ```

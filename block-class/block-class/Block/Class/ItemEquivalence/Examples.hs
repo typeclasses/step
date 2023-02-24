@@ -1,4 +1,8 @@
-module Block.Class.ItemEquivalence.Examples where
+module Block.Class.ItemEquivalence.Examples
+  (
+    {- * Item equivalences -} equality,
+  )
+  where
 
 import Essentials
 

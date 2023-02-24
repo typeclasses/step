@@ -1,7 +1,6 @@
 module Block.Class.Positional.Types
   (
-    Take (..),
-    Shortfall (..),
+    {- * Types -} Take (..),
   )
   where
 
@@ -11,7 +10,7 @@ import Block.Class.Shortfall
 
 {-| The result of 'Block.Class.take' -}
 data Take xs =
-    TakePart{ taken :: xs, remainder :: xs }
+    TakePart{ taken :: xs, takeRemainder :: xs }
       -- ^ The requested range covers part of the block
   | TakeAll
       -- ^ The requested range covers the entire block

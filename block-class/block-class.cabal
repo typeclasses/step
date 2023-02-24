@@ -67,7 +67,6 @@ library
 
         Block.Class.NonEmptyIso
         Block.Class.NonEmptyIso.Class
-        Block.Class.NonEmptyIso.Utilities
 
         Block.Class.End
 

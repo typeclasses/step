@@ -1,4 +1,8 @@
-module Block.Class.ItemEquivalence.Type where
+module Block.Class.ItemEquivalence.Type
+  (
+    {- * Type -} ItemEquivalence (..),
+  )
+  where
 
 import Essentials
 

@@ -1,4 +1,8 @@
-module Block.Class.Search.Utilities where
+module Block.Class.Search.Utilities
+  (
+    {- * Utilities -} findPredicate, spanPredicate,
+  )
+  where
 
 import Essentials
 import Block.Class.Search.Types

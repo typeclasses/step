@@ -1,6 +1,6 @@
 module Block.Class.Positional.Class
   (
-    Positional (..),
+    {- * Class -} Positional (..),
   )
   where
 

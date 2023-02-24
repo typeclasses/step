@@ -4,19 +4,19 @@ module Block.Class
 
     {- * Dealing with single items -} {- $singleton -}
             singleton,  first, last, terminal,
-            pop, Pop (Pop), push, unpop, pushMaybe,
+            pop, Pop (..), push, unpop, pushMaybe,
 
     {- * Operations involving numeric positions -} {- $positional -}
-            length, take, Take (TakeAll, TakePart, TakeInsufficient),
+            length, take, Take (..),
 
     {- * Single item at a numeric position -} {- $index -} at,
 
     {- * Searching for items matching a predicate -} {- $search -}
-            span, spanPredicate, Span (SpanAll, SpanNone, SpanPart),
-            find, findPredicate, Pivot (Pivot),
+            span, spanPredicate, Span (..),
+            find, findPredicate, Pivot (..),
 
     {- * Prefix detection -} {- $biPrefix -}
-            biPrefix, BiPrefix (Same, NoPrefixRelation, IsPrefix),
+            biPrefix, BiPrefix (..),
             WhichOfTwo (First, Second),
 
     {- * Item equality -} {- $itemEquality -}
@@ -32,9 +32,9 @@ module Block.Class
     {- * Isomorphism with NonEmpty -} {- $nonEmptyIso -}
             toNonEmpty, fromNonEmpty,
 
-    {- * End = Front | Back -} {- $end -} End (Front, Back),
+    {- * End = Front | Back -} {- $end -} End (..),
 
-    {- * Shortfall -} {- $shortfall -} Shortfall (Shortfall),
+    {- * Shortfall -} {- $shortfall -} Shortfall (..),
 
     {- * Classes -} {- $classes -} Singleton, Positional, Search,
             Refined, NonEmptyIso, Index, Concat, ItemEquality,

@@ -1,4 +1,8 @@
-module Block.Class.State.Types where
+module Block.Class.State.Types
+  (
+    {- * Types -} State (..),
+  )
+  where
 
 import Essentials
 

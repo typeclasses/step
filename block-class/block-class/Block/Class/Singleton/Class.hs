@@ -1,4 +1,8 @@
-module Block.Class.Singleton.Class where
+module Block.Class.Singleton.Class
+  (
+    {- * Class -} Singleton (..),
+  )
+  where
 
 import Essentials
 
@@ -39,7 +43,7 @@ instance Singleton x (NonEmpty x) where
         Front -> \(x :| xs) -> Pop x (nonEmpty xs)
         Back -> \xs ->
             let p = pop Front (reverse xs)
-            in p{ remainder = reverse <$> remainder p }
+            in p{ popRemainder = reverse <$> popRemainder p }
 
     push :: End -> x -> NonEmpty x -> NonEmpty x
     push = \case

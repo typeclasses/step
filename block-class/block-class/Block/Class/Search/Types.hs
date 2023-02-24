@@ -1,4 +1,8 @@
-module Block.Class.Search.Types where
+module Block.Class.Search.Types
+  (
+    {- * Types -} Pivot (..), Span (..),
+  )
+  where
 
 import Essentials
 
@@ -15,7 +19,7 @@ data Span xs =
     SpanPart
       -- ^ Some items were spanned by the predicate
       { spanned :: xs -- ^ The spanned items
-      , remainder :: xs -- ^ The remainder
+      , spanRemainder :: xs -- ^ The remainder
       }
   | SpanNone
       -- ^ The first item does not satisfy the predicate

@@ -1,4 +1,8 @@
-module Block.Class.Index.Class where
+module Block.Class.Index.Class
+  (
+    {- * Class -} Index (..),
+  )
+  where
 
 import Essentials
 

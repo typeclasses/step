@@ -1,4 +1,9 @@
-module Block.Class.End where
+module Block.Class.End
+  (
+    {- * Type -} End (..),
+    {- * Utilities -} opposite,
+  )
+  where
 
 import Essentials
 

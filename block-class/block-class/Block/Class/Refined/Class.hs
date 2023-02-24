@@ -1,4 +1,8 @@
-module Block.Class.Refined.Class where
+module Block.Class.Refined.Class
+  (
+    {- * Class -} Refined (..),
+  )
+  where
 
 import Essentials
 

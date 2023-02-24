@@ -1,4 +1,8 @@
-module Block.Class.BiPrefix.Utilities where
+module Block.Class.BiPrefix.Utilities
+  (
+    {- * Utilities -} biPrefix
+  )
+  where
 
 import Essentials
 
@@ -20,8 +24,8 @@ the first, the result is @('IsPrefix' 'Second' a b)@. The fields
 is the remainder.
 
 If both blocks are identical (the first is a prefix of the second
-and vice versa), the result is 'Same'. If neither block is a prefix
-of the other, the result is 'NoPrefixRelation'. -}
+and vice versa), the result is 'BothPrefix'. If neither block is a
+prefix of the other, the result is 'NoPrefixRelation'. -}
 biPrefix :: Positional xs =>
     ItemEquivalence xs -- ^ How to determine equivalence of two
         -- sub-blocks (such as 'Block.Class.equality')
@@ -29,7 +33,7 @@ biPrefix :: Positional xs =>
     -> BiPrefix xs
 biPrefix (equivalentItems -> same) pair =
     case whichIsShorter pair of
-        Nothing -> if same pair then Same else NoPrefixRelation
+        Nothing -> if same pair then BothPrefix else NoPrefixRelation
         Just theShorter -> case take Front (length short) long of
             TakePart prefix suffix | same (prefix, short) ->
                 IsPrefix theShorter prefix suffix
