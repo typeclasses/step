@@ -27,6 +27,8 @@ instance (IsString xs, Null x xs) => IsString (NotNull x xs) where
     fromString = fromString >>> refine >>>
         fromMaybe (error "NotNull fromString: empty")
 
+instance (Null x xs, Eq xs) => Block x (NotNull x xs)
+
 instance (Null x xs) => Refined xs (NotNull x xs) where
 
     refine :: xs -> Maybe (NotNull x xs)

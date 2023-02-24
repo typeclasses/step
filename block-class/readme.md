@@ -36,11 +36,9 @@ data End = Front | Back
 
 ## Concatenation
 
-The following have the constraint `Concat xs`.
-
 ```haskell
-(++)   :: xs -> xs -> xs
-concat :: End -> NonEmpty xs -> xs
+(++)   :: Concat xs => xs -> xs -> xs
+concat :: Concat xs => End -> NonEmpty xs -> xs
 ```
 
 The `Concat` class is roughly analogous to `Semigroup`.
@@ -69,13 +67,19 @@ when all you care about is comparing the items of a block.
 sameItems :: ItemEquality xs => xs -> xs -> Bool
 ```
 
-## NonEmpty
 
-The following have the constraint `NonEmptyIso x xs`.
+## Enumeration
 
 ```haskell
-toNonEmpty   :: End -> xs -> NonEmpty x
-fromNonEmpty :: End -> NonEmpty x -> xs
+toNonEmpty :: Enumerate x xs => End -> xs -> NonEmpty x
+foldItems  :: Enumerate x xs => End -> (x -> a) -> (x -> State a ()) -> xs -> a
+```
+
+
+## NonEmpty
+
+```haskell
+fromNonEmpty :: NonEmptyIso x xs => End -> NonEmpty x -> xs
 ```
 
 The `NonEmptyIso` class describes how a block is isomorphic (up to
@@ -98,27 +102,23 @@ The `NonEmptyIso` class describes how a block is isomorphic (up to
 
 ## First and last items
 
-The following all have the constraint `Singleton x xs`.
-
 ```haskell
-singleton :: x -> xs
-pop       :: End -> xs -> Pop x xs
-unpop     :: End -> Pop x xs -> xs
-push      :: End -> x -> xs -> xs
-terminal  :: End -> xs -> x
-first     :: xs -> x
-last      :: xs -> x
-pushMaybe :: End -> Maybe x -> Maybe xs -> Maybe xs
+singleton :: Singleton x xs => x -> xs
+pop       :: Singleton x xs => End -> xs -> Pop x xs
+unpop     :: Singleton x xs => End -> Pop x xs -> xs
+push      :: Singleton x xs => End -> x -> xs -> xs
+terminal  :: Singleton x xs => End -> xs -> x
+first     :: Singleton x xs => xs -> x
+last      :: Singleton x xs => xs -> x
+pushMaybe :: Singleton x xs => End -> Maybe x -> Maybe xs -> Maybe xs
 ```
 
 
 ## Splitting by length
 
-The following have the constraint `Positional xs`.
-
 ```haskell
-length :: xs -> Positive
-take   :: End -> Positive -> xs -> Take xs
+length :: Positional xs => xs -> Positive
+take   :: Positional xs => End -> Positive -> xs -> Take xs
 ```
 
 ```haskell
@@ -142,14 +142,12 @@ at :: Index x xs => End -> Positive -> xs -> Maybe x
 
 ## Search
 
-The following have the constraint `Search xs`.
-
 ```haskell
-spanPredicate :: End -> (x -> Bool) -> xs -> Span xs
-findPredicate :: End -> (x -> Bool) -> xs -> Maybe (Pivot x xs)
-span          :: End -> (x -> State s Bool) -> xs -> State s (Span xs)
-find          :: End -> (x -> State s (Maybe found))
-                     -> xs -> State s (Maybe (Pivot found xs))
+spanPredicate :: Search xs => End -> (x -> Bool) -> xs -> Span xs
+findPredicate :: Search xs => End -> (x -> Bool) -> xs -> Maybe (Pivot x xs)
+span          :: Search xs => End -> (x -> State s Bool) -> xs -> State s (Span xs)
+find          :: Search xs => End -> (x -> State s (Maybe found))
+                                  -> xs -> State s (Maybe (Pivot found xs))
 ```
 
 ```haskell
@@ -170,12 +168,10 @@ For some types of block, there may exist a corresponding type which admits the
 possibility of representing an empty sequence. Such types are called `Refined`.
 For example, `Text1` is a refined type, and its unrefined precursor is `Text`.
 
-The following have the constraint `Refined nul xs`.
-
 ```haskell
-generalize :: xs -> nul
-refine     :: nul -> Maybe xs
-assume     :: nul -> xs
+generalize :: Refined nul xs => xs -> nul
+refine     :: Refined nul xs => nul -> Maybe xs
+assume     :: Refined nul xs => nul -> xs
 ```
 
 `assume` is defined only where `refine` produces `Just`, and it has a default

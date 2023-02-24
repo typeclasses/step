@@ -1,5 +1,6 @@
 module Block.Class.ClassNames
   (
+    Block,
     Concat,
     Enumerate,
     Index,

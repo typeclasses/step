@@ -15,7 +15,7 @@ import Data.String (IsString (..), String)
 newtype Seq1 a = Seq1 (NotNull a (Seq a))
   deriving newtype
     (
-      Eq, Ord, Show, Semigroup, Singleton a, Positional,
+      Eq, Ord, Show, Semigroup, Block a, Singleton a, Positional,
       Search a, Enumerate a, NonEmptyIso a, Refined (Seq a), Index a,
       Concat, ItemEquality
     )

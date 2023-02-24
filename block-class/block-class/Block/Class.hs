@@ -36,7 +36,7 @@ module Block.Class
 
     {- * Shortfall -} {- $shortfall -} Shortfall (..),
 
-    {- * Classes -} {- $classes -} Singleton, Positional, Search,
+    {- * Classes -} {- $classes -} Block, Singleton, Positional, Search,
             Refined, NonEmptyIso, Index, Concat, ItemEquality, Enumerate,
 
     {- * State -} State (..),
@@ -45,10 +45,8 @@ module Block.Class
   where
 
 import Block.Class.BiPrefix
-import Block.Class.Index
-import Block.Class.NonEmptyIso
 import Block.Class.Refined
-import Block.Class.Search
+import Block.Class.Block
 
 {- $singleton
 

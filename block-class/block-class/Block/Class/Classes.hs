@@ -1,5 +1,6 @@
 module Block.Class.Classes
   (
+    Block,
     Concat (..),
     Enumerate (..),
     Index (..),
@@ -12,6 +13,7 @@ module Block.Class.Classes
   )
   where
 
+import Block.Class.Block.Class
 import Block.Class.Concat.Class
 import Block.Class.Enumerate.Class
 import Block.Class.Index.Class

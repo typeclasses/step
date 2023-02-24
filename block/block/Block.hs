@@ -36,7 +36,7 @@ module Block
 
     {- * Shortfall -} Shortfall (..),
 
-    {- * Classes -} Singleton, Positional, Search,
+    {- * Classes -} Block, Singleton, Positional, Search,
             Refined, NonEmptyIso, Index, Concat, ItemEquality, Enumerate,
 
     {- * State -} State (..),

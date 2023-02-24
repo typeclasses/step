@@ -38,16 +38,20 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
 ---  IsString  ---
 
 instance (IsString xs, Singleton xs xss, NonEmptyIso xs xss, Positional xs) =>
-        IsString (BlockBlock x xs xss) where
+  IsString (BlockBlock x xs xss) where
 
     fromString :: String -> BlockBlock x xs xss
     fromString = fromString >>> singleton >>> BlockBlock
 
 
+---  Block  ---
+
+instance (Block x xs, Block xs xss) => Block x (BlockBlock x xs xss)
+
+
 ---  ItemEquality  ---
 
-instance (Positional xs, ItemEquality xs, Singleton xs xss) =>
-        ItemEquality (BlockBlock x xs xss) where
+instance (Positional xs, Singleton xs xss) => ItemEquality (BlockBlock x xs xss) where
 
     sameItems :: BlockBlock x xs xss -> BlockBlock x xs xss -> Bool
     sameItems = \(BlockBlockUnsafe xss1 len1) (BlockBlockUnsafe xss2 len2) ->
@@ -72,7 +76,8 @@ instance (Positional xs, ItemEquality xs, Singleton xs xss) =>
 
 ---  Concat  ---
 
-instance (Positional xs, ItemEquality xs, Singleton xs xss, Concat xss) => Concat (BlockBlock x xs xss) where
+instance (Positional xs, Singleton xs xss, Concat xss) =>
+  Concat (BlockBlock x xs xss) where
 
     (++) :: BlockBlock x xs xss -> BlockBlock x xs xss -> BlockBlock x xs xss
     BlockBlockUnsafe xss1 len1 ++ BlockBlockUnsafe xss2 len2 =
@@ -84,8 +89,9 @@ instance (Positional xs, ItemEquality xs, Singleton xs xss, Concat xss) => Conca
 
 ---  Enumerate  ---
 
-instance (Positional xs, ItemEquality xs, Singleton xs xss, Singleton x xs,
-        Enumerate xs xss, Enumerate x xs) => Enumerate x (BlockBlock x xs xss) where
+instance (Positional xs, Singleton x xs, Enumerate x xs,
+          Singleton xs xss, Enumerate xs xss) =>
+  Enumerate x (BlockBlock x xs xss) where
 
     foldItems :: End -> (x -> a) -> (x -> State a ()) -> BlockBlock x xs xss -> a
     foldItems end initialX stepX = bbXss >>>
@@ -106,19 +112,15 @@ instance (Positional xs, ItemEquality xs, Singleton xs xss, Singleton x xs,
         g (Just (pop end -> Pop (pop end -> Pop x xs) xss)) =
             x : f xs xss
 
-
----  NonEmptyIso  ---
-
-instance (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs, Singleton x xs) =>
-        NonEmptyIso x (BlockBlock x xs xss) where
+instance (NonEmptyIso x xs, Positional xs, Singleton x xs,
+          NonEmptyIso xs xss, Singleton xs xss) =>
+  NonEmptyIso x (BlockBlock x xs xss) where
 
     fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
     fromNonEmpty end = fromNonEmpty end >>> singleton >>> BlockBlock
 
-
----  Singleton  ---
-
-instance (Singleton x xs, Singleton xs xss, Positional xs, ItemEquality xs) => Singleton x (BlockBlock x xs xss) where
+instance (Singleton x xs, Singleton xs xss, Positional xs) =>
+  Singleton x (BlockBlock x xs xss) where
 
     singleton :: x -> BlockBlock x xs xss
     singleton x = BlockBlockUnsafe (singleton (singleton x)) 1
@@ -136,11 +138,8 @@ instance (Singleton x xs, Singleton xs xss, Positional xs, ItemEquality xs) => S
     push end x (BlockBlockUnsafe xss n) =
         BlockBlockUnsafe (push end (singleton x) xss) (n + 1)
 
-
----  Positional  ---
-
-instance (Search xs xss, Singleton xs xss, Positional xs, NonEmptyIso xs xss) =>
-        Positional (BlockBlock x xs xss) where
+instance (Positional xs, Search xs xss, NonEmptyIso xs xss) =>
+  Positional (BlockBlock x xs xss) where
 
     length :: BlockBlock x xs xss -> Positive
     length = bbLength
@@ -165,11 +164,8 @@ instance (Search xs xss, Singleton xs xss, Positional xs, NonEmptyIso xs xss) =>
                         TakeAll                         ->  pure $ Just (Just xs, Nothing)
                         TakePart a b                    ->  pure $ Just (Just a, Just b)
 
-
----  Index  ---
-
-instance (Search xs xss, Singleton xs xss, NonEmptyIso xs xss, Index x xs) =>
-        Index x (BlockBlock x xs xss) where
+instance (Index x xs, Search xs xss, NonEmptyIso xs xss) =>
+  Index x (BlockBlock x xs xss) where
 
     at :: End -> Positive -> BlockBlock x xs xss -> Maybe x
     at end = \n (BlockBlock xss) -> go n xss
@@ -181,11 +177,8 @@ instance (Search xs xss, Singleton xs xss, NonEmptyIso xs xss, Index x xs) =>
           where
             Pop xs xss' = pop end xss
 
-
----  Search  ---
-
-instance (Search xs xss, Search x xs, NonEmptyIso xs xss, Positional xs, Singleton xs xss,
-        Semigroup xss) => Search x (BlockBlock x xs xss) where
+instance (Search x xs, Positional xs, Search xs xss, NonEmptyIso xs xss) =>
+  Search x (BlockBlock x xs xss) where
 
     span :: End -> (x -> State s Bool) -> BlockBlock x xs xss
         -> State s (Span (BlockBlock x xs xss))

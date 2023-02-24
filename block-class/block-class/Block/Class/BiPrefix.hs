@@ -9,3 +9,5 @@ module Block.Class.BiPrefix
 import Block.Class.BiPrefix.Types
 import Block.Class.BiPrefix.Utilities
 import Block.Class.ItemEquivalence
+
+-- todo: roll this into the Positional module
