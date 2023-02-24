@@ -7,16 +7,17 @@ module Block.BlockBlock.Type
 import Essentials
 import Block.Class
 
-import Integer (Positive)
-import Prelude ((+))
+import Data.Function (on)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup (sconcat)
+import Data.String (IsString (..), String)
+import Integer (Positive)
 import Integer.Signed (Signed (..))
-import Data.Function (on)
+import Prelude ((+))
 
+import qualified Block.Class.End as End
 import qualified Data.Maybe as Maybe
 import qualified Fold.Nonempty as Fold
-import qualified Block.Class.End as End
 import qualified Integer.Positive as Positive
 
 data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
@@ -30,6 +31,12 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
       (Fold.run Fold.sum (length <$> (toNonEmpty Front xss :: NonEmpty xs)))
 
 {-# complete BlockBlock #-}
+
+instance (IsString xs, Singleton xs xss, NonEmptyIso xs xss, Positional xs) =>
+        IsString (BlockBlock x xs xss) where
+
+    fromString :: String -> BlockBlock x xs xss
+    fromString = fromString >>> singleton >>> BlockBlock
 
 instance (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs) => ItemEquality (BlockBlock x xs xss) where
     sameItems = sameItems `on` toNonEmpty Front

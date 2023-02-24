@@ -10,10 +10,7 @@ extra-source-files: *.md
 
 common base
     default-language: GHC2021
-
-    ghc-options:
-        -Wall
-        -Wmissing-deriving-strategies
+    ghc-options: -Wall -Wmissing-deriving-strategies
 
     default-extensions:
         BlockArguments
@@ -94,8 +91,7 @@ library
 test-suite test-block-class
     import: base
     type: exitcode-stdio-1.0
-    default-extensions:
-        OverloadedStrings
+    default-extensions: OverloadedStrings
     hs-source-dirs: test-block-class
     main-is: Main.hs
     build-depends:

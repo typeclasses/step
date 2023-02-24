@@ -10,7 +10,6 @@ extra-source-files: *.md
 
 common base
     default-language: GHC2021
-    default-extensions: NoImplicitPrelude
     ghc-options: -Wall
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
@@ -19,5 +18,14 @@ common base
 
 library
     import: base
+    default-extensions: NoImplicitPrelude
     hs-source-dirs: block
     exposed-modules: Block
+
+test-suite tutorial
+    import: base
+    type: exitcode-stdio-1.0
+    default-extensions: OverloadedStrings
+    hs-source-dirs: tutorial
+    main-is: Main.hs
+    build-depends: block
