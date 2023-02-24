@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.Singleton (spec) where
 
 import Block.Class.Singleton
-import Block.Class.ItemEquality
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -12,9 +11,7 @@ import qualified Hedgehog.Gen as Gen
 import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall x xs.
-    (Show x, Eq x) =>
-    (Show xs, ItemEquality xs) =>
-    (Singleton x xs) =>
+    (Show x, Show xs, Singleton x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs) -> Spec
 spec genX genXs variegate = describe "Singleton" do
 

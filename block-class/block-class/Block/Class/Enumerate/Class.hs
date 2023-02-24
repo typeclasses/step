@@ -25,7 +25,7 @@ instance (Eq x) => Enumerate x (NonEmpty x) where
     toNonEmpty :: End -> NonEmpty x -> NonEmpty x
     toNonEmpty = \case Front -> id; Back -> NonEmpty.reverse
 
-    foldItems :: Eq x => End -> (x -> a) -> (a -> x -> a) -> NonEmpty x -> a
+    foldItems :: End -> (x -> a) -> (a -> x -> a) -> NonEmpty x -> a
     foldItems end initial step =
         toNonEmpty end >>> \(x :| xs) ->
         Foldable.foldl' step (initial x) xs

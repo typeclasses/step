@@ -15,7 +15,7 @@ import Block.Class.Positional.Class (Positional (..))
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Integer.Positive as Positive
 
-class (Singleton x xs, Positional xs) => Index x xs where
+class (Eq x, Singleton x xs, Positional xs) => Index x xs where
 
     {-| Get the item at a particular position
 

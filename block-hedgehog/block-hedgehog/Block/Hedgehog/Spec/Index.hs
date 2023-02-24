@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.Index (spec) where
 
 import Block.Class.Index
-import Block.Class.ItemEquality
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -12,10 +11,7 @@ import Prelude ((+))
 import qualified Block.Class.End as End
 import qualified Block.Hedgehog.Gen.End as Gen
 
-spec :: forall x xs.
-    (Show x, Eq x) =>
-    (Show xs, ItemEquality xs) =>
-    (Index x xs) =>
+spec :: forall x xs. (Show x, Show xs, Index x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs) -> Spec
 spec genX genXs variegate = describe "Index" do
 

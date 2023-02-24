@@ -11,8 +11,7 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Block.Hedgehog.Gen.End as Gen
 
-spec :: forall x xs.
-    (Show x, Show xs, Eq x, NonEmptyIso x xs) =>
+spec :: forall x xs. (Show x, Show xs, NonEmptyIso x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs) -> Spec
 spec genX genXs variegate = describe "NonEmptyIso" do
 

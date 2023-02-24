@@ -17,12 +17,8 @@ import qualified Block.Hedgehog.Spec.Search as Search
 import qualified Block.Hedgehog.Spec.Refined as Refined
 import qualified Hedgehog.Gen as Gen
 
-spec :: forall x xs.
-    (Show x, Eq x) =>
-    (Show xs, Eq xs) =>
-    (
-      NonEmptyIso x xs, Search x xs, Index x xs, ItemEquality xs
-    ) =>
+spec :: forall x xs. (Show x, Eq x, Show xs,
+        NonEmptyIso x xs, Search x xs, Index x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs)
     -> PredicateGenerators x xs -> Spec
 spec genX genXs variegate genP  = do
@@ -43,14 +39,8 @@ spec genX genXs variegate genP  = do
         length ne === length xs
 
 refinedSpec :: forall x nul xs.
-    (Show x, Eq x) =>
-    (Show nul, Eq nul) =>
-    (Show xs, Eq xs) =>
-    (
-      Semigroup xs, Monoid nul, Index x xs,
-      NonEmptyIso x xs, Search x xs, Refined nul xs,
-      ItemEquality xs
-    ) =>
+        (Show x, Show nul, Show xs, Eq nul, Eq xs,
+        NonEmptyIso x xs, Search x xs, Index x xs, Refined nul xs) =>
     Gen x -> Gen nul -> Gen xs -> (xs -> Gen xs)
     -> PredicateGenerators x xs -> Spec
 refinedSpec genX genNul genXs variegate genP = do

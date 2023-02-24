@@ -12,7 +12,7 @@ import Block.Class.Concat.Class (Concat (..))
 
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty, reverse)
 
-class Concat xs => Singleton x xs | xs -> x where
+class (Eq x, Concat xs) => Singleton x xs | xs -> x where
 
     {-| A block with a single item -}
     singleton ::

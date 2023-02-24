@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.Search (spec, PredicateGenerators (..)) where
 
 import Block.Class.Search
-import Block.Class.ItemEquality
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -19,10 +18,7 @@ data PredicateGenerators x xs =
     (Bool -> Gen x) -- ^ Item generators for items that do/don't match the predicate
     (Bool -> Gen xs) -- ^ Block generators for blocks whose items all do/don't match the predicate
 
-spec :: forall x xs.
-    (Show x, Eq x) =>
-    (Show xs, ItemEquality xs) =>
-    (Search x xs) =>
+spec :: forall x xs. (Show x, Eq x, Show xs, Search x xs) =>
     Gen xs
     -> (xs -> Gen xs)
     -> PredicateGenerators x xs
