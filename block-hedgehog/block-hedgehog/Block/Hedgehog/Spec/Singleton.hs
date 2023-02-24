@@ -10,8 +10,7 @@ import Hedgehog (Gen, forAll, diff)
 import qualified Hedgehog.Gen as Gen
 import qualified Block.Hedgehog.Gen.End as Gen
 
-spec :: forall x xs.
-    (Show x, Show xs, Singleton x xs) =>
+spec :: forall x xs. (Show x, Show xs, Singleton x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs) -> Spec
 spec genX genXs variegate = describe "Singleton" do
 

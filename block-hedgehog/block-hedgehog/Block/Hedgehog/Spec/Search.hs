@@ -14,15 +14,13 @@ import qualified Block.Hedgehog.Gen.End as Gen
 
 data PredicateGenerators x xs =
   PredicateGenerators
-    (x -> Bool) -- ^ A predicate
-    (Bool -> Gen x) -- ^ Item generators for items that do/don't match the predicate
-    (Bool -> Gen xs) -- ^ Block generators for blocks whose items all do/don't match the predicate
+    (x -> Bool)      -- ^ A predicate
+    (Bool -> Gen x)  -- ^ Item generators for items that do/don't match the predicate
+    (Bool -> Gen xs) -- ^ Block generators for blocks whose items all
+                     --   do/don't match the predicate
 
-spec :: forall x xs. (Show x, Eq x, Show xs, Search x xs) =>
-    Gen xs
-    -> (xs -> Gen xs)
-    -> PredicateGenerators x xs
-    -> Spec
+spec :: forall x xs. (Show x, Show xs, Search x xs) =>
+    Gen xs -> (xs -> Gen xs) -> PredicateGenerators x xs -> Spec
 spec genXs variegate (PredicateGenerators p genX' genXs') = describe "Search" do
 
     it "findPredicate -> Just" $ hedgehog do

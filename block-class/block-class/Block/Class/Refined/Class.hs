@@ -12,7 +12,7 @@ import Prelude (error)
 import qualified Data.Maybe as Maybe
 import qualified Data.Foldable as Foldable
 
-class Refined nul xs | xs -> nul where
+class (Eq nul, Eq xs) => Refined nul xs | xs -> nul where
 
     refine :: nul -> Maybe xs
 
@@ -24,7 +24,7 @@ class Refined nul xs | xs -> nul where
 
     {-# minimal refine, generalize #-}
 
-instance Refined [x] (NonEmpty x) where
+instance (Eq x) => Refined [x] (NonEmpty x) where
 
     refine :: [x] -> Maybe (NonEmpty x)
     refine = nonEmpty
