@@ -99,10 +99,11 @@ biPrefixSpec = describe "biPrefix" do
 
 foldSpec :: Spec
 foldSpec = describe "foldItems" do
+    let f x = modify (<> [x])
     it "Front" $
-        foldItems Front (: []) (\s c -> s <> [c]) (ne "abc") `shouldBe` "abc"
+        foldItems Front (: []) f (ne "abc") `shouldBe` "abc"
     it "Back" $
-        foldItems Back (: []) (\s c -> s <> [c]) (ne "abc") `shouldBe` "cba"
+        foldItems Back (: []) f (ne "abc") `shouldBe` "cba"
 
 ne :: [a] -> NonEmpty a
 ne (x : xs) = x :| xs

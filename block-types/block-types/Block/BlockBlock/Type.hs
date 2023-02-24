@@ -84,14 +84,13 @@ instance (Positional xs, ItemEquality xs, Singleton xs xss, Concat xss) => Conca
 
 ---  Enumerate  ---
 
-instance (Positional xs, ItemEquality xs, Singleton xs xss, Singleton x xs, Enumerate xs xss, Enumerate x xs) =>
-        Enumerate x (BlockBlock x xs xss) where
+instance (Positional xs, ItemEquality xs, Singleton xs xss, Singleton x xs,
+        Enumerate xs xss, Enumerate x xs) => Enumerate x (BlockBlock x xs xss) where
 
-    foldItems :: End -> (x -> a) -> (a -> x -> a) -> BlockBlock x xs xss -> a
+    foldItems :: End -> (x -> a) -> (x -> State a ()) -> BlockBlock x xs xss -> a
     foldItems end initialX stepX = bbXss >>>
-        foldItems end
-            (foldItems end initialX stepX)
-            (\a -> foldItems end (stepX a) stepX)
+        foldItems end (foldItems end initialX stepX) \xs ->
+            modify \a -> foldItems end (execState a . stepX) stepX xs
 
     toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
     toNonEmpty end = bbXss >>>
