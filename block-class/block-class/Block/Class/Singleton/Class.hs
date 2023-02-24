@@ -33,7 +33,7 @@ class Concat xs => Singleton x xs | xs -> x where
         -> xs -- ^ A block
         -> xs -- ^ A new block with the item appended to it
 
-instance Singleton x (NonEmpty x) where
+instance (Eq x) => Singleton x (NonEmpty x) where
 
     singleton :: x -> NonEmpty x
     singleton = (:| [])

@@ -83,7 +83,7 @@ genText1 = Gen.text (Range.linear 1 10) genChar <&> assume
 genSeq :: Gen a -> Gen (Seq a)
 genSeq g = Gen.seq (Range.linear 0 10) g
 
-genSeq1 :: Gen a -> Gen (Seq1 a)
+genSeq1 :: Eq a => Gen a -> Gen (Seq1 a)
 genSeq1 g = Gen.seq (Range.linear 1 10) g <&> assume
 
 genByteStringPredicate :: PredicateGenerators Word8 ByteString1

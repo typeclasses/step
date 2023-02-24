@@ -72,7 +72,7 @@ instance (Positional xs, ItemEquality xs, Singleton xs xss) =>
 
 ---  Concat  ---
 
-instance (Concat xss) => Concat (BlockBlock x xs xss) where
+instance (Positional xs, ItemEquality xs, Singleton xs xss, Concat xss) => Concat (BlockBlock x xs xss) where
 
     (++) :: BlockBlock x xs xss -> BlockBlock x xs xss -> BlockBlock x xs xss
     BlockBlockUnsafe xss1 len1 ++ BlockBlockUnsafe xss2 len2 =
@@ -119,7 +119,7 @@ instance (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Position
 
 ---  Singleton  ---
 
-instance (Singleton x xs, Singleton xs xss) => Singleton x (BlockBlock x xs xss) where
+instance (Singleton x xs, Singleton xs xss, Positional xs, ItemEquality xs) => Singleton x (BlockBlock x xs xss) where
 
     singleton :: x -> BlockBlock x xs xss
     singleton x = BlockBlockUnsafe (singleton (singleton x)) 1

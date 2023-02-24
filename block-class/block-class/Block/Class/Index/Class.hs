@@ -25,7 +25,7 @@ class (Singleton x xs, Positional xs) => Index x xs where
     this is unconventional.) -}
     at :: End -> Positive -> xs -> Maybe x
 
-instance Index x (NonEmpty x) where
+instance (Eq x) => Index x (NonEmpty x) where
 
     at :: End -> Positive -> NonEmpty x -> Maybe x
     at Front n = case Positive.fromNatural (Positive.subtractOne n) of

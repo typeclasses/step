@@ -46,12 +46,12 @@ instance (Null x xs) => Concat (NotNull x xs) where
     concat :: End -> NonEmpty (NotNull x xs) -> NotNull x xs
     concat end = Foldable.toList >>> fmap generalize >>> Null.concat end >>> NotNull
 
-instance (Eq x, Eq xs, Null x xs) => Enumerate x (NotNull x xs) where
+instance (Null x xs) => Enumerate x (NotNull x xs) where
 
     toNonEmpty :: End -> NotNull x xs -> NonEmpty x
     toNonEmpty end = generalize >>> Null.toNonEmpty end >>> Maybe.fromJust
 
-instance (Eq x, Eq xs, Null x xs) => NonEmptyIso x (NotNull x xs) where
+instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
 
     fromNonEmpty :: End -> NonEmpty x -> NotNull x xs
     fromNonEmpty end = Null.fromNonEmpty end >>> NotNull

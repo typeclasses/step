@@ -39,7 +39,7 @@ class Concat xs => Positional xs where
         -> xs -- ^ A block
         -> Take xs
 
-instance Positional (NonEmpty x) where
+instance (Eq x) => Positional (NonEmpty x) where
 
     length :: NonEmpty x -> Positive
     length = Positive.length
