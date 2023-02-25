@@ -20,7 +20,7 @@ import qualified Block.Hedgehog.Spec.Refined as Refined
 blockSpec :: forall x xs. (Show x, Show xs, Block x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs) -> PredicateGenerators x xs -> Spec
 blockSpec genX genXs variegate genP = do
-    Block.spec genXs variegate
+    Block.spec genXs variegate genP
     Concat.spec genXs
     Singleton.spec genX genXs variegate
     Enumerate.spec genXs variegate

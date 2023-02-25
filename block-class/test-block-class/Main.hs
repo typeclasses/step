@@ -18,6 +18,7 @@ main = hspec do
     findSpec
     biPrefixSpec
     foldSpec
+    atSpec
 
 spanSpec :: Spec
 spanSpec = describe "span" do
@@ -104,6 +105,19 @@ foldSpec = describe "foldItems" do
         foldItems Front (: []) f (ne "abc") `shouldBe` "abc"
     it "Back" $
         foldItems Back (: []) f (ne "abc") `shouldBe` "cba"
+
+atSpec :: Spec
+atSpec = describe "at" do
+    it "Front" do
+        at Front 1 (ne "abc") `shouldBe` Just 'a'
+        at Front 2 (ne "abc") `shouldBe` Just 'b'
+        at Front 3 (ne "abc") `shouldBe` Just 'c'
+        at Front 4 (ne "abc") `shouldBe` Nothing
+    it "Back" do
+        at Back 1 (ne "abc") `shouldBe` Just 'c'
+        at Back 2 (ne "abc") `shouldBe` Just 'b'
+        at Back 3 (ne "abc") `shouldBe` Just 'a'
+        at Back 4 (ne "abc") `shouldBe` Nothing
 
 ne :: [a] -> NonEmpty a
 ne (x : xs) = x :| xs
