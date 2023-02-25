@@ -4,12 +4,12 @@ import Essentials
 
 import Cursor.Interface (Cursor, Mode)
 import SupplyChain (Vendor)
-import Block.Class.Class (Block)
+import Block (Block)
 
-type Feed action (mode :: Mode) block =
-    Block block =>
+type Feed action (mode :: Mode) item block =
+    Block item block =>
         Vendor (Const Void) (Cursor mode block) action
 
-type FeedPlus up action (mode :: Mode) block =
-    Block block =>
+type FeedPlus up action (mode :: Mode) item block =
+    Block item block =>
         Vendor up (Cursor mode block) action

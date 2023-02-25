@@ -7,7 +7,7 @@ module Cursor.Reader.Type
 import Essentials
 import SupplyChain
 import Cursor.Interface
-import Block.Class.Class
+import Block
 
 import qualified Control.Monad as Monad
 
@@ -17,20 +17,20 @@ import qualified Control.Monad as Monad
 Sequencing operations like '(<*>)' and '(>>=)' insert resets between the operations.
 (The implicit resets and the idempotency of 'reset' are essential to arguing that
 the 'Applicative' and 'Monad' class laws are sufficiently respected.) -}
-newtype ReaderPlus up action mode block product =
+newtype ReaderPlus up action mode item block product =
     Reader{ reader ::
-        Block block => IsCursor mode block up =>
+        Block item block => IsCursor mode block up =>
             Job up action product }
     deriving stock Functor
 
-type Reader action mode block product =
-    ReaderPlus (Cursor mode block) action mode block product
+type Reader action mode item block product =
+    ReaderPlus (Cursor mode block) action mode item block product
 
-instance Applicative (ReaderPlus up action mode block) where
+instance Applicative (ReaderPlus up action mode item block) where
     pure x = Reader (pure x)
     (<*>) = Monad.ap
 
-instance Monad (ReaderPlus up action mode block) where
+instance Monad (ReaderPlus up action mode item block) where
     step1 >>= step2 = Reader do
         x <- reader step1
         order reset

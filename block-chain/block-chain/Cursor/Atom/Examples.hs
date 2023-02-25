@@ -15,8 +15,8 @@ import Cursor.Reader.Utilities.With (withLength)
 import Data.Either (Either (..))
 
 atomically ::
-    Reader action 'Write block (Either error product)
-    -> AtomPlus up action block error product
+    Reader action 'Write item block (Either error product)
+    -> AtomPlus up action item block error product
 atomically x = Atom do
     (len, ei) <- lookAhead (withLength x)
     pure do

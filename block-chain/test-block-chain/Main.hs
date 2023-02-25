@@ -1,11 +1,12 @@
 import Essentials
 
-import Block.Class.Gen (genBlocks)
 import Data.Text (Text)
 import Test.Hspec (describe, it, shouldBe, hspec)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (forAll)
-import Block.Class.Text (Text1)
+import Block (Text1)
+
+import qualified Block.Hedgehog.Gen.Shatter as Gen
 
 main = hspec do
 
@@ -13,7 +14,7 @@ main = hspec do
 
         it "Request line" $ hedgehog do
             let input :: Text = "GET /hello.txt HTTP/1.1"
-                reader = _
-            chunkedInput :: [Text1] <- forAll $ genBlocks input
-            _
+                reader = undefined -- todo
+            chunkedInput :: [Text1] <- forAll $ Gen.shatter0 input
+            undefined -- todo
             -- runReader reader chunkedInput `shouldBe` ("GET", ["hello.txt"], ['1', '1'])

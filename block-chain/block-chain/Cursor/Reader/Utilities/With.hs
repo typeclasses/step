@@ -21,8 +21,8 @@ import qualified Integer.Positive as Positive
 import qualified SupplyChain
 
 {-| Augments a reader's result with the exact input that was committed over -}
-withBlocks :: Reader action 'Write block product
-    -> ReaderPlus up action 'Write block (Seq block, product)
+withBlocks :: Reader action 'Write item block product
+    -> ReaderPlus up action 'Write item block (Seq block, product)
 withBlocks (Reader x) = do
     (length, product) <- Reader $
         Feed.privateBuffer >- Monitor.withRecord lengthRecording x
@@ -30,8 +30,8 @@ withBlocks (Reader x) = do
     pure (blocks, product)
 
 {-| Augments a reader's result with the amount of input that is committed -}
-withLength :: Reader action 'Write block product
-    -> ReaderPlus up action 'Write block (Natural, product)
+withLength :: Reader action 'Write item block product
+    -> ReaderPlus up action 'Write item block (Natural, product)
 withLength (Reader x) = do
     (length, product) <- Reader $
         Feed.privateBuffer >- Monitor.withRecord lengthRecording x

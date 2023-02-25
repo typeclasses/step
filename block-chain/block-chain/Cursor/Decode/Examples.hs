@@ -2,11 +2,11 @@ module Cursor.Decode.Examples where
 
 import Cursor.Decode.Type
 
-import Block.Class.ByteString (ByteString1)
+import Block (ByteString1)
 
-hexadecimalWord8 :: Decode ByteString1 ByteString1
-hexadecimalWord8 = Decode \inputs ->
-    _
+-- hexadecimalWord8 :: Decode ByteString1 ByteString1
+-- hexadecimalWord8 = Decode \inputs ->
+--     _
 
 {-
 

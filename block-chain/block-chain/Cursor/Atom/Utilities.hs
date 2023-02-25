@@ -12,8 +12,8 @@ import Cursor.Interface
 import Data.Either (Either (..))
 
 optional ::
-    AtomPlus up action block error product
-    -> ReaderPlus up action 'Write block (Maybe product)
+    AtomPlus up action item block error product
+    -> ReaderPlus up action 'Write item block (Maybe product)
 optional (Atom x) = do
     z <- x
     case z of
@@ -21,8 +21,8 @@ optional (Atom x) = do
         Right rw -> Just <$> rw
 
 repetition ::
-    AtomPlus up action block error product
-    -> ReaderPlus up action 'Write block [product]
+    AtomPlus up action item block error product
+    -> ReaderPlus up action 'Write item block [product]
 repetition (Atom x) = recur
   where
     recur = do
