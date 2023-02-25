@@ -35,6 +35,12 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
 {-# complete BlockBlock #-}
 
 
+---  Semigroup  ---
+
+instance (Block x xs, Block xs xss) => Semigroup (BlockBlock x xs xss) where
+    (<>) = (++)
+
+
 ---  IsString  ---
 
 instance (IsString xs, Block x xs, Block xs xss) =>
