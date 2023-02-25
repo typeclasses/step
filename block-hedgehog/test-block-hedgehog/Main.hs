@@ -2,14 +2,13 @@ module Main (main) where
 
 import Essentials
 
-import Block.Hedgehog.Spec (PredicateGenerators (..))
+import Block.Hedgehog.Spec (PredicateGenerators (..), blockSpec)
 import Data.Char (Char)
 import Data.List.NonEmpty (NonEmpty)
 import Hedgehog (Gen)
 import System.IO (IO)
 import Test.Hspec (hspec)
 
-import qualified Block.Hedgehog.Spec as Block
 import qualified Data.Char as Char
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -17,7 +16,7 @@ import qualified Hedgehog.Range as Range
 main :: IO ()
 main = hspec do
 
-    Block.spec @Char @(NonEmpty Char)
+    blockSpec @Char @(NonEmpty Char)
         genChar
         (genNonEmpty genChar)
         pure

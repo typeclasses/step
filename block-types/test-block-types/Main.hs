@@ -5,7 +5,7 @@ import Block.Class
 
 import Block.BlockBlock (BlockBlock (..))
 import Block.ByteString (ByteString1)
-import Block.Hedgehog.Spec (PredicateGenerators (..))
+import Block.Hedgehog.Spec (PredicateGenerators (..), blockSpec, refinedSpec)
 import Block.Sequence (Seq1)
 import Block.Text (Text1)
 import Data.ByteString (ByteString)
@@ -19,7 +19,6 @@ import System.IO (IO)
 import Test.Hspec (hspec, describe)
 
 import qualified Block.Hedgehog.Gen.Shatter as Gen
-import qualified Block.Hedgehog.Spec as Block
 import qualified Data.ByteString as ByteString
 import qualified Data.Char as Char
 import qualified Hedgehog.Gen as Gen
@@ -29,31 +28,16 @@ main :: IO ()
 main = hspec do
 
     describe "ByteString1" $
-        Block.refinedSpec
-            genByte
-            genByteString
-            genByteString1
-            pure -- no way to variegate
-            genByteStringPredicate
+        refinedSpec genByte genByteString genByteString1 pure genByteStringPredicate
 
     describe "Text1" $
-        Block.refinedSpec
-            genChar
-            genText
-            genText1
-            pure -- no way to variegate
-            genTextPredicate
+        refinedSpec genChar genText genText1 pure genTextPredicate
 
     describe "Seq1" $
-        Block.refinedSpec
-            genChar
-            (genSeq genChar)
-            (genSeq1 genChar)
-            pure -- no way to variegate
-            genCharSeqPredicate
+        refinedSpec genChar (genSeq genChar) (genSeq1 genChar) pure genCharSeqPredicate
 
     describe "BlockBlock" $
-        Block.spec @Char @(BlockBlock Char Text1 (Seq1 Text1))
+        blockSpec @Char @(BlockBlock Char Text1 (Seq1 Text1))
             genChar
             (genBlockBlock @Char @Text1 @(Seq1 Text1) genText1)
             variegateBlockBlock

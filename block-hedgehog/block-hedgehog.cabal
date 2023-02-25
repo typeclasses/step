@@ -35,6 +35,7 @@ library
         Block.Hedgehog.Gen.Positive
 
         Block.Hedgehog.Spec
+        Block.Hedgehog.Spec.Block
         Block.Hedgehog.Spec.Concat
         Block.Hedgehog.Spec.Enumerate
         Block.Hedgehog.Spec.Index
