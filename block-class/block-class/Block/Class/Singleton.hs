@@ -2,7 +2,8 @@ module Block.Class.Singleton
   (
     {- * Class -} Singleton (..),
     {- * Types -} Pop (..),
-    {- * Utilities -} unpop, first, last, terminal, pushMaybe,
+    {- * Utilities -}
+          unpop, first, last, terminal, pushMaybe, sameItemsPop,
     {- * Re-exported modules -}
           module Block.Class.Concat,
           module Block.Class.End,

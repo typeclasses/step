@@ -1,7 +1,7 @@
 module Block.Class.ItemEquality
   (
     {- * Class -} ItemEquality (..),
-    {- * Utilities -} sameItemsTake, sameItemsPop, foldableEqOn,
+    {- * Utilities -} sameItemsTake, foldableEqOn,
   )
   where
 

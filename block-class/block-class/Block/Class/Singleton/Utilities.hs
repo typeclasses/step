@@ -1,14 +1,17 @@
 module Block.Class.Singleton.Utilities
   (
-    {- * Utilities -} unpop, terminal, first, last, pushMaybe,
+    {- * Utilities -} unpop, terminal, first, last, pushMaybe, sameItemsPop,
   )
   where
 
 import Essentials
 
+import Block.Class.End (End (..))
+import Block.Class.ItemEquality.Class (ItemEquality (..))
+import Block.Class.ItemEquality.Utilities (foldableEqOn)
 import Block.Class.Singleton.Class (Singleton (..))
 import Block.Class.Singleton.Types (Pop (..))
-import Block.Class.End (End (..))
+import Data.Bool ((&&))
 
 {-| The inverse of 'pop' -}
 unpop :: (Singleton x xs) =>
@@ -39,3 +42,6 @@ pushMaybe end (Just x) (Just xs)  =  Just (push end x xs)
 pushMaybe _   Nothing  (Just xs)  =  Just xs
 pushMaybe _   (Just x) Nothing    =  Just (singleton x)
 pushMaybe _   Nothing  Nothing    =  Nothing
+
+sameItemsPop :: Eq x => ItemEquality xs => Pop x xs -> Pop x xs -> Bool
+sameItemsPop (Pop x1 xs1) (Pop x2 xs2) = x1 == x2 && foldableEqOn sameItems xs1 xs2
