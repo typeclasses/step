@@ -17,15 +17,14 @@ common base
         TypeFamilies
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
-      , block-class ^>= 0.0
-      , block-types ^>= 0.0
+      , block ^>= 0.0.0
       , bytestring ^>= 0.11.4
       , containers ^>= 0.6.5
       , hedgehog ^>= 1.2
       , integer-types ^>= 0.1
       , mtl ^>= 2.3.1
       , optics ^>= 0.4.2
-      , quaalude ^>= 0.0
+      , quaalude ^>= 0.0.0
       , supply-chain ^>= 0.0
       , supply-monitor ^>= 0.0
       , supply-next == 0.0.1.*
