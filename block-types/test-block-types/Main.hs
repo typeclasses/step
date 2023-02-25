@@ -90,22 +90,20 @@ genCharSeqPredicate = PredicateGenerators Char.isUpper genX genXs
     genX = \case False -> Gen.lower; True -> Gen.upper
     genXs t = Gen.seq (Range.linear 1 10) (genX t) <&> assume
 
-genBlockBlock :: forall x xs xss.
-    (Positional xs, NonEmptyIso xs xss) =>
+genBlockBlock :: forall x xs xss. (Block x xs, Block xs xss) =>
     Gen xs -> Gen (BlockBlock x xs xss)
 genBlockBlock g = do
     xs <- g
     xss <- Gen.shatter1 xs
     pure $ BlockBlock $ fromNonEmpty Front xss
 
-genBlockBlockPredicate :: forall x xs xss.
-    (Positional xs, NonEmptyIso xs xss) =>
-    PredicateGenerators x xs
-    -> PredicateGenerators x (BlockBlock x xs xss)
+genBlockBlockPredicate :: forall x xs xss. (Block x xs, Block xs xss) =>
+    PredicateGenerators x xs -> PredicateGenerators x (BlockBlock x xs xss)
 genBlockBlockPredicate (PredicateGenerators p genX genXs) =
     PredicateGenerators p genX (\t -> genBlockBlock @x @xs @xss (genXs t))
 
-variegateBlockBlock :: (Eq x, NonEmptyIso x xs, NonEmptyIso xs xss, Singleton xs xss, Positional xs, Singleton x xs) => BlockBlock x xs xss -> Gen (BlockBlock x xs xss)
+variegateBlockBlock :: (Eq x, Block x xs, Block xs xss) =>
+    BlockBlock x xs xss -> Gen (BlockBlock x xs xss)
 variegateBlockBlock bb = do
     let xs = toNonEmpty end bb & fromNonEmpty end
     xss <- Gen.shatter1 xs
