@@ -2,7 +2,7 @@ module Block.Class.Positional
   (
     {- * Class -} Positional (..),
     {- * Types -} Take (..), BiPrefix (..), WhichOfTwo (..),
-    {- * Utilities -} biPrefix,
+    {- * Utilities -} biPrefix, sameItemsTake,
     {- * Re-exported modules -}
             module Block.Class.Concat,
             module Block.Class.End,

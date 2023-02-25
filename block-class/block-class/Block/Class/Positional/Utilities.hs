@@ -1,17 +1,19 @@
 module Block.Class.Positional.Utilities
   (
-    {- * Utilities -} biPrefix,
+    {- * Utilities -} biPrefix, sameItemsTake,
   )
   where
 
 import Essentials
 
+import Block.Class.End (End)
+import Block.Class.ItemEquality.Class (ItemEquality (..))
+import Block.Class.ItemEquivalence.Types (ItemEquivalence (equivalentItems))
 import Block.Class.Positional.Class (Positional (..))
 import Block.Class.Positional.Types (BiPrefix (..), WhichOfTwo (..), Take (..))
-import Block.Class.ItemEquivalence.Types (ItemEquivalence (equivalentItems))
-import Block.Class.End (End)
-import Data.Ord (Ordering (..), compare)
+import Data.Bool ((&&))
 import Data.Function (on)
+import Data.Ord (Ordering (..), compare)
 
 {-| Given a pair of blocks, determine whether either is a prefix
     of the other, according to an item equivalence
@@ -53,3 +55,9 @@ biPrefix (equivalentItems -> same) end pair =
         EQ -> Nothing
         LT -> Just First
         GT -> Just Second
+
+sameItemsTake :: ItemEquality xs => Take xs -> Take xs -> Bool
+sameItemsTake = \case
+    TakeAll -> \case TakeAll -> True; _ -> False
+    TakeInsufficient s1 -> \case TakeInsufficient s2 -> s1 == s2; _ -> False
+    TakePart a1 b1 -> \case TakePart a2 b2 -> sameItems a1 a2 && sameItems b1 b2; _ -> False
