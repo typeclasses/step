@@ -1,7 +1,7 @@
 module Block.Class.ItemEquality.Utilities
   (
     {- * Utilities -}
-    sameItemsTake, sameItemsPop, sameItemsPivot, sameItemsSpan,
+    sameItemsTake, sameItemsPop, sameItemsPivot,
     foldableEqOn,
   )
   where
@@ -33,12 +33,6 @@ sameItemsPivot :: Eq found => ItemEquality xs =>
     Pivot found xs -> Pivot found xs -> Bool
 sameItemsPivot (Pivot a1 b1 c1) (Pivot a2 b2 c2) =
     sameItemsFoldable a1 a2 && b1 == b2 && sameItemsFoldable c1 c2
-
-sameItemsSpan :: ItemEquality xs => Span xs -> Span xs -> Bool
-sameItemsSpan = \case
-    SpanNone -> \case SpanNone -> True; _ -> False
-    SpanAll -> \case SpanAll -> True; _ -> False
-    SpanPart a1 b1 -> \case SpanPart a2 b2 -> sameItems a1 a2 && sameItems b1 b2; _ -> False
 
 foldableEqOn :: Foldable f => (x -> x -> Bool) -> f x -> f x -> Bool
 foldableEqOn f = listEqOn f `on` Foldable.toList

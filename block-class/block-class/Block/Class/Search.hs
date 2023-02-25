@@ -2,7 +2,7 @@ module Block.Class.Search
   (
     {- * Class -} Search (..),
     {- * Types -} Pivot (..), Span (..),
-    {- * Utilities -} findPredicate, spanPredicate,
+    {- * Utilities -} findPredicate, spanPredicate, sameItemsSpan,
     {- * Re-exported modules -}
             module Block.Class.Singleton,
             module Block.Class.State,
