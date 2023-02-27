@@ -31,7 +31,7 @@ import qualified Data.Text as Text
 import qualified Integer.Natural as Natural
 import qualified Integer.Positive as Positive
 
-class (Eq x, Eq xs) => Null x xs | xs -> x where
+class Null x xs | xs -> x where
     toList :: End -> xs -> [x]
     fromList :: End -> [x] -> xs
     null :: xs -> Bool
@@ -55,7 +55,7 @@ fromNonEmpty end = NonEmpty.toList >>> fromList end
 notNullMaybe :: Null x xs => xs -> Maybe xs
 notNullMaybe xs = if null xs then Nothing else Just xs
 
-instance (Eq a) => Null a (Seq a) where
+instance Null a (Seq a) where
 
     (++) :: Seq a -> Seq a -> Seq a
     (++) = (Semigroup.<>)
