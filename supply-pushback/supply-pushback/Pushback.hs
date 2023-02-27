@@ -1,30 +1,21 @@
 module Pushback
   (
     {- * Interface -} {- $interface -} Pushback (..),
-            Step (..), PushbackStream (..), next, push,
-    {- * Stack -} {- $stack -} Stack, StackPlus,
-            substateStack,
-    {- * Buffer -} {- $buffer -} Buffer, BufferPlus,
-            substateBuffer, privateBuffer,
-    {- * Stack container -} {- $stackContainer -}
-            StackContainer (..), list, sequence,
-    {- * Stack effect -} {- $stackEffect -}
-            StackEffect (..),
+            Step (..), TerminableStream (..), PushbackStream (..), next, push,
+    {- * Stack -} {- $stack -} Stack, StackPlus, substateStack,
+    {- * Buffer -} {- $buffer -} Buffer, BufferPlus, substateBuffer, privateBuffer,
+    {- * Stack container -} {- $stackContainer -} StackContainer (..), list, sequence,
+    {- * Stack effect -} {- $stackEffect -} StackEffect (..),
   )
   where
 
 import Pushback.Interface
-    (Pushback (..), Step (..), PushbackStream (..),
-        next, push)
 import Pushback.Stack
-    (Stack, StackPlus)
 import Pushback.Buffer
-    (BufferPlus, Buffer)
-import Pushback.StackEffect
-    (StackEffect (StackEffect))
-import Pushback.StackContainer
-    (StackContainer (StackContainer),
-        list, sequence)
+import Pushback.StackContainer.Examples
+
+import Pushback.StackEffect (StackEffect (StackEffect))
+import Pushback.StackContainer.Type (StackContainer (StackContainer))
 
 import qualified Pushback.Buffer as Buffer
 import qualified Pushback.Stack as Stack

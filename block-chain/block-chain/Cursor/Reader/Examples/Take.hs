@@ -1,38 +1,38 @@
 module Cursor.Reader.Examples.Take where
 
 import Essentials
-import Cursor.Interface.Type
+import Cursor.Interface.Orders
 import Cursor.Reader.Type
+import Cursor.Advancement
 
+import Block (Block)
 import Data.Sequence (Seq (..))
 import Integer (Positive, Natural)
 import Block (Take (..), Shortfall (..), End (..))
 import SupplyChain (order)
-import Cursor.Interface (next, commit)
+import Data.Either (Either (Left, Right))
+import Next (Step (..))
 
 import qualified Data.Sequence as Seq
 import qualified Integer
 import qualified Block
 
-takePositive :: Positive
-    -> ReaderPlus up action 'Write item block (Advancement, Seq block)
-takePositive = \n -> Reader (go n)
-  where
-    go n = order next >>= \case
-        End -> pure (YouCanNotAdvance{ shortfall = n }, Seq.empty)
-        Item x -> case Block.take Front n x of
-            TakeAll -> do
-                _ <- order (commit n)
-                pure (AdvanceSuccess, Seq.singleton x)
-            TakePart{ taken } -> do
-                _ <- order (commit (Block.length taken))
-                pure (AdvanceSuccess, Seq.singleton taken)
-            TakeInsufficient (Shortfall s) -> do
-                _ <- order (commit (Block.length x))
-                go s <&> \(a, xs) -> (a, x :<| xs)
+takePositive :: Block xs xss =>
+    Positive -> ReaderPlus up action item xs
+    (Either (Shortfall, Maybe xss) xss)
+takePositive n = next >>= \case
+    End -> pure $ Left (Shortfall n, Nothing)
+    Item x -> case Block.take Front n x of
+        TakeAll -> pure $ Right $ Block.singleton x
+        TakePart{ taken, takeRemainder } ->
+            push takeRemainder $> Right (Block.singleton taken)
+        TakeInsufficient (Shortfall s) -> do
+            takePositive s <&> fmap (Block.push Front x)
 
-takeNatural :: Natural
-    -> ReaderPlus up action 'Write item block (Advancement, Seq block)
+takeNatural :: Block xs xss => Natural
+    -> ReaderPlus up action item xs (Advancement, Maybe xss)
 takeNatural n = Integer.narrow n & \case
-    Just p -> takePositive p
-    Nothing -> pure (AdvanceSuccess, Seq.empty)
+    Nothing -> pure (AdvanceSuccess, Nothing)
+    Just p -> takePositive p <&> \case
+        Left (s, xssM) -> (YouCanNotAdvance s, xssM)
+        Right xss -> (AdvanceSuccess, Just xss)

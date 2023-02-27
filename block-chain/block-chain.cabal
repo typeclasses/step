@@ -63,11 +63,8 @@ library
         Cursor.Reader.Utilities
         Cursor.Reader.Utilities.LookAhead
         Cursor.Reader.Utilities.With
-
-        Cursor.Atom
-        Cursor.Atom.Type
-        Cursor.Atom.Examples
-        Cursor.Atom.Utilities
+        Cursor.Reader.Utilities.Optional
+        Cursor.Reader.Utilities.Repetition
 
 test-suite test-block-chain
     import: base

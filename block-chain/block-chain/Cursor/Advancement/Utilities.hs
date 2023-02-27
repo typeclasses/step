@@ -9,6 +9,7 @@ import Essentials
 import Cursor.Advancement.Type (Advancement (..))
 import Integer (Positive, Natural)
 import Prelude ((-))
+import Block (Shortfall (..))
 
 import qualified Integer.Positive as Positive
 
@@ -18,14 +19,14 @@ commitAlternative :: Monad m =>
     -> (Positive -> m Advancement)
 commitAlternative a b n = a n >>= \case
     AdvanceSuccess -> pure AdvanceSuccess
-    YouCanNotAdvance{ shortfall = n' } -> b n'
+    YouCanNotAdvance (Shortfall n') -> b n'
 
 shortfallNatural :: Advancement -> Natural
 shortfallNatural = \case
     AdvanceSuccess -> 0
-    YouCanNotAdvance{ shortfall } -> Positive.toNatural shortfall
+    YouCanNotAdvance (Shortfall n') -> Positive.toNatural n'
 
 minusShortfall :: Advancement -> Natural -> Natural
 minusShortfall = \case
     AdvanceSuccess -> id
-    YouCanNotAdvance{ shortfall } -> \x -> x - Positive.toNatural shortfall
+    YouCanNotAdvance (Shortfall n') -> \x -> x - Positive.toNatural n'
