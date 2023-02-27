@@ -1,6 +1,6 @@
 module Block
   (
-    {- * Block types -} Seq1, ByteString1, Text1, BlockBlock (..),
+    {- * Block types -} Seq1, ByteString1, Text1, ASCII1, BlockBlock (..),
 
     {- * Concatenation -} (++), concat, concatRefined, append,
 
@@ -44,6 +44,7 @@ module Block
   )
   where
 
+import Block.ASCII
 import Block.BlockBlock
 import Block.ByteString
 import Block.Class
