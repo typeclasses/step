@@ -106,7 +106,7 @@ commitFromBuffer :: Block item block =>
     Positive -- ^ How many items to commit
     -> StateT (Buffer block) (Job up action) Advancement
 commitFromBuffer n = use uncommitted >>= \case
-    Seq.Empty -> pure YouCanNotAdvance{ shortfall = n }
+    Seq.Empty -> pure $ YouCanNotAdvance $ Shortfall n
     x :<| xs -> case take Front n x of
         TakeAll -> assign uncommitted xs $> AdvanceSuccess
         TakePart{ takeRemainder = x' } -> assign uncommitted (x' :<| xs) $> AdvanceSuccess
@@ -121,7 +121,7 @@ remainder becomes the new content of the 'uncommitted' buffer. -}
 commitFromUpstream :: Block item block => TerminableStream block up =>
     Positive -> StateT (Buffer block) (Job up action) Advancement
 commitFromUpstream n = lift (Job.order Next.next) >>= \case
-    End -> pure YouCanNotAdvance{ shortfall = n }
+    End -> pure $ YouCanNotAdvance $ Shortfall n
     Item x -> do
         modifying unviewed (:|> x)
         case take Front n x of

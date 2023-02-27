@@ -9,7 +9,7 @@ import Essentials
 import Cursor.Feed.Type
 import Cursor.Interface
 
-import Block (Block)
+import Block (Block, Shortfall (..))
 import Control.Monad.State (MonadState)
 import Data.Sequence (Seq (..))
 import Next (TerminableStream)
@@ -39,7 +39,7 @@ and 'Reset' and 'Flush' do nothing. -}
 empty :: FeedPlus up action mode item block
 empty = Vendor \case
     Next -> pure $ Referral End empty
-    Commit n -> pure $ Referral YouCanNotAdvance{ shortfall = n } empty
+    Commit n -> pure $ Referral (YouCanNotAdvance $ Shortfall n) empty
     Reset -> pure $ Referral () empty
     Flush -> pure $ Referral () empty
 

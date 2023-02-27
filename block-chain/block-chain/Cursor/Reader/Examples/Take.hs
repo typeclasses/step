@@ -19,7 +19,7 @@ takePositive :: Positive
 takePositive = \n -> Reader (go n)
   where
     go n = order next >>= \case
-        End -> pure (YouCanNotAdvance{ shortfall = n }, Seq.empty)
+        End -> pure (YouCanNotAdvance (Shortfall n), Seq.empty)
         Item x -> case Block.take Front n x of
             TakeAll -> do
                 _ <- order (commit n)
