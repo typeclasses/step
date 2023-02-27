@@ -3,11 +3,13 @@ module Main (main) where
 import Essentials
 import Block.Class
 
+import Block.ASCII (ASCII, ASCII1, assumeAscii)
 import Block.BlockBlock (BlockBlock (..))
 import Block.ByteString (ByteString1)
 import Block.Hedgehog.Spec (PredicateGenerators (..), blockSpec, refinedSpec)
 import Block.Sequence (Seq1)
 import Block.Text (Text1)
+import Data.Bool ((&&))
 import Data.ByteString (ByteString)
 import Data.Char (Char)
 import Data.Sequence (Seq)
@@ -18,6 +20,7 @@ import Prelude (fromIntegral)
 import System.IO (IO)
 import Test.Hspec (hspec, describe)
 
+import qualified ASCII.Char as ASCII
 import qualified Block.Hedgehog.Gen.Shatter as Gen
 import qualified Data.ByteString as ByteString
 import qualified Data.Char as Char
@@ -35,6 +38,9 @@ main = hspec do
 
     describe "Seq1" $
         refinedSpec genChar (genSeq genChar) (genSeq1 genChar) pure genCharSeqPredicate
+
+    describe "ASCII1" $
+        refinedSpec genAsciiChar genAscii genAscii1 pure genAsciiPredicate
 
     describe "BlockBlock" $
         blockSpec @Char @(BlockBlock Char Text1 (Seq1 Text1))
@@ -57,6 +63,15 @@ genByteString = Gen.list (Range.linear 0 10) genByte <&> ByteString.pack
 
 genByteString1 :: Gen ByteString1
 genByteString1 = Gen.list (Range.linear 1 10) genByte <&> (ByteString.pack >>> assume)
+
+genAsciiChar :: Gen ASCII.Char
+genAsciiChar = genByte <&> ASCII.fromWord8Unsafe
+
+genAscii :: Gen ASCII
+genAscii = Gen.list (Range.linear 0 10) genByte <&> (ByteString.pack >>> assumeAscii)
+
+genAscii1 :: Gen ASCII1
+genAscii1 = Gen.list (Range.linear 1 10) genByte <&> (ByteString.pack >>> assumeAscii >>> assume)
 
 genText :: Gen Text
 genText = Gen.text (Range.linear 0 10) genChar
@@ -89,6 +104,16 @@ genCharSeqPredicate = PredicateGenerators Char.isUpper genX genXs
   where
     genX = \case False -> Gen.lower; True -> Gen.upper
     genXs t = Gen.seq (Range.linear 1 10) (genX t) <&> assume
+
+genAsciiPredicate :: PredicateGenerators ASCII.Char ASCII1
+genAsciiPredicate = PredicateGenerators
+    (\x -> x >= ASCII.CapitalLetterA && x <= ASCII.CapitalLetterZ) genX genXs
+  where
+    genX t = fmap ASCII.fromWord8Unsafe $ Gen.integral $ fmap fromIntegral $ case t of
+        True  -> Range.linear (Char.ord 'A') (Char.ord 'Z')
+        False -> Range.linear (Char.ord 'a') (Char.ord 'z')
+    genXs t = Gen.list (Range.linear 1 10) (genX t)
+        <&> (fmap ASCII.toWord8 >>> ByteString.pack >>> assumeAscii >>> assume)
 
 genBlockBlock :: forall x xs xss. (Block x xs, Block xs xss) =>
     Gen xs -> Gen (BlockBlock x xs xss)

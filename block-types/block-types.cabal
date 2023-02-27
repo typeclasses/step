@@ -20,6 +20,7 @@ common base
         ViewPatterns
 
     build-depends:
+      , ascii-char ^>= 1.0.1
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0.0
       , bytestring ^>= 0.11.4
@@ -51,6 +52,9 @@ library
         Block.Text
         Block.Text.Type
         Block.Text.Equivalence
+
+        Block.ASCII
+        Block.ASCII.Type
 
 test-suite test-block-types
     import: base
