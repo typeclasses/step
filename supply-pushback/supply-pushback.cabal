@@ -11,6 +11,7 @@ library
     default-extensions:
         BlockArguments
         DataKinds
+        DerivingStrategies
         FunctionalDependencies
         LambdaCase
         NoImplicitPrelude
@@ -52,3 +53,9 @@ library
         Pushback.StackEffect
         Pushback.StackEffect.Type
         Pushback.StackEffect.Examples
+
+        Reset.Interface
+        Reset.Interface.Class
+        Reset.Interface.Type
+
+        Reset.Reader.Type
