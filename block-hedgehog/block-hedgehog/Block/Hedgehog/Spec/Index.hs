@@ -11,7 +11,7 @@ import Prelude ((+))
 import qualified Block.Class.End as End
 import qualified Block.Hedgehog.Gen.End as Gen
 
-spec :: forall x xs. (Show x, Show xs, Index x xs) =>
+spec :: forall x xs. (Eq x, Show x, Show xs, Index x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs) -> Spec
 spec genX genXs variegate = describe "Index" do
 

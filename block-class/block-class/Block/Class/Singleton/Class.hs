@@ -12,7 +12,7 @@ import Block.Class.Concat.Class (Concat (..))
 
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty, reverse)
 
-class (Eq x, Concat xs) => Singleton x xs | xs -> x where
+class (Concat xs) => Singleton x xs | xs -> x where
 
     {-| A block with a single item -}
     singleton ::
@@ -33,7 +33,7 @@ class (Eq x, Concat xs) => Singleton x xs | xs -> x where
         -> xs -- ^ A block
         -> xs -- ^ A new block with the item appended to it
 
-instance (Eq x) => Singleton x (NonEmpty x) where
+instance Singleton x (NonEmpty x) where
 
     singleton :: x -> NonEmpty x
     singleton = (:| [])

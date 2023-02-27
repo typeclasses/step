@@ -57,7 +57,8 @@ instance (Block x xs, Block xs xss) => Block x (BlockBlock x xs xss)
 
 ---  ItemEquality  ---
 
-instance (Block x xs, Block xs xss) => ItemEquality (BlockBlock x xs xss) where
+instance (Block x xs, Block xs xss, ItemEquality xs) =>
+        ItemEquality (BlockBlock x xs xss) where
 
     sameItems :: BlockBlock x xs xss -> BlockBlock x xs xss -> Bool
     sameItems = \(BlockBlockUnsafe xss1 len1) (BlockBlockUnsafe xss2 len2) ->

@@ -8,16 +8,15 @@ import Essentials
 
 import Data.List.NonEmpty (NonEmpty)
 import Block.Class.End (End (..))
-import Block.Class.ItemEquality.Class (ItemEquality (..))
 
 import qualified Data.Semigroup as Semigroup
 import qualified Data.List.NonEmpty as NonEmpty
 
-class ItemEquality xs => Concat xs where
+class Concat xs where
     (++) :: xs -> xs -> xs
     concat :: End -> NonEmpty xs -> xs
 
-instance (Eq x) => Concat (NonEmpty x) where
+instance Concat (NonEmpty x) where
 
     (++) :: NonEmpty x -> NonEmpty x -> NonEmpty x
     (++) = (Semigroup.<>)

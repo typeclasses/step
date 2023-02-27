@@ -15,7 +15,7 @@ import Block.Class.Positional.Class (Positional (..))
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Integer.Positive as Positive
 
-class (Eq x, Singleton x xs, Positional xs) => Index x xs where
+class (Singleton x xs, Positional xs) => Index x xs where
 
     {-| Get the item at a particular position
 
@@ -25,7 +25,7 @@ class (Eq x, Singleton x xs, Positional xs) => Index x xs where
     this is unconventional.) -}
     at :: End -> Positive -> xs -> Maybe x
 
-instance (Eq x) => Index x (NonEmpty x) where
+instance Index x (NonEmpty x) where
 
     at :: End -> Positive -> NonEmpty x -> Maybe x
     at Front n = case Positive.fromNatural (Positive.subtractOne n) of

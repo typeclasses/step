@@ -6,7 +6,6 @@ module Block.Class.Enumerate.Class
 
 import Essentials
 
-import Block.Class.ItemEquality.Class (ItemEquality)
 import Block.Class.End (End (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import Block.Class.State.Types (State)
@@ -15,13 +14,13 @@ import Block.Class.State.Utilities (execState)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Foldable as Foldable
 
-class (Eq x, ItemEquality xs) => Enumerate x xs | xs -> x where
+class Enumerate x xs | xs -> x where
 
     toNonEmpty :: End -> xs -> NonEmpty x
 
     foldItems :: End -> (x -> a) -> (x -> State a ()) -> xs -> a
 
-instance (Eq x) => Enumerate x (NonEmpty x) where
+instance Enumerate x (NonEmpty x) where
 
     toNonEmpty :: End -> NonEmpty x -> NonEmpty x
     toNonEmpty = \case Front -> id; Back -> NonEmpty.reverse

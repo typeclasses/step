@@ -8,7 +8,7 @@ import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===))
 
 spec :: forall nul xs.
-    (Show xs, Show nul, Refined nul xs) =>
+    (Eq xs, Eq nul, Show xs, Show nul, Refined nul xs) =>
     Gen nul -> Gen xs -> Spec
 spec genNul genXs = describe "Refined" do
 

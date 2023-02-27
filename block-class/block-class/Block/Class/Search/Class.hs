@@ -61,7 +61,7 @@ f the items that the search examined
         -> xs -- ^ A block
         -> State s (Maybe (Pivot found xs))
 
-instance (Eq x) => Search x (NonEmpty x) where
+instance Search x (NonEmpty x) where
 
     span ::
         End -> (x -> State s Bool) -> NonEmpty x -> State s (Span (NonEmpty x))

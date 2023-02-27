@@ -1,6 +1,7 @@
 module Block.Hedgehog.Spec.Enumerate (spec) where
 
 import Block.Class.Enumerate
+import Block.Class.ItemEquality
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -12,7 +13,7 @@ import qualified Block.Hedgehog.Gen.End as Gen
 import qualified Block.Class.End as End
 import qualified Data.List.NonEmpty as NonEmpty
 
-spec :: forall x xs. (Show x, Show xs, Enumerate x xs) =>
+spec :: forall x xs. (Eq x, ItemEquality xs, Show x, Show xs, Enumerate x xs) =>
     Gen xs -> (xs -> Gen xs) -> Spec
 spec genXs variegate = describe "Enumerate" do
 

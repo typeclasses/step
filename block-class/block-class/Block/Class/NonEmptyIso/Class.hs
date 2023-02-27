@@ -15,7 +15,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 class (Enumerate x xs) => NonEmptyIso x xs | xs -> x where
     fromNonEmpty :: End -> NonEmpty x -> xs
 
-instance (Eq x) => NonEmptyIso x (NonEmpty x) where
+instance NonEmptyIso x (NonEmpty x) where
 
     fromNonEmpty :: End -> NonEmpty x -> NonEmpty x
     fromNonEmpty = \case Front -> id; Back -> NonEmpty.reverse

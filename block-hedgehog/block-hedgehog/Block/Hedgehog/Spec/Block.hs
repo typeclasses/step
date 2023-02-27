@@ -1,6 +1,7 @@
 module Block.Hedgehog.Spec.Block (spec) where
 
 import Block.Class.Block
+import Block.Class.ItemEquality
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -12,7 +13,7 @@ import Block.Hedgehog.Spec.Search (PredicateGenerators (..))
 import qualified Block.Hedgehog.Gen.End as Gen
 import qualified Block.Hedgehog.Gen.Positive as Gen
 
-spec :: forall x xs. (Show x, Show xs, Block x xs) =>
+spec :: forall x xs. (Eq x, Show x, Show xs, Block x xs) =>
     Gen xs -> (xs -> Gen xs) -> PredicateGenerators x xs -> Spec
 spec genXs variegate (PredicateGenerators p _ _) = describe "Block" do
 

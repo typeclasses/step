@@ -44,8 +44,9 @@ module Block.Class
   )
   where
 
-import Block.Class.Refined
 import Block.Class.Block
+import Block.Class.ItemEquality
+import Block.Class.Refined
 
 {- $singleton
 
