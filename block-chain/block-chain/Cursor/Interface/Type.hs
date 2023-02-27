@@ -17,7 +17,7 @@ data Mode = Read | Write
 data Cursor (mode :: Mode) block product =
     (product ~ Step block) => Next
         -- ^ Fetch the next block, moving the view cursor forward
-  | (product ~ Advancement, mode ~ 'Write) => Commit Positive
+  | (product ~ Advancement () (), mode ~ 'Write) => Commit Positive
         -- ^ Move the commit cursor forward
   | (product ~ ()) => Reset
         -- ^ Move the view cursor to the commit cursor

@@ -25,5 +25,5 @@ remainsAtLeastPositive :: Positive
     -> ReaderPlus up action mode item block Bool
 remainsAtLeastPositive n =
     lookAhead (takePositive n) <&> \(a, _) -> case a of
-        AdvanceSuccess -> True
-        YouCanNotAdvance{} -> False
+        AdvanceSuccess _ -> True
+        YouCanNotAdvance _ _ -> False

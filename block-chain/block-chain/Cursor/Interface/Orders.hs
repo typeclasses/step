@@ -20,10 +20,10 @@ reset = order Cursor.reset
 flush :: IsCursor mode block up => Job up action ()
 flush = order Cursor.flush
 
-commitPositive :: IsCursor 'Write block up => Positive -> Job up action Advancement
+commitPositive :: IsCursor 'Write block up => Positive -> Job up action (Advancement () ())
 commitPositive n = order (Cursor.commit n)
 
-commitNatural :: IsCursor 'Write block up => Natural -> Job up action Advancement
+commitNatural :: IsCursor 'Write block up => Natural -> Job up action (Advancement () ())
 commitNatural n = case Positive.fromNatural n of
-    Nothing -> pure AdvanceSuccess
+    Nothing -> pure $ AdvanceSuccess ()
     Just p -> commitPositive p

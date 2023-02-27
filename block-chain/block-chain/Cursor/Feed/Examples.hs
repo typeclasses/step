@@ -39,7 +39,7 @@ and 'Reset' and 'Flush' do nothing. -}
 empty :: FeedPlus up action mode item block
 empty = Vendor \case
     Next -> pure $ Referral End empty
-    Commit n -> pure $ Referral (YouCanNotAdvance $ Shortfall n) empty
+    Commit n -> pure $ Referral (YouCanNotAdvance (Shortfall n) ()) empty
     Reset -> pure $ Referral () empty
     Flush -> pure $ Referral () empty
 

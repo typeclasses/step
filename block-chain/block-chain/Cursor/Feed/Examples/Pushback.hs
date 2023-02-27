@@ -81,7 +81,7 @@ flush s = do
     pure $ Referral () pushback
 
 commit :: PushbackStream block up => Block item block => Buffer block -> Positive
-    -> Job up action (Referral up (Cursor mode block) action Advancement)
+    -> Job up action (Referral up (Cursor mode block) action (Advancement () ()))
 commit s n = do
     (r, s') <- State.runStateT (commitAlternative commitFromBuffer commitFromUpstream n) s
     pure $ Referral r (pushback' s')
@@ -104,12 +104,12 @@ nextFromUpstream = lift (Job.order Next.next) >>= \case
 {-| Tries to pop some fixed number of items from the 'uncommitted' buffer -}
 commitFromBuffer :: Block item block =>
     Positive -- ^ How many items to commit
-    -> StateT (Buffer block) (Job up action) Advancement
+    -> StateT (Buffer block) (Job up action) (Advancement () ())
 commitFromBuffer n = use uncommitted >>= \case
-    Seq.Empty -> pure $ YouCanNotAdvance $ Shortfall n
+    Seq.Empty -> pure $ YouCanNotAdvance (Shortfall n) ()
     x :<| xs -> case take Front n x of
-        TakeAll -> assign uncommitted xs $> AdvanceSuccess
-        TakePart{ takeRemainder = x' } -> assign uncommitted (x' :<| xs) $> AdvanceSuccess
+        TakeAll -> assign uncommitted xs $> AdvanceSuccess ()
+        TakePart{ takeRemainder = x' } -> assign uncommitted (x' :<| xs) $> AdvanceSuccess ()
         TakeInsufficient (Shortfall n') -> assign uncommitted xs *> commitFromBuffer n'
 
 {- | Assuming the 'uncommitted' buffer is empty, fetches more blocks from
@@ -119,16 +119,16 @@ All new blocks obtained from upstream are appended to the 'unviewed' buffer.
 If a block is obtained from upstream and only partially committed, its
 remainder becomes the new content of the 'uncommitted' buffer. -}
 commitFromUpstream :: Block item block => TerminableStream block up =>
-    Positive -> StateT (Buffer block) (Job up action) Advancement
+    Positive -> StateT (Buffer block) (Job up action) (Advancement () ())
 commitFromUpstream n = lift (Job.order Next.next) >>= \case
-    End -> pure $ YouCanNotAdvance $ Shortfall n
+    End -> pure $ YouCanNotAdvance (Shortfall n) ()
     Item x -> do
         modifying unviewed (:|> x)
         case take Front n x of
-            TakeAll -> pure AdvanceSuccess
+            TakeAll -> pure $ AdvanceSuccess ()
             TakePart{ takeRemainder = x' } -> do
                 assign uncommitted (Seq.singleton x')
-                pure AdvanceSuccess
+                pure $ AdvanceSuccess ()
             TakeInsufficient (Shortfall n') -> commitFromUpstream n'
 
 maybeAlternative :: Monad m => m (Maybe a) -> m (Maybe a) -> m (Maybe a)

@@ -6,6 +6,6 @@ module Cursor.Advancement.Type
 
 import Block (Shortfall)
 
-data Advancement =
-    AdvanceSuccess
-  | YouCanNotAdvance Shortfall
+data Advancement a b =
+    YouCanNotAdvance Shortfall a
+  | AdvanceSuccess b

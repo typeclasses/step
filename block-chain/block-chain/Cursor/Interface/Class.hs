@@ -19,7 +19,7 @@ class TerminableStream block interface =>
 instance IsCursor mode block (Cursor mode block) where
     liftCursor x = x
 
-commit :: IsCursor 'Write block up => Positive -> up Advancement
+commit :: IsCursor 'Write block up => Positive -> up (Advancement () ())
 commit x = liftCursor (Commit x)
 
 reset :: IsCursor mode block up => up ()
