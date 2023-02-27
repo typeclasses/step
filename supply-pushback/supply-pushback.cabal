@@ -18,7 +18,7 @@ library
         TypeFamilies
 
     build-depends:
-      , base ^>= 4.17
+      , base ^>= 4.16 || ^>= 4.17
       , containers ^>= 0.6.5
       , hedgehog ^>= 1.2
       , integer-types ^>= 0.1

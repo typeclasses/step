@@ -4,6 +4,8 @@ module Cursor.Advancement.Type
   )
   where
 
-import Block (Shortfall)
+import Integer (Positive)
 
-data Advancement = AdvanceSuccess | YouCanNotAdvance Shortfall
+data Advancement =
+    AdvanceSuccess
+  | YouCanNotAdvance{ shortfall :: Positive }

@@ -1,7 +1,7 @@
 module Pushback.Interface
   (
     {- * Types -} Pushback (..), Step (..),
-    {- * Class -} PushbackStream (..), TerminableStream (..), next, push,
+    {- * Class -} PushbackStream (..), next, push,
   )
   where
 

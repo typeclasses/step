@@ -1,21 +1,29 @@
 module Cursor.Interface.Class
   (
     {- * Class -} IsCursor (..),
-    {- * Requests -} next, push, flush,
+    {- * Requests -} commit, reset, next, flush,
   )
   where
 
 import Cursor.Interface.Type
 
-import Pushback (PushbackStream, next, push)
+import Integer (Positive)
+import Next (TerminableStream, next)
 
-class (PushbackStream block interface) =>
-    IsCursor block interface | interface -> block
+class TerminableStream block interface =>
+    IsCursor (mode :: Mode) block interface
+    | interface -> mode block
   where
-    liftCursor :: Cursor block product -> interface product
+    liftCursor :: Cursor mode block product -> interface product
 
-instance IsCursor block (Cursor block) where
+instance IsCursor mode block (Cursor mode block) where
     liftCursor x = x
 
-flush :: IsCursor block up => up ()
+commit :: IsCursor 'Write block up => Positive -> up Advancement
+commit x = liftCursor (Commit x)
+
+reset :: IsCursor mode block up => up ()
+reset = liftCursor Reset
+
+flush :: IsCursor mode block up => up ()
 flush = liftCursor Flush

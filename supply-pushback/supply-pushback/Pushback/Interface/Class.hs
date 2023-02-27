@@ -1,6 +1,6 @@
 module Pushback.Interface.Class
   (
-    {- * Class -} PushbackStream (..), TerminableStream (..),
+    {- * Class -} PushbackStream (..),
     {- * Requests -} next, push,
   )
   where

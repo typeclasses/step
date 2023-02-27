@@ -1,7 +1,8 @@
 module Cursor.Interface
   (
-    {- * Types -} Cursor (..), Step (..),
-    {- * Class -} IsCursor (..), next, push, flush,
+    {- * Types -} Cursor (..), Mode (..), Advancement (..),
+            Step (..), CursorRead, CursorWrite,
+    {- * Class -} IsCursor (..), commit, reset, next,
   )
   where
 
