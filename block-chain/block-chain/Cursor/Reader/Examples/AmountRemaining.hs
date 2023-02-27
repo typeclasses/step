@@ -24,6 +24,6 @@ remainsAtLeastNatural n = Integer.narrow n & \case
 remainsAtLeastPositive :: Positive
     -> ReaderPlus up action mode item block Bool
 remainsAtLeastPositive n =
-    lookAhead (takePositive n) <&> \(a, _) -> case a of
+    lookAhead (takePositive n) <&> \case
         AdvanceSuccess _ -> True
         YouCanNotAdvance _ _ -> False
