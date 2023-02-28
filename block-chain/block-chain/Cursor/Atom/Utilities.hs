@@ -1,6 +1,6 @@
 module Cursor.Atom.Utilities
   (
-    optional, repetition,
+    optional, repetition
   )
   where
 
@@ -11,24 +11,23 @@ import Cursor.Interface
 
 import Data.Either (Either (..))
 
-optional ::
-    AtomPlus up action item block error product
-    -> ReaderPlus up action 'Write item block (Maybe product)
+optional :: AtomPlus up action item block error product
+    -> ReaderPlus up action 'Write item block (Either error product)
 optional (Atom x) = do
     z <- x
     case z of
-        Left _ -> pure Nothing
-        Right rw -> Just <$> rw
+        Left e -> pure (Left e)
+        Right rw -> Right <$> rw
 
-repetition ::
-    AtomPlus up action item block error product
-    -> ReaderPlus up action 'Write item block [product]
+repetition :: Monoid product => AtomPlus up action item block error product
+    -> ReaderPlus up action 'Write item block (error, product)
 repetition (Atom x) = recur
   where
     recur = do
       z <- x
       case z of
-          Left _ -> pure []
+          Left e -> pure (e, mempty)
           Right rw -> do
               a <- rw
-              (a :) <$> recur
+              (e, as) <- recur
+              pure (e, a <> as)
