@@ -13,6 +13,7 @@ import Data.String (IsString)
 import Data.Text (Text)
 import Data.Word (Word8)
 import Integer (Natural)
+import Cursor.Morph (morph)
 
 import qualified ASCII.Char as ASCII
 import qualified Block
@@ -43,7 +44,7 @@ data Method = GET | POST | HEAD deriving stock (Eq, Ord, Show, Enum, Bounded)
 
 readRequest :: ExceptT Error (ReaderPlus up action 'Write Word8 ByteString) Request
 readRequest = do
-    (start, fields) <- withByteStringAsAscii do
+    (start, fields) <- morph decodeAscii do
         start <- readStart
         fields <- makeFieldMap <$> readFieldList
         readBlankLine

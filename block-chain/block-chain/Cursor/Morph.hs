@@ -1,7 +1,7 @@
 module Cursor.Morph
   (
     {- * Types -} Morph, MorphPlus,
-    {- * Usage -} morphed,
+    {- * Usage -} morph,
     -- {- * Examples -} decode,
   )
   where
