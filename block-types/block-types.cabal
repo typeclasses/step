@@ -55,6 +55,10 @@ library
 
         Block.ASCII
         Block.ASCII.Type
+        Block.ASCII.Utilities
+
+    other-modules:
+        Block.ASCII.Internal
 
 test-suite test-block-types
     import: base

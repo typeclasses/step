@@ -43,6 +43,7 @@ module Block
             runState, evalState, execState, stateless, get, put, modify,
 
     {- * ASCII -} ASCII, generalizeAscii, refineAscii, assumeAscii,
+            ascii1Lower, ascii1Upper, asciiLower, asciiUpper,
   )
   where
 

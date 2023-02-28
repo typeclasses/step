@@ -1,3 +1,5 @@
+module Main (main) where
+
 import Essentials
 
 import Data.Text (Text)
@@ -5,9 +7,11 @@ import Test.Hspec (describe, it, shouldBe, hspec)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (forAll)
 import Block (Text1)
+import System.IO (IO)
 
 import qualified Block.Hedgehog.Gen.Shatter as Gen
 
+main :: IO ()
 main = hspec do
 
     describe "HTTP example" do

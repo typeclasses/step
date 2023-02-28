@@ -1,8 +1,8 @@
 module Cursor.Atom
   (
     {- * Types -} Atom, AtomPlus (..),
-    {- * Examples -} atomically,
-    {- * Utilities -} optional, repetition,
+    {- * Examples -} atom, right, just,
+    {- * Utilities -} unAtom, optional, firstSuccess0, firstSuccess1, whileSuccessful,
   )
   where
 

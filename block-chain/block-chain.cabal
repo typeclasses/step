@@ -11,11 +11,13 @@ common base
         DataKinds
         DerivingStrategies
         FunctionalDependencies
+        ImpredicativeTypes
         LambdaCase
         NoImplicitPrelude
         PatternSynonyms
         TypeFamilies
     build-depends:
+      , ascii-char ^>= 1.0.1
       , base ^>= 4.16 || ^>= 4.17
       , block ^>= 0.0.0
       , bytestring ^>= 0.11.4
@@ -59,8 +61,11 @@ library
         Cursor.Reader.Type
         Cursor.Reader.Examples
         Cursor.Reader.Examples.AmountRemaining
+        Cursor.Reader.Examples.Exact
         Cursor.Reader.Examples.Take
         Cursor.Reader.Utilities
+        Cursor.Reader.Utilities.Alternative
+        Cursor.Reader.Utilities.Exception
         Cursor.Reader.Utilities.LookAhead
         Cursor.Reader.Utilities.With
 
@@ -72,10 +77,10 @@ library
 test-suite test-block-chain
     import: base
     type: exitcode-stdio-1.0
-    default-extensions:
-        OverloadedStrings
+    default-extensions: OverloadedStrings
     hs-source-dirs: test-block-chain
     main-is: Main.hs
+    other-modules: HTTP
     build-depends:
       , block-chain
       , block-hedgehog

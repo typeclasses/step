@@ -1,4 +1,4 @@
-module Block.ASCII
+module Block.ASCII.Utilities
   (
     {- * Type -} ASCII1, ASCII,
     {- * Utilities -} generalizeAscii, refineAscii, assumeAscii,
@@ -6,5 +6,4 @@ module Block.ASCII
   )
   where
 
-import Block.ASCII.Type
-import Block.ASCII.Utilities
+import Block.ASCII.Internal
