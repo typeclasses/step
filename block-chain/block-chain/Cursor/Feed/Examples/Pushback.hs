@@ -13,9 +13,10 @@ import Block (Block, Take (..), take, End (..), Shortfall (..))
 import Control.Monad.State (StateT)
 import Control.Monad.Trans (lift)
 import Cursor.Advancement (commitAlternative)
-import Cursor.Buffer (Buffer (Buffer))
+import Cursor.Buffer (Buffer)
 import Data.Sequence (Seq (..))
 import Integer (Positive)
+import Miscellany (maybeAlternative)
 import Next (TerminableStream)
 import Optics (assign, modifying, view)
 import Pushback.Interface (PushbackStream, push)
@@ -37,7 +38,7 @@ Behaviors:
   insufficient to complete the commit, then try 'commitFromUpstream'.
 - 'Reset' or 'Flush' - Push any 'uncommitted' input back upstream, then empty both buffers. -}
 pushback :: PushbackStream block up => FeedPlus up action mode item block
-pushback = pushback' (Buffer mempty mempty)
+pushback = pushback' Buffer.empty
 
 pushback' :: PushbackStream block up =>
     Buffer block -> FeedPlus up action mode item block
@@ -92,8 +93,3 @@ commitFromUpstream n = lift (Job.order Next.next) >>= \case
                 assign Buffer.uncommitted (Seq.singleton x')
                 pure $ AdvanceSuccess ()
             TakeInsufficient (Shortfall n') -> commitFromUpstream n'
-
-maybeAlternative :: Monad m => m (Maybe a) -> m (Maybe a) -> m (Maybe a)
-maybeAlternative a b = a >>= \case
-    Just x -> pure (Just x)
-    Nothing -> b

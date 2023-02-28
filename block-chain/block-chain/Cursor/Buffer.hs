@@ -21,6 +21,9 @@ data Buffer block = Buffer
 type BufferLens block =
     Optics.Lens (Buffer block) (Buffer block) (Seq block) (Seq block)
 
+empty :: Buffer block
+empty = Buffer mempty mempty
+
 {-| Input that has been obtained from upstream but not committed -}
 uncommitted :: BufferLens block
 

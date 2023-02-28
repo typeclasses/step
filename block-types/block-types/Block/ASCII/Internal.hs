@@ -2,7 +2,7 @@ module Block.ASCII.Internal
   (
     {- * Type -} ASCII1 (..), ASCII (..),
     {- * Utilities -} generalizeAscii, refineAscii, assumeAscii,
-            ascii1Lower, ascii1Upper, asciiLower, asciiUpper,
+            ascii1Lower, ascii1Upper, asciiLower, asciiUpper, spanAscii,
   )
   where
 
@@ -87,7 +87,10 @@ generalizeAscii :: ASCII -> ByteString
 generalizeAscii (ASCII x) = x
 
 refineAscii :: ByteString -> Maybe ASCII
-refineAscii x = if BS.all (< 128) x then Just (ASCII x) else Nothing
+refineAscii x = if BS.all isAsciiByte x then Just (ASCII x) else Nothing
+
+isAsciiByte :: Word8 -> Bool
+isAsciiByte = (< 128)
 
 assumeAscii :: ByteString -> ASCII
 assumeAscii = refineAscii >>> Maybe.fromJust
@@ -117,3 +120,9 @@ word8Lower x = if x >= 65 && x <= 90 then x + 32 else x
 
 word8Upper :: Word8 -> Word8
 word8Upper x = if x >= 97 && x <= 122 then x - 32 else x
+
+spanAscii :: End -> ByteString1 -> Maybe (ASCII1, Maybe ByteString1)
+spanAscii end bs = spanPredicate end isAsciiByte bs & \case
+    SpanNone -> Nothing
+    SpanAll -> Just (ASCII1 bs, Nothing)
+    SpanPart x bs' -> Just (ASCII1 x, Just bs')

@@ -3,8 +3,9 @@ module HTTP where
 import Essentials
 import Cursor.Interface
 
-import Block (ASCII, ASCII1)
+import Block (ASCII, ASCII1, ByteString1)
 import Control.Monad.Except (ExceptT)
+import Cursor.Morph (morphExcept, decodeAscii)
 import Cursor.Reader.Type (ReaderPlus)
 import Data.ByteString (ByteString)
 import Data.Map.Strict (Map)
@@ -13,7 +14,6 @@ import Data.String (IsString)
 import Data.Text (Text)
 import Data.Word (Word8)
 import Integer (Natural)
-import Cursor.Morph (morph)
 
 import qualified ASCII.Char as ASCII
 import qualified Block
@@ -42,9 +42,9 @@ data Body = Body ByteString
 
 data Method = GET | POST | HEAD deriving stock (Eq, Ord, Show, Enum, Bounded)
 
-readRequest :: ExceptT Error (ReaderPlus up action 'Write Word8 ByteString) Request
+readRequest :: ExceptT Error (ReaderPlus up action 'Write Word8 ByteString1) Request
 readRequest = do
-    (start, fields) <- morph decodeAscii do
+    (start, fields) <- morphExcept decodeAscii do
         start <- readStart
         fields <- makeFieldMap <$> readFieldList
         readBlankLine
@@ -75,5 +75,5 @@ readSpace = Read.true "space" $ Read.exact " "
 readBlankLine :: ExceptT Error (ReaderPlus up action 'Write item ASCII1) ()
 readBlankLine = Read.true "blank line" $ Read.exact "\r\n"
 
-readBody :: FieldMap -> ExceptT Error (ReaderPlus up action 'Write Word8 ByteString) (Maybe Body)
+readBody :: FieldMap -> ExceptT Error (ReaderPlus up action 'Write Word8 ByteString1) (Maybe Body)
 readBody fields = _

@@ -76,6 +76,9 @@ library
 
         Cursor.Buffer
 
+    other-modules:
+        Miscellany
+
 test-suite test-block-chain
     import: base
     type: exitcode-stdio-1.0

@@ -6,7 +6,7 @@ import Data.Text (Text)
 import Test.Hspec (describe, it, shouldBe, hspec)
 import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (forAll)
-import Block (Text1)
+import Block (ByteString1, Text1)
 import System.IO (IO)
 
 import qualified Block.Hedgehog.Gen.Shatter as Gen
@@ -19,6 +19,6 @@ main = hspec do
         it "Request line" $ hedgehog do
             let input :: Text = "GET /hello.txt HTTP/1.1"
                 reader = undefined -- todo
-            chunkedInput :: [Text1] <- forAll $ Gen.shatter0 input
+            chunkedInput :: [ByteString1] <- forAll $ Gen.shatter0 input
             undefined -- todo
             -- runReader reader chunkedInput `shouldBe` ("GET", ["hello.txt"], ['1', '1'])
