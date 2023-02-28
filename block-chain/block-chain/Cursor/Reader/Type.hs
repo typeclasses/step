@@ -1,6 +1,6 @@
 module Cursor.Reader.Type
   (
-    Reader, ReaderPlus (..),
+    {- * Types -} Reader, ReaderPlus (..),
   )
   where
 

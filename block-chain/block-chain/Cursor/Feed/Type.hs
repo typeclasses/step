@@ -1,4 +1,8 @@
-module Cursor.Feed.Type where
+module Cursor.Feed.Type
+  (
+    {- * Types -} Feed, FeedPlus,
+  )
+  where
 
 import Essentials
 

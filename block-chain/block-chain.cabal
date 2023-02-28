@@ -37,6 +37,8 @@ library
     import: base
     hs-source-dirs: block-chain
     exposed-modules:
+        Cursor
+
         Cursor.Interface
         Cursor.Interface.Type
         Cursor.Interface.Class
@@ -46,6 +48,7 @@ library
         Cursor.Advancement.Type
         Cursor.Advancement.Utilities
 
+        Cursor.Feed
         Cursor.Feed.Type
         Cursor.Feed.Examples
         Cursor.Feed.Examples.Pushback
@@ -59,6 +62,7 @@ library
         Cursor.Morph.Examples.DecodeASCII
         Cursor.Morph.Usage
 
+        Cursor.Reader
         Cursor.Reader.Type
         Cursor.Reader.Examples
         Cursor.Reader.Examples.AmountRemaining
