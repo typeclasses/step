@@ -23,8 +23,8 @@ newtype ReaderPlus up action mode item block product =
             Job up action product }
     deriving stock Functor
 
-type Reader action mode item block =
-    ReaderPlus (Cursor mode block) action mode item block
+type Reader action mode item block product =
+    ReaderPlus (Cursor mode block) action mode item block product
 
 instance Applicative (ReaderPlus up action mode item block) where
     pure x = Reader (pure x)

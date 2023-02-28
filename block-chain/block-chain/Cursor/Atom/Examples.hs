@@ -12,13 +12,15 @@ import Cursor.Atom.Type (AtomPlus (..))
 import Cursor.Reader.Type (Reader, ReaderPlus (..))
 import Cursor.Reader.Utilities.LookAhead (lookAhead)
 import Cursor.Reader.Utilities.With (withLength)
-import Control.Monad.Except (ExceptT, runExceptT, liftEither)
-import Control.Monad.Trans (lift)
+import Data.Either (Either (..))
 
-atomically :: forall up action item block error product.
-    ExceptT error (Reader action 'Write item block) product
+atomically ::
+    Reader action 'Write item block (Either error product)
     -> AtomPlus up action item block error product
 atomically x = Atom do
-    (len, ei) <- lift $ lookAhead $ withLength $ runExceptT x
-    product <- liftEither ei
-    pure $ Reader $ commitNatural len $> product
+    (len, ei) <- lookAhead (withLength x)
+    pure do
+        product <- ei
+        pure $ Reader do
+            _ <- commitNatural len
+            pure product
