@@ -4,4 +4,4 @@ module Cursor.Morph.Examples
   )
   where
 
-import Cursor.Morph.Examples.ASCII
+import Cursor.Morph.Examples.DecodeASCII

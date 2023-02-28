@@ -64,13 +64,29 @@ makeFieldMap = Foldable.toList >>> fmap (\(Field a b) -> (Block.asciiLower a, b)
     >>> Map.fromListWith (\a b -> a <> ", " <> b) >>> FieldMap
 
 readStart :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) Start
-readStart = _
+readStart = do
+    method <- readMethod
+    readSpace
+    target <- readTarget
+    readSpace
+    version <- readVersion
+    readEndOfLine
+    pure $ Start method target version
 
 readMethod :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) Method
 readMethod = Read.just "method" Read.enum
 
+readTarget :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) Target
+readTarget = _
+
+readVersion :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) Version
+readVersion = _
+
 readSpace :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) ()
 readSpace = Read.true "space" $ Read.exact " "
+
+readEndOfLine :: ExceptT Error (ReaderPlus up action 'Write item ASCII1) ()
+readEndOfLine = Read.true "end of line" $ Read.exact "\r\n"
 
 readBlankLine :: ExceptT Error (ReaderPlus up action 'Write item ASCII1) ()
 readBlankLine = Read.true "blank line" $ Read.exact "\r\n"

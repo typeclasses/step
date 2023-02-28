@@ -56,7 +56,7 @@ library
         Cursor.Morph
         Cursor.Morph.Type
         Cursor.Morph.Examples
-        Cursor.Morph.Examples.ASCII
+        Cursor.Morph.Examples.DecodeASCII
         Cursor.Morph.Usage
 
         Cursor.Reader.Type

@@ -1,4 +1,4 @@
-module Cursor.Morph.Examples.ASCII
+module Cursor.Morph.Examples.DecodeASCII
   (
     {- * Transformations -} decodeAscii,
   )
