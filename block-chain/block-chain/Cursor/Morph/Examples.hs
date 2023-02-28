@@ -1,6 +1,6 @@
 module Cursor.Morph.Examples
   (
-    -- {- * Transformations -} decode,
+    {- * Transformations -} decodeAscii,
   )
   where
 
@@ -9,10 +9,17 @@ import Cursor.Morph.Type
 import Cursor.Interface
 import Cursor.Decode.Type
 
-import Data.Text (Text)
+import Block (ASCII1)
 import Data.ByteString (ByteString)
+import Data.Text (Text)
+import Data.Word (Word8)
+import SupplyChain (Vendor (..))
 
--- decode ::
---     Decode a b -- ^ See "Cursor.Decode.Examples"
---     -> MorphPlus up action 'Write a b
--- decode = _
+import qualified ASCII.Char as ASCII
+
+decodeAscii :: MorphPlus up action 'Write Word8 ByteString ASCII.Char ASCII1
+decodeAscii = Vendor \case
+    Next -> _
+    Commit n -> _
+    Reset -> _
+    Flush -> _
