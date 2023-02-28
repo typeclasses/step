@@ -1,7 +1,8 @@
 module Cursor.Reader.Utilities
   (
     {- * Reader utilities -} withBlocks, withLength, lookAhead, firstJust,
-            true, just, whileJust, whileRight, whileSuccessful,
+            true, just, whileJust, whileRight, whileSuccessful, whileSuccessfulJust,
+            whileJustExcept,
   )
   where
 
