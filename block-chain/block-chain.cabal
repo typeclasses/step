@@ -5,7 +5,7 @@ version: 0.0.0.0
 
 common base
     default-language: GHC2021
-    ghc-options: -Wall
+    ghc-options: -Wall -fdefer-typed-holes
     default-extensions:
         BlockArguments
         DataKinds
@@ -73,6 +73,7 @@ library
         Cursor.Reader.Utilities.Exception
         Cursor.Reader.Utilities.LookAhead
         Cursor.Reader.Utilities.With
+        Cursor.Reader.Usage
 
         Cursor.Atom
         Cursor.Atom.Type
@@ -87,7 +88,7 @@ library
 test-suite test-block-chain
     import: base
     type: exitcode-stdio-1.0
-    default-extensions: OverloadedStrings
+    default-extensions: OverloadedStrings OverloadedLists
     hs-source-dirs: test-block-chain
     main-is: Main.hs
     other-modules: HTTP

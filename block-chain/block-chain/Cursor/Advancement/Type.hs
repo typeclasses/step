@@ -4,8 +4,11 @@ module Cursor.Advancement.Type
   )
   where
 
+import Essentials
+
 import Block (Shortfall)
 
 data Advancement a b =
     YouCanNotAdvance Shortfall a
   | AdvanceSuccess b
+  deriving stock (Eq, Ord, Show)

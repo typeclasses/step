@@ -13,13 +13,18 @@ import Integer (Positive)
 import Integer.Signed (Signed (..))
 import Prelude ((+))
 import Data.Bool ((&&))
+import GHC.Exts (IsList (..), Item)
+import Prelude (error)
+import Data.List.NonEmpty (nonEmpty)
 
-import qualified Block.Class.End as End
+import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
+import qualified Block.Class.End as End
 import qualified Fold.Nonempty as Fold
 import qualified Integer.Positive as Positive
 
-data BlockBlock x xs xss = BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
+data BlockBlock (x :: Type) (xs :: Type) (xss :: Type) =
+    BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
     deriving stock (Eq, Ord, Show)
 
 
@@ -33,6 +38,21 @@ pattern BlockBlock xss <- BlockBlockUnsafe xss _
       (Fold.run Fold.sum (length <$> (toNonEmpty Front xss :: NonEmpty xs)))
 
 {-# complete BlockBlock #-}
+
+
+---  IsList  ---
+
+instance (Block x xs, Block xs xss) => IsList (BlockBlock x xs xss) where
+
+    type Item (BlockBlock x xs xss) = x
+
+    toList =
+        toNonEmpty Front >>> Foldable.toList
+
+    fromList =
+        nonEmpty
+        >>> Maybe.fromMaybe (error "fromList BlockBlock: empty")
+        >>> fromNonEmpty Front
 
 
 ---  Semigroup  ---

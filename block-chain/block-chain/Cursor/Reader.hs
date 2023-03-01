@@ -9,9 +9,11 @@ module Cursor.Reader
             withBlocks, withLength, lookAhead, firstJust,
             true, just, whileJust, whileRight, whileSuccessful,
             whileSuccessfulJust, whileJustExcept,
+    {- * Usage -} readBlockList,
   )
   where
 
 import Cursor.Reader.Type
 import Cursor.Reader.Utilities
 import Cursor.Reader.Examples
+import Cursor.Reader.Usage

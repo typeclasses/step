@@ -13,15 +13,16 @@ import Integer (Positive, Signed (..))
 import Prelude (error)
 import Data.List.NonEmpty (NonEmpty)
 import Block.Null.Class (Null)
-import qualified Data.Foldable as Foldable
+import GHC.Exts (IsList)
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
 import qualified Integer.Positive as Positive
 import qualified Integer
 import qualified Block.Null.Class as Null
 
 newtype NotNull x xs = NotNull xs
-    deriving newtype (Eq, Ord, Show, Semigroup)
+    deriving newtype (Eq, Ord, Show, Semigroup, IsList)
 
 instance (IsString xs, Null x xs) => IsString (NotNull x xs) where
     fromString = fromString >>> refine >>>

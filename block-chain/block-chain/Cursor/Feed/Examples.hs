@@ -11,16 +11,15 @@ import Cursor.Interface
 
 import Block (Block, Shortfall (..))
 import Control.Monad.State (MonadState)
-import Data.Sequence (Seq (..))
 import Next (TerminableStream)
 import Optics (Lens')
 import SupplyChain (Vendor (Vendor), Referral (Referral), (>->))
 import Pushback.Interface (PushbackStream)
+import Pushback (StackContainer)
 
 import qualified Cursor.Feed.Examples.Pushback as Pushback
 import qualified Pushback.Buffer
 import qualified Pushback.Stack
-import qualified Pushback.StackContainer as StackContainer
 
 {-| Turn a pushback block producer into a cursor feed
 
@@ -44,30 +43,32 @@ empty = Vendor \case
     Flush -> pure $ Referral () empty
 
 {-| In-memory cursor feed that operates solely on state -}
-substate :: forall state up action mode item block.
+substate :: forall state container up action mode item block.
     Block item block => MonadState state action =>
-    Lens' state (Seq block)
+    Lens' state container
         -- ^ Identifies where to store pushed-back items
         --   within a larger state context
+    -> StackContainer container block
     -> FeedPlus up action mode item block
-substate containerLens = buffer >-> pushback
+substate containerLens container = buffer >-> pushback
   where
-    buffer = Pushback.Stack.substate containerLens StackContainer.sequence
+    buffer = Pushback.Stack.substate containerLens container
 
 {-| Turn a block producer into a cursor feed, using state to store remainders
 
 When this cursor receives a 'Reset' request, any input that has been read from
 upstream but not committed is pushed into a buffer stored in the 'MonadState'
 context, at a position identified by the given lens parameter. -}
-substateBuffer :: forall state up action mode item block.
+substateBuffer :: forall state container up action mode item block.
     Block item block => MonadState state action => TerminableStream block up =>
-    Lens' state (Seq block)
+    Lens' state container
         -- ^ Identifies where to store pushed-back items
         --   within a larger state context
+    -> StackContainer container block
     -> FeedPlus up action mode item block
-substateBuffer containerLens = buffer >-> pushback
+substateBuffer containerLens container = buffer >-> pushback
   where
-    buffer = Pushback.Buffer.substate containerLens StackContainer.sequence
+    buffer = Pushback.Buffer.substate containerLens container
 
 {-| Turns a block producer into a cursor feed that does not afford any way
     to retrieve remainders

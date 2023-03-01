@@ -17,6 +17,7 @@ common base
         LambdaCase
         NoImplicitPrelude
         PatternSynonyms
+        TypeFamilies
         ViewPatterns
 
     build-depends:

@@ -18,13 +18,29 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Word (Word8)
 import Prelude ((+), (-))
 import Data.Bool ((&&))
+import GHC.Exts (IsList (..), Item)
+import Prelude (error)
+import Data.List.NonEmpty (nonEmpty)
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
 import qualified Data.ByteString as BS
 import qualified ASCII.Char as A
 
 newtype ASCII1 = ASCII1 ByteString1
   deriving newtype (Eq, Ord, Show, Semigroup, IsString, Concat, ItemEquality)
+
+instance IsList ASCII1 where
+
+    type Item ASCII1 = A.Char
+
+    toList =
+        toNonEmpty Front >>> Foldable.toList
+
+    fromList =
+        nonEmpty
+        >>> Maybe.fromMaybe (error "fromList ASCII1: empty")
+        >>> fromNonEmpty Front
 
 instance Block Char ASCII1
 
@@ -82,6 +98,14 @@ instance Index Char ASCII1 where
 
 newtype ASCII = ASCII ByteString
   deriving newtype (Eq, Ord, Show, Semigroup, IsString)
+
+instance IsList ASCII where
+
+    type Item ASCII = A.Char
+
+    toList = generalizeAscii >>> BS.unpack >>> fmap A.fromWord8Unsafe
+
+    fromList = fmap A.toWord8 >>> BS.pack >>> assumeAscii
 
 generalizeAscii :: ASCII -> ByteString
 generalizeAscii (ASCII x) = x

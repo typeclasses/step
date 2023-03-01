@@ -7,10 +7,17 @@ module Block.Text.Type
 import Essentials
 import Block.Class.ClassNames
 
+import Block.Class (toNonEmpty, End (..), fromNonEmpty)
 import Block.Null.Type (NotNull)
 import Data.Char (Char)
 import Data.String (IsString)
 import Data.Text (Text)
+import GHC.Exts (IsList (..), Item)
+import Prelude (error)
+import Data.List.NonEmpty (nonEmpty)
+
+import qualified Data.Foldable as Foldable
+import qualified Data.Maybe as Maybe
 
 newtype Text1 = Text1 (NotNull Char Text)
   deriving newtype
@@ -19,3 +26,15 @@ newtype Text1 = Text1 (NotNull Char Text)
       Search Char, Enumerate Char, NonEmptyIso Char, Refined Text, Index Char,
       Concat, ItemEquality, IsString
     )
+
+instance IsList Text1 where
+
+    type Item Text1 = Char
+
+    toList =
+        toNonEmpty Front >>> Foldable.toList
+
+    fromList =
+        nonEmpty
+        >>> Maybe.fromMaybe (error "fromList Text1: empty")
+        >>> fromNonEmpty Front
