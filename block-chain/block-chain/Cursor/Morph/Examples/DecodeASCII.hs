@@ -29,6 +29,8 @@ import qualified Cursor.Buffer as Buffer
 import qualified Cursor.Interface.Orders as Cursor
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
+import qualified Integer
+import qualified Integer.Signed as Signed
 import qualified Optics
 
 data Vitality = Dead | Alive
@@ -80,6 +82,11 @@ commit :: IsCursor 'Write ByteString1 up => S -> Positive
 commit s n = do
     (r, s') <- flip State.runStateT s $
         commitAlternative (Optics.zoom buffer . Buffer.commit) commitFromUpstream n
+    case r of
+        AdvanceSuccess _ -> void $ Cursor.commitPositive n
+        YouCanNotAdvance (Shortfall sh) _ -> case Integer.subtract n sh of
+            Signed.Plus n' -> void $ Cursor.commitPositive n'
+            _ -> pure ()
     pure $ Referral r (decodeAscii' s')
 
 commitFromUpstream :: IsCursor 'Write ByteString1 up =>
