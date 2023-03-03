@@ -28,6 +28,7 @@ import qualified Cursor.Interface.Orders as Cursor
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Optics
+import qualified SupplyChain.Vendor as Vendor
 
 data Vitality = Dead | Alive
 
@@ -44,7 +45,7 @@ uncommitted = buffer % Buffer.uncommitted
 unviewed    = buffer % Buffer.unviewed
 
 decodeAscii :: MorphPlus up action 'Write Word8 ByteString1 ASCII.Char ASCII1
-decodeAscii = state (S Buffer.empty Alive) \case
+decodeAscii = Vendor.state (S Buffer.empty Alive) \case
     Next     -> State.runStateT $ next
     Commit n -> State.runStateT $ commit n
     Reset    -> State.runStateT $ reset
@@ -82,17 +83,6 @@ commit n = Optics.use uncommitted >>= \case
             Optics.assign uncommitted ((Seq.:<|) x' xs)
             _ <- lift $ Cursor.commitPositive n
             pure $ AdvanceSuccess ()
-
-state ::
-    s -- ^ Initial state
-    -> (forall response. down response -> s -> Job up action (response, s))
-    -> Vendor up down action
-state initial step = go initial
-  where
-    go s = Vendor
-        (\request -> step request s <&> \(response, s') ->
-                        Referral response (go s')
-        )
 
 bufferMore :: IsCursor 'Write ByteString1 up => StateT S (Job up action) ()
 bufferMore = lift Cursor.next >>= \case

@@ -27,7 +27,7 @@ common base
       , mtl ^>= 2.3.1
       , optics ^>= 0.4.2
       , quaalude ^>= 0.0.0
-      , supply-chain ^>= 0.0
+      , supply-chain ^>= 0.0.1
       , supply-monitor ^>= 0.0
       , supply-next == 0.0.1.*
       , supply-pushback ^>= 0.0
