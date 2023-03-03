@@ -1,7 +1,7 @@
 module Cursor
   (
     {- * Types -} Reader, ReaderPlus (..), Feed, FeedPlus, Morph, MorphPlus, Advancement (..), Shortfall (..),
-    {- * Reader -} takePositive, enum, enumErrorText, enumExceptText,
+    {- * Reader -} takePositive, enum, enumErrorText, enumExceptText, takeWhile, span,
     {- * Morph -} morph, decodeAscii,
     {- * Running readers -} readBlockList,
     {- * Miscellany -} overExcept,

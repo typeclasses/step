@@ -15,8 +15,8 @@ import qualified Data.Sequence as Seq
 import qualified Block
 import qualified Cursor.Interface.Orders as Cursor
 
--- takeWhile :: (item -> Bool) -> ReaderPlus up action 'Write item block (Seq block)
--- takeWhile f = _
+takeWhile :: (item -> Bool) -> ReaderPlus up action 'Write item block (Seq block)
+takeWhile f = span () (pure . f) <&> \(xs, ()) -> xs
 
 span :: forall s up action item block. s -> (item -> State s Bool)
     -> ReaderPlus up action 'Write item block (Seq block, s)

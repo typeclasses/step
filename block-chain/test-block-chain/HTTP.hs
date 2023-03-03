@@ -93,7 +93,7 @@ readMethod :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) Meth
 readMethod = Cursor.enumExceptText tbError
 
 readTarget :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) Target
-readTarget = _
+readTarget = Cursor.takeWhile (/= ASCII.Space)
 
 readVersion :: ExceptT Error (ReaderPlus up action 'Write ASCII.Char ASCII1) Version
 readVersion = _
