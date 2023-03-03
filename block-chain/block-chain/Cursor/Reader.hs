@@ -4,7 +4,7 @@ module Cursor.Reader
     {- * Examples -}
             takePositive, takeNatural,
             atEnd, remainsAtLeastPositive, remainsAtLeastNatural,
-    {- ** Exact -} exact, enum,
+    {- ** Exact -} exact, enum, enumErrorText, enumExceptText,
     {- * Utilities -}
             withBlocks, withLength, lookAhead, firstJust,
             true, just, whileJust, whileRight, whileSuccessful,

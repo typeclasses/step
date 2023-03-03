@@ -1,4 +1,4 @@
-module Cursor.Reader.Examples.Take where
+module Cursor.Reader.Examples.TakeNumber where
 
 import Essentials
 import Cursor.Interface.Type
@@ -7,31 +7,28 @@ import Cursor.Reader.Type
 import Data.Sequence (Seq (..))
 import Integer (Positive, Natural)
 import Block (Take (..), Shortfall (..), End (..), Seq1)
-import SupplyChain (order)
-import Cursor.Interface (next, commit)
 
+import qualified Cursor.Interface.Orders as Cursor
 import qualified Data.Sequence as Seq
 import qualified Integer
 import qualified Block
 
 takePositive :: Positive
     -> ReaderPlus up action 'Write item block (Advancement (Seq block) (Seq1 block))
-takePositive = \n -> Reader (go n)
+takePositive = \n -> Reader (go n Seq.Empty <&> fmap Block.assume)
   where
-    go n = order next >>= \case
-        End -> pure $ YouCanNotAdvance (Shortfall n) Seq.empty
+    go n acc = Cursor.next >>= \case
+        End -> pure $ YouCanNotAdvance (Shortfall n) acc
         Item x -> case Block.take Front n x of
             TakeAll -> do
-                _ <- order (commit n)
-                pure $ AdvanceSuccess $ Block.singleton x
+                _ <- Cursor.commitPositive n
+                pure $ AdvanceSuccess (acc Seq.:|> x)
             TakePart{ taken } -> do
-                _ <- order (commit (Block.length taken))
-                pure $ AdvanceSuccess $ Block.singleton taken
+                _ <- Cursor.commitPositive (Block.length taken)
+                pure $ AdvanceSuccess (acc Seq.:|> taken)
             TakeInsufficient (Shortfall s) -> do
-                _ <- order (commit (Block.length x))
-                go s <&> \case
-                    YouCanNotAdvance s' xs -> YouCanNotAdvance s' (x :<| xs)
-                    AdvanceSuccess xs -> AdvanceSuccess (Block.push Front x xs)
+                _ <- Cursor.commitPositive (Block.length x)
+                go s (acc Seq.:|> x)
 
 takeNatural :: Natural
     -> ReaderPlus up action 'Write item block (Advancement () (), Seq block)

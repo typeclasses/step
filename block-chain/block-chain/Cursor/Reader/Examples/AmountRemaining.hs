@@ -3,7 +3,7 @@ module Cursor.Reader.Examples.AmountRemaining where
 import Essentials
 import Cursor.Interface.Type
 import Cursor.Reader.Type
-import Cursor.Reader.Examples.Take
+import Cursor.Reader.Examples.TakeNumber
 
 import Cursor.Reader.Utilities (lookAhead)
 import SupplyChain (order)

@@ -9,7 +9,7 @@ import Cursor.Reader.Type
 import Cursor.Interface.Type
 
 import Cursor.Advancement (minusShortfall)
-import Cursor.Reader.Examples.Take (takeNatural)
+import Cursor.Reader.Examples.TakeNumber (takeNatural)
 import Data.Sequence (Seq)
 import Integer (Natural)
 import SupplyChain ((>-))

@@ -39,7 +39,7 @@ module Block
     {- * Classes -} Block, Singleton, Positional, Search,
             Refined, NonEmptyIso, Index, Concat, ItemEquality, Enumerate,
 
-    {- * State -} State (..),
+    {- * State -} State (..), StateResult (..),
             runState, evalState, execState, stateless, get, put, modify,
 
     {- * ASCII -} ASCII, generalizeAscii, refineAscii, assumeAscii,

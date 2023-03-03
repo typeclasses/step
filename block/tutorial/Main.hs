@@ -6,7 +6,7 @@ module Main (main) where
 import Block (Text1)
 
 -- State
-import Block (State, get, modify, runState, evalState, stateless)
+import Block (State, StateResult (..), get, modify, runState, evalState, stateless)
 
 -- Miscellaneous other types
 import Block (End (..), Shortfall (..), Take (..), Pivot (..), Span (..))
@@ -95,7 +95,7 @@ main =
         add x = traverse_ (\w -> modify (w +)) (charAsWord x) $> not (isSpace x)
 
     (("234 567" :: Text1) & Block.span Front add & runState 0)
-        ~> (9, SpanPart "234" " 567")
+        ~> StateResult{ stateResult = SpanPart "234" " 567", newState = 9 }
 
 
     {- Whereas 'findPredicate' has a parameter of type (x -> Bool), the

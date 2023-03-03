@@ -39,7 +39,7 @@ module Block.Class
     {- * Classes -} {- $classes -} Block, Singleton, Positional, Search,
             Refined, NonEmptyIso, Index, Concat, ItemEquality, Enumerate,
 
-    {- * State -} State (..),
+    {- * State -} State (..), StateResult (..),
             runState, evalState, execState, stateless, get, put, modify,
   )
   where

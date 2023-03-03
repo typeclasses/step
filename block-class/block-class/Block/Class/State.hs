@@ -1,6 +1,6 @@
 module Block.Class.State
   (
-    {- * Type -} State (..),
+    {- * Type -} State (..), StateResult (..),
     {- * Utilities -} runState, evalState, execState, stateless, get, put, modify,
   )
   where
