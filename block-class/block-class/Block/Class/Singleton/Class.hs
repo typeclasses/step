@@ -8,11 +8,10 @@ import Essentials
 
 import Block.Class.Singleton.Types (Pop (..))
 import Block.Class.End (End (..))
-import Block.Class.Concat.Class (Concat (..))
 
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty, reverse)
 
-class (Concat xs) => Singleton x xs | xs -> x where
+class Singleton x xs | xs -> x where
 
     {-| A block with a single item -}
     singleton ::
