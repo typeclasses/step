@@ -32,6 +32,8 @@ library
     exposed-modules:
         Block.Class
 
+        Block.Class.Utilities
+
         Block.Class.Block
         Block.Class.Block.Class
 
