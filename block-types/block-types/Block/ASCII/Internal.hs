@@ -84,7 +84,7 @@ instance Enumerate Char ASCII1 where
     foldItems end initial step (ASCII1 bs) =
         foldItems end (initial . A.fromWord8Unsafe) (step . A.fromWord8Unsafe) bs
 
-instance NonEmptyIso Char ASCII1 where
+instance Construct Char ASCII1 where
 
     fromNonEmpty :: End -> NonEmpty Char -> ASCII1
     fromNonEmpty end = fmap A.toWord8 >>> fromNonEmpty end >>> ASCII1

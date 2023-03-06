@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.NonEmptyIso (spec) where
 
-import Block.Class.NonEmptyIso
-import Block.Class.ItemEquality
+import Block.Class
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -12,7 +11,7 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Block.Hedgehog.Gen.End as Gen
 
-spec :: forall x xs. (Eq x, ItemEquality xs, Show x, Show xs, NonEmptyIso x xs) =>
+spec :: forall x xs. (Eq x, ItemEquality xs, Show x, Show xs, Block x xs) =>
     Gen x -> Gen xs -> (xs -> Gen xs) -> Spec
 spec genX genXs variegate = describe "NonEmptyIso" do
 

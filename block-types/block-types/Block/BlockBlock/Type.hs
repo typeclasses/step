@@ -136,7 +136,7 @@ instance (Block x xs, Block xs xss) => Enumerate x (BlockBlock x xs xss) where
         g (Just (pop end -> Pop (pop end -> Pop x xs) xss)) =
             x : f xs xss
 
-instance (Block x xs, Block xs xss) => NonEmptyIso x (BlockBlock x xs xss) where
+instance (Block x xs, Block xs xss) => Construct x (BlockBlock x xs xss) where
 
     fromNonEmpty :: End -> NonEmpty x -> BlockBlock x xs xss
     fromNonEmpty end = fromNonEmpty end >>> singleton >>> BlockBlock

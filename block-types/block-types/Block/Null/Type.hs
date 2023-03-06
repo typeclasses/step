@@ -57,7 +57,7 @@ instance (Null x xs) => Enumerate x (NotNull x xs) where
     foldItems :: End -> (x -> a) -> (x -> State a ()) -> NotNull x xs -> a
     foldItems end initial step = toNonEmpty end >>> foldItems end initial step
 
-instance (Null x xs) => NonEmptyIso x (NotNull x xs) where
+instance (Null x xs) => Construct x (NotNull x xs) where
 
     fromNonEmpty :: End -> NonEmpty x -> NotNull x xs
     fromNonEmpty end = Null.fromNonEmpty end >>> NotNull

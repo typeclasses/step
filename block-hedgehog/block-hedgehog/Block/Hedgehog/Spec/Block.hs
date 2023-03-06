@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.Block (spec) where
 
-import Block.Class.Block
-import Block.Class.ItemEquality
+import Block.Class
 import Essentials
 
 import Test.Hspec (Spec, describe, it)

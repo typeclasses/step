@@ -2,10 +2,10 @@ module Block.Class.ClassNames
   (
     Block,
     Concat,
+    Construct,
     Enumerate,
     Index,
     ItemEquality,
-    NonEmptyIso,
     Positional,
     Refined,
     Search,

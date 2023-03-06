@@ -37,7 +37,7 @@ module Block.Class
     {- * Shortfall -} {- $shortfall -} Shortfall (..),
 
     {- * Classes -} {- $classes -} Block, Singleton, Positional, Search,
-            Refined, NonEmptyIso, Index, Concat, ItemEquality, Enumerate,
+            Refined, Construct, Index, Concat, ItemEquality, Enumerate,
 
     {- * State -} State (..), StateResult (..),
             runState, evalState, execState, stateless, get, put, modify,

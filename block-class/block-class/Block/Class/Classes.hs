@@ -5,7 +5,7 @@ module Block.Class.Classes
     Enumerate (..),
     Index (..),
     ItemEquality (..),
-    NonEmptyIso (..),
+    Construct (..),
     Positional (..),
     Refined (..),
     Search (..),
@@ -18,7 +18,7 @@ import Block.Class.Concat.Class
 import Block.Class.Enumerate.Class
 import Block.Class.Index.Class
 import Block.Class.ItemEquality.Class
-import Block.Class.NonEmptyIso.Class
+import Block.Class.Construct.Class
 import Block.Class.Positional.Class
 import Block.Class.Refined.Class
 import Block.Class.Search.Class

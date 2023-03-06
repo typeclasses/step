@@ -23,7 +23,7 @@ newtype Text1 = Text1 (NotNull Char Text)
   deriving newtype
     (
       Eq, Ord, Show, Semigroup, Block Char, Singleton Char, Positional,
-      Search Char, Enumerate Char, NonEmptyIso Char, Refined Text, Index Char,
+      Search Char, Enumerate Char, Construct Char, Refined Text, Index Char,
       Concat, ItemEquality, IsString
     )
 
