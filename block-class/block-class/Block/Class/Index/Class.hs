@@ -9,20 +9,17 @@ import Essentials
 import Block.Class.End (End (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import Integer (Positive)
-import Block.Class.Singleton.Class (Singleton (..))
-import Block.Class.Positional.Class (Positional (..))
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Integer.Positive as Positive
 
-class (Singleton x xs, Positional xs) => Index x xs where
+class Index x xs | xs -> x where
 
     {-| Get the item at a particular position
 
     Returns 'Nothing' if the position is greater than 'length'.
 
-    The first item's position is 1. (Please take note, because
-    this is unconventional.) -}
+    The first item's position is 1. -}
     at :: End -> Positive -> xs -> Maybe x
 
 instance Index x (NonEmpty x) where
