@@ -6,6 +6,7 @@ module Block.Class.Block.Class
 
 import Essentials
 
+import Block.Class.Concat.Class
 import Block.Class.Enumerate.Class
 import Block.Class.Index.Class
 import Block.Class.ItemEquality.Class
@@ -16,6 +17,7 @@ import Data.List.NonEmpty (NonEmpty)
 
 class
   (
+    Concat xs,
     Construct x xs,
     Enumerate x xs,
     Search x xs,

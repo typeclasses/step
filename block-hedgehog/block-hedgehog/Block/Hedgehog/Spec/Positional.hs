@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.Positional (spec) where
 
-import Block.Class.Positional
-import Block.Class.ItemEquality
+import Block.Class
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -12,7 +11,7 @@ import Prelude ((+))
 
 import qualified Block.Hedgehog.Gen.End as Gen
 
-spec :: forall xs. (ItemEquality xs, Show xs, Positional xs) =>
+spec :: forall x xs. (ItemEquality xs, Show xs, Block x xs) =>
     Gen xs -> (xs -> Gen xs) -> Spec
 spec genXs variegate = describe "Positional" do
 
