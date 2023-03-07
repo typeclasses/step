@@ -50,15 +50,21 @@ findSpec = describe "find" do
         let digit x = pure (readMaybe [x] :: Maybe Int)
         it "1" do
             let result = stateless $ find Front digit str
-            result `shouldBe` Just (Pivot (nonEmpty "abc") 1 (nonEmpty "def2ghi"))
+            result `shouldBe` Just (Pivot 1
+                (ne "abc1", nonEmpty "abc")
+                (ne "1def2ghi", nonEmpty "def2ghi"))
         it "2" do
             let result = stateless $ find Back digit str
-            result `shouldBe` Just (Pivot (nonEmpty "ghi") 2 (nonEmpty "abc1def"))
+            result `shouldBe` Just (Pivot 2
+                (ne "2ghi", nonEmpty "ghi")
+                (ne "abc1def2", nonEmpty "abc1def"))
 
     it "pivot on the end" do
         let p x = pure (Just x <* guard (isLetter x))
         let result = stateless $ find Front p (ne "abc")
-        result `shouldBe` Just (Pivot Nothing 'a' (nonEmpty "bc"))
+        result `shouldBe` Just (Pivot 'a'
+            (ne "a", Nothing)
+            (ne "abc", nonEmpty "bc"))
 
     it "no pivot" do
         [Back, Front] & traverse_ \end -> do

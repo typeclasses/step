@@ -41,7 +41,8 @@ class Null x xs | xs -> x where
     push :: End -> x -> xs -> xs
     splitAt :: Natural -> xs -> (xs, xs)
     span :: Monad m => End -> (x -> m Bool) -> xs -> m (xs, xs)
-    find :: Monad m => End -> (x -> m (Maybe found)) -> xs -> m (Maybe (xs, found, xs))
+    find :: Monad m => End -> (x -> m (Maybe found))
+        -> xs -> m (Maybe (found, (xs, xs), (xs, xs)))
     at :: End -> Positive -> xs -> Maybe x
     (++) :: xs -> xs -> xs
     concat :: End -> [xs] -> xs
@@ -115,13 +116,18 @@ instance Null a (Seq a) where
     splitAt :: Natural -> Seq a -> (Seq a, Seq a)
     splitAt n = Seq.splitAt (Natural.toInt n & Maybe.fromJust)
 
-    find :: Monad m => End -> (a -> m (Maybe found)) -> Seq a -> m (Maybe (Seq a, found, Seq a))
+    find :: Monad m => End -> (a -> m (Maybe found)) -> Seq a
+        -> m (Maybe (found, (Seq a, Seq a), (Seq a, Seq a)))
     find Front f = go Seq.empty
       where
         go !seen xs = case Seq.viewl xs of
           Seq.EmptyL -> pure Nothing
           (Seq.:<) y ys -> f y >>= \case
-              Just found -> pure (Just (seen, found, ys))
+              Just found -> pure $ Just
+                  ( found
+                  , ((Seq.:|>) seen y, seen)
+                  , (xs, ys)
+                  )
               Nothing -> go ((Seq.:|>) seen y) ys
 
     find Back f = go Seq.empty
@@ -129,7 +135,11 @@ instance Null a (Seq a) where
         go !seen xs = case Seq.viewr xs of
             Seq.EmptyR -> pure Nothing
             (Seq.:>) ys y -> f y >>= \case
-                Just found -> pure (Just (seen, found, ys))
+                Just found -> pure $ Just
+                  ( found
+                  , ((Seq.<|) y seen, seen)
+                  , (xs, ys)
+                  )
                 Nothing -> go ((Seq.:<|) y seen) ys
 
 instance Null Char Text where
@@ -182,11 +192,17 @@ instance Null Char Text where
     span Front = Text.spanM
     span Back = Text.spanEndM >>> (fmap . fmap) \(a, b) -> (b, a)
 
-    find :: Monad m => End -> (Char -> m (Maybe found)) -> Text -> m (Maybe (Text, found, Text))
+    find :: Monad m => End -> (Char -> m (Maybe found)) -> Text
+        -> m (Maybe (found, (Text, Text), (Text, Text)))
     find Front f xs =
         State.runStateT (Text.spanM s xs) Nothing
             <&> \((a, b), foundMaybe) ->
-                (foundMaybe <&> \found -> (a, found, Text.tail b))
+                (foundMaybe <&> \found ->
+                    ( found
+                    , (Text.snoc a (Text.head b), a)
+                    , (b, Text.tail b)
+                    )
+                )
       where
         s x = lift (f x) >>= \case
             Nothing -> pure True
@@ -194,7 +210,12 @@ instance Null Char Text where
     find Back f xs =
         State.runStateT (Text.spanEndM s xs) Nothing
             <&> \((a, b), foundMaybe) ->
-                (foundMaybe <&> \found -> (b, found, Text.init a))
+                (foundMaybe <&> \found ->
+                    ( found
+                    , (Text.cons (Text.last a) b, b)
+                    , (a, Text.init a)
+                    )
+                )
       where
         s x = lift (f x) >>= \case
             Nothing -> pure True
@@ -258,12 +279,29 @@ instance Null Word8 ByteString where
                 False -> pure i
                 True -> go (i + 1) zs
 
-    find :: Monad m => End -> (Word8 -> m (Maybe found)) -> ByteString -> m (Maybe (ByteString, found, ByteString))
+    find :: Monad m => End -> (Word8 -> m (Maybe found)) -> ByteString
+        -> m (Maybe (found, (ByteString, ByteString), (ByteString, ByteString)))
     find end f xs =
         go 0 (toList end xs) <&> \(i, xm) ->
         xm <&> \x -> case end of
-            Front -> (ByteString.take i xs, x, ByteString.drop (i + 1) xs)
-            Back -> (ByteString.drop (ByteString.length xs - i) xs, x, ByteString.take (ByteString.length xs - i - 1) xs)
+            Front ->
+                ( x
+                , ( ByteString.take (i + 1) xs
+                  , ByteString.take  i      xs
+                  )
+                , ( ByteString.drop  i      xs
+                  , ByteString.drop (i + 1) xs
+                  )
+                )
+            Back ->
+                ( x
+                , ( ByteString.drop (ByteString.length xs - i - 1) xs
+                  , ByteString.drop (ByteString.length xs - i) xs
+                  )
+                , ( ByteString.take (ByteString.length xs - i    ) xs
+                  , ByteString.take (ByteString.length xs - i - 1) xs
+                  )
+                )
       where
         go !i ys = case ys of
             [] -> pure (i, Nothing)

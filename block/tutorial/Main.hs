@@ -64,9 +64,9 @@ main =
 
        If no item matches the predicate, the result is 'Nothing'. -}
 
-    (hi & Block.findPredicate Front isUpper) ~> Just (Pivot Nothing 'H' (Just "ello World"))
-    (hi & Block.findPredicate Front isSpace) ~> Just (Pivot (Just "Hello") ' ' (Just "World"))
-    (hi & Block.findPredicate Back  isUpper) ~> Just (Pivot (Just "orld") 'W' (Just "Hello "))
+    (hi & Block.findPredicate Front isUpper) ~> Just (Pivot 'H' ( "H"      , Nothing      ) ( "Hello World" , Just "ello World" ))
+    (hi & Block.findPredicate Front isSpace) ~> Just (Pivot ' ' ( "Hello " , Just "Hello" ) ( " World"      , Just "World"      ))
+    (hi & Block.findPredicate Back  isUpper) ~> Just (Pivot 'W' ( "World"  , Just "orld"  ) ( "Hello W"     , Just "Hello "     ))
     (hi & Block.findPredicate Front isDigit) ~> Nothing
 
 
@@ -103,7 +103,7 @@ main =
        This allows a 'find' produce a final value when a match is found. -}
 
     (lyric & Block.find Front (pure . charAsWord) & stateless)
-        ~> Just (Pivot (Just "on the wall, ") 9 (Just "8 bottles of beer"))
+        ~> Just (Pivot 9 ("on the wall, 9", Just "on the wall, ") ("98 bottles of beer", Just "8 bottles of beer"))
 
 
     {- A larger example demonstrating both state collection and a final
@@ -117,10 +117,7 @@ main =
                 _   -> pure Nothing
 
     (("234+ 567*" :: Text1) & Block.find Front calculate & evalState [])
-        ~> Just (Pivot (Just "234") 9 (Just " 567*"))
-
-    (("234* 567*" :: Text1) & Block.find Front calculate & evalState [])
-        ~> Just (Pivot (Just "234") 24 (Just " 567*"))
+        ~> Just (Pivot 9 ("234+", Just "234") ("+ 567*", Just " 567*"))
 
 
 --------------------------------------------------------------------------------

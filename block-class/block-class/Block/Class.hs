@@ -61,6 +61,7 @@ import Prelude (error)
 import Data.Function (fix)
 import Data.Ord (Ordering (..), compare)
 import Block.End (End (..))
+import GHC.Stack (HasCallStack)
 
 import qualified Data.Maybe as Maybe
 import qualified Data.Foldable as Foldable
@@ -271,11 +272,11 @@ class Search x xs | xs -> x where
         -> State s (Maybe (Pivot found xs))
 
 {-| A successful result of 'Block.Class.find' -}
-data Pivot found xs =
+data Pivot x xs =
     Pivot
-      (Maybe xs) -- ^ Items that were searched before finding a match
-      found -- ^ Result from a successful item match
-      (Maybe xs) -- ^ Items that were not searched
+      x
+      (xs, Maybe xs) -- ^ Before, including and excluding the item
+      (xs, Maybe xs) -- ^ After, including and excluding the item
   deriving stock (Eq, Ord, Show, Functor)
 
 {-| The result of 'Block.Class.span' -}
@@ -314,14 +315,20 @@ instance Search x (NonEmpty x) where
         -> State s (Maybe (Pivot found (NonEmpty x)))
 
     find Front f = fix \r (x :| xs) -> f x >>= \case
-        Just found -> pure $ Just $ Pivot Nothing found (nonEmpty xs)
+        Just found -> pure $ Just $ Pivot found (x :| [], Nothing) (x :| xs, nonEmpty xs)
         Nothing -> case xs of
             [] -> pure Nothing
-            y : ys -> r (y :| ys) <&> fmap \(Pivot asm found bs) ->
-                Pivot (Just (x :| maybe [] NonEmpty.toList asm)) found bs
+            y : ys -> r (y :| ys) <&> fmap (pivotConsNonEmpty x)
 
     find Back f = \xs ->
         find Front f (NonEmpty.reverse xs) <&> fmap (fmap NonEmpty.reverse)
+
+pivotConsNonEmpty :: x -> Pivot a (NonEmpty x) -> Pivot a (NonEmpty x)
+pivotConsNonEmpty x (Pivot y (as, asm) (bs, bsm)) =
+    Pivot y (as', asm') (bs, bsm)
+  where
+    as' = x :| Foldable.toList as
+    asm' = asm & maybe (x :| []) (\as'' -> x :| Foldable.toList as'') & Just
 
 findPredicate :: Search x xs => End -> (x -> Bool) -> xs -> Maybe (Pivot x xs)
 findPredicate end f =
@@ -330,11 +337,9 @@ findPredicate end f =
 spanPredicate :: Search x xs => End -> (x -> Bool) -> xs -> Span xs
 spanPredicate end f = stateless . span end (pure . f)
 
-sameItemsPivot :: Eq found => ItemEquality xs =>
-    Pivot found xs -> Pivot found xs -> Bool
-sameItemsPivot (Pivot a1 b1 c1) (Pivot a2 b2 c2) =
-    (foldableEqOn sameItems a1 a2) &&
-    (b1 == b2 && foldableEqOn sameItems c1 c2)
+sameItemsPivot :: Eq x => ItemEquality xs => Pivot x xs -> Pivot x xs -> Bool
+sameItemsPivot (Pivot x1 (as1, _) (bs1, _)) (Pivot x2 (as2, _) (bs2, _)) =
+    x1 == x2 && sameItems as1 as2 && sameItems bs1 bs2
 
 sameItemsSpan :: ItemEquality xs => Span xs -> Span xs -> Bool
 sameItemsSpan = \case
@@ -486,7 +491,7 @@ class Refined nul xs | xs -> nul where
     generalize :: xs -> nul
 
     {-| Defined only where 'refine' produces 'Just' -}
-    assume :: nul -> xs
+    assume :: HasCallStack => nul -> xs
     assume = refine >>> Maybe.fromJust
 
     {-# minimal refine, generalize #-}

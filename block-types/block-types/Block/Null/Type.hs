@@ -109,4 +109,9 @@ instance (Null x xs) => Search x (NotNull x xs) where
         -> m (Maybe (Pivot found (NotNull x xs)))
     find end f xs =
         Null.find end f (generalize xs)
-        <&> fmap (\(a, x, b) -> Pivot (refine a) x (refine b))
+        <&> fmap
+              (\(x, (a, a'), (b, b')) ->
+                  Pivot x
+                      (assume a, refine a')
+                      (assume b, refine b')
+              )

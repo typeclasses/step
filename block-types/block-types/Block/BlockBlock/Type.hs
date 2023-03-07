@@ -173,7 +173,7 @@ instance (Block x xs, Block xs xss) => Positional (BlockBlock x xs xss) where
                 (BlockBlockUnsafe (Maybe.fromJust remainder) remainderLength)
           where
             (taken, remainder) = evalState n (find end f xss) & Maybe.fromJust
-                & \(Pivot xs1 (x1, x2) xs2) ->
+                & \(Pivot (x1, x2) (_, xs1) (_, xs2)) ->
                     (pushMaybe (oppositeEnd end) x1 xs1, pushMaybe end x2 xs2)
               where
                 f xs = do
@@ -209,7 +209,7 @@ instance (Block x xs, Block xs xss) => Search x (BlockBlock x xs xss) where
             )
         <&> \case
             Nothing -> SpanAll
-            Just (Pivot a (a', b') b) ->
+            Just (Pivot (a', b') (_, a) (_, b)) ->
                 case pushMaybe (oppositeEnd end) a' a of
                     Nothing -> SpanNone
                     Just a'' -> SpanPart
@@ -221,8 +221,12 @@ instance (Block x xs, Block xs xss) => Search x (BlockBlock x xs xss) where
     find end f bb =
         bb & bbXss
         & find end (find end f)
-        <&> fmap \(Pivot a (Pivot a' x b') b) ->
+        <&> fmap \(Pivot (Pivot x (a1', a') (b1', b')) (_, a) (_, b)) ->
                 Pivot
-                    (BlockBlock <$> pushMaybe (oppositeEnd end) a' a)
                     x
-                    (BlockBlock <$> pushMaybe end b' b)
+                    ( BlockBlock $ unpop (oppositeEnd end) (Pop a1' a)
+                    , BlockBlock <$> pushMaybe (oppositeEnd end) a' a
+                    )
+                    ( BlockBlock $ unpop end (Pop b1' b)
+                    , BlockBlock <$> pushMaybe end b' b
+                    )
