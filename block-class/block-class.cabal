@@ -79,7 +79,6 @@ library
 
         Block.Class.Concat
         Block.Class.Concat.Class
-        Block.Class.Concat.Utilities
 
         Block.Class.Enumerate
         Block.Class.Enumerate.Class

@@ -1,6 +1,6 @@
 module Block.Class
   (
-    {- * Concatenation -} (++), concat, concatRefined, append,
+    {- * Concatenation -} (++), concat, concatRefined, append, concatRecursively,
 
     {- * Dealing with single items -} {- $singleton -}
             singleton,  first, last, terminal,
@@ -47,6 +47,7 @@ module Block.Class
 import Block.Class.Block
 import Block.Class.ItemEquality
 import Block.Class.Refined
+import Block.Class.Utilities
 
 {- $singleton
 

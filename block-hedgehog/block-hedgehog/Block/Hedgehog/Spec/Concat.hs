@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.Concat (spec) where
 
-import Block.Class.Concat
-import Block.Class.ItemEquality
+import Block.Class
 import Essentials
 
 import Hedgehog (Gen, forAll, diff)
