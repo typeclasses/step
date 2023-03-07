@@ -1,7 +1,6 @@
 module Block.Hedgehog.Spec.Enumerate (spec) where
 
-import Block.Class.Enumerate
-import Block.Class.ItemEquality
+import Block.Class
 import Essentials
 
 import Test.Hspec (Spec, describe, it)
@@ -10,7 +9,6 @@ import Hedgehog (Gen, forAll, (===))
 
 import qualified Hedgehog.Gen as Gen
 import qualified Block.Hedgehog.Gen.End as Gen
-import qualified Block.Class.End as End
 import qualified Data.List.NonEmpty as NonEmpty
 
 spec :: forall x xs. (Eq x, ItemEquality xs, Show x, Show xs, Enumerate x xs) =>
@@ -27,4 +25,4 @@ spec genXs variegate = describe "Enumerate" do
         xs <- forAll genXs
         end <- forAll Gen.end
         (NonEmpty.reverse . toNonEmpty end) xs
-            === toNonEmpty (End.opposite end) xs
+            === toNonEmpty (oppositeEnd end) xs

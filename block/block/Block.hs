@@ -32,12 +32,11 @@ module Block
     {- * Isomorphism with NonEmpty -}
             toNonEmpty, fromNonEmpty, foldItems,
 
-    {- * End = Front | Back -} End (..),
+    {- * End = Front | Back -} End (..), oppositeEnd,
 
     {- * Shortfall -} Shortfall (..),
 
-    {- * Classes -} Block, Singleton, Positional, Search,
-            Refined, Construct, Index, Concat, ItemEquality, Enumerate,
+    {- * Classes -} Block, Refined, ItemEquality,
 
     {- * State -} State (..), StateResult (..),
             runState, evalState, execState, stateless, get, put, modify,

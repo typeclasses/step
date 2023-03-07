@@ -1,4 +1,4 @@
-module Block.Class.Shortfall
+module Block.Shortfall
   (
     {- * Type -} Shortfall (..),
   )

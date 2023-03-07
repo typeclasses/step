@@ -31,61 +31,9 @@ library
     hs-source-dirs: block-class
     exposed-modules:
         Block.Class
-
-        Block.Class.Utilities
-
-        Block.Class.Block
-        Block.Class.Block.Class
-
-        Block.Class.Classes
-        Block.Class.ClassNames
-
-        Block.Class.Refined
-        Block.Class.Refined.Class
-        Block.Class.Refined.Utilities
-
-        Block.Class.ItemEquivalence
-        Block.Class.ItemEquivalence.Types
-        Block.Class.ItemEquivalence.Examples
-
-        Block.Class.Singleton
-        Block.Class.Singleton.Class
-        Block.Class.Singleton.Types
-        Block.Class.Singleton.Utilities
-
-        Block.Class.Positional
-        Block.Class.Positional.Class
-        Block.Class.Positional.Types
-        Block.Class.Positional.Utilities
-
-        Block.Class.Search
-        Block.Class.Search.Class
-        Block.Class.Search.Types
-        Block.Class.Search.Utilities
-
-        Block.Class.Construct
-        Block.Class.Construct.Class
-
-        Block.Class.End
-
-        Block.Class.Shortfall
-
-        Block.Class.State
-        Block.Class.State.Types
-        Block.Class.State.Utilities
-
-        Block.Class.Index
-        Block.Class.Index.Class
-
-        Block.Class.Concat
-        Block.Class.Concat.Class
-
-        Block.Class.Enumerate
-        Block.Class.Enumerate.Class
-
-        Block.Class.ItemEquality
-        Block.Class.ItemEquality.Class
-        Block.Class.ItemEquality.Utilities
+        Block.End
+        Block.Shortfall
+        Block.State
 
 test-suite test-block-class
     import: base

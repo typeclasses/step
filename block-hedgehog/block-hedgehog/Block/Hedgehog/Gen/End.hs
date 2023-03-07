@@ -1,7 +1,7 @@
 module Block.Hedgehog.Gen.End (end) where
 
 import Hedgehog (Gen)
-import Block.Class.End (End (..))
+import Block.End (End (..))
 
 import qualified Hedgehog.Gen as Gen
 

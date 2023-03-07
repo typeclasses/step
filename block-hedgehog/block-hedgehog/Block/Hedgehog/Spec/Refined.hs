@@ -1,6 +1,6 @@
 module Block.Hedgehog.Spec.Refined (spec) where
 
-import Block.Class.Refined
+import Block.Class
 import Essentials
 
 import Test.Hspec (Spec, describe, it)

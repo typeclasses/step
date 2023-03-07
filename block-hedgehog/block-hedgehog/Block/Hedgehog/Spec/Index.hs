@@ -8,7 +8,6 @@ import Test.Hspec.Hedgehog (hedgehog)
 import Hedgehog (Gen, forAll, (===))
 import Prelude ((+))
 
-import qualified Block.Class.End as End
 import qualified Block.Hedgehog.Gen.End as Gen
 
 spec :: forall x xs. (Eq x, Show x, Show xs, Block x xs) =>
@@ -30,7 +29,7 @@ spec genX genXs variegate = describe "Index" do
         xs <- forAll genXs
         end <- forAll Gen.end
 
-        at end (length xs) xs === Just (terminal (End.opposite end) xs)
+        at end (length xs) xs === Just (terminal (oppositeEnd end) xs)
 
     it "at end (length xs + 1) xs = Nothing" $ hedgehog do
         xs <- forAll genXs

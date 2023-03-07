@@ -1,10 +1,13 @@
-module Block.Class.State.Types
+module Block.State
   (
-    {- * Types -} State (..), StateResult (..),
+    {- * Type -} State (..), StateResult (..),
+    {- * Utilities -} runState, evalState, execState, stateless, get, put, modify,
   )
   where
 
 import Essentials
+
+import Prelude (($!))
 
 newtype State s a = State (s -> (StateResult s a))
     deriving stock Functor
@@ -28,3 +31,26 @@ instance Monad (State s) where
         State sb = f a
       in
         sb s1
+
+stateless :: State () a -> a
+stateless = evalState ()
+
+runState :: s -> State s a -> StateResult s a
+runState s (State f) = f s
+
+evalState :: s -> State s a -> a
+evalState s (State f) = stateResult (f s)
+
+execState :: s -> State s a -> s
+execState s (State f) = newState (f s)
+
+get :: State s s
+get = State \s -> StateResult s s
+
+put :: s -> State s ()
+put s = State \_ -> StateResult () s
+
+modify :: (s -> s) -> State s ()
+modify f = do
+    s <- get
+    put $! f s

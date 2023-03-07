@@ -1,4 +1,4 @@
-module Block.Class.End
+module Block.End
   (
     {- * Type -} End (..),
     {- * Utilities -} opposite,

@@ -19,7 +19,6 @@ import Data.List.NonEmpty (nonEmpty)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
-import qualified Block.Class.End as End
 import qualified Fold.Nonempty as Fold
 import qualified Integer.Positive as Positive
 
@@ -175,7 +174,7 @@ instance (Block x xs, Block xs xss) => Positional (BlockBlock x xs xss) where
           where
             (taken, remainder) = evalState n (find end f xss) & Maybe.fromJust
                 & \(Pivot xs1 (x1, x2) xs2) ->
-                    (pushMaybe (End.opposite end) x1 xs1, pushMaybe end x2 xs2)
+                    (pushMaybe (oppositeEnd end) x1 xs1, pushMaybe end x2 xs2)
               where
                 f xs = do
                     rem <- get
@@ -211,7 +210,7 @@ instance (Block x xs, Block xs xss) => Search x (BlockBlock x xs xss) where
         <&> \case
             Nothing -> SpanAll
             Just (Pivot a (a', b') b) ->
-                case pushMaybe (End.opposite end) a' a of
+                case pushMaybe (oppositeEnd end) a' a of
                     Nothing -> SpanNone
                     Just a'' -> SpanPart
                         (BlockBlock a'')
@@ -224,6 +223,6 @@ instance (Block x xs, Block xs xss) => Search x (BlockBlock x xs xss) where
         & find end (find end f)
         <&> fmap \(Pivot a (Pivot a' x b') b) ->
                 Pivot
-                    (BlockBlock <$> pushMaybe (End.opposite end) a' a)
+                    (BlockBlock <$> pushMaybe (oppositeEnd end) a' a)
                     x
                     (BlockBlock <$> pushMaybe end b' b)

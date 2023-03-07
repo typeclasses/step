@@ -5,9 +5,8 @@ module Block.ByteString.Type
   where
 
 import Essentials
-import Block.Class.ClassNames
+import Block.Class
 
-import Block.Class (toNonEmpty, End (..), fromNonEmpty)
 import Block.Null.Type (NotNull)
 import Data.ByteString (ByteString)
 import Data.String (IsString)
