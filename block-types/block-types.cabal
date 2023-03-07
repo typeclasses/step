@@ -29,7 +29,7 @@ common base
       , gambler ^>= 0.2.0
       , integer-types ^>= 0.1.0
       , quaalude ^>= 0.0.0
-      , text ^>= 1.2.4 || ^>= 2.0
+      , text ^>= 2.0.2
       , transformers ^>= 0.5.6
 
 library

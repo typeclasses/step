@@ -34,7 +34,7 @@ common base
       , supply-monitor ^>= 0.0
       , supply-next == 0.0.1.*
       , supply-pushback ^>= 0.0
-      , text ^>= 1.2.4 || ^>= 2.0
+      , text ^>= 2.0.2
 
 library
     import: base
