@@ -67,9 +67,6 @@ instance Positional ASCII1 where
 
 instance Search Char ASCII1 where
 
-    span :: End -> (Char -> State s Bool) -> ASCII1 -> State s (Span ASCII1)
-    span end f (ASCII1 bs) = span end (f . A.fromWord8Unsafe) bs <&> fmap ASCII1
-
     find :: End -> (Char -> State s (Maybe found)) -> ASCII1
          -> State s (Maybe (Pivot found ASCII1))
     find end f (ASCII1 bs) =

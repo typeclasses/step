@@ -14,9 +14,8 @@ module Block.Class
     {- * Single item at a numeric position -} Index (..),
 
     {- * Searching for items matching a predicate -}
-            Search (..),
-            spanPredicate, Span (..),
-            findPredicate, Pivot (..),
+            Search (..), Pivot (..), findPredicate,
+            span, spanPredicate, Span (..),
 
     {- * Prefix detection -}
             biPrefix, BiPrefix (..),
@@ -236,21 +235,6 @@ instance Positional (NonEmpty x) where
 
 class Search x xs | xs -> x where
 
-    {-| Separate a block into two parts by specifying a predicate
-        for all the items in the first part
-
-    Where possible, the result is @('SpanPart' spanned remainder)@,
-    where @spanned@ is the longest contiguous series starting from the
-    designated 'End' of items that match the predicate and @remainder@
-    is everything else. If not even the first item matches, the result
-    is 'SpanNone'. If all the items match, the result is 'SpanAll'. -}
-    span ::
-        End -- ^ Which end to start searching from: 'Front' or 'Back'
-        -> (x -> State s Bool)
-            -- ^ Keep taking as long as items match this predicate
-        -> xs -- ^ A block
-        -> State s (Span xs)
-
     {-| Search a block for the first item for which the given function
         returns @Just@
 
@@ -282,53 +266,25 @@ data Pivot a xs =
       }
   deriving stock (Eq, Ord, Show, Functor)
 
-{-| The result of 'Block.Class.span' -}
-data Span xs =
-    SpanPart
-      -- ^ Some items were spanned by the predicate
-      { spanned :: xs -- ^ The spanned items
-      , spanRemainder :: xs -- ^ The remainder
-      }
-  | SpanNone
-      -- ^ The first item does not satisfy the predicate
-  | SpanAll
-      -- ^ All items satisfy the predicate
-  deriving stock (Eq, Ord, Show, Functor)
-
 instance Search x (NonEmpty x) where
-
-    span ::
-        End -> (x -> State s Bool) -> NonEmpty x -> State s (Span (NonEmpty x))
-
-    span Front f = fix \r (x :| xs) -> f x >>= \case
-        False -> pure SpanNone
-        True -> case xs of
-            [] -> pure SpanAll
-            y : ys -> r (y :| ys) <&> \case
-                SpanAll        ->  SpanAll
-                SpanNone       ->  SpanPart (x :| []) (y :| ys)
-                SpanPart as b  ->  SpanPart (x :| NonEmpty.toList as) b
-
-    span Back f = \xs -> span Front f (NonEmpty.reverse xs) <&> \case
-        SpanNone      ->  SpanNone
-        SpanAll       ->  SpanAll
-        SpanPart a b  ->  SpanPart (NonEmpty.reverse a) (NonEmpty.reverse b)
 
     find :: End -> (x -> State s (Maybe found)) -> NonEmpty x
         -> State s (Maybe (Pivot found (NonEmpty x)))
-
-    find Front f = fix \r (x :| xs) -> f x >>= \case
-        Just pivot -> pure $ Just $ Pivot
-          { pivot
-          , split1 = (x :| [], nonEmpty xs)
-          , split2 = (Nothing, x :| xs)
-          }
-        Nothing -> case xs of
-            [] -> pure Nothing
-            y : ys -> r (y :| ys) <&> fmap (pivotConsNonEmpty x)
-
-    find Back f = \xs ->
-        find Front f (NonEmpty.reverse xs) <&> fmap (fmap NonEmpty.reverse)
+    find = \case
+        Front -> findFront
+        Back -> \f xs ->
+            findFront f (NonEmpty.reverse xs)
+            <&> fmap (fmap NonEmpty.reverse)
+      where
+        findFront f = fix \r (x :| xs) -> f x >>= \case
+            Just pivot -> pure $ Just $ Pivot
+              { pivot
+              , split1 = (x :| [], nonEmpty xs)
+              , split2 = (Nothing, x :| xs)
+              }
+            Nothing -> case xs of
+                [] -> pure Nothing
+                y : ys -> r (y :| ys) <&> fmap (pivotConsNonEmpty x)
 
 pivotConsNonEmpty :: x -> Pivot a (NonEmpty x) -> Pivot a (NonEmpty x)
 pivotConsNonEmpty x Pivot{ pivot, split1 = (as, bsm), split2 = (asm, bs) } =
@@ -347,6 +303,38 @@ spanPredicate end f = stateless . span end (pure . f)
 sameItemsPivot :: Eq x => ItemEquality xs => Pivot x xs -> Pivot x xs -> Bool
 sameItemsPivot (Pivot x1 (as1, _) (_, bs1)) (Pivot x2 (as2, _) (_, bs2)) =
     x1 == x2 && sameItems as1 as2 && sameItems bs1 bs2
+
+{-| Separate a block into two parts by specifying a predicate for all the items in
+    the first part
+
+Where possible, the result is @('SpanPart' spanned remainder)@, where @spanned@ is the
+longest contiguous series starting from the designated 'End' of items that match the
+predicate and @remainder@ is everything else. If not even the first item matches, the
+result is 'SpanNone'. If all the items match, the result is 'SpanAll'. -}
+span :: Search x xs =>
+    End -- ^ Which end to start searching from: 'Front' or 'Back'
+    -> (x -> State s Bool)
+        -- ^ Keep taking as long as items match this predicate
+    -> xs -- ^ A block
+    -> State s (Span xs)
+span end f xs = find end (\x -> f x <&> \case False -> Just (); True -> Nothing) xs
+    <&> \case
+            Nothing -> SpanAll
+            Just (Pivot () _ (Nothing, _)) -> SpanNone
+            Just (Pivot () _ (Just a, b)) -> SpanPart a b
+
+{-| The result of 'Block.Class.span' -}
+data Span xs =
+    SpanPart
+      -- ^ Some items were spanned by the predicate
+      { spanned :: xs -- ^ The spanned items
+      , spanRemainder :: xs -- ^ The remainder
+      }
+  | SpanNone
+      -- ^ The first item does not satisfy the predicate
+  | SpanAll
+      -- ^ All items satisfy the predicate
+  deriving stock (Eq, Ord, Show, Functor)
 
 sameItemsSpan :: ItemEquality xs => Span xs -> Span xs -> Bool
 sameItemsSpan = \case

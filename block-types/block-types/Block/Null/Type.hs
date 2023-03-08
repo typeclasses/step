@@ -95,16 +95,6 @@ instance (Null x xs) => Singleton x (NotNull x xs) where
 
 instance (Null x xs) => Search x (NotNull x xs) where
 
-    span :: Monad m => End -> (x -> m Bool) -> NotNull x xs
-        -> m (Span (NotNull x xs))
-    span end f xs =
-        Null.span end f (generalize xs)
-        <&> (\(a, b) -> (refine a, refine b))
-        <&> \case
-            (Nothing, _) -> SpanNone
-            (Just _, Nothing) -> SpanAll
-            (Just x, Just y) -> SpanPart x y
-
     find :: Monad m => End -> (x -> m (Maybe found)) -> NotNull x xs
         -> m (Maybe (Pivot found (NotNull x xs)))
     find end f xs =

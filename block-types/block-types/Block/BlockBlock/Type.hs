@@ -197,25 +197,6 @@ instance (Block x xs, Block xs xss) => Index x (BlockBlock x xs xss) where
 
 instance (Block x xs, Block xs xss) => Search x (BlockBlock x xs xss) where
 
-    span :: End -> (x -> State s Bool) -> BlockBlock x xs xss
-        -> State s (Span (BlockBlock x xs xss))
-    span end f bb =
-        bb & bbXss
-        & find end
-            (\xs -> span end f xs <&> \case
-                SpanAll       ->  Nothing
-                SpanNone      ->  Just (Nothing, xs)
-                SpanPart a b  ->  Just (Just a, b)
-            )
-        <&> \case
-            Nothing -> SpanAll
-            Just Pivot{ pivot = (a', b'), split1 = (_, b), split2 = (a, _) } ->
-                case pushMaybe (oppositeEnd end) a' a of
-                    Nothing -> SpanNone
-                    Just a'' -> SpanPart
-                        (BlockBlock a'')
-                        (BlockBlock (maybe (singleton b') (push end b') b))
-
     find :: End -> (x -> State s (Maybe found)) -> BlockBlock x xs xss
         -> State s (Maybe (Pivot found (BlockBlock x xs xss)))
     find end f bb =
