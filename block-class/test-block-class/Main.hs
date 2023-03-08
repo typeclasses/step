@@ -12,6 +12,8 @@ import System.IO (IO)
 import Test.Hspec (hspec, describe, it, shouldBe, Spec)
 import Text.Read (readMaybe)
 
+import qualified Fold.ShortcutNonempty as Fold
+
 main :: IO ()
 main = hspec do
     spanSpec
@@ -112,11 +114,10 @@ biPrefixSpec = describe "biPrefix" do
 
 foldSpec :: Spec
 foldSpec = describe "foldItems" do
-    let f x = modify (<> [x])
     it "Front" $
-        foldItems Front (: []) f (ne "abc") `shouldBe` "abc"
+        foldItems Front Fold.list (ne "abc") `shouldBe` (ne "abc")
     it "Back" $
-        foldItems Back (: []) f (ne "abc") `shouldBe` "cba"
+        foldItems Back Fold.list (ne "abc") `shouldBe` (ne "cba")
 
 atSpec :: Spec
 atSpec = describe "at" do

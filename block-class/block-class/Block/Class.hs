@@ -61,6 +61,7 @@ import Data.Function (fix)
 import Data.Ord (Ordering (..), compare)
 import Block.End (End (..))
 import GHC.Stack (HasCallStack)
+import Fold.ShortcutNonempty (ShortcutNonemptyFold)
 
 import qualified Data.Maybe as Maybe
 import qualified Data.Foldable as Foldable
@@ -68,6 +69,7 @@ import qualified Integer.Positive as Positive
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Semigroup as Semigroup
 import qualified Block.End as End
+import qualified Fold.ShortcutNonempty as Fold
 
 
 ---  Block  ---
@@ -159,17 +161,17 @@ class Enumerate x xs | xs -> x where
 
     toNonEmpty :: End -> xs -> NonEmpty x
 
-    foldItems :: End -> (x -> a) -> (x -> State a ()) -> xs -> a
+    foldItems :: End -> ShortcutNonemptyFold x a -> xs -> a
 
 instance Enumerate x (NonEmpty x) where
 
     toNonEmpty :: End -> NonEmpty x -> NonEmpty x
     toNonEmpty = \case Front -> id; Back -> NonEmpty.reverse
 
-    foldItems :: End -> (x -> a) -> (x -> State a ()) -> NonEmpty x -> a
-    foldItems end initial step =
-        toNonEmpty end >>> \(x0 :| xs) ->
-        Foldable.foldl' (\s x -> step x & execState s) (initial x0) xs
+    foldItems :: End -> ShortcutNonemptyFold x a -> NonEmpty x -> a
+    foldItems end initial step = undefined -- todo
+        -- toNonEmpty end >>> \(x0 :| xs) ->
+        -- Foldable.foldl' (\s x -> step x & execState s) (initial x0) xs
 
 
 ---  Positional  ----

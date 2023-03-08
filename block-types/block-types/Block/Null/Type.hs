@@ -14,12 +14,14 @@ import Prelude (error)
 import Data.List.NonEmpty (NonEmpty)
 import Block.Null.Class (Null)
 import GHC.Exts (IsList)
+import Fold.ShortcutNonempty (ShortcutNonemptyFold)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
 import qualified Integer.Positive as Positive
 import qualified Integer
 import qualified Block.Null.Class as Null
+import qualified Fold.ShortcutNonempty as Fold
 
 newtype NotNull x xs = NotNull xs
     deriving newtype (Eq, Ord, Show, Semigroup, IsList)
@@ -54,8 +56,8 @@ instance (Null x xs) => Enumerate x (NotNull x xs) where
     toNonEmpty :: End -> NotNull x xs -> NonEmpty x
     toNonEmpty end = generalize >>> Null.toNonEmpty end >>> Maybe.fromJust
 
-    foldItems :: End -> (x -> a) -> (x -> State a ()) -> NotNull x xs -> a
-    foldItems end initial step = toNonEmpty end >>> foldItems end initial step
+    foldItems :: End -> ShortcutNonemptyFold x a -> NotNull x xs -> a
+    foldItems end f = toNonEmpty end >>> foldItems end f
 
 instance (Null x xs) => Construct x (NotNull x xs) where
 

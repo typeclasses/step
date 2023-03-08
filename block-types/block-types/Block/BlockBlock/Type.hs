@@ -16,11 +16,13 @@ import Data.Bool ((&&))
 import GHC.Exts (IsList (..), Item)
 import Prelude (error)
 import Data.List.NonEmpty (nonEmpty)
+import Fold.ShortcutNonempty (ShortcutNonemptyFold)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
 import qualified Fold.Nonempty as Fold
 import qualified Integer.Positive as Positive
+import qualified Fold.ShortcutNonempty as ShortcutFold
 
 data BlockBlock (x :: Type) (xs :: Type) (xss :: Type) =
     BlockBlockUnsafe{ bbXss :: !xss, bbLength :: !Positive }
@@ -116,9 +118,11 @@ instance (Block x xs, Block xs xss) => Concat (BlockBlock x xs xss) where
 
 instance (Block x xs, Block xs xss) => Enumerate x (BlockBlock x xs xss) where
 
-    foldItems :: End -> (x -> a) -> (x -> State a ()) -> BlockBlock x xs xss -> a
-    foldItems end initialX stepX = bbXss >>>
-        foldItems end (foldItems end initialX stepX) \xs ->
+    foldItems :: End -> ShortcutNonemptyFold x a -> BlockBlock x xs xss -> a
+    foldItems end f@(ShortcutNonemptyFold{ ShortcutFold.step }) = bbXss >>>
+        foldItems end ShortcutNonemptyFold
+          { ShortcutFold.initial = foldItems end f
+          ,  \xs ->
             modify \a -> foldItems end (execState a . stepX) stepX xs
 
     toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
