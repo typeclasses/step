@@ -173,7 +173,7 @@ instance (Block x xs, Block xs xss) => Positional (BlockBlock x xs xss) where
                 (BlockBlockUnsafe (Maybe.fromJust remainder) remainderLength)
           where
             (taken, remainder) = evalState n (find end f xss) & Maybe.fromJust
-                & \(Pivot (x1, x2) (_, xs1) (_, xs2)) ->
+                & \Pivot{ pivot = (x1, x2), split1 = (_, xs2), split2 = (xs1, _) } ->
                     (pushMaybe (oppositeEnd end) x1 xs1, pushMaybe end x2 xs2)
               where
                 f xs = do
@@ -209,7 +209,7 @@ instance (Block x xs, Block xs xss) => Search x (BlockBlock x xs xss) where
             )
         <&> \case
             Nothing -> SpanAll
-            Just (Pivot (a', b') (_, a) (_, b)) ->
+            Just Pivot{ pivot = (a', b'), split1 = (_, b), split2 = (a, _) } ->
                 case pushMaybe (oppositeEnd end) a' a of
                     Nothing -> SpanNone
                     Just a'' -> SpanPart
@@ -221,12 +221,21 @@ instance (Block x xs, Block xs xss) => Search x (BlockBlock x xs xss) where
     find end f bb =
         bb & bbXss
         & find end (find end f)
-        <&> fmap \(Pivot (Pivot x (a1', a') (b1', b')) (_, a) (_, b)) ->
+        <&> fmap \Pivot{ pivot = Pivot{ pivot = x
+                                      , split1 = (a1', b')
+                                      , split2 = (a', b1')
+                                      }
+                       , split1 = (_, b)
+                       , split2 = (a, _)
+                       } ->
                 Pivot
-                    x
-                    ( BlockBlock $ unpop (oppositeEnd end) (Pop a1' a)
-                    , BlockBlock <$> pushMaybe (oppositeEnd end) a' a
-                    )
-                    ( BlockBlock $ unpop end (Pop b1' b)
-                    , BlockBlock <$> pushMaybe end b' b
-                    )
+                  { pivot = x
+                  , split1 =
+                      ( BlockBlock $ unpop (oppositeEnd end) (Pop a1' a)
+                      , BlockBlock <$> pushMaybe end b' b
+                      )
+                  , split2 =
+                      ( BlockBlock <$> pushMaybe (oppositeEnd end) a' a
+                      , BlockBlock $ unpop end (Pop b1' b)
+                      )
+                  }

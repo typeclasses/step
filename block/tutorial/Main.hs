@@ -64,9 +64,21 @@ main =
 
        If no item matches the predicate, the result is 'Nothing'. -}
 
-    (hi & Block.findPredicate Front isUpper) ~> Just (Pivot 'H' ( "H"      , Nothing      ) ( "Hello World" , Just "ello World" ))
-    (hi & Block.findPredicate Front isSpace) ~> Just (Pivot ' ' ( "Hello " , Just "Hello" ) ( " World"      , Just "World"      ))
-    (hi & Block.findPredicate Back  isUpper) ~> Just (Pivot 'W' ( "World"  , Just "orld"  ) ( "Hello W"     , Just "Hello "     ))
+    (hi & Block.findPredicate Front isUpper) ~> Just Pivot
+        { pivot = 'H'
+        , split1 = ("H", Just "ello World")
+        , split2 = (Nothing, "Hello World")
+        }
+    (hi & Block.findPredicate Front isSpace) ~> Just Pivot
+        { pivot = ' '
+        , split1 = ("Hello ", Just "World")
+        , split2 = (Just "Hello" , " World")
+        }
+    (hi & Block.findPredicate Back  isUpper) ~> Just Pivot
+        { pivot = 'W'
+        , split1 = ("World", Just "Hello ")
+        , split2 = (Just "orld", "Hello W")
+        }
     (hi & Block.findPredicate Front isDigit) ~> Nothing
 
 
@@ -102,9 +114,11 @@ main =
        general 'find' function's parameter is (x -> State s (Maybe a)).
        This allows a 'find' produce a final value when a match is found. -}
 
-    (lyric & Block.find Front (pure . charAsWord) & stateless)
-        ~> Just (Pivot 9 ("on the wall, 9", Just "on the wall, ") ("98 bottles of beer", Just "8 bottles of beer"))
-
+    (lyric & Block.find Front (pure . charAsWord) & stateless) ~> Just Pivot
+        { pivot = 9
+        , split1 = ("on the wall, 9", Just "8 bottles of beer")
+        , split2 = (Just "on the wall, ", "98 bottles of beer")
+        }
 
     {- A larger example demonstrating both state collection and a final
        result: -}
@@ -116,8 +130,11 @@ main =
                 '*' -> (Just . product) <$> get
                 _   -> pure Nothing
 
-    (("234+ 567*" :: Text1) & Block.find Front calculate & evalState [])
-        ~> Just (Pivot 9 ("234+", Just "234") ("+ 567*", Just " 567*"))
+    (("234+ 567*" :: Text1) & Block.find Front calculate & evalState []) ~> Just Pivot
+        { pivot = 9
+        , split1 = ("234+", Just " 567*")
+        , split2 = (Just "234", "+ 567*")
+        }
 
 
 --------------------------------------------------------------------------------

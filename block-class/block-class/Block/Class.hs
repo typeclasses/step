@@ -272,11 +272,14 @@ class Search x xs | xs -> x where
         -> State s (Maybe (Pivot found xs))
 
 {-| A successful result of 'Block.Class.find' -}
-data Pivot x xs =
+data Pivot a xs =
     Pivot
-      x
-      (xs, Maybe xs) -- ^ Before, including and excluding the item
-      (xs, Maybe xs) -- ^ After, including and excluding the item
+      { pivot :: a
+      , split1 :: (xs, Maybe xs)
+          -- ^ Split of the block where the first part includes the found item
+      , split2 :: (Maybe xs, xs)
+          -- ^ Split of the block where the second part includes the found item
+      }
   deriving stock (Eq, Ord, Show, Functor)
 
 {-| The result of 'Block.Class.span' -}
@@ -315,7 +318,11 @@ instance Search x (NonEmpty x) where
         -> State s (Maybe (Pivot found (NonEmpty x)))
 
     find Front f = fix \r (x :| xs) -> f x >>= \case
-        Just found -> pure $ Just $ Pivot found (x :| [], Nothing) (x :| xs, nonEmpty xs)
+        Just pivot -> pure $ Just $ Pivot
+          { pivot
+          , split1 = (x :| [], nonEmpty xs)
+          , split2 = (Nothing, x :| xs)
+          }
         Nothing -> case xs of
             [] -> pure Nothing
             y : ys -> r (y :| ys) <&> fmap (pivotConsNonEmpty x)
@@ -324,8 +331,8 @@ instance Search x (NonEmpty x) where
         find Front f (NonEmpty.reverse xs) <&> fmap (fmap NonEmpty.reverse)
 
 pivotConsNonEmpty :: x -> Pivot a (NonEmpty x) -> Pivot a (NonEmpty x)
-pivotConsNonEmpty x (Pivot y (as, asm) (bs, bsm)) =
-    Pivot y (as', asm') (bs, bsm)
+pivotConsNonEmpty x Pivot{ pivot, split1 = (as, bsm), split2 = (asm, bs) } =
+    Pivot{ pivot, split1 = (as', bsm), split2 = (asm', bs) }
   where
     as' = x :| Foldable.toList as
     asm' = asm & maybe (x :| []) (\as'' -> x :| Foldable.toList as'') & Just
@@ -338,7 +345,7 @@ spanPredicate :: Search x xs => End -> (x -> Bool) -> xs -> Span xs
 spanPredicate end f = stateless . span end (pure . f)
 
 sameItemsPivot :: Eq x => ItemEquality xs => Pivot x xs -> Pivot x xs -> Bool
-sameItemsPivot (Pivot x1 (as1, _) (bs1, _)) (Pivot x2 (as2, _) (bs2, _)) =
+sameItemsPivot (Pivot x1 (as1, _) (_, bs1)) (Pivot x2 (as2, _) (_, bs2)) =
     x1 == x2 && sameItems as1 as2 && sameItems bs1 bs2
 
 sameItemsSpan :: ItemEquality xs => Span xs -> Span xs -> Bool

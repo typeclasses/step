@@ -1,6 +1,6 @@
 module Block.Null.Class
   (
-    Null (..), toNonEmpty, fromNonEmpty, notNullMaybe,
+    Null (..), Pivot (..), toNonEmpty, fromNonEmpty, notNullMaybe,
   )
   where
 
@@ -42,10 +42,12 @@ class Null x xs | xs -> x where
     splitAt :: Natural -> xs -> (xs, xs)
     span :: Monad m => End -> (x -> m Bool) -> xs -> m (xs, xs)
     find :: Monad m => End -> (x -> m (Maybe found))
-        -> xs -> m (Maybe (found, (xs, xs), (xs, xs)))
+        -> xs -> m (Maybe (Pivot found xs))
     at :: End -> Positive -> xs -> Maybe x
     (++) :: xs -> xs -> xs
     concat :: End -> [xs] -> xs
+
+data Pivot a xs = Pivot a (xs, xs) (xs, xs)
 
 toNonEmpty :: Null x xs => End -> xs -> Maybe (NonEmpty x)
 toNonEmpty end = toList end >>> NonEmpty.nonEmpty
@@ -117,17 +119,13 @@ instance Null a (Seq a) where
     splitAt n = Seq.splitAt (Natural.toInt n & Maybe.fromJust)
 
     find :: Monad m => End -> (a -> m (Maybe found)) -> Seq a
-        -> m (Maybe (found, (Seq a, Seq a), (Seq a, Seq a)))
+        -> m (Maybe (Pivot found (Seq a)))
     find Front f = go Seq.empty
       where
         go !seen xs = case Seq.viewl xs of
           Seq.EmptyL -> pure Nothing
           (Seq.:<) y ys -> f y >>= \case
-              Just found -> pure $ Just
-                  ( found
-                  , ((Seq.:|>) seen y, seen)
-                  , (xs, ys)
-                  )
+              Just found -> pure $ Just $ Pivot found ((Seq.:|>) seen y, ys) (seen, xs)
               Nothing -> go ((Seq.:|>) seen y) ys
 
     find Back f = go Seq.empty
@@ -135,11 +133,7 @@ instance Null a (Seq a) where
         go !seen xs = case Seq.viewr xs of
             Seq.EmptyR -> pure Nothing
             (Seq.:>) ys y -> f y >>= \case
-                Just found -> pure $ Just
-                  ( found
-                  , ((Seq.<|) y seen, seen)
-                  , (xs, ys)
-                  )
+                Just found -> pure $ Just $ Pivot found ((Seq.<|) y seen, ys) (seen, xs)
                 Nothing -> go ((Seq.:<|) y seen) ys
 
 instance Null Char Text where
@@ -193,16 +187,12 @@ instance Null Char Text where
     span Back = Text.spanEndM >>> (fmap . fmap) \(a, b) -> (b, a)
 
     find :: Monad m => End -> (Char -> m (Maybe found)) -> Text
-        -> m (Maybe (found, (Text, Text), (Text, Text)))
+        -> m (Maybe (Pivot found Text))
     find Front f xs =
         State.runStateT (Text.spanM s xs) Nothing
             <&> \((a, b), foundMaybe) ->
-                (foundMaybe <&> \found ->
-                    ( found
-                    , (Text.snoc a (Text.head b), a)
-                    , (b, Text.tail b)
-                    )
-                )
+                (foundMaybe <&> \found -> Pivot found
+                    (Text.snoc a (Text.head b), Text.tail b) (a, b))
       where
         s x = lift (f x) >>= \case
             Nothing -> pure True
@@ -210,12 +200,8 @@ instance Null Char Text where
     find Back f xs =
         State.runStateT (Text.spanEndM s xs) Nothing
             <&> \((a, b), foundMaybe) ->
-                (foundMaybe <&> \found ->
-                    ( found
-                    , (Text.cons (Text.last a) b, b)
-                    , (a, Text.init a)
-                    )
-                )
+                (foundMaybe <&> \found -> Pivot found
+                    (Text.cons (Text.last a) b, Text.init a) (b, a))
       where
         s x = lift (f x) >>= \case
             Nothing -> pure True
@@ -280,28 +266,18 @@ instance Null Word8 ByteString where
                 True -> go (i + 1) zs
 
     find :: Monad m => End -> (Word8 -> m (Maybe found)) -> ByteString
-        -> m (Maybe (found, (ByteString, ByteString), (ByteString, ByteString)))
+        -> m (Maybe (Pivot found ByteString))
     find end f xs =
         go 0 (toList end xs) <&> \(i, xm) ->
         xm <&> \x -> case end of
-            Front ->
-                ( x
-                , ( ByteString.take (i + 1) xs
-                  , ByteString.take  i      xs
-                  )
-                , ( ByteString.drop  i      xs
-                  , ByteString.drop (i + 1) xs
-                  )
-                )
-            Back ->
-                ( x
-                , ( ByteString.drop (ByteString.length xs - i - 1) xs
-                  , ByteString.drop (ByteString.length xs - i) xs
-                  )
-                , ( ByteString.take (ByteString.length xs - i    ) xs
-                  , ByteString.take (ByteString.length xs - i - 1) xs
-                  )
-                )
+            Front -> Pivot x
+                (ByteString.splitAt (i + 1) xs)
+                (ByteString.splitAt (i    ) xs)
+            Back -> Pivot x
+                (swap $ ByteString.splitAt (ByteString.length xs - i - 1) xs)
+                (swap $ ByteString.splitAt (ByteString.length xs - i    ) xs)
+              where
+                swap (a, b) = (b, a)
       where
         go !i ys = case ys of
             [] -> pure (i, Nothing)

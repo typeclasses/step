@@ -36,11 +36,11 @@ spec genXs variegate (PredicateGenerators p genX' genXs') = describe "Search" do
         abc :: xs <- forAll $ variegate $ concat end parts
 
         diff (findPredicate end p abc) (foldableEqOn sameItemsPivot)
-            (Just
-                (Pivot b
-                    (unpop (oppositeEnd end) (Pop b a), a)
-                    (unpop end               (Pop b c), c)
-                )
+            (Just Pivot
+                { pivot = b
+                , split1 = (unpop (oppositeEnd end) (Pop b a), c)
+                , split2 = (a, unpop end (Pop b c))
+                }
             )
 
     it "findPredicate -> Nothing" $ hedgehog do
