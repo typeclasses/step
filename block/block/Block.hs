@@ -29,7 +29,7 @@ module Block
     {- * Nullability -}
             refine, generalize, assume,
 
-    {- * Isomorphism with NonEmpty -}
+    {- * Kinship with NonEmpty -}
             toNonEmpty, fromNonEmpty, foldItems,
 
     {- * End = Front | Back -} End (..), oppositeEnd,

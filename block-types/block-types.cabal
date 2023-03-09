@@ -26,7 +26,7 @@ common base
       , block-class ^>= 0.0.0
       , bytestring ^>= 0.11.4
       , containers ^>= 0.6.5
-      , gambler ^>= 0.3.0
+      , gambler ^>= 0.4.1
       , integer-types ^>= 0.1.0
       , quaalude ^>= 0.0.0
       , text ^>= 2.0.2

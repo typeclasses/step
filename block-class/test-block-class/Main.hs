@@ -115,9 +115,9 @@ biPrefixSpec = describe "biPrefix" do
 foldSpec :: Spec
 foldSpec = describe "foldItems" do
     it "Front" $
-        foldItems Front Fold.list (ne "abc") `shouldBe` (ne "abc")
+        foldItems Front (Fold.motivate Fold.list) (ne "abc") `shouldBe` (ne "abc")
     it "Back" $
-        foldItems Back Fold.list (ne "abc") `shouldBe` (ne "cba")
+        foldItems Back (Fold.motivate Fold.list) (ne "abc") `shouldBe` (ne "cba")
 
 atSpec :: Spec
 atSpec = describe "at" do

@@ -23,7 +23,7 @@ common base
 
     build-depends:
       , base ^>= 4.16 || ^>= 4.17
-      , gambler ^>= 0.3.0
+      , gambler ^>= 0.4.1
       , integer-types ^>= 0.1.0
       , quaalude ^>= 0.0.0
 

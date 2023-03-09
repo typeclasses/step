@@ -169,9 +169,11 @@ instance Enumerate x (NonEmpty x) where
     toNonEmpty = \case Front -> id; Back -> NonEmpty.reverse
 
     foldItems :: End -> ShortcutNonemptyFold x a -> NonEmpty x -> a
-    foldItems end initial step = undefined -- todo
-        -- toNonEmpty end >>> \(x0 :| xs) ->
-        -- Foldable.foldl' (\s x -> step x & execState s) (initial x0) xs
+    foldItems end f = case end of
+        Front -> foldFront
+        Back -> NonEmpty.reverse >>> foldFront
+      where
+        foldFront = Fold.run f
 
 
 ---  Positional  ----

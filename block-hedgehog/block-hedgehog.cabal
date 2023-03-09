@@ -6,6 +6,8 @@ version: 0.0.0.0
 license: Apache-2.0
 license-file: license.txt
 
+extra-source-files: *.md
+
 common base
     default-language: GHC2021
     ghc-options: -Wall -Wmissing-deriving-strategies
@@ -20,6 +22,7 @@ common base
       , base ^>= 4.16 || ^>= 4.17
       , block-class ^>= 0.0.0
       , containers ^>= 0.6.5
+      , gambler ^>= 0.4.1
       , hedgehog ^>= 1.2
       , hspec ^>= 2.10.9
       , hspec-hedgehog ^>= 0.0.1

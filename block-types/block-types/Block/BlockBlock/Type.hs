@@ -119,11 +119,7 @@ instance (Block x xs, Block xs xss) => Concat (BlockBlock x xs xss) where
 instance (Block x xs, Block xs xss) => Enumerate x (BlockBlock x xs xss) where
 
     foldItems :: End -> ShortcutNonemptyFold x a -> BlockBlock x xs xss -> a
-    foldItems end f@(ShortcutNonemptyFold{ ShortcutFold.step }) = bbXss >>>
-        foldItems end ShortcutNonemptyFold
-          { ShortcutFold.initial = foldItems end f
-          ,  \xs ->
-            modify \a -> foldItems end (execState a . stepX) stepX xs
+    foldItems end f bb = foldItems end (ShortcutFold.repeatedly (foldItems end) f) (bbXss bb)
 
     toNonEmpty :: End -> BlockBlock x xs xss -> NonEmpty x
     toNonEmpty end = bbXss >>>

@@ -18,10 +18,10 @@ import Fold.ShortcutNonempty (ShortcutNonemptyFold)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
+import qualified Block.Null.Class as Null
+import qualified Fold.Shortcut
 import qualified Integer.Positive as Positive
 import qualified Integer
-import qualified Block.Null.Class as Null
-import qualified Fold.ShortcutNonempty as Fold
 
 newtype NotNull x xs = NotNull xs
     deriving newtype (Eq, Ord, Show, Semigroup, IsList)
@@ -57,7 +57,8 @@ instance (Null x xs) => Enumerate x (NotNull x xs) where
     toNonEmpty end = generalize >>> Null.toNonEmpty end >>> Maybe.fromJust
 
     foldItems :: End -> ShortcutNonemptyFold x a -> NotNull x xs -> a
-    foldItems end f = toNonEmpty end >>> foldItems end f
+    foldItems end f = generalize >>>
+        Null.foldItems end (Fold.Shortcut.shortcutNonemptyFold f <&> Maybe.fromJust)
 
 instance (Null x xs) => Construct x (NotNull x xs) where
 

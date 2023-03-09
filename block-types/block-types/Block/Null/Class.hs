@@ -15,6 +15,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Sequence (Seq)
 import Data.Text (Text)
 import Data.Word (Word8)
+import Fold.Shortcut (ShortcutFold (ShortcutFold))
 import Integer (Natural, Positive)
 import Prelude ((+), (-))
 
@@ -28,6 +29,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Semigroup as Semigroup
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Fold.Shortcut as Fold
 import qualified Integer.Natural as Natural
 import qualified Integer.Positive as Positive
 
@@ -41,11 +43,11 @@ class Null x xs | xs -> x where
     push :: End -> x -> xs -> xs
     splitAt :: Natural -> xs -> (xs, xs)
     span :: Monad m => End -> (x -> m Bool) -> xs -> m (xs, xs)
-    find :: Monad m => End -> (x -> m (Maybe found))
-        -> xs -> m (Maybe (Pivot found xs))
+    find :: Monad m => End -> (x -> m (Maybe found)) -> xs -> m (Maybe (Pivot found xs))
     at :: End -> Positive -> xs -> Maybe x
     (++) :: xs -> xs -> xs
     concat :: End -> [xs] -> xs
+    foldItems :: End -> ShortcutFold x a -> xs -> a
 
 data Pivot a xs = Pivot a (xs, xs) (xs, xs)
 
@@ -76,6 +78,18 @@ instance Null a (Seq a) where
     toList :: End -> Seq a -> [a]
     toList Front = Foldable.toList
     toList Back = Foldable.foldl (flip (:)) []
+
+    foldItems :: End -> ShortcutFold a b -> Seq a -> b
+    foldItems end ShortcutFold{ Fold.initial, Fold.step, Fold.extract } =
+        case end of
+            Front -> go initial
+              where
+                go (Fold.Alive Fold.Tenacious x) (a Seq.:<| as) = go (step x a) as
+                go v _ = extract v
+            Back -> go initial
+              where
+                go (Fold.Alive Fold.Tenacious x) (as Seq.:|> a) = go (step x a) as
+                go v _ = extract v
 
     fromList :: End -> [a] -> Seq a
     fromList Front = Seq.fromList
@@ -158,6 +172,18 @@ instance Null Char Text where
       where
         go = maybe [] (\(xs, x) -> x : go xs) . Text.unsnoc
 
+    foldItems :: End -> ShortcutFold Char b -> Text -> b
+    foldItems end ShortcutFold{ Fold.initial, Fold.step, Fold.extract } =
+        case end of
+            Front -> go initial
+              where
+                go (Fold.Alive Fold.Tenacious x) (Text.uncons -> Just (a, as)) = go (step x a) as
+                go v _ = extract v
+            Back -> go initial
+              where
+                go (Fold.Alive Fold.Tenacious x) (Text.unsnoc -> Just (as, a)) = go (step x a) as
+                go v _ = extract v
+
     fromList :: End -> [Char] -> Text
     fromList Front = Text.pack
     fromList Back = Text.pack >>> Text.reverse
@@ -228,6 +254,18 @@ instance Null Word8 ByteString where
     toList Back = go
       where
         go = maybe [] (\(xs, x) -> x : go xs) . ByteString.unsnoc
+
+    foldItems :: End -> ShortcutFold Word8 b -> ByteString -> b
+    foldItems end ShortcutFold{ Fold.initial, Fold.step, Fold.extract } =
+        case end of
+            Front -> go initial
+              where
+                go (Fold.Alive Fold.Tenacious x) (ByteString.uncons -> Just (a, as)) = go (step x a) as
+                go v _ = extract v
+            Back -> go initial
+              where
+                go (Fold.Alive Fold.Tenacious x) (ByteString.unsnoc -> Just (as, a)) = go (step x a) as
+                go v _ = extract v
 
     fromList :: End -> [Word8] -> ByteString
     fromList Front = ByteString.pack
