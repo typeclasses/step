@@ -21,11 +21,13 @@ import Data.Bool ((&&))
 import GHC.Exts (IsList (..), Item)
 import Prelude (error)
 import Data.List.NonEmpty (nonEmpty)
+import Fold.ShortcutNonempty (ShortcutNonemptyFold)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
 import qualified Data.ByteString as BS
 import qualified ASCII.Char as A
+import qualified Fold.ShortcutNonempty as ShortcutFold
 
 newtype ASCII1 = ASCII1 ByteString1
   deriving newtype (Eq, Ord, Show, Semigroup, IsString, Concat, ItemEquality)
@@ -77,9 +79,9 @@ instance Enumerate Char ASCII1 where
     toNonEmpty :: End -> ASCII1 -> NonEmpty Char
     toNonEmpty end (ASCII1 bs) = toNonEmpty end bs <&> A.fromWord8Unsafe
 
-    foldItems :: End -> (Char -> a) -> (Char -> State a ()) -> ASCII1 -> a
-    foldItems end initial step (ASCII1 bs) =
-        foldItems end (initial . A.fromWord8Unsafe) (step . A.fromWord8Unsafe) bs
+    foldItems :: End -> ShortcutNonemptyFold Char a -> ASCII1 -> a
+    foldItems end f (ASCII1 bs) =
+        foldItems end (ShortcutFold.premap A.fromWord8Unsafe f) bs
 
 instance Construct Char ASCII1 where
 

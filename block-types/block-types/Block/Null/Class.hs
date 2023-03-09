@@ -15,6 +15,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Sequence (Seq)
 import Data.Text (Text)
 import Data.Word (Word8)
+import Fold.Shortcut (ShortcutFold)
 import Integer (Natural, Positive)
 import Prelude ((+), (-))
 
@@ -46,6 +47,7 @@ class Null x xs | xs -> x where
     at :: End -> Positive -> xs -> Maybe x
     (++) :: xs -> xs -> xs
     concat :: End -> [xs] -> xs
+    foldItems :: End -> ShortcutFold x a -> xs -> a
 
 data Pivot a xs = Pivot a (xs, xs) (xs, xs)
 
@@ -76,6 +78,8 @@ instance Null a (Seq a) where
     toList :: End -> Seq a -> [a]
     toList Front = Foldable.toList
     toList Back = Foldable.foldl (flip (:)) []
+
+
 
     fromList :: End -> [a] -> Seq a
     fromList Front = Seq.fromList

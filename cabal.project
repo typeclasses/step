@@ -6,6 +6,7 @@ packages:
   , block-types
   , supply-monitor
   , supply-pushback
+  , /home/chris/hs/gambler/gambler
 
 with-compiler: ghc-9.2.4
 
